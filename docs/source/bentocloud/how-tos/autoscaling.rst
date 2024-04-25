@@ -14,9 +14,9 @@ You can set the :ref:`minimum and maximum replicas <bentocloud/how-tos/configure
 Concurrency
 -----------
 
-To enable autoscaling, first configure the ``concurrency`` configuration for the service. :doc:`/guides/concurrency` refers to the concurrent number of requests of a BentoML Service is able to to process simultaneously. Setting this parameter means the Service will be automatically scaled on BentoCloud when the concurrent requests per replica exceeds the specified concurrency threshold.
+To enable autoscaling, first configure the ``concurrency`` configuration for the service. :doc:`/guides/concurrency` refers to the number of concurrent requests of a BentoML Service is able to to process simultaneously. Setting this parameter means the Service will be automatically scaled on BentoCloud when the concurrent requests per replica exceeds the specified concurrency threshold.
 
-For example, a ``concurrency`` is set to 32, and the Service has 2 replicas, if the Service receives 100 concurrent requests, BentoCloud will automatically scale up to 4 replicas to handle the traffic. Similarly, if the concurrent requests drop below 32, BentoCloud will scale down to 1 replica to save resources.
+For instance, consider a scenario where ``concurrency`` is set to 32 and the service is currently operating with 2 replicas. If the service receives 100 concurrent requests, BentoCloud will automatically scale up to 4 replicas to effectively manage the increased traffic. Conversely, if the number of concurrent requests decreases to below 32, BentoCloud will intelligently scale down to 1 replica to optimize resource utilization.
 
 In general, the autoscaler will scale the number of replicas based on the following formula, permitted by the ``min_replicas`` and ``max_replicas`` settings in the deployment:
 
@@ -34,10 +34,11 @@ Use the ``@bentoml.service`` decorator to set concurrency:
     class MyService:
         ...
 
-.. note::
+.. warning::
 
     If ``concurrency`` is not set, the Service will only be autoscaled based on CPU utilization, which may not be optimal for your Service.
 
+To determine the optimal value for ``concurrency``, we recommend conducting a stress test on your service using a load generation tool such as `Locust <https://locust.io/>`_ either locally or on BentoCloud. The purpose of the stress test is to identify the maximum number of concurrent requests your service can manage. After identifying this maximum, set the concurrency parameter to a value slightly below this threshold ensuring that the service has adequate headroom to handle traffic fluctuations.
 
 External queue
 --------------

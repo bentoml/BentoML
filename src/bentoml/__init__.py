@@ -44,6 +44,7 @@ from ._internal.tag import Tag
 from ._internal.utils.http import Cookie
 
 # Bento management APIs
+from .bentos import build
 from .bentos import delete
 from .bentos import export_bento
 from .bentos import get
@@ -234,6 +235,7 @@ __all__ = [
     "delete",
     "import_bento",
     "export_bento",
+    "build",
     "load",
     "push",
     "pull",

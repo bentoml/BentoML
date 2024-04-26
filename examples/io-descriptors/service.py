@@ -12,26 +12,24 @@ import bentoml
 from bentoml.validators import DataframeSchema
 from bentoml.validators import DType
 
-# PROMPT_TEMPLATE = """<image>\nUSER: What's the content of the image?\nASSISTANT:"""
-
 
 @bentoml.service()
 class ImageResize:
     @bentoml.api()
-    def generate(self, image: Image, height: str = "64", width: str = "64") -> Image:
-        size = int(height), int(width)
-        return image.resize(size, im.ANTIALIAS)
+    def generate(self, image: Image, height: int = 64, width: int = 64) -> Image:
+        size = height, width
+        return image.resize(size, im.LANCZOS)
 
     @bentoml.api()
     def generate_with_path(
         self,
         image: t.Annotated[Path, bentoml.validators.ContentType("image/jpeg")],
-        height: str = "64",
-        width: str = "64",
+        height: int = 64,
+        width: int = 64,
     ) -> Image:
-        size = int(height), int(width)
+        size = height, width
         image = im.open(image)
-        return image.resize(size, im.ANTIALIAS)
+        return image.resize(size, im.LANCZOS)
 
 
 @bentoml.service()
@@ -46,12 +44,13 @@ class AppendStringToFile:
     @bentoml.api()
     def append_string_to_eof(
         self,
+        context: bentoml.Context,
         txt_file: t.Annotated[Path, bentoml.validators.ContentType("text/plain")],
         input_string: str,
     ) -> t.Annotated[Path, bentoml.validators.ContentType("text/plain")]:
-        with open(txt_file, "a") as file:
+        with open(output_path, "a") as file:
             file.write(input_string)
-        return txt_file
+        return output_path
 
 
 @bentoml.service()
@@ -72,15 +71,17 @@ class AudioSpeedUp:
     @bentoml.api()
     def speed_up_audio(
         self,
+        context: bentoml.Context,
         audio: t.Annotated[Path, bentoml.validators.ContentType("audio/mpeg")],
         velocity: float,
     ) -> t.Annotated[Path, bentoml.validators.ContentType("audio/mp3")]:
         from pydub import AudioSegment
-
-        sound = AudioSegment.from_file(audio)  # type：
+        import os
+        output_path = os.path.join(context.temp_dir, "output.mp3")
+        sound = AudioSegment.from_file(audio) 
         sound = sound.speedup(velocity)
-        sound.export("output.mp3", format="mp3")
-        return Path("output.mp3")
+        sound.export(output_path, format="mp3")
+        return Path(output_path)
 
 
 @bentoml.service()

@@ -75,10 +75,12 @@ class AudioSpeedUp:
         audio: t.Annotated[Path, bentoml.validators.ContentType("audio/mpeg")],
         velocity: float,
     ) -> t.Annotated[Path, bentoml.validators.ContentType("audio/mp3")]:
-        from pydub import AudioSegment
         import os
+
+        from pydub import AudioSegment
+
         output_path = os.path.join(context.temp_dir, "output.mp3")
-        sound = AudioSegment.from_file(audio) 
+        sound = AudioSegment.from_file(audio)
         sound = sound.speedup(velocity)
         sound.export(output_path, format="mp3")
         return Path(output_path)

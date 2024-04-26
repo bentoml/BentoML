@@ -107,11 +107,11 @@ def get_templates_variables(
         "__base_image__": base_image,
         "__conda_python_version__": conda_python_version,
         "__is_cuda__": _is_cuda,
-        "__pip_preheat_packages__": {
-            k: python_packages[k]
+        "__pip_preheat_packages__": [
+            python_packages[k]
             for k in PREHEAT_PIP_PACKAGES
             if python_packages and python_packages.get(k)
-        },
+        ],
     }
 
 
@@ -198,21 +198,13 @@ def generate_containerfile(
             globals={"bento_base_template": template, **J2_FUNCTION},
         )
 
-    try:
-        requirement_file = resolve_user_filepath(
-            "env/python/requirements.lock.txt", build_ctx
-        )
-    except FileNotFoundError:
-        try:
-            requirement_file = resolve_user_filepath(
-                "env/python/requirements.txt", build_ctx
-            )
-        except FileNotFoundError:
-            requirement_file = None
-
-    python_packages = (
-        _resolve_package_versions(requirement_file) if requirement_file else {}
-    )
+    requirement_file = bento_fs.getsyspath("env/python/requirements.lock.txt")
+    if not os.path.exists(requirement_file):
+        requirement_file = bento_fs.getsyspath("env/python/requirements.txt")
+    if os.path.exists(requirement_file):
+        python_packages = _resolve_package_versions(requirement_file)
+    else:
+        python_packages = {}
 
     return template.render(
         **get_templates_variables(
@@ -233,7 +225,7 @@ def _resolve_package_versions(requirement: str) -> dict[str, str]:
         requirement,
         include_nested=True,
     )
-    versions: dict[str, str] = {}
+    deps: dict[str, str] = {}
     for req in requirements_txt.requirements:
         if (
             req.is_editable
@@ -245,6 +237,7 @@ def _resolve_package_versions(requirement: str) -> dict[str, str]:
             continue
         for sp in req.specifier:
             if sp.operator == "==":
-                versions[req.name] = sp.version
+                assert req.line is not None
+                deps[req.name] = req.line
                 break
-    return versions
+    return deps

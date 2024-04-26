@@ -61,9 +61,9 @@ WORKDIR $BENTO_PATH
 # Block SETUP_BENTO_COMPONENTS
 {% block SETUP_BENTO_COMPONENTS %}
 
-{% if __pip_preheat_packages__ is not none %}
-{% for key, value in __pip_preheat_packages__.items() -%}
-RUN --mount=type=cache,target=/root/.cache/pip bash -c "pip3 install {{ key }}=={{ value }} || true"
+{% if __pip_preheat_packages__ %}
+{% for value in __pip_preheat_packages__ -%}
+{% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} bash -c "pip3 install {{value}} || true"
 {% endfor -%}
 {% endif -%}
 

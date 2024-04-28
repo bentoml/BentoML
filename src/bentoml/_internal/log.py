@@ -23,15 +23,22 @@ CLI_LOGGING_CONFIG: dict[str, t.Any] = {
     "version": 1,
     "disable_existing_loggers": True,
     "filters": {"infofilter": {"()": InfoFilter}},
+    "formatters": {
+        "simple": {
+            "format": "%(levelname)s: %(message)s",
+        }
+    },
     "handlers": {
         "bentomlhandler": {
             "class": "logging.StreamHandler",
             "filters": ["infofilter"],
             "stream": "ext://sys.stdout",
+            "formatter": "simple",
         },
         "defaulthandler": {
             "class": "logging.StreamHandler",
             "level": logging.WARNING,
+            "formatter": "simple",
         },
     },
     "loggers": {

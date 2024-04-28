@@ -424,7 +424,15 @@ class Bento(StoreItem):
                     continue
                 except NotFound:
                     pass
-            global_model = model_store.get(model.tag)
+            try:
+                global_model = model_store.get(model.tag)
+            except NotFound:
+                logger.warning(
+                    "Bento: %s: Missing model %s",
+                    self.tag,
+                    model.tag,
+                )
+                continue
             total_size += global_model.file_size
         return total_size
 

@@ -1,0 +1,3 @@
+scikit-learn
+pandas
+bentoml[monitor-otlp]>=1.0.19

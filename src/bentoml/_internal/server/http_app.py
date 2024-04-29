@@ -74,7 +74,7 @@ DEFAULT_INDEX_HTML = """\
 """
 
 
-def log_exception(request: Request, exc_info: t.Any) -> None:
+def log_exception(request: Request, exc_info: t.Any = True) -> None:
     """
     Logs an exception.  This is called by :meth:`handle_exception`
     if debugging is disabled and right before the handler is called.

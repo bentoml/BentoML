@@ -153,13 +153,11 @@ def serve_http(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
-    timeout_keep_alive: int | None = Provide[BentoMLContainer.timeouts.keep_alive],
-    timeout_graceful_shutdown: int | None = Provide[
-        BentoMLContainer.timeouts.graceful_shutdown
-    ],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     development_mode: bool = False,
     reload: bool = False,
+    timeout_keep_alive: int | None = None,
+    timeout_graceful_shutdown: int | None = None,
     dependency_map: dict[str, str] | None = None,
     service_name: str = "",
     threaded: bool = False,

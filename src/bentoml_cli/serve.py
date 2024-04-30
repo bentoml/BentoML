@@ -192,15 +192,15 @@ def build_serve_command() -> click.Group:
     @click.option(
         "--timeout-keep-alive",
         type=int,
-        default=BentoMLContainer.timeouts.keep_alive.get(),
-        help="Close Keep-Alive connections if no new data is received within this timeout. Default: 5",
+        default=None,
+        help="Close Keep-Alive connections if no new data is received within this timeout.",
         show_default=True,
         hidden=True,
     )
     @click.option(
         "--timeout-graceful-shutdown",
         type=int,
-        default=BentoMLContainer.timeouts.graceful_shutdown.get(),
+        default=None,
         help="Maximum number of seconds to wait for graceful shutdown. After this timeout, the server will start terminating requests.",
         show_default=True,
         hidden=True,
@@ -337,10 +337,10 @@ def build_serve_command() -> click.Group:
                 ssl_cert_reqs=ssl_cert_reqs,
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
-                timeout_keep_alive=timeout_keep_alive,
-                timeout_graceful_shutdown=timeout_graceful_shutdown,
                 development_mode=development,
                 reload=reload,
+                timeout_keep_alive=timeout_keep_alive,
+                timeout_graceful_shutdown=timeout_graceful_shutdown,
             )
 
     @cli.command(name="serve-grpc", hidden=True)

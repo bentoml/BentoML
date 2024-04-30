@@ -139,13 +139,13 @@ def build_start_command() -> click.Group:
     @click.option(
         "--timeout-keep-alive",
         type=int,
-        default=BentoMLContainer.timeouts.keep_alive.get(),
-        help="Close Keep-Alive connections if no new data is received within this timeout. Default: 5",
+        default=None,
+        help="Close Keep-Alive connections if no new data is received within this timeout.",
     )
     @click.option(
         "--timeout-graceful-shutdown",
         type=int,
-        default=BentoMLContainer.timeouts.graceful_shutdown.get(),
+        default=None,
         help="Maximum number of seconds to wait for graceful shutdown. After this timeout, the server will start terminating requests.",
     )
     @add_experimental_docstring

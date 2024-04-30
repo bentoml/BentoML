@@ -85,8 +85,8 @@ import click
 @click.option(
     "--timeout-keep-alive",
     type=int,
-    default=5,
-    help="Close Keep-Alive connections if no new data is received within this timeout. Default: 5",
+    default=None,
+    help="Close Keep-Alive connections if no new data is received within this timeout.",
 )
 @click.option(
     "--timeout-graceful-shutdown",

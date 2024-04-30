@@ -40,7 +40,7 @@ class MaxConcurrencyMiddleware:
         if scope["type"] not in ("http", "websocket"):
             return await self.app(scope, receive, send)
 
-        if self._semaphore.locked():
+        if self._semaphore.locked() and scope["path"] != "/livez":
             resp = JSONResponse({"error": "Too many requests"}, status_code=429)
             await resp(scope, receive, send)
             return

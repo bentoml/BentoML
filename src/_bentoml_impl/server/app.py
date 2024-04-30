@@ -4,14 +4,12 @@ import asyncio
 import functools
 import inspect
 import math
-import sys
 import typing as t
 from http import HTTPStatus
 from pathlib import Path
 
 import anyio
 import anyio.to_thread
-import pydantic
 from simple_di import Provide
 from simple_di import inject
 from starlette.middleware import Middleware
@@ -164,57 +162,13 @@ class ServiceAppFactory(BaseAppFactory):
         try:
             return JSONResponse(self.service.openapi_spec.asdict())
         except Exception:
-            log_exception(req, sys.exc_info())
-            raise
-
-    async def handle_uncaught_exception(self, req: Request, exc: Exception) -> Response:
-        from starlette.responses import JSONResponse
-
-        log_exception(req, sys.exc_info())
-        resp = JSONResponse(
-            {"error": "An unexpected error has occurred, please check the server log."},
-            status_code=500,
-        )
-        self._add_response_headers(resp)
-        return resp
-
-    async def handle_validation_error(self, req: Request, exc: Exception) -> Response:
-        from starlette.responses import JSONResponse
-
-        assert isinstance(exc, pydantic.ValidationError)
-
-        data = {
-            "error": f"{exc.error_count()} validation error for {exc.title}",
-            "detail": exc.errors(include_context=False),
-        }
-        resp = JSONResponse(data, status_code=400)
-        self._add_response_headers(resp)
-        return resp
-
-    async def handle_bentoml_exception(self, req: Request, exc: Exception) -> Response:
-        from starlette.responses import JSONResponse
-
-        log_exception(req, sys.exc_info())
-        assert isinstance(exc, BentoMLException)
-        status = exc.error_code.value
-        if 400 <= status < 500 and status not in (401, 403):
-            resp = JSONResponse(
-                {"error": f"BentoService error handling API request: {exc}"},
-                status_code=status,
+            log_exception(req)
+            return JSONResponse(
+                {"error": "Failed to generate OpenAPI spec"}, status_code=500
             )
-        else:
-            resp = JSONResponse("", status_code=status)
-        self._add_response_headers(resp)
-        return resp
 
     def __call__(self) -> Starlette:
         app = super().__call__()
-
-        app.add_exception_handler(
-            pydantic.ValidationError, self.handle_validation_error
-        )
-        app.add_exception_handler(BentoMLException, self.handle_bentoml_exception)
-        app.add_exception_handler(Exception, self.handle_uncaught_exception)
         app.add_route("/schema.json", self.schema_view, name="schema")
 
         for mount_app, path, name in self.service.mount_apps:
@@ -380,7 +334,7 @@ class ServiceAppFactory(BaseAppFactory):
         routes = super().routes
 
         for name, method in self.service.apis.items():
-            api_endpoint = functools.partial(self.api_endpoint, name)
+            api_endpoint = functools.partial(self.api_endpoint_wrapper, name)
             route_path = method.route
             if not route_path.startswith("/"):
                 route_path = "/" + route_path
@@ -446,6 +400,44 @@ class ServiceAppFactory(BaseAppFactory):
         return await self.dispatchers[name](
             functools.partial(inner_infer, **input_kwargs)
         )(value)
+
+    async def api_endpoint_wrapper(self, name: str, request: Request) -> Response:
+        from pydantic import ValidationError
+        from starlette.responses import JSONResponse
+
+        try:
+            resp = await self.api_endpoint(name, request)
+        except ValidationError as exc:
+            log_exception(request)
+            data = {
+                "error": f"{exc.error_count()} validation error for {exc.title}",
+                "detail": exc.errors(include_context=False),
+            }
+            resp = JSONResponse(data, status_code=400)
+        except BentoMLException as exc:
+            log_exception(request)
+            status = exc.error_code.value
+            if status in (401, 403):
+                detail = {
+                    "error": "Authorization error",
+                }
+            elif status >= 500:
+                detail = {
+                    "error": "An unexpected error has occurred, please check the server log."
+                }
+            else:
+                detail = ({"error": str(exc)},)
+            resp = JSONResponse(detail, status_code=status)
+        except Exception:
+            log_exception(request)
+            resp = JSONResponse(
+                {
+                    "error": "An unexpected error has occurred, please check the server log."
+                },
+                status_code=500,
+            )
+        self._add_response_headers(resp)
+        return resp
 
     async def api_endpoint(self, name: str, request: Request) -> Response:
         from starlette.background import BackgroundTask
@@ -516,7 +508,6 @@ class ServiceAppFactory(BaseAppFactory):
             response.status_code = ctx.response.status_code
             response.headers.update(ctx.response.metadata)
             set_cookies(response, ctx.response.cookies)
-        self._add_response_headers(response)
         # clean the request resources after the response is consumed.
         response.background = BackgroundTask(request.close)
         return response

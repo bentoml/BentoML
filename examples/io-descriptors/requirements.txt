@@ -1,0 +1,5 @@
+bentoml
+torch
+pydub
+pdf2img
+pandas

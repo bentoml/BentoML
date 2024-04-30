@@ -123,7 +123,7 @@ def main(
     ssl_cert_reqs: int | None,
     ssl_ca_certs: str | None,
     ssl_ciphers: str | None,
-    timeout_keep_alive: int,
+    timeout_keep_alive: int | None,
     timeout_graceful_shutdown: int | None,
     development_mode: bool,
     timeout: int,

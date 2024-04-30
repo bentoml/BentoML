@@ -232,11 +232,9 @@ def serve_http_development(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
-    timeout_keep_alive: int | None = Provide[BentoMLContainer.timeouts.keep_alive],
-    timeout_graceful_shutdown: int | None = Provide[
-        BentoMLContainer.timeouts.graceful_shutdown
-    ],
     reload: bool = False,
+    timeout_keep_alive: int | None = None,
+    timeout_graceful_shutdown: int | None = None,
 ) -> None:
     logger.warning(
         "serve_http_development is deprecated. Please use serve_http_production with api_workers=1 and development_mode=True"
@@ -256,11 +254,11 @@ def serve_http_development(
         ssl_cert_reqs=ssl_cert_reqs,
         ssl_ca_certs=ssl_ca_certs,
         ssl_ciphers=ssl_ciphers,
-        timeout_keep_alive=timeout_keep_alive,
-        timeout_graceful_shutdown=timeout_graceful_shutdown,
         reload=reload,
         api_workers=1,
         development_mode=True,
+        timeout_keep_alive=timeout_keep_alive,
+        timeout_graceful_shutdown=timeout_graceful_shutdown,
     )
 
 
@@ -318,13 +316,11 @@ def serve_http_production(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
-    timeout_keep_alive: int | None = Provide[BentoMLContainer.timeouts.keep_alive],
-    timeout_graceful_shutdown: int | None = Provide[
-        BentoMLContainer.timeouts.graceful_shutdown
-    ],
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     development_mode: bool = False,
     reload: bool = False,
+    timeout_keep_alive: int | None = None,
+    timeout_graceful_shutdown: int | None = None,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 

@@ -292,10 +292,10 @@ def build_serve_command() -> click.Group:
                     ssl_cert_reqs=ssl_cert_reqs,
                     ssl_ca_certs=ssl_ca_certs,
                     ssl_ciphers=ssl_ciphers,
-                    timeout_keep_alive=timeout_keep_alive,
-                    timeout_graceful_shutdown=timeout_graceful_shutdown,
                     reload=reload,
                     development_mode=True,
+                    timeout_keep_alive=timeout_keep_alive,
+                    timeout_graceful_shutdown=timeout_graceful_shutdown,
                 )
             else:
                 serve_http_production(
@@ -312,10 +312,10 @@ def build_serve_command() -> click.Group:
                     ssl_cert_reqs=ssl_cert_reqs,
                     ssl_ca_certs=ssl_ca_certs,
                     ssl_ciphers=ssl_ciphers,
-                    timeout_keep_alive=timeout_keep_alive,
-                    timeout_graceful_shutdown=timeout_graceful_shutdown,
                     reload=reload,
                     development_mode=False,
+                    timeout_keep_alive=timeout_keep_alive,
+                    timeout_graceful_shutdown=timeout_graceful_shutdown,
                 )
         else:
             # bentoml>=1.2

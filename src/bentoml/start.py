@@ -159,10 +159,8 @@ def start_http_server(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
-    timeout_keep_alive: int | None = Provide[BentoMLContainer.timeouts.keep_alive],
-    timeout_graceful_shutdown: int | None = Provide[
-        BentoMLContainer.timeouts.graceful_shutdown
-    ],
+    timeout_keep_alive: int | None = None,
+    timeout_graceful_shutdown: int | None = None,
 ) -> None:
     from .serve import ensure_prometheus_dir
 

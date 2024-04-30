@@ -7,10 +7,12 @@ import os
 import pathlib
 import sys
 import typing as t
-from functools import lru_cache, partial
+from functools import lru_cache
+from functools import partial
 
 import attrs
-from simple_di import Provide, inject
+from simple_di import Provide
+from simple_di import inject
 from typing_extensions import Unpack
 
 from bentoml import Runner
@@ -240,10 +242,8 @@ class Service(t.Generic[T]):
 
     def inject_config(self) -> None:
         from bentoml._internal.configuration import load_config
-        from bentoml._internal.configuration.containers import (
-            BentoMLContainer,
-            config_merger,
-        )
+        from bentoml._internal.configuration.containers import BentoMLContainer
+        from bentoml._internal.configuration.containers import config_merger
 
         # XXX: ensure at least one item to make `flatten_dict` work
         override_defaults = {

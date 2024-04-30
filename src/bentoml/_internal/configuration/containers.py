@@ -12,21 +12,22 @@ from typing import TYPE_CHECKING
 import schema as s
 import yaml
 from deepmerge.merger import Merger
-from simple_di import Provide, providers
+from simple_di import Provide
+from simple_di import providers
 
 from ...exceptions import BentoMLConfigException
-from ..context import server_context, trace_context
+from ..context import server_context
+from ..context import trace_context
 from ..resource import CpuResource
-from ..utils import split_with_quotes, validate_or_create_dir
+from ..utils import split_with_quotes
+from ..utils import validate_or_create_dir
 from ..utils.unflatten import unflatten
 from . import expand_env_var
-from .helpers import (
-    expand_env_var_in_values,
-    flatten_dict,
-    get_default_config,
-    import_configuration_spec,
-    load_config_file,
-)
+from .helpers import expand_env_var_in_values
+from .helpers import flatten_dict
+from .helpers import get_default_config
+from .helpers import import_configuration_spec
+from .helpers import load_config_file
 
 if TYPE_CHECKING:
     from fs.base import FS
@@ -335,14 +336,12 @@ class _BentoMLContainerClass:
         jaeger: dict[str, t.Any] = Provide[tracing.jaeger],
         otlp: dict[str, t.Any] = Provide[tracing.otlp],
     ):
-        from opentelemetry.sdk.resources import (
-            SERVICE_INSTANCE_ID,
-            SERVICE_NAME,
-            SERVICE_NAMESPACE,
-            SERVICE_VERSION,
-            OTELResourceDetector,
-            Resource,
-        )
+        from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
+        from opentelemetry.sdk.resources import SERVICE_NAME
+        from opentelemetry.sdk.resources import SERVICE_NAMESPACE
+        from opentelemetry.sdk.resources import SERVICE_VERSION
+        from opentelemetry.sdk.resources import OTELResourceDetector
+        from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
@@ -439,7 +438,8 @@ class _BentoMLContainerClass:
     def tracing_excluded_urls(
         excluded_urls: str | list[str] | None = Provide[tracing.excluded_urls],
     ):
-        from opentelemetry.util.http import ExcludeList, parse_excluded_urls
+        from opentelemetry.util.http import ExcludeList
+        from opentelemetry.util.http import parse_excluded_urls
 
         if isinstance(excluded_urls, list):
             return ExcludeList(excluded_urls)
@@ -462,7 +462,8 @@ class _BentoMLContainerClass:
         the Prometheus default is returned; otherwise, a set of exponential buckets
         generated based on the configuration is returned.
         """
-        from ..utils.metrics import INF, exponential_buckets
+        from ..utils.metrics import INF
+        from ..utils.metrics import exponential_buckets
 
         if "buckets" in duration:
             return tuple(duration["buckets"]) + (INF,)

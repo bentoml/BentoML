@@ -1,8 +1,0 @@
-service: 'service.py:svc'
-name: text-classification-svc
-include:
-  - 'service.py'
-python:
-  packages:
-  - torch>=2.0
-  - transformers

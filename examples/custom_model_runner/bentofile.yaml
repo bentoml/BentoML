@@ -1,6 +1,0 @@
-service: "service:svc"
-include:
-  - "service.py"
-  - "mnist.py"
-python:
-  requirements_txt: "./requirements.txt"

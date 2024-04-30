@@ -48,9 +48,9 @@ class AppendStringToFile:
         txt_file: t.Annotated[Path, bentoml.validators.ContentType("text/plain")],
         input_string: str,
     ) -> t.Annotated[Path, bentoml.validators.ContentType("text/plain")]:
-        with open(output_path, "a") as file:
+        with open(txt_file, "a") as file:
             file.write(input_string)
-        return output_path
+        return txt_file
 
 
 @bentoml.service()

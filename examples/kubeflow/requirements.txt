@@ -1,5 +1,0 @@
-bentoml
-numpy==1.23.5
-pandas==1.5.2
-xgboost==1.7.4
-scikit-learn==1.1.3

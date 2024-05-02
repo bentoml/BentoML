@@ -41,7 +41,7 @@ class CloudClientContext:
                     "Unable to get current user from yatai server"
                 )
             self.email = user.email
-            add_context(self, ignore_warning=True)
+            _ = add_context(self, ignore_warning=True)
         return self.email
 
 
@@ -116,7 +116,9 @@ class CloudClientConfig:
             return bentoml_cattr.structure(yaml_content, cls)
 
 
-def add_context(context: CloudClientContext, *, ignore_warning: bool = False) -> None:
+def add_context(
+    context: CloudClientContext, *, ignore_warning: bool = False
+) -> CloudClientConfig:
     config = CloudClientConfig.get_config()
     for idx, ctx in enumerate(config.contexts):
         if ctx.name == context.name:
@@ -127,6 +129,7 @@ def add_context(context: CloudClientContext, *, ignore_warning: bool = False) ->
     else:
         config.contexts.append(context)
     config.to_yaml_file()
+    return config
 
 
 def get_context(context: str | None) -> CloudClientContext:

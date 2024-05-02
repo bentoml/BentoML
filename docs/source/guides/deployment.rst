@@ -8,7 +8,7 @@ If you want to deploy your BentoML project in environments other than BentoCloud
 
 To deploy a BentoML project on BentoCloud, do the following:
 
-1. `Sign up here <https://www.bentoml.com/cloud>`_ for BentoCloud. You will receive $30 free credits once you have your account.
+1. `Sign up here <https://www.bentoml.com/cloud>`_ for BentoCloud. You will receive $10 free credits once you have your account.
 2. Create an :doc:`API token with Developer Operations Access </bentocloud/how-tos/manage-access-token>` on the BentoCloud console.
 3. Log in to BentoCloud. The login command will be displayed on the BentoCloud console after you create the token.
 4. Deploy a project on BentoCloud. You can deploy the example project in :doc:`/get-started/quickstart` by running the following commands:

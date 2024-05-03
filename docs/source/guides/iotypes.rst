@@ -207,7 +207,7 @@ BentoML supports various tensor types such as ``numpy.ndarray``, ``torch.Tensor`
 .. code-block:: python
 
     import torch
-    from bentoml.validators import Shape, Dtype
+    from bentoml.validators import Shape, DType
     from typing import Annotated  # Python 3.9 or above
     from typing_extensions import Annotated  # Older than 3.9
     from pydantic import Field
@@ -218,7 +218,7 @@ BentoML supports various tensor types such as ``numpy.ndarray``, ``torch.Tensor`
         @bentoml.api
         def classify(
             self,
-            input: Annotated[torch.Tensor, Shape((1, 4)), Dtype("float32")]
+            input: Annotated[torch.Tensor, Shape((1, 4)), DType("float32")]
             = Field(description="A 1x4 tensor with float32 dtype")
         ) -> np.ndarray:
             ...

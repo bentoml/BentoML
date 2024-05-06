@@ -354,6 +354,7 @@ class DeploymentStatus(Enum):
     ImageBuilding = "image-building"
     ImageBuildFailed = "image-build-failed"
     ImageBuildSucceeded = "image-build-succeeded"
+    ScaledToZero = "scaled-to-zero"
 
 
 @attr.define

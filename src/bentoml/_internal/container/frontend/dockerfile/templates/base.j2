@@ -60,6 +60,13 @@ WORKDIR $BENTO_PATH
 
 # Block SETUP_BENTO_COMPONENTS
 {% block SETUP_BENTO_COMPONENTS %}
+
+{% if __pip_preheat_packages__ %}
+{% for value in __pip_preheat_packages__ -%}
+{% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} bash -c "pip3 install {{value}} || true"
+{% endfor -%}
+{% endif -%}
+
 COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
 {% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/pip") %}

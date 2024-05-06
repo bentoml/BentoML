@@ -96,6 +96,7 @@ class Schema:
     maxItems: t.Optional[int] = None
     minItems: t.Optional[int] = None
     uniqueItems: t.Optional[bool] = None
+    prefixItems: t.Optional[t.List[Schema]] = None
     maxProperties: t.Optional[int] = None
     minProperties: t.Optional[int] = None
     required: t.Optional[t.List[str]] = None

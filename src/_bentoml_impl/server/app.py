@@ -51,7 +51,7 @@ class ContextMiddleware:
     ) -> None:
         from starlette.requests import Request
 
-        if scope["type"] not in ("http", "websocket"):
+        if scope["type"] not in ("http",):
             return await self.app(scope, receive, send)
 
         req = Request(scope, receive, send)

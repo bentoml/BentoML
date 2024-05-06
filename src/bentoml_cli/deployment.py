@@ -282,9 +282,11 @@ def update(  # type: ignore
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
-        envs=[{"name": item.split("=")[0], "value": item.split("=")[1]} for item in env]
-        if env is not None
-        else None,
+        envs=(
+            [{"name": item.split("=")[0], "value": item.split("=")[1]} for item in env]
+            if env is not None
+            else None
+        ),
         config_file=config_file,
         config_dict=cfg_dict,
     )
@@ -402,9 +404,11 @@ def apply(  # type: ignore
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
-        envs=[{"key": item.split("=")[0], "value": item.split("=")[1]} for item in env]
-        if env is not None
-        else None,
+        envs=(
+            [{"key": item.split("=")[0], "value": item.split("=")[1]} for item in env]
+            if env is not None
+            else None
+        ),
         config_file=config_file,
         config_dict=cfg_dict,
     )
@@ -622,12 +626,12 @@ def list_command(  # type: ignore
     )
     res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]
     if output == "table":
-        table = Table(box=None)
-        table.add_column("Deployment")
-        table.add_column("created_at")
-        table.add_column("Bento")
-        table.add_column("Status")
-        table.add_column("Region")
+        table = Table(box=None, expand=True)
+        table.add_column("Deployment", overflow="fold")
+        table.add_column("created_at", overflow="fold")
+        table.add_column("Bento", overflow="fold")
+        table.add_column("Status", overflow="fold")
+        table.add_column("Region", overflow="fold")
         for info in d_list:
             table.add_row(
                 info.name,
@@ -666,13 +670,13 @@ def list_instance_types(  # type: ignore
     )
     res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]
     if output == "table":
-        table = Table(box=None)
-        table.add_column("Name")
-        table.add_column("Price")
-        table.add_column("CPU")
-        table.add_column("Memory")
-        table.add_column("GPU")
-        table.add_column("GPU Type")
+        table = Table(box=None, expand=True)
+        table.add_column("Name", overflow="fold")
+        table.add_column("Price", overflow="fold")
+        table.add_column("CPU", overflow="fold")
+        table.add_column("Memory", overflow="fold")
+        table.add_column("GPU", overflow="fold")
+        table.add_column("GPU Type", overflow="fold")
         for info in d_list:
             table.add_row(
                 info.name,

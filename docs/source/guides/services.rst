@@ -33,6 +33,10 @@ Here is a Service definition example from :doc:`/get-started/quickstart`.
 
 Methods within the class which are defined as accessible HTTP API endpoints are decorated with ``@bentoml.api``. This makes them callable when the Service is deployed.
 
+.. note::
+
+    This Service downloads a pre-trained model from Hugging Face. It is possible to use your own model within the Service class. For more information, see :doc:`/guides/model-store`.
+
 Test the Service code
 ---------------------
 

@@ -53,7 +53,7 @@ def numpy_prepare_pydantic_annotations(
     _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
         annotations
     )
-    for i, annotation in enumerate(remaining_annotations[:]):
+    for i, annotation in reversed(list(enumerate(remaining_annotations))):
         if isinstance(annotation, Shape):
             shape = annotation.dimensions
             del remaining_annotations[i]
@@ -80,7 +80,7 @@ def torch_prepare_pydantic_annotations(
     _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
         annotations
     )
-    for i, annotation in enumerate(remaining_annotations[:]):
+    for i, annotation in reversed(list(enumerate(remaining_annotations))):
         if isinstance(annotation, Shape):
             shape = annotation.dimensions
             del remaining_annotations[i]
@@ -106,7 +106,7 @@ def tf_prepare_pydantic_annotations(
     _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
         annotations
     )
-    for i, annotation in enumerate(remaining_annotations[:]):
+    for i, annotation in reversed(list(enumerate(remaining_annotations))):
         if isinstance(annotation, Shape):
             shape = annotation.dimensions
             del remaining_annotations[i]
@@ -169,7 +169,7 @@ def pathlib_prepare_pydantic_annotations(
         annotations
     )
     content_type: str | None = None
-    for i, annotation in enumerate(remaining_annotations[:]):
+    for i, annotation in reversed(list(enumerate(remaining_annotations))):
         if isinstance(annotation, ContentType):
             content_type = annotation.content_type
             del remaining_annotations[i]

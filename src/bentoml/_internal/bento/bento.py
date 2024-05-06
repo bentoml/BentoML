@@ -309,16 +309,12 @@ class Bento(StoreItem):
                 service=svc,  # type: ignore # attrs converters do not typecheck
                 entry_service=svc.name,
                 labels=build_config.labels,
-                models=(
-                    [
-                        BentoModelInfo.from_bento_model(
-                            m, alias=resolved_aliases.get(m.tag)
-                        )
-                        for m in models
-                    ]
-                    if is_legacy
-                    else []
-                ),
+                models=[
+                    BentoModelInfo.from_bento_model(
+                        m, alias=resolved_aliases.get(m.tag)
+                    )
+                    for m in models
+                ],
                 runners=(
                     [BentoRunnerInfo.from_runner(r) for r in svc.runners]  # type: ignore # attrs converters do not typecheck
                     if is_legacy

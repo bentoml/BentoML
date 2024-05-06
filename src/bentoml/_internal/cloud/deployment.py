@@ -489,10 +489,13 @@ class DeploymentInfo:
                     spinner_task_id,
                     action=f"Waiting for deployment '{self.name}' to be ready. Current status: '{status.status}'.",
                 )
-                if status.status == DeploymentStatus.Running.value:
+                if (
+                    status.status == DeploymentStatus.Running.value
+                    or status.status == DeploymentStatus.ScaledToZero.value
+                ):
                     spinner.spinner_progress.update(
                         spinner_task_id,
-                        action=f'[bold green] Deployment "{self.name}" is ready.[/bold green]',
+                        action=f'[bold green] Deployment "{self.name}" is ready. Current status: "{status.status}"[/bold green]',
                     )
                     spinner.spinner_progress.stop_task(spinner_task_id)
                     return

@@ -170,6 +170,20 @@ def construct_ssl_args(
     return args
 
 
+def construct_timeouts_args(
+    timeout_keep_alive: int | None,
+    timeout_graceful_shutdown: int | None,
+) -> list[str]:
+    args: list[str] = []
+
+    if timeout_keep_alive:
+        args.extend(["--timeout-keep-alive", str(timeout_keep_alive)])
+    if timeout_graceful_shutdown:
+        args.extend(["--timeout-graceful-shutdown", str(timeout_graceful_shutdown)])
+
+    return args
+
+
 def find_triton_binary():
     binary = shutil.which("tritonserver")
     if binary is None:
@@ -219,6 +233,8 @@ def serve_http_development(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
     reload: bool = False,
+    timeout_keep_alive: int | None = None,
+    timeout_graceful_shutdown: int | None = None,
 ) -> None:
     logger.warning(
         "serve_http_development is deprecated. Please use serve_http_production with api_workers=1 and development_mode=True"
@@ -241,6 +257,8 @@ def serve_http_development(
         reload=reload,
         api_workers=1,
         development_mode=True,
+        timeout_keep_alive=timeout_keep_alive,
+        timeout_graceful_shutdown=timeout_graceful_shutdown,
     )
 
 
@@ -301,6 +319,8 @@ def serve_http_production(
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     development_mode: bool = False,
     reload: bool = False,
+    timeout_keep_alive: int | None = None,
+    timeout_graceful_shutdown: int | None = None,
 ) -> None:
     prometheus_dir = ensure_prometheus_dir()
 
@@ -428,6 +448,11 @@ def serve_http_production(
         ssl_ciphers=ssl_ciphers,
     )
 
+    timeouts_args = construct_timeouts_args(
+        timeout_keep_alive=timeout_keep_alive,
+        timeout_graceful_shutdown=timeout_graceful_shutdown,
+    )
+
     api_server_args = [
         "-m",
         SCRIPT_API_SERVER,
@@ -445,6 +470,7 @@ def serve_http_production(
         "--prometheus-dir",
         prometheus_dir,
         *ssl_args,
+        *timeouts_args,
         *timeout_args,
     ]
 

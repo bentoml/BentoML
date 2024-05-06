@@ -156,6 +156,8 @@ def serve_http(
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
     development_mode: bool = False,
     reload: bool = False,
+    timeout_keep_alive: int | None = None,
+    timeout_graceful_shutdown: int | None = None,
     dependency_map: dict[str, str] | None = None,
     service_name: str = "",
     threaded: bool = False,
@@ -167,6 +169,7 @@ def serve_http(
     from bentoml._internal.utils.analytics.usage_stats import track_serve
     from bentoml._internal.utils.circus import create_standalone_arbiter
     from bentoml.serve import construct_ssl_args
+    from bentoml.serve import construct_timeouts_args
     from bentoml.serve import create_watcher
     from bentoml.serve import ensure_prometheus_dir
     from bentoml.serve import make_reload_plugin
@@ -257,6 +260,10 @@ def serve_http(
             ssl_ca_certs=ssl_ca_certs,
             ssl_ciphers=ssl_ciphers,
         )
+        timeouts_args = construct_timeouts_args(
+            timeout_keep_alive=timeout_keep_alive,
+            timeout_graceful_shutdown=timeout_graceful_shutdown,
+        )
         timeout_args = ["--timeout", str(timeout)] if timeout else []
 
         server_args = [
@@ -274,6 +281,7 @@ def serve_http(
             "--prometheus-dir",
             prometheus_dir,
             *ssl_args,
+            *timeouts_args,
             *timeout_args,
         ]
         if worker_envs:

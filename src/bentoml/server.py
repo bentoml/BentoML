@@ -337,9 +337,12 @@ class HTTPServer(Server[HTTPClient]):
         ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
         ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
         ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+        timeout_keep_alive: int | None = None,
+        timeout_graceful_shutdown: int | None = None,
     ):
         # hacky workaround to prevent bentoml.serve being overwritten immediately
         from .serve import construct_ssl_args
+        from .serve import construct_timeouts_args
 
         super().__init__(
             bento,
@@ -368,6 +371,13 @@ class HTTPServer(Server[HTTPClient]):
         )
 
         self.args.extend(construct_ssl_args(**ssl_args))
+
+        timeouts_args = {
+            "timeout_keep_alive": timeout_keep_alive,
+            "timeout_graceful_shutdown": timeout_graceful_shutdown,
+        }
+
+        self.args.extend(construct_timeouts_args(**timeouts_args))
 
     def get_client(self) -> HTTPClient:
         return super().get_client()

@@ -136,6 +136,18 @@ def build_start_command() -> click.Group:
         default=BentoMLContainer.ssl.ciphers.get(),
         help="Ciphers to use (see stdlib 'ssl' module)",
     )
+    @click.option(
+        "--timeout-keep-alive",
+        type=int,
+        default=None,
+        help="Close Keep-Alive connections if no new data is received within this timeout.",
+    )
+    @click.option(
+        "--timeout-graceful-shutdown",
+        type=int,
+        default=None,
+        help="Maximum number of seconds to wait for graceful shutdown. After this timeout, the server will start terminating requests.",
+    )
     @add_experimental_docstring
     def start_http_server(  # type: ignore (unused warning)
         bento: str,
@@ -156,6 +168,8 @@ def build_start_command() -> click.Group:
         ssl_cert_reqs: int | None,
         ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
+        timeout_keep_alive: int | None,
+        timeout_graceful_shutdown: int | None,
     ) -> None:
         """
         Start a HTTP API server standalone. This will be used inside Yatai.
@@ -207,6 +221,8 @@ def build_start_command() -> click.Group:
                     ssl_cert_reqs=ssl_cert_reqs,
                     ssl_ca_certs=ssl_ca_certs,
                     ssl_ciphers=ssl_ciphers,
+                    timeout_keep_alive=timeout_keep_alive,
+                    timeout_graceful_shutdown=timeout_graceful_shutdown,
                 )
             else:
                 from bentoml.start import start_runner_server
@@ -245,6 +261,8 @@ def build_start_command() -> click.Group:
                 ssl_cert_reqs=ssl_cert_reqs,
                 ssl_ca_certs=ssl_ca_certs,
                 ssl_ciphers=ssl_ciphers,
+                timeout_keep_alive=timeout_keep_alive,
+                timeout_graceful_shutdown=timeout_graceful_shutdown,
                 dependency_map=runner_map_dict,
                 service_name=service_name,
             )

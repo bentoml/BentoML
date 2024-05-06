@@ -189,6 +189,22 @@ def build_serve_command() -> click.Group:
         show_default=True,
         hidden=True,
     )
+    @click.option(
+        "--timeout-keep-alive",
+        type=int,
+        default=None,
+        help="Close Keep-Alive connections if no new data is received within this timeout.",
+        show_default=True,
+        hidden=True,
+    )
+    @click.option(
+        "--timeout-graceful-shutdown",
+        type=int,
+        default=None,
+        help="Maximum number of seconds to wait for graceful shutdown. After this timeout, the server will start terminating requests.",
+        show_default=True,
+        hidden=True,
+    )
     @env_manager
     def serve(  # type: ignore (unused warning)
         bento: str,
@@ -207,6 +223,8 @@ def build_serve_command() -> click.Group:
         ssl_cert_reqs: int | None,
         ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
+        timeout_keep_alive: int | None,
+        timeout_graceful_shutdown: int | None,
         **attrs: t.Any,
     ) -> None:
         """Start a HTTP BentoServer from a given 🍱
@@ -276,6 +294,8 @@ def build_serve_command() -> click.Group:
                     ssl_ciphers=ssl_ciphers,
                     reload=reload,
                     development_mode=True,
+                    timeout_keep_alive=timeout_keep_alive,
+                    timeout_graceful_shutdown=timeout_graceful_shutdown,
                 )
             else:
                 serve_http_production(
@@ -294,6 +314,8 @@ def build_serve_command() -> click.Group:
                     ssl_ciphers=ssl_ciphers,
                     reload=reload,
                     development_mode=False,
+                    timeout_keep_alive=timeout_keep_alive,
+                    timeout_graceful_shutdown=timeout_graceful_shutdown,
                 )
         else:
             # bentoml>=1.2
@@ -317,6 +339,8 @@ def build_serve_command() -> click.Group:
                 ssl_ciphers=ssl_ciphers,
                 development_mode=development,
                 reload=reload,
+                timeout_keep_alive=timeout_keep_alive,
+                timeout_graceful_shutdown=timeout_graceful_shutdown,
             )
 
     @cli.command(name="serve-grpc", hidden=True)

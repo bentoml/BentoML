@@ -159,6 +159,8 @@ def start_http_server(
     ssl_cert_reqs: int | None = Provide[BentoMLContainer.ssl.cert_reqs],
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     ssl_ciphers: str | None = Provide[BentoMLContainer.ssl.ciphers],
+    timeout_keep_alive: int | None = None,
+    timeout_graceful_shutdown: int | None = None,
 ) -> None:
     from .serve import ensure_prometheus_dir
 
@@ -173,6 +175,7 @@ def start_http_server(
     from .serve import API_SERVER_NAME
     from .serve import PROMETHEUS_MESSAGE
     from .serve import construct_ssl_args
+    from .serve import construct_timeouts_args
     from .serve import create_watcher
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
@@ -201,6 +204,10 @@ def start_http_server(
         ssl_ca_certs=ssl_ca_certs,
         ssl_ciphers=ssl_ciphers,
     )
+    timeouts_args = construct_timeouts_args(
+        timeout_keep_alive=timeout_keep_alive,
+        timeout_graceful_shutdown=timeout_graceful_shutdown,
+    )
     scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     watchers.append(
         create_watcher(
@@ -222,6 +229,7 @@ def start_http_server(
                 "--prometheus-dir",
                 prometheus_dir,
                 *ssl_args,
+                *timeouts_args,
                 *timeout_args,
             ],
             working_dir=working_dir,

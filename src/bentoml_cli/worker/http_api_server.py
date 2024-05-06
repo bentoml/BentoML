@@ -84,6 +84,18 @@ import click
     help="Ciphers to use (see stdlib 'ssl' module)",
 )
 @click.option(
+    "--timeout-keep-alive",
+    type=click.INT,
+    default=None,
+    help="Close Keep-Alive connections if no new data is received within this timeout.",
+)
+@click.option(
+    "--timeout-graceful-shutdown",
+    type=click.INT,
+    default=None,
+    help="Maximum number of seconds to wait for graceful shutdown. After this timeout, the server will start terminating requests.",
+)
+@click.option(
     "--development-mode",
     type=click.BOOL,
     help="Run the API server in development mode",
@@ -111,6 +123,8 @@ def main(
     ssl_cert_reqs: int | None,
     ssl_ca_certs: str | None,
     ssl_ciphers: str | None,
+    timeout_keep_alive: int | None,
+    timeout_graceful_shutdown: int | None,
     development_mode: bool,
     timeout: int | None,
 ):
@@ -180,6 +194,11 @@ def main(
         if not ssl_ciphers:
             ssl_ciphers = "TLSv1"
             uvicorn_options["ssl_ciphers"] = ssl_ciphers
+
+    if timeout_keep_alive:
+        uvicorn_options["timeout_keep_alive"] = timeout_keep_alive
+    if timeout_graceful_shutdown:
+        uvicorn_options["timeout_graceful_shutdown"] = timeout_graceful_shutdown
 
     if psutil.WINDOWS:
         uvicorn_options["loop"] = "asyncio"

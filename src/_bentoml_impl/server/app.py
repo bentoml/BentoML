@@ -411,7 +411,7 @@ class ServiceAppFactory(BaseAppFactory):
             log_exception(request)
             data = {
                 "error": f"{exc.error_count()} validation error for {exc.title}",
-                "detail": exc.errors(include_context=False),
+                "detail": exc.errors(include_context=False, include_input=False),
             }
             resp = JSONResponse(data, status_code=400)
         except BentoMLException as exc:

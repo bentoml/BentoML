@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import typing as t
+from copy import deepcopy
 from numbers import Real
 
 import schema as s
@@ -226,5 +227,5 @@ def finalize_config(config: dict[str, t.Any]) -> dict[str, t.Any]:
         if svc in SERVICE_CFG_KEYS:
             continue
         config["services"][svc] = config_merger.merge(
-            default_service_config, service_config
+            deepcopy(default_service_config), service_config
         )

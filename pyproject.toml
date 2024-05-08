@@ -62,7 +62,7 @@ dependencies = [
     "schema",
     "simple-di>=0.1.4",
     "starlette>=0.24.0",
-    "uvicorn",
+    "uvicorn>=0.22.0",
     "watchfiles>=0.15.0",
     # for manipulating pyproject.toml
     "tomli>=1.1.0; python_version < \"3.11\"",

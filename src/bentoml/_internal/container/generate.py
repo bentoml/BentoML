@@ -233,6 +233,7 @@ def _resolve_package_versions(requirement: str) -> dict[str, str]:
             or req.is_url
             or req.is_wheel
             or not req.name
+            or not req.specifier
         ):
             continue
         for sp in req.specifier:

@@ -139,7 +139,6 @@ def build_start_command() -> click.Group:
     @click.option(
         "--timeout-keep-alive",
         type=int,
-        default=None,
         help="Close Keep-Alive connections if no new data is received within this timeout.",
     )
     @click.option(

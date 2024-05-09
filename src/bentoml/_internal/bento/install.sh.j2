@@ -17,11 +17,11 @@ BENTOML_VERSION=${BENTOML_VERSION:-<< bentoml_version >>}
 pushd "$BASEDIR" &>/dev/null
 if [ -f "$REQUIREMENTS_LOCK" ]; then
     echo "Installing pip packages from 'requirements.lock.txt'.."
-    pip3 install -r "$REQUIREMENTS_LOCK" "${PIP_ARGS[@]}"
+    pip3 install "${PIP_ARGS[@]}" -r "$REQUIREMENTS_LOCK"
 else
     if [ -f "$REQUIREMENTS_TXT" ]; then
         echo "Installing pip packages from 'requirements.txt'.."
-        pip3 install -r "$REQUIREMENTS_TXT" "${PIP_ARGS[@]}"
+        pip3 install "${PIP_ARGS[@]}" -r "$REQUIREMENTS_TXT"
     fi
 fi
 popd &>/dev/null
@@ -33,7 +33,7 @@ wheels=($WHEELS_DIR/*.whl)
 {% raw %}
 if [ ${#wheels[@]} -gt 0 ]; then
     echo "Installing wheels packaged in Bento.."
-    pip3 install "${wheels[@]}" "${PIP_ARGS[@]}"
+    pip3 install "${PIP_ARGS[@]}" "${wheels[@]}"
 fi
 {% endraw %}
 

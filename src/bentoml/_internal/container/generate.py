@@ -100,6 +100,14 @@ def get_templates_variables(
 
     PREHEAT_PIP_PACKAGES = ["torch", "vllm"]
 
+    preheat_packages: list[str] = []
+    if docker.pip_preheat_packages:
+        preheat_packages.extend(docker.pip_preheat_packages)
+    if python_packages:
+        preheat_packages.extend(
+            [python_packages[k] for k in PREHEAT_PIP_PACKAGES if python_packages.get(k)]
+        )
+
     return {
         **{to_options_field(k): v for k, v in docker.to_dict().items()},
         **{to_bento_field(k): v for k, v in default_env.items()},
@@ -107,11 +115,7 @@ def get_templates_variables(
         "__base_image__": base_image,
         "__conda_python_version__": conda_python_version,
         "__is_cuda__": _is_cuda,
-        "__pip_preheat_packages__": [
-            python_packages[k]
-            for k in PREHEAT_PIP_PACKAGES
-            if python_packages and python_packages.get(k)
-        ],
+        "__pip_preheat_packages__": preheat_packages,
     }
 
 

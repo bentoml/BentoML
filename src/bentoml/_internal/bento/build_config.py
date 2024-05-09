@@ -174,6 +174,7 @@ class DockerOptions:
     setup_script: t.Optional[str] = None
     base_image: t.Optional[str] = None
     dockerfile_template: t.Optional[str] = None
+    pip_preheat_packages: t.Optional[t.List[str]] = None
 
     def __attrs_post_init__(self):
         if self.base_image is not None:

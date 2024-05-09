@@ -297,7 +297,10 @@ def download_and_zip_git_repo(
             raise BentoMLException(
                 f"Failed to clone git repository {url}: {e.stderr}"
             ) from e
-        zipball = os.path.join(dst_path, subdirectory or name)
+        zipball = os.path.join(
+            dst_path,
+            name + (f"-{subdirectory.replace('/', '-')}" if subdirectory else ""),
+        )
         shutil.rmtree(os.path.join(dest_dir, ".git"), ignore_errors=True)
         source_dir = os.path.join(dest_dir, subdirectory) if subdirectory else dest_dir
         result = shutil.make_archive(zipball, "zip", source_dir)

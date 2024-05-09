@@ -679,8 +679,8 @@ class PythonOptions:
                 filename = link.filename
             elif link.url.startswith("git+ssh://"):
                 # We are only able to handle SSH Git URLs
-                url, ref = link.url[4:], ""
-                if url.count("@") > 1:
+                url, ref = link.url_without_fragment[4:], ""
+                if url.count("@") > 1:  # ssh://git@owner/repo@ref
                     url, _, ref = url.rpartition("@")
                 filename = download_and_zip_git_repo(
                     url, ref, link.subdirectory_fragment, wheels_folder

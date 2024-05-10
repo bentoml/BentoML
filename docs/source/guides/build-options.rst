@@ -170,6 +170,29 @@ BentoML will lock the package to the version available in the current environmen
     You don't need to specify ``bentoml`` as a dependency in this field since the current version of BentoML will be added to the list by default. However,
     you can override this by specifying a different BentoML version.
 
+To include a package from a GitHub repository, use the `pip requirements file format <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_. You can specify the repository URL, the branch, tag, or commit to install from, and the subdirectory if the Python package is not in the root of the repository.
+
+.. code-block:: yaml
+
+    python:
+      packages:
+        # Install from a specific branch
+        - "git+https://github.com/username/repository.git@branch_name"
+        # Install from a specific tag
+        - "git+https://github.com/username/repository.git@v1.0.0"
+        # Install from a specific commit
+        - "git+https://github.com/username/repository.git@abcdef1234567890abcdef1234567890abcdef12"
+        # Install from a subdirectory
+        - "git+https://github.com/username/repository.git@branch_name#subdirectory=package_dir"
+
+If your project depends on a private GitHub repository, you can include the Python package from the repository via SSH. Make sure that the environment where BentoML is running has the appropriate SSH keys configured and that `these keys are added to GitHub <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account>`_. In the following example, ``git@github.com:username/repository.git`` is the SSH URL for the repository.
+
+.. code-block:: yaml
+
+    python:
+      packages:
+        - "git+ssh://git@github.com/username/repository.git@branch_name"
+
 If you already have a `requirements.txt <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_
 file that defines Python packages for your project, you may also supply a path to the ``requirements.txt`` file directly:
 

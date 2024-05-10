@@ -157,8 +157,8 @@ Here is an example of using Jaeger as the tracing exporter:
 	                "agent_port": 6831,
 	                "udp_split_oversized_batches": True,
 	            }
-	   		}
-		}
+	   	}
+	    }
 	)
 	class MyService:
 	    # Service implementation code

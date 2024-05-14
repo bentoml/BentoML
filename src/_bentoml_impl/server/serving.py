@@ -301,6 +301,7 @@ def serve_http(
         )
 
         log_host = "localhost" if host in ["0.0.0.0", "::"] else host
+        dependency_map[svc.name] = f"{scheme}://{log_host}:{port}"
 
         # inject runner map now
         inject_env = {"BENTOML_RUNNER_MAP": json.dumps(dependency_map)}

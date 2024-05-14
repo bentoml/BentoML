@@ -127,6 +127,13 @@ class Service(t.Generic[T]):
             return self.dependencies[attr_name].on.find_dependent(path)
         return self.dependencies[attr_name].on
 
+    @property
+    def url(self) -> str | None:
+        """Get the URL of the service, or None if the service is not served"""
+        dependency_map = BentoMLContainer.remote_runner_mapping.get()
+        url = dependency_map.get(self.name)
+        return url.replace("tcp://", "http://") if url else None
+
     @lru_cache(maxsize=1)
     def all_services(self) -> dict[str, Service[t.Any]]:
         """Get a map of the service and all recursive dependencies"""

@@ -463,7 +463,11 @@ class PythonOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    lock_packages: t.Optional[bool] = attr.field(
+    lock_packages: bool = attr.field(
+        default=True,
+        validator=attr.validators.optional(attr.validators.instance_of(bool)),
+    )
+    pack_git_packages: bool = attr.field(
         default=True,
         validator=attr.validators.optional(attr.validators.instance_of(bool)),
     )
@@ -658,6 +662,11 @@ class PythonOptions:
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
+        if not self.pack_git_packages and self.lock_packages is not False:
+            logger.warning(
+                "Setting 'lock_packages' to False since 'pack_git_packages' is False"
+            )
+            return attr.evolve(self, lock_packages=False)
         return self
 
     def _fix_dep_urls(self, requirements_txt: str, wheels_folder: str) -> None:
@@ -677,10 +686,10 @@ class PythonOptions:
 
             if "/env/python/wheels" in link.url:
                 filename = link.filename
-            elif link.url.startswith("git+ssh://"):
+            elif self.pack_git_packages and link.url.startswith("git+"):
                 # We are only able to handle SSH Git URLs
                 url, ref = link.url_without_fragment[4:], ""
-                if url.count("@") > 1:  # ssh://git@owner/repo@ref
+                if "@" in link.path:  # ssh://git@owner/repo@ref
                     url, _, ref = url.rpartition("@")
                 filename = download_and_zip_git_repo(
                     url, ref, link.subdirectory_fragment, wheels_folder

@@ -2,6 +2,9 @@ ci:
   autoupdate_schedule: monthly
   autofix_commit_msg: "ci: auto fixes from pre-commit.ci\n\nFor more information, see https://pre-commit.ci"
   autoupdate_commit_msg: 'ci: pre-commit autoupdate [skip ci]'
+  skip:  # exceeds tier max size
+    - buf-format
+    - buf-lint
 exclude: '(.*\.(css|js|svg))|(.*/(snippets|grpc|proto)/.*)$'
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit

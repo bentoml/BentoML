@@ -11,6 +11,7 @@ if t.TYPE_CHECKING:
     from _bentoml_sdk import Service
 
 BENTO_YAML_FILENAME = "bento.yaml"
+BENTO_BUILD_CONFIG_FILENAME = "bentofile.yaml"
 
 
 def normalize_identifier(
@@ -104,6 +105,9 @@ def import_service(
     `normalize_identifier` function.
     """
     from _bentoml_sdk import Service
+    from bentoml._internal.bento.bento import BentoInfo
+    from bentoml._internal.bento.build_config import BentoBuildConfig
+    from bentoml._internal.configuration.containers import BentoMLContainer
 
     if bento_path is None:
         bento_path = pathlib.Path(".")
@@ -123,7 +127,6 @@ def import_service(
         bento_path.parent.joinpath(BENTO_YAML_FILENAME).exists()
         and bento_path.parent.joinpath("models").exists()
     ):
-        from bentoml._internal.configuration.containers import BentoMLContainer
         from bentoml._internal.models import ModelStore
 
         original_model_store = BentoMLContainer.model_store.get()
@@ -133,6 +136,19 @@ def import_service(
         )
     else:
         original_model_store = None
+
+    # load model aliases
+    if (bento_yaml := bento_path.with_name(BENTO_YAML_FILENAME)).exists():
+        with open(bento_yaml, encoding="utf-8") as f:
+            info = BentoInfo.from_yaml_file(f)
+        model_aliases = {m.alias: str(m.tag) for m in info.all_models if m.alias}
+    elif (bentofile := bento_path.joinpath(BENTO_BUILD_CONFIG_FILENAME)).exists():
+        with open(bentofile, encoding="utf-8") as f:
+            build_config = BentoBuildConfig.from_yaml(f)
+        model_aliases = build_config.model_aliases
+    else:
+        model_aliases = {}
+    BentoMLContainer.model_aliases.set(model_aliases)
 
     try:
         module_name, _, attrs_str = service_identifier.partition(":")

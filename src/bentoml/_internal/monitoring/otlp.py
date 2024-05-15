@@ -212,24 +212,22 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
             self._init_logger()
             assert self.data_logger is not None
 
+        extra_columns: dict[str, t.Any] = {
+            self.COLUMN_TIME: datetime.datetime.now().timestamp(),
+            self.COLUMN_RID: str(trace_context.request_id),
+            self.COLUMN_TID: str(trace_context.trace_id),
+        }
+
         if self._will_export_schema or random.random() < self.meta_sample_rate:
-            extra_columns = {
-                self.COLUMN_TIME: datetime.datetime.now().timestamp(),
-                self.COLUMN_RID: str(trace_context.request_id),
-                self.COLUMN_TID: str(trace_context.trace_id),
-                self.COLUMN_META: {
-                    "bento_name": server_context.bento_name,
-                    "bento_version": server_context.bento_version,
-                    "monitor_name": self.name,
-                    "schema": self._schema,
-                },
+            extra_columns[self.COLUMN_META] = {
+                "bento_name": server_context.bento_name,
+                "bento_version": server_context.bento_version,
+                "monitor_name": self.name,
+                "schema": self._schema,
             }
+
             self._will_export_schema = False
-        else:
-            extra_columns = {
-                self.COLUMN_TIME: datetime.datetime.now().timestamp(),
-                self.COLUMN_RID: str(trace_context.request_id),
-            }
+
         while True:
             try:
                 record = {k: v.popleft() for k, v in datas.items()}

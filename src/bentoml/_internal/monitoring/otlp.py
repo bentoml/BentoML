@@ -89,9 +89,10 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
 
     """
 
-    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_META) = (
+    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_TID, COLUMN_META) = (
         "timestamp",
         "request_id",
+        "trace_id",
         "bento_meta",
     )
 
@@ -215,6 +216,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
             extra_columns = {
                 self.COLUMN_TIME: datetime.datetime.now().timestamp(),
                 self.COLUMN_RID: str(trace_context.request_id),
+                self.COLUMN_TID: str(trace_context.trace_id),
                 self.COLUMN_META: {
                     "bento_name": server_context.bento_name,
                     "bento_version": server_context.bento_version,

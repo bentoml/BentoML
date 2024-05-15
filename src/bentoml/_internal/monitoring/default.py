@@ -56,7 +56,11 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
     data is logged as a JSON array.
     """
 
-    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID) = ("timestamp", "request_id")
+    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_TID) = (
+        "timestamp",
+        "request_id",
+        "trace_id",
+    )
 
     def __init__(
         self,
@@ -136,10 +140,11 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
             self._init_logger()
             assert self.data_logger is not None
 
-        extra_columns = dict(
-            timestamp=datetime.datetime.now().isoformat(),
-            request_id=str(trace_context.request_id),
-        )
+        extra_columns = {
+            self.COLUMN_TIME: datetime.datetime.now().isoformat(),
+            self.COLUMN_RID: str(trace_context.request_id),
+            self.COLUMN_TID: str(trace_context.trace_id),
+        }
         while True:
             try:
                 record = {k: v.popleft() for k, v in datas.items()}

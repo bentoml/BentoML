@@ -267,16 +267,25 @@ class ServiceAppFactory(BaseAppFactory):
         self._service_instance = self.service()
         set_current_service(self._service_instance)
 
-    def _add_response_headers(self, resp: Response) -> None:
+    @inject
+    def _add_response_headers(
+        self,
+        resp: Response,
+        logging_format: dict[str, str] = Provide[BentoMLContainer.logging_formatting],
+    ) -> None:
         from bentoml._internal.context import trace_context
 
         if trace_context.request_id is not None:
-            resp.headers["X-BentoML-Request-ID"] = str(trace_context.request_id)
+            resp.headers["X-BentoML-Request-ID"] = format(
+                trace_context.request_id, logging_format["span_id"]
+            )
         if (
             BentoMLContainer.http.response.trace_id.get()
             and trace_context.trace_id is not None
         ):
-            resp.headers["X-BentoML-Trace-ID"] = str(trace_context.trace_id)
+            resp.headers["X-BentoML-Trace-ID"] = format(
+                trace_context.trace_id, logging_format["trace_id"]
+            )
 
     async def destroy_instance(self) -> None:
         from _bentoml_sdk.service.dependency import cleanup

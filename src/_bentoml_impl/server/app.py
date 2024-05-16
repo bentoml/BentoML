@@ -220,7 +220,7 @@ class ServiceAppFactory(BaseAppFactory):
                 Middleware(CORSMiddleware, **self.access_control_options)
             )
 
-        def client_request_hook(span: Span | None, _scope: dict[str, t.Any]) -> None:
+        def server_request_hook(span: Span | None, _scope: dict[str, t.Any]) -> None:
             from bentoml._internal.context import trace_context
 
             if span is not None:
@@ -231,8 +231,8 @@ class ServiceAppFactory(BaseAppFactory):
                 OpenTelemetryMiddleware,
                 excluded_urls=BentoMLContainer.tracing_excluded_urls.get(),
                 default_span_details=None,
-                server_request_hook=None,
-                client_request_hook=client_request_hook,
+                server_request_hook=server_request_hook,
+                client_request_hook=None,
                 tracer_provider=BentoMLContainer.tracer_provider.get(),
             )
         )

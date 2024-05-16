@@ -194,6 +194,10 @@ However, for scenarios where you want to maximize performance and throughput, sy
 
 The asynchronous API implementation is more efficient because when an asynchronous method is invoked, the event loop becomes available to serve other requests as the current request awaits method results. In addition, BentoML automatically configures the ideal amount of parallelism based on the available number of CPU cores. This eliminates the need for further event loop configuration in common use cases.
 
+.. warning::
+
+    Avoid implementating blocking logic within asynchronous APIs, since such operations can block the IO event loop, preventing health check endpoints like ``/readyz`` from functioning properly.
+
 Convert synchronous to asynchronous
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -183,7 +183,7 @@ This example defines a sequential pipeline where output from one model is fed as
     import numpy as np
     from transformers import pipeline
 
-    @bentoml.service(resources={"cpu": 2, "memory": "2Gi"})
+    @bentoml.service(resources={"cpu": "2", "memory": "2Gi"})
     class PreprocessingService:
         model_a_ref = bentoml.models.get("model_a:latest")
 
@@ -253,7 +253,7 @@ This example runs two independent models concurrently to generate different type
             data_b = self.pipeline_b(input_data)
             return data_b
 
-    @bentoml.service(resources={"cpu": 4, "memory": "8Gi"})
+    @bentoml.service(resources={"cpu": "4", "memory": "8Gi"})
     class EnsembleService:
         service_a = bentoml.depends(ModelAService)
         service_b = bentoml.depends(ModelBService)

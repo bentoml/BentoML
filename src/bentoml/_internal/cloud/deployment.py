@@ -488,6 +488,7 @@ class DeploymentInfo:
         spinner_task_id: TaskID | None = None,
     ) -> None:
         from httpcore import TimeoutException
+
         start_time = time.time()
         if spinner is not None and spinner_task_id is not None:
             while time.time() - start_time < timeout:
@@ -499,13 +500,13 @@ class DeploymentInfo:
                         if i == 2:
                             spinner.spinner_progress.update(
                                 spinner_task_id,
-                                action=f'[bold red]Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website.[/bold red]'
-                                )
+                                action="[bold red]Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website.[/bold red]",
+                            )
                             spinner.spinner_progress.stop_task(spinner_task_id)
                             return
                         spinner.spinner_progress.update(
                             spinner_task_id,
-                            action=f"Unable to get deployment status, retrying..."
+                            action="Unable to get deployment status, retrying...",
                         )
                 spinner.spinner_progress.update(
                     spinner_task_id,

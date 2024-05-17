@@ -92,7 +92,7 @@ Models must be retrieved from the class scope of a Service. Defining the model a
 
 .. warning::
 
-    If ``bentoml.models.get()`` is called inside the constructor of a Service class, the model will not be referenced by the Bento therefore not pushed or deployed, leading to model not found issues.
+    If ``bentoml.models.get()`` is called inside the constructor of a Service class, the model will not be referenced by the Bento therefore not pushed or deployed, leading to model ``FileNotFoundError``.
 
 
 Manage models

@@ -518,12 +518,14 @@ class PythonOptions:
 
     @property
     def _jinja_environment(self) -> jinja2.Environment:
-        return jinja2.Environment(
+        env = jinja2.Environment(
             extensions=["jinja2.ext.debug"],
             variable_start_string="<<",
             variable_end_string=">>",
             loader=jinja2.FileSystemLoader(os.path.dirname(__file__), followlinks=True),
         )
+        env.filters["bash_quote"] = shlex.quote
+        return env
 
     def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
         from .bentoml_builder import build_bentoml_sdist

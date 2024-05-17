@@ -67,7 +67,7 @@ To retrieve a model from the BentoML Model Store, use the ``get`` method.
 
 ``bentoml.models.get`` returns a ``bentoml.Model`` instance, linking to a saved model entry in the BentoML Model Store. You can then use the instance to get model information like tag, labels, and file system paths, or create a :doc:`Service </guides/services>` on top of it.
 
-For example, you can load the model into a Transformers pipeline as below for the project in :doc:`/get-started/quickstart`.
+For example, you can load the model into a Transformers pipeline from the ``path`` provided by the ``bentoml.Model`` instance as below, see more in :doc:`/get-started/quickstart`.
 
 .. code-block:: python
 
@@ -84,19 +84,16 @@ For example, you can load the model into a Transformers pipeline as below for th
             self.pipeline = pipeline('summarization', self.model_ref.path)
 
         @bentoml.api
-        ...
+        def summarize(self, text: str = EXAMPLE_INPUT) -> str:
+            ...
 
-When you retrieve your model within a Service class, it is important to consider whether you want to define the model as a class variable or within the constructor (``init`` method). By defining the model as a class variable, you explicitly declare it as a dependency of the Service. This makes it clear to BentoML's packaging mechanism which resources need to be included when the Service is packaged as a Bento and deployed. This is important in ensuring that all necessary models are available in production, not just in the local development setup.
 
-If you use ``bentoml.models.get()`` inside the constructor, it works locally because the model is fetched every time an instance of the Service is created. In local development, this might not be a problem because the environment is controlled and the model is readily available. However, when you deploy the Service in a production environment like BentoCloud, this can lead to issues:
+Models must be retrieved from the class scope of a Service. Defining the model as a class variable declares it as a dependency of the Service, ensuring the models are referenced by the Bento when transported and deployed.
 
-- Dependency tracking: BentoML might not automatically recognize the model as a dependency of the Service, as it's not declared at the class level. This can lead to deployment packages missing required models. To avoid this, you can specify the ``models`` field in ``bentofile.yaml`` to tell BentoML explicitly what models should be referenced. For more information, see :ref:`build-options-model`.
-- Performance: Loading the model in every instance initialization can significantly increase memory usage and slow down the startup time of each :doc:`worker </guides/workers>`, especially if your model is large.
+.. warning::
 
-Consider the following when deciding where to use ``bentoml.models.get()``:
+    If ``bentoml.models.get()`` is called inside the constructor of a Service class, the model will not be referenced by the Bento therefore not pushed or deployed, leading to model ``NotFound`` in BentoML store error.
 
-- Class-level definitions: Defining models and other dependencies as class-level attributes can help you make dependencies explicit and manage them efficiently.
-- Constructor usage: The constructor should be used for initializing instance-specific configurations that do not involve heavy lifting like loading models.
 
 Manage models
 -------------

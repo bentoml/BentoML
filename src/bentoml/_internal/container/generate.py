@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import shlex
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -166,6 +167,7 @@ def generate_containerfile(
         lstrip_blocks=True,
         loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True),
     )
+    ENVIRONMENT.filters["bash_quote"] = shlex.quote
 
     if docker.cuda_version is not None:
         release_type = "cuda"

@@ -122,6 +122,7 @@ python:
   requirements_txt: null
   packages: null
   lock_packages: true
+  pack_git_packages: true
   index_url: null
   no_index: null
   trusted_host: null

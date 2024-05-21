@@ -304,6 +304,56 @@ Alternatively, you can use ``pathlib.Path`` with a ``ContentType`` validator to 
 
 This is particularly useful when dealing with image uploads in web applications or similar scenarios.
 
+Compound
+^^^^^^^^
+
+In advanced use cases, handling single data types often isn't enough. Complex scenarios may require processing combinations of different data types.
+
+For example, you can combine image and JSON input as below:
+
+.. code-block:: python
+
+    from pydantic import BaseModel, Field
+    from PIL import Image as PILImage
+    import bentoml
+
+    class ImageMetadata(BaseModel):
+        description: str = Field(description="Description of the image")
+        timestamp: str = Field(description="Timestamp of when the image was captured")
+
+    @bentoml.service
+    class ImageProcessingService:
+
+        @bentoml.api
+        def process_image(self, image: PILImage, metadata: ImageMetadata) -> dict:
+            # Implementation for processing the image and metadata
+            ...
+
+In this example, ``PILImage`` handles the image data, while the Pydantic model ``ImageMetadata`` processes the JSON input.
+
+BentoML also supports lists input and output of complex types, such as images and file paths. Here’s an example of defining APIs that handle lists of images and paths at once:
+
+.. code-block:: python
+
+    from PIL import Image as PILImage
+    from pathlib import Path
+    from typing import List, Dict
+    import bentoml
+
+    @bentoml.service
+    class BatchImageService:
+        @bentoml.api
+        def enhance_images(self, images: List[PILImage]) -> List[PILImage]:
+            # Process images and return a list of images
+            ...
+
+        @bentoml.api
+        def process_files(self, files: List[Path]) -> List[Dict]:
+            # Process files and return a list of dictionaries
+            ...
+
+Note that currently BentoML does not support output that combines raw binary data (like images or files) with plain dictionary data directly.
+
 Validate data
 -------------
 

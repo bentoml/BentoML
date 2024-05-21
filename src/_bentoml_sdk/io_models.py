@@ -80,18 +80,18 @@ class IOMixin:
     def openapi_components(cls, name: str) -> dict[str, Schema]:
         from .service.openapi import REF_TEMPLATE
 
-        if issubclass(cls, RootModel):
-            return {}
-        assert issubclass(cls, IOMixin) and issubclass(cls, BaseModel)
+        assert issubclass(cls, BaseModel)
         json_schema = cls.model_json_schema(ref_template=REF_TEMPLATE)
         defs = json_schema.pop("$defs", None)
-        main_name = (
-            f"{name}__{cls.__name__}"
-            if cls.__name__ in ("Input", "Output")
-            else cls.__name__
-        )
-        json_schema["title"] = main_name
-        components: dict[str, Schema] = {main_name: Schema(**json_schema)}
+        components: dict[str, Schema] = {}
+        if not issubclass(cls, RootModel):
+            main_name = (
+                f"{name}__{cls.__name__}"
+                if cls.__name__ in ("Input", "Output")
+                else cls.__name__
+            )
+            json_schema["title"] = main_name
+            components[main_name] = Schema(**json_schema)
         if defs is not None:
             # NOTE: This is a nested models, hence we will update the definitions
             components.update({k: Schema(**v) for k, v in defs.items()})

@@ -811,7 +811,7 @@ class BentoBuildConfig:
         # satisfies type checker. docker, python, and conda accepts
         # dict[str, t.Any] since our converter will handle the conversion.
         # There is no way to tell type checker signatures of the converter from attrs
-        # if given attribute is alrady has a type annotation.
+        # if given attribute is already has a type annotation.
         from typing_extensions import TypedDict
 
         class EnvironmentEntry(TypedDict):

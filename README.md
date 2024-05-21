@@ -59,7 +59,7 @@ Run the service code locally (serving at http://localhost:3000 by default):
 bentoml serve service.py:Summarization
 ```
 
-Now you can run inference in your browser at http://localhost:3000 or with a Python client:
+Now you can run inference from your browser at http://localhost:3000 or with a Python script:
 
 ```python
 import bentoml

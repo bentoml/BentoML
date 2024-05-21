@@ -1,21 +1,27 @@
-<div align="center">
-  <img src="./docs/source/_static/img/bentoml-logo-black.jpg" width="480px" alt="bentoml" />
-  <h1 align="center">BentoML: The Unified Model Serving Framework</h1>
+<p align="center">
+  <img src="./docs/source/_static/img/bentoml-logo-black.jpg" width="330px" alt="bentoml" />
+</p>
+<h2 align="center">
+    <p>Unified Model Serving Framework</p>
+</h2>
+<p align="center">
   <a href="https://pypi.org/project/bentoml"><img src="https://img.shields.io/pypi/v/bentoml.svg" alt="pypi_status" /></a>
   <a href="https://github.com/bentoml/BentoML/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://github.com/bentoml/bentoml/workflows/CI/badge.svg?branch=main" alt="CI" /></a>
   <a href="https://twitter.com/bentomlai"><img src="https://badgen.net/badge/icon/@bentomlai/1DA1F2?icon=twitter&label=Follow%20Us" alt="Twitter" /></a>
   <a href="https://join.slack.bentoml.org"><img src="https://badgen.net/badge/Join/Community/cyan?icon=slack" alt="Community" /></a>
-  <p>BentoML is an open-source framework for model serving. Developers use BentoML to build model inference APIs and multi-model serving systems with any open-source or custom proprietary AI models.</p>
-  <i><a href="https://l.bentoml.com/join-slack">👉 Join our Slack community!</a></i>
-</div>
+</p>
+
+🍱 BentoML is an open-source framework for model serving. Developers use BentoML to build model inference APIs and multi-model serving systems with any open-source or custom proprietary AI models.
+
+👉 [Join our Slack community!](https://l.bentoml.com/join-slack)
 
 ## Highlights
 
-- **The easiest way to build APIs for any AI/ML models.** Turn any model inference script into a REST API server with just a few lines of code.
-- **Docker containers made simple, no more dependency hell.** Manage your environments, dependencies and models with ease. BentoML helps ensure reproducibility, automatically generates Docker images, and simplifies running inference across development, testing, and production environments.
-- **Get the most out of your CPU/GPU compute resources, ensuring optimal API throughput and latency.** Leverage serving optimization features including dynamic batching, model parallelism, multi-stage pipeline serving, and multi-model orchestration.
-- **Customize for your specific needs.** Highly flexible for implementing custom API spec, pre/post-processing, model inference logic, and model composition, all with Python code. Support any ML framework, modality, and inference runtime.
-- **Build for Production.** Run and debug locally. When ready, deploy with Docker containers or [BentoCloud](https://www.bentoml.com/).
+- **🍱 Easily build APIs for Any AI/ML Model.** Turn any model inference script into a REST API server with just a few lines of code and standard Python type hints.
+- **🐳 Docker Containers made simple.** No more dependency hell! Manage your environments, dependencies and models with a simple config file. BentoML automatically generates Docker images, ensures reproducibility, and simplifies how you run inference across different environments.
+- **🧭 Maximize CPU/GPU utilization.** Improve your API throughput and latency performance leveraging built-in serving optimization features like dynamic batching, model parallelism, multi-stage pipeline and multi-model inference-graph orchestration.
+- **👩‍💻 Build Custom AI Applications.** BentoML is highly flexible for advanced customizations. Easily implement your own API specifications, asynchronous inference tasks; customize pre/post-processing, model inference logic; and define model composition; all using Python code. Supports any ML framework, modality, and inference runtime.
+- **🚀 Build for Production.** Develop, run and debug locally. Seamlessly deploy to production with Docker containers or [BentoCloud](https://www.bentoml.com/).
 
 ## Getting started
 
@@ -79,12 +85,12 @@ Then, choose one of the following ways for deployment:
 
 <details>
 
-<summary>Docker Container</summary>
+<summary>🐳 Docker Container</summary>
 
 Run `bentoml build` to package necessary code, models, dependency configs into a Bento - the standardized deployable artifact in BentoML:
 
 ```bash
-bentoml build
+bentoml build 
 ```
 
 Ensure [Docker](https://docs.docker.com/) is running. Generate a Docker container image for deployment:
@@ -93,7 +99,7 @@ Ensure [Docker](https://docs.docker.com/) is running. Generate a Docker containe
 bentoml containerize summarization:latest
 ```
 
-Follow the printed instructions and run the generated image:
+Run the generated image:
 
 ```bash
 docker run --rm -p 3000:3000 summarization:latest
@@ -103,7 +109,7 @@ docker run --rm -p 3000:3000 summarization:latest
 
 <details>
 
-<summary>BentoCloud</summary>
+<summary>☁️ BentoCloud</summary>
 
 BentoCloud is the AI inference platform for fast moving AI teams. It lets you easily deploy your BentoML code in a fast-scaling infrastructure. [Sign up for BentoCloud](https://cloud.bentoml.com/signup) for personal access; for enterprise use cases, [contact our team](https://www.bentoml.com/contact).
 
@@ -129,8 +135,9 @@ For detailed explanations, read [Quickstart](https://docs.bentoml.com/en/latest/
 - Audio: [XTTS](https://github.com/bentoml/BentoXTTS), [WhisperX](https://github.com/bentoml/BentoWhisperX), [Bark](https://github.com/bentoml/BentoBark)
 - Computer Vision: [YOLO](https://github.com/bentoml/BentoYolo)
 - Multimodal: [BLIP](https://github.com/bentoml/BentoBlip), [CLIP](https://github.com/bentoml/BentoClip)
+- Compound AI systems: [Serving RAG with custom models](https://github.com/bentoml/rag-tutorials)
 
-See the [examples](./examples/) folder for more use cases.
+Check out the [examples](./examples/) folder for more sample code and usage.
 
 ## Advanced topics
 
@@ -144,7 +151,7 @@ See the [examples](./examples/) folder for more use cases.
 - [Observability](https://docs.bentoml.com/en/latest/guides/observability/index.html)
 - [BentoCloud deployment](https://docs.bentoml.com/en/latest/guides/deployment.html)
 
-See [the BentoML documentation](https://docs.bentoml.com/en/latest/index.html) for more topics.
+See [Documentation](https://docs.bentoml.com) for more tutorials and guides.
 
 ## Community
 

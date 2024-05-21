@@ -1,27 +1,24 @@
-<p align="center">
-  <img src="./docs/source/_static/img/bentoml-logo-black.jpg" width="330px" alt="bentoml" />
-</p>
-<h2 align="center">
-    <p>Unified Model Serving Framework</p>
-</h2>
-<p align="center">
-  <a href="https://pypi.org/project/bentoml"><img src="https://img.shields.io/pypi/v/bentoml.svg" alt="pypi_status" /></a>
-  <a href="https://github.com/bentoml/BentoML/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://github.com/bentoml/bentoml/workflows/CI/badge.svg?branch=main" alt="CI" /></a>
-  <a href="https://twitter.com/bentomlai"><img src="https://badgen.net/badge/icon/@bentomlai/1DA1F2?icon=twitter&label=Follow%20Us" alt="Twitter" /></a>
-  <a href="https://join.slack.bentoml.org"><img src="https://badgen.net/badge/Join/Community/cyan?icon=slack" alt="Community" /></a>
-</p>
+# 🍱 BentoML: Unified Model Serving Framework
 
-🍱 BentoML is an open-source framework for model serving. Developers use BentoML to build model inference APIs and multi-model serving systems with any open-source or custom proprietary AI models.
+Build model inference APIs and multi-model serving systems with any open-source or custom AI models.
 
-👉 [Join our Slack community!](https://l.bentoml.com/join-slack)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202-green.svg)](https://github.com/bentoml/BentoML?tab=Apache-2.0-1-ov-file)
+[![Releases](https://img.shields.io/github/v/release/bentoml/bentoml.svg)](https://github.com/bentoml/bentoml/releases)
+[![CI](https://github.com/bentoml/bentoml/workflows/CI/badge.svg?branch=main)](https://github.com/bentoml/BentoML/actions/workflows/ci.yml?query=branch%3Amain)
+[![Twitter](https://badgen.net/badge/icon/@bentomlai/1DA1F2?icon=twitter&label=Follow)](https://twitter.com/bentomlai)
+[![Community](https://badgen.net/badge/Join/Community/cyan?icon=slack)](https://l.bentoml.com/join-slack)
 
-## Highlights
+## What is BentoML?
+
+BentoML is an open-source framework for model serving, simplifying how AI/ML models gets into production:
 
 - **🍱 Easily build APIs for Any AI/ML Model.** Turn any model inference script into a REST API server with just a few lines of code and standard Python type hints.
 - **🐳 Docker Containers made simple.** No more dependency hell! Manage your environments, dependencies and models with a simple config file. BentoML automatically generates Docker images, ensures reproducibility, and simplifies how you run inference across different environments.
 - **🧭 Maximize CPU/GPU utilization.** Improve your API throughput and latency performance leveraging built-in serving optimization features like dynamic batching, model parallelism, multi-stage pipeline and multi-model inference-graph orchestration.
 - **👩‍💻 Build Custom AI Applications.** BentoML is highly flexible for advanced customizations. Easily implement your own API specifications, asynchronous inference tasks; customize pre/post-processing, model inference logic; and define model composition; all using Python code. Supports any ML framework, modality, and inference runtime.
 - **🚀 Build for Production.** Develop, run and debug locally. Seamlessly deploy to production with Docker containers or [BentoCloud](https://www.bentoml.com/).
+
+👉 [Join our Slack community!](https://l.bentoml.com/join-slack)
 
 ## Getting started
 

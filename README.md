@@ -90,7 +90,7 @@ Then, choose one of the following ways for deployment:
 Run `bentoml build` to package necessary code, models, dependency configs into a Bento - the standardized deployable artifact in BentoML:
 
 ```bash
-bentoml build 
+bentoml build
 ```
 
 Ensure [Docker](https://docs.docker.com/) is running. Generate a Docker container image for deployment:

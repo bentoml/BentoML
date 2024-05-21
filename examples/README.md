@@ -7,6 +7,7 @@ The directory contains a collection of example projects demonstrating
 
 | Example | Model | Functionality |
 | --- | --- | --- |
+| [quickstart](./quickstart/) | Transformers | Summarization |
 | [inference-graph](./inference-graph/) | Text Generation, Text Classification | Distributed Services, Model Composition, Inference Graph |
 | [io-descriptors](./io-descriptors/) | Pydantic | Custom IO Types |
 | [model-loading-saving](./model-loading-saving/) | Stable Diffusion | Model Store |

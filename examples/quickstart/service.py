@@ -1,41 +1,29 @@
-import numpy as np
-from pydantic import Field
-from typing_extensions import Annotated
+from __future__ import annotations
+
+from transformers import pipeline
 
 import bentoml
-from bentoml.validators import Shape
+
+EXAMPLE_INPUT = "Breaking News: In an astonishing turn of events, the small \
+town of Willow Creek has been taken by storm as local resident Jerry Thompson's cat, \
+Whiskers, performed what witnesses are calling a 'miraculous and gravity-defying leap.' \
+Eyewitnesses report that Whiskers, an otherwise unremarkable tabby cat, jumped \
+a record-breaking 20 feet into the air to catch a fly. The event, which took \
+place in Thompson's backyard, is now being investigated by scientists for potential \
+breaches in the laws of physics. Local authorities are considering a town festival \
+to celebrate what is being hailed as 'The Leap of the Century."
 
 
 @bentoml.service(
-    resources={
-        "cpu": "1",
-        "memory": "2Gi",
-    },
+    resources={"cpu": "2"},
+    traffic={"timeout": 10},
 )
-class IrisClassifier:
-    """
-    A simple Iris classification service using a sklearn model
-    """
-
-    # Load in the class scope to declare the model as a dependency of the service
-    iris_model = bentoml.models.get("iris_sklearn:latest")
-
-    def __init__(self):
-        """
-        Initialize the service by loading the model from the model store
-        """
-        import joblib
-
-        self.model = joblib.load(self.iris_model.path_of("model.pkl"))
+class Summarization:
+    def __init__(self) -> None:
+        # Load model into pipeline
+        self.pipeline = pipeline("summarization")
 
     @bentoml.api
-    def classify(
-        self,
-        input_series: Annotated[np.ndarray, Shape((-1, 4))] = Field(
-            default=[[5.2, 2.3, 5.0, 0.7]]
-        ),
-    ) -> np.ndarray:
-        """
-        Define API with preprocessing and model inference logic
-        """
-        return self.model.predict(input_series)
+    def summarize(self, text: str = EXAMPLE_INPUT) -> str:
+        result = self.pipeline(text)
+        return result[0]["summary_text"]

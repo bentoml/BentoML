@@ -10,7 +10,7 @@ Build model inference APIs and multi-model serving systems with any open-source 
 
 ## What is BentoML?
 
-BentoML is an open-source framework for model serving, simplifying how AI/ML models gets into production:
+BentoML is an open-source model serving framework, simplifying how AI/ML models gets into production:
 
 - **🍱 Easily build APIs for Any AI/ML Model.** Turn any model inference script into a REST API server with just a few lines of code and standard Python type hints.
 - **🐳 Docker Containers made simple.** No more dependency hell! Manage your environments, dependencies and models with a simple config file. BentoML automatically generates Docker images, ensures reproducibility, and simplifies how you run inference across different environments.

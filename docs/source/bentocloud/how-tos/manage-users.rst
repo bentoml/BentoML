@@ -62,11 +62,11 @@ The tasks you are able to perform depend on your user role. The following table 
      - ✓
      -
      -
-   * - Create, update, terminate, restore, and delete Deployments
+   * - Create, terminate, restore, and delete Deployments
      - ✓
      - ✓
      -
-   * - View Deployment configurations
+   * - View and update Deployment configurations
      - ✓
      - ✓
      -
@@ -78,15 +78,11 @@ The tasks you are able to perform depend on your user role. The following table 
      - ✓
      - ✓
      - ✓
-   * - View Deployment details page (Playground, Replicas, Activities, Logging, Monitoring, and Revision tabs)
-     - ✓
-     - ✓
-     -
    * - Run inference with Deployments
      - ✓
      - ✓
      - ✓
-   * - View detail logs
+   * - View Activities, Logging, and Monitoring information on a Deployment details page
      - ✓
      - ✓
      -

@@ -153,6 +153,7 @@ def main(
     from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
 
+    configure_server_logging()
     if runner_map:
         BentoMLContainer.remote_runner_mapping.set(
             t.cast(t.Dict[str, str], json.loads(runner_map))
@@ -169,7 +170,6 @@ def main(
     if worker_id is not None:
         server_context.worker_index = worker_id
 
-    configure_server_logging()
     BentoMLContainer.development_mode.set(development_mode)
 
     if prometheus_dir is not None:

@@ -67,7 +67,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
 
     @classmethod
     def batch_to_payloads(
-        cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int
+        cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int = 0
     ) -> list[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
         payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
@@ -75,7 +75,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
 
     @classmethod
     def from_batch_payloads(
-        cls, payloads: t.Sequence[Payload], batch_dim: int
+        cls, payloads: t.Sequence[Payload], batch_dim: int = 0
     ) -> tuple[BatchType, list[int]]:
         batches = [cls.from_payload(payload) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)

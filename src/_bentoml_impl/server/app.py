@@ -119,6 +119,7 @@ class ServiceAppFactory(BaseAppFactory):
                 get_batch_size=functools.partial(
                     AutoContainer.get_batch_size, batch_dim=method.batch_dim[0]
                 ),
+                batch_dim=method.batch_dim,
             )
 
     @functools.cached_property

@@ -69,11 +69,13 @@ class RunnerAppFactory(BaseAppFactory):
 
         for method in runner.runner_methods:
             max_batch_size = method.max_batch_size if method.config.batchable else -1
-            self.dispatchers[method.name] = CorkDispatcher(
-                max_latency_in_ms=method.max_latency_ms,
-                max_batch_size=max_batch_size,
-                fallback=fallback,
-            )
+            if max_batch_size > 1:
+                self.dispatchers[method.name] = CorkDispatcher(
+                    max_latency_in_ms=method.max_latency_ms,
+                    max_batch_size=max_batch_size,
+                    fallback=fallback,
+                    batch_dim=method.config.batch_dim,
+                )
 
     @property
     def name(self) -> str:
@@ -199,26 +201,24 @@ class RunnerAppFactory(BaseAppFactory):
 
         if runner_method.config.is_stream:
             # Streaming does not have batching implemented yet
-            async def infer_stream(
-                paramss: t.Sequence[Params[t.Any]],
-            ) -> t.Sequence[t.AsyncGenerator[str, None]]:
+            async def infer(
+                params: Params[t.Any],
+            ) -> t.Coroutine[None, None, t.AsyncGenerator[str, None]]:
                 async def inner():
                     # This is a workaround to allow infer stream to return a iterable of
                     # async generator, to align with how non stream inference works
-                    params = paramss[0].map(AutoContainer.from_payload)
+                    param = params.map(AutoContainer.from_payload)
                     try:
-                        ret = runner_method.async_stream(*params.args, **params.kwargs)
+                        ret = runner_method.async_stream(*param.args, **param.kwargs)
                     except Exception:
                         traceback.print_exc()
                         raise
                     async for data in ret:
                         yield data
 
-                return (inner(),)
-
-            infer = self.dispatchers[runner_method.name](infer_stream)
+                return inner()
         else:
-            if batching:
+            if runner_method.name in self.dispatchers:
 
                 async def infer_batch(
                     params_list: t.Sequence[Params[t.Any]],
@@ -271,12 +271,8 @@ class RunnerAppFactory(BaseAppFactory):
                 infer = self.dispatchers[runner_method.name](infer_batch)
             else:
 
-                async def infer_single(
-                    paramss: t.Sequence[Params[t.Any]],
-                ) -> tuple[Payload]:
-                    assert len(paramss) == 1
-
-                    params = paramss[0].map(AutoContainer.from_payload)
+                async def infer(params: Params[t.Any]) -> Payload:
+                    params = params.map(AutoContainer.from_payload)
 
                     try:
                         ret = await runner_method.async_run(
@@ -286,10 +282,7 @@ class RunnerAppFactory(BaseAppFactory):
                         traceback.print_exc()
                         raise
 
-                    payload = AutoContainer.to_payload(ret, 0)
-                    return (payload,)
-
-                infer = self.dispatchers[runner_method.name](infer_single)
+                    return AutoContainer.to_payload(ret, 0)
 
         async def _request_handler(request: Request) -> Response:
             assert self._is_ready

@@ -278,6 +278,7 @@ class ServiceAppFactory(BaseAppFactory):
     ) -> None:
         from bentoml._internal.context import trace_context
 
+        resp.headers.update({"Server": f"BentoML Service/{self.service.name}"})
         if trace_context.request_id is not None:
             resp.headers["X-BentoML-Request-ID"] = format(
                 trace_context.request_id, logging_format["span_id"]
@@ -449,6 +450,12 @@ class ServiceAppFactory(BaseAppFactory):
                 status_code=500,
             )
         self._add_response_headers(resp)
+        ctx = self.service.context
+        if resp.background is not None:
+            ctx.response.background.tasks.append(resp.background)
+        # clean the request resources after the response is consumed.
+        ctx.response.background.add_task(request.close)
+        resp.background = ctx.response.background
         return resp
 
     async def api_endpoint(self, name: str, request: Request) -> Response:
@@ -512,15 +519,9 @@ class ServiceAppFactory(BaseAppFactory):
             response = output
         else:
             response = await method.output_spec.to_http_response(output, serde)
-        response.headers.update({"Server": f"BentoML Service/{self.service.name}"})
 
         if method.ctx_param is not None:
             response.status_code = ctx.response.status_code
             response.headers.update(ctx.response.metadata)
             set_cookies(response, ctx.response.cookies)
-        if response.background is not None:
-            ctx.response.background.tasks.append(response.background)
-        # clean the request resources after the response is consumed.
-        ctx.response.background.add_task(request.close)
-        response.background = ctx.response.background
         return response

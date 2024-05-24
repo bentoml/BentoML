@@ -115,6 +115,7 @@ if TYPE_CHECKING:
     from _bentoml_sdk import on_shutdown
     from _bentoml_sdk import runner_service
     from _bentoml_sdk import service
+    from _bentoml_sdk import task
 else:
     from ._internal.utils import LazyLoader as _LazyLoader
     from ._internal.utils.pkg import pkg_version_info
@@ -180,6 +181,7 @@ else:
         "service",
         "runner_service",
         "api",
+        "task",
         "depends",
         "on_shutdown",
         "on_deployment",
@@ -288,6 +290,7 @@ __all__ = [
     "service",
     "runner_service",
     "api",
+    "task",
     "on_shutdown",
     "on_deployment",
     "depends",

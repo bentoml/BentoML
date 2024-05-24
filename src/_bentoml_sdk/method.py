@@ -57,6 +57,7 @@ class APIMethod(t.Generic[P, R]):
     is_stream: bool = attrs.field(init=False)
     doc: str | None = attrs.field(init=False)
     ctx_param: str | None = attrs.field(init=False)
+    is_async: bool = False
 
     @doc.default
     def default_doc(self) -> str | None:

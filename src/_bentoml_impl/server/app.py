@@ -13,6 +13,7 @@ import anyio.to_thread
 from simple_di import Provide
 from simple_di import inject
 from starlette.middleware import Middleware
+from starlette.responses import JSONResponse
 from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 
@@ -26,6 +27,9 @@ from bentoml._internal.server.http_app import log_exception
 from bentoml._internal.utils.metrics import exponential_buckets
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import ServiceUnavailable
+
+from ..tasks import ResultStatus
+from ..tasks import Sqlite3Store
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
@@ -158,8 +162,6 @@ class ServiceAppFactory(BaseAppFactory):
         return FileResponse(Path(__file__).parent / filename)
 
     async def openapi_spec_view(self, req: Request) -> Response:
-        from starlette.responses import JSONResponse
-
         try:
             return JSONResponse(self.service.openapi_spec.asdict())
         except Exception:
@@ -266,9 +268,11 @@ class ServiceAppFactory(BaseAppFactory):
         middlewares.append(Middleware(ContextMiddleware, context=self.service.context))
         return middlewares
 
-    def create_instance(self) -> None:
+    async def create_instance(self) -> None:
         self._service_instance = self.service()
         set_current_service(self._service_instance)
+        self._result_store = Sqlite3Store(":memory:")  # TODO: local file
+        await self._result_store.__aenter__()
 
     @inject
     def _add_response_headers(
@@ -306,6 +310,7 @@ class ServiceAppFactory(BaseAppFactory):
         await cleanup()
         self._service_instance = None
         set_current_service(None)
+        await self._result_store.__aexit__(None, None, None)
 
     async def readyz(self, _: Request) -> Response:
         from starlette.exceptions import HTTPException
@@ -335,10 +340,70 @@ class ServiceAppFactory(BaseAppFactory):
         return [*super().on_shutdown, self.destroy_instance]
 
     async def schema_view(self, request: Request) -> Response:
-        from starlette.responses import JSONResponse
-
         schema = self.service.schema()
         return JSONResponse(schema)
+
+    async def get_status(self, request: Request) -> Response:
+        task_id = request.query_params.get("task_id")
+        if task_id is None:
+            resp = JSONResponse({"error": "task_id is required"}, status_code=400)
+            self._add_response_headers(resp)
+            return resp
+        try:
+            status = await self._result_store.get_status(task_id)
+        except Exception as e:
+            log_exception(request)
+            resp = JSONResponse(
+                {"error": str(e)}, status_code=400 if isinstance(e, KeyError) else 500
+            )
+        else:
+            resp = JSONResponse({"task_id": task_id, "status": status.value})
+        self._add_response_headers(resp)
+        return resp
+
+    async def get_result(self, request: Request) -> Response:
+        task_id = request.query_params.get("task_id")
+        if task_id is None:
+            resp = JSONResponse({"error": "task_id is required"}, status_code=400)
+            self._add_response_headers(resp)
+            return resp
+        try:
+            resp, _ = await self._result_store.get(task_id)
+        except Exception as e:
+            log_exception(request)
+            resp = JSONResponse(
+                {"error": str(e)},
+                status_code=400 if isinstance(e, (KeyError, RuntimeError)) else 500,
+            )
+        self._add_response_headers(resp)
+        return resp
+
+    async def _run_task(self, task_id: str, name: str, request: Request) -> None:
+        resp = await self.api_endpoint_wrapper(name, request)
+        if resp.background is not None:
+            # wait for the response to be consumed
+            await resp.background()
+        await self._result_store.set_result(
+            task_id,
+            resp,
+            ResultStatus.SUCCESS if resp.status_code < 400 else ResultStatus.FAILURE,
+        )
+
+    async def submit_task(self, name: str, request: Request) -> Response:
+        from starlette.background import BackgroundTask
+
+        try:
+            task_id = await self._result_store.new_entry(request)
+        except Exception as e:
+            log_exception(request)
+            resp = JSONResponse({"error": str(e)}, status_code=500)
+            self._add_response_headers(resp)
+            return resp
+        else:
+            resp = JSONResponse({"task_id": task_id})
+            resp.background = BackgroundTask(self._run_task, name, request)
+            self._add_response_headers(resp)
+            return resp
 
     @property
     def routes(self) -> list[BaseRoute]:
@@ -416,7 +481,6 @@ class ServiceAppFactory(BaseAppFactory):
 
     async def api_endpoint_wrapper(self, name: str, request: Request) -> Response:
         from pydantic import ValidationError
-        from starlette.responses import JSONResponse
 
         try:
             resp = await self.api_endpoint(name, request)

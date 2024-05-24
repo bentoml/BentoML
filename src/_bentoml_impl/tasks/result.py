@@ -7,6 +7,7 @@ import typing as t
 import uuid
 
 from starlette.requests import Request
+from starlette.responses import Response
 
 from .serde import JSONSerde
 from .serde import Serde
@@ -16,8 +17,6 @@ To = t.TypeVar("To")
 
 if t.TYPE_CHECKING:
     from aiosqlite import Connection
-    from starlette.requests import Request
-    from starlette.responses import Response
 
 
 class ResultStatus(enum.Enum):

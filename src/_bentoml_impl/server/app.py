@@ -400,7 +400,9 @@ class ServiceAppFactory(BaseAppFactory):
             self._add_response_headers(resp)
             return resp
         else:
-            resp = JSONResponse({"task_id": task_id})
+            resp = JSONResponse(
+                {"task_id": task_id, "status": ResultStatus.IN_PROGRESS.value}
+            )
             resp.background = BackgroundTask(self._run_task, name, request)
             self._add_response_headers(resp)
             return resp
@@ -417,6 +419,26 @@ class ServiceAppFactory(BaseAppFactory):
             if not route_path.startswith("/"):
                 route_path = "/" + route_path
             routes.append(Route(route_path, api_endpoint, methods=["POST"], name=name))
+            if method.is_async:
+                routes.append(
+                    Route(
+                        f"{route_path}/submit",
+                        functools.partial(self.submit_task, name),
+                        methods=["POST"],
+                        name=f"{name}_submit",
+                    )
+                )
+                routes.append(
+                    Route(
+                        f"{route_path}/status",
+                        self.get_status,
+                        methods=["GET"],
+                        name=f"{name}_status",
+                    )
+                )
+                routes.append(
+                    Route(f"{route_path}/get", self.get_result, methods=["GET"])
+                )
         return routes
 
     async def _to_thread(

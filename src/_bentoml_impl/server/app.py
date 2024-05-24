@@ -452,8 +452,6 @@ class ServiceAppFactory(BaseAppFactory):
         return resp
 
     async def api_endpoint(self, name: str, request: Request) -> Response:
-        from starlette.background import BackgroundTask
-
         from _bentoml_sdk.io_models import ARGS
         from _bentoml_sdk.io_models import KWARGS
         from bentoml._internal.utils import get_original_func
@@ -520,6 +518,9 @@ class ServiceAppFactory(BaseAppFactory):
             response.status_code = ctx.response.status_code
             response.headers.update(ctx.response.metadata)
             set_cookies(response, ctx.response.cookies)
+        if response.background is not None:
+            ctx.response.background.tasks.append(response.background)
         # clean the request resources after the response is consumed.
-        response.background = BackgroundTask(request.close)
+        ctx.response.background.add_task(request.close)
+        response.background = ctx.response.background
         return response

@@ -94,7 +94,7 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
 
 class TaskStatusResponse(pydantic.BaseModel):
     task_id: str
-    status: str
+    status: t.Literal["in_progress", "success", "failure"]
 
 
 task_status_response = {
@@ -189,6 +189,26 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
                     "description": f"Submit a new task of {api.name}",
                     "operationId": f"{svc.name}__{api.name}_submit",
                     "requestBody": api.openapi_request(),
+                }
+            )
+            routes[f"{api.route}/retry"] = PathItem(
+                post={
+                    "responses": {
+                        HTTPStatus.OK.value: task_status_response,
+                        **error_responses,
+                    },
+                    "tags": [APP_TAG.name],
+                    "x-bentoml-name": f"{api.name}_retry",
+                    "description": f"Retry a task of {api.name}",
+                    "operationId": f"{svc.name}__{api.name}_retry",
+                    "parameters": [
+                        {
+                            "name": "task_id",
+                            "in": "query",
+                            "required": True,
+                            "schema": {"type": "string", "title": "Task ID"},
+                        }
+                    ],
                 }
             )
     return routes

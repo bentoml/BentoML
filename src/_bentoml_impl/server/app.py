@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
+import logging
 import math
 import typing as t
 from http import HTTPStatus
@@ -43,6 +44,8 @@ if t.TYPE_CHECKING:
     from bentoml.metrics import Histogram
 
 R = t.TypeVar("R")
+logger = logging.getLogger("bentoml.server")
+RESULT_STORE_ENV = "BENTOML_RESULT_STORE"
 
 
 class ContextMiddleware:
@@ -271,7 +274,8 @@ class ServiceAppFactory(BaseAppFactory):
     async def create_instance(self) -> None:
         self._service_instance = self.service()
         set_current_service(self._service_instance)
-        self._result_store = Sqlite3Store(":memory:")  # TODO: local file
+        store_path = BentoMLContainer.result_store_file.get()
+        self._result_store = Sqlite3Store(store_path)
         await self._result_store.__aenter__()
 
     @inject
@@ -351,11 +355,11 @@ class ServiceAppFactory(BaseAppFactory):
             return resp
         try:
             status = await self._result_store.get_status(task_id)
+        except KeyError:
+            resp = JSONResponse({"error": "task_id not found"}, status_code=404)
         except Exception as e:
             log_exception(request)
-            resp = JSONResponse(
-                {"error": str(e)}, status_code=400 if isinstance(e, KeyError) else 500
-            )
+            resp = JSONResponse({"error": str(e)}, status_code=500)
         else:
             resp = JSONResponse({"task_id": task_id, "status": status.value})
         self._add_response_headers(resp)
@@ -368,42 +372,71 @@ class ServiceAppFactory(BaseAppFactory):
             self._add_response_headers(resp)
             return resp
         try:
-            resp, _ = await self._result_store.get(task_id)
+            row = await self._result_store.get(task_id)
+            resp = row.result
+        except KeyError:
+            resp = JSONResponse({"error": "task_id not found"}, status_code=404)
+        except RuntimeError:
+            resp = JSONResponse(
+                {"error": "task_id is not completed yet"}, status_code=400
+            )
         except Exception as e:
             log_exception(request)
+            resp = JSONResponse({"error": str(e)}, status_code=500)
+        self._add_response_headers(resp)
+        return resp
+
+    async def retry_task(self, request: Request) -> Response:
+        task_id = request.query_params.get("task_id")
+        if task_id is None:
+            resp = JSONResponse({"error": "task_id is required"}, status_code=400)
+            self._add_response_headers(resp)
+            return resp
+        try:
+            row = await self._result_store.get(task_id)
+        except KeyError:
+            resp = JSONResponse({"error": "task_id not found"}, status_code=404)
+        except RuntimeError:
             resp = JSONResponse(
-                {"error": str(e)},
-                status_code=400 if isinstance(e, (KeyError, RuntimeError)) else 500,
+                {"error": "can't retry a task if it is not completed yet"},
+                status_code=400,
             )
+        else:
+            resp = await self.submit_task(row.name, row.input)
         self._add_response_headers(resp)
         return resp
 
     async def _run_task(self, task_id: str, name: str, request: Request) -> None:
-        resp = await self.api_endpoint_wrapper(name, request)
-        if resp.background is not None:
-            # wait for the response to be consumed
-            await resp.background()
-        await self._result_store.set_result(
-            task_id,
-            resp,
-            ResultStatus.SUCCESS if resp.status_code < 400 else ResultStatus.FAILURE,
-        )
+        try:
+            resp = await self.api_endpoint_wrapper(name, request)
+            await self._result_store.set_result(
+                task_id,
+                resp,
+                ResultStatus.SUCCESS
+                if resp.status_code < 400
+                else ResultStatus.FAILURE,
+            )
+        except Exception:
+            logger.exception("Task(%s) %s failed", name, task_id)
+        else:
+            logger.info("Task(%s) %s is completed", name, task_id)
 
     async def submit_task(self, name: str, request: Request) -> Response:
         from starlette.background import BackgroundTask
 
         try:
-            task_id = await self._result_store.new_entry(request)
+            task_id = await self._result_store.new_entry(name, request)
         except Exception as e:
             log_exception(request)
             resp = JSONResponse({"error": str(e)}, status_code=500)
             self._add_response_headers(resp)
             return resp
         else:
+            logger.info("Task(%s) %s is submitted", name, task_id)
             resp = JSONResponse(
                 {"task_id": task_id, "status": ResultStatus.IN_PROGRESS.value}
             )
-            resp.background = BackgroundTask(self._run_task, name, request)
+            resp.background = BackgroundTask(self._run_task, task_id, name, request)
             self._add_response_headers(resp)
             return resp
 
@@ -438,6 +471,9 @@ class ServiceAppFactory(BaseAppFactory):
                 )
                 routes.append(
                     Route(f"{route_path}/get", self.get_result, methods=["GET"])
+                )
+                routes.append(
+                    Route(f"{route_path}/retry", self.retry_task, methods=["POST"])
                 )
         return routes
 

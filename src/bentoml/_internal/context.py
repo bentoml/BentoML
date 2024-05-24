@@ -126,12 +126,6 @@ class ServiceContext:
         status_code: int = 200
         background: BackgroundTasks = attr.field(factory=BackgroundTasks)
 
-        def __init__(self):
-            self.metadata = starlette.datastructures.MutableHeaders()  # type: ignore (coercing Starlette headers to Metadata)
-            self.headers = self.metadata  # type: ignore (coercing Starlette headers to Metadata)
-            self.cookies = []
-            self.status_code = 200
-
         @property
         def headers(self) -> Metadata:
             return self.metadata

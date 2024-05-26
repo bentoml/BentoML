@@ -37,6 +37,14 @@ if [ ${#wheels[@]} -gt 0 ]; then
 fi
 {% endraw %}
 
+targzs=($WHEELS_DIR/*.tar.gz)
+{% raw %}
+if [ ${#targzs[@]} -gt 0 ]; then
+    echo "Installing tar.gz packaged in Bento.."
+    pip3 install "${PIP_ARGS[@]}" "${targzs[@]}"
+fi
+{% endraw %}
+
 # Install the BentoML from PyPI if it's not already installed
 if python3 -c "import bentoml" &> /dev/null; then
     existing_bentoml_version=$(python3 -c "import bentoml; print(bentoml.__version__)")

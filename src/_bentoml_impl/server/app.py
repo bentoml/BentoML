@@ -406,6 +406,20 @@ class ServiceAppFactory(BaseAppFactory):
         self._add_response_headers(resp)
         return resp
 
+    async def cancel_task(self, request: Request) -> Response:
+        task_id = request.query_params.get("task_id")
+        if task_id is None:
+            resp = JSONResponse({"error": "task_id is required"}, status_code=400)
+            self._add_response_headers(resp)
+            return resp
+        await self._result_store.set_status(task_id, ResultStatus.CANCELLED)
+        resp = JSONResponse(
+            {"error": "task cancellation is not supported in local development server"},
+            status_code=400,
+        )
+        self._add_response_headers(resp)
+        return resp
+
     async def _run_task(self, task_id: str, name: str, request: Request) -> None:
         try:
             resp = await self.api_endpoint_wrapper(name, request)
@@ -474,6 +488,9 @@ class ServiceAppFactory(BaseAppFactory):
                 )
                 routes.append(
                     Route(f"{route_path}/retry", self.retry_task, methods=["POST"])
+                )
+                routes.append(
+                    Route(f"{route_path}/cancel", self.cancel_task, methods=["PUT"])
                 )
         return routes
 

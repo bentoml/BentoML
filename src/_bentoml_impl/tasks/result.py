@@ -7,6 +7,7 @@ import textwrap
 import typing as t
 import uuid
 
+import attrs
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -24,9 +25,11 @@ class ResultStatus(enum.Enum):
     IN_PROGRESS = "in_progress"
     SUCCESS = "success"
     FAILURE = "failure"
+    CANCELLED = "cancelled"
 
 
-class ResultRow(t.NamedTuple, t.Generic[Ti, To]):
+@attrs.frozen
+class ResultRow(t.Generic[Ti, To]):
     task_id: str
     name: str
     input: Ti
@@ -57,8 +60,14 @@ class ResultStore(abc.ABC, t.Generic[Ti, To]):
     async def set_result(self, task_id: str, result: To, status: ResultStatus) -> None:
         raise NotImplementedError
 
+    @abc.abstractmethod
+    async def set_status(self, task_id: str, status: ResultStatus) -> None:
+        raise NotImplementedError
+
 
 class Sqlite3Store(ResultStore[Request, Response]):
+    RESULT_RETENTION = 60 * 60 * 24  # retain results for 24 hours
+
     def __init__(self, db_file: str, serializer: Serde | None = None) -> None:
         self._conn = self._connect(db_file)
         if serializer is None:
@@ -135,6 +144,18 @@ class Sqlite3Store(ResultStore[Request, Response]):
             await self.serializer.deserialize_response(row[3]),
         )
 
+    async def set_status(self, task_id: str, status: ResultStatus) -> None:
+        await self._conn.execute(
+            "UPDATE result SET status = ?, updated_at = ? WHERE task_id = ? AND status = ?",
+            (
+                status.value,
+                datetime.datetime.now(tz=datetime.timezone.utc),
+                task_id,
+                ResultStatus.IN_PROGRESS.value,
+            ),
+        )
+        await self._conn.commit()
+
     async def set_result(
         self, task_id: str, result: Response, status: ResultStatus
     ) -> None:
@@ -145,6 +166,14 @@ class Sqlite3Store(ResultStore[Request, Response]):
                 await self.serializer.serialize_response(result),
                 datetime.datetime.now(tz=datetime.timezone.utc),
                 task_id,
+            ),
+        )
+        # delete older results
+        await self._conn.execute(
+            "DELETE FROM result WHERE updated_at < ?",
+            (
+                datetime.datetime.now(tz=datetime.timezone.utc)
+                - datetime.timedelta(seconds=self.RESULT_RETENTION),
             ),
         )
         await self._conn.commit()

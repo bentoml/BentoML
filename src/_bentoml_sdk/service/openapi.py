@@ -94,7 +94,7 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
 
 class TaskStatusResponse(pydantic.BaseModel):
     task_id: str
-    status: t.Literal["in_progress", "success", "failure"]
+    status: t.Literal["in_progress", "success", "failure", "cancelled"]
 
 
 task_status_response = {
@@ -200,6 +200,26 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
                     "tags": [APP_TAG.name],
                     "x-bentoml-name": f"{api.name}_retry",
                     "description": f"Retry a task of {api.name}",
+                    "operationId": f"{svc.name}__{api.name}_retry",
+                    "parameters": [
+                        {
+                            "name": "task_id",
+                            "in": "query",
+                            "required": True,
+                            "schema": {"type": "string", "title": "Task ID"},
+                        }
+                    ],
+                }
+            )
+            routes[f"{api.route}/cancel"] = PathItem(
+                put={
+                    "responses": {
+                        HTTPStatus.OK.value: task_status_response,
+                        **error_responses,
+                    },
+                    "tags": [APP_TAG.name],
+                    "x-bentoml-name": f"{api.name}_retry",
+                    "description": f"Cancel an in-progress task of {api.name}",
                     "operationId": f"{svc.name}__{api.name}_retry",
                     "parameters": [
                         {

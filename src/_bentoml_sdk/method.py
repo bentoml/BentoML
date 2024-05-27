@@ -151,6 +151,7 @@ class APIMethod(t.Generic[P, R]):
                 "batchable": self.batchable,
                 "input": _flatten_model_schema(self.input_spec),
                 "output": output,
+                "is_async": self.is_async,
             }
         )
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import functools
 import typing as t
 
 import attrs
@@ -20,6 +21,7 @@ class ClientEndpoint:
     input_spec: type[IODescriptor] | None = None
     output_spec: type[IODescriptor] | None = None
     stream_output: bool = False
+    is_async: bool = False
 
 
 class AbstractClient(abc.ABC):
@@ -45,11 +47,21 @@ class AbstractClient(abc.ABC):
         if endpoint.input_spec is not None:
             method.__annotations__ = endpoint.input_spec.__annotations__
             method.__signature__ = endpoint.input_spec.__signature__
+        if endpoint.is_async:
+            method.submit = functools.partial(self._submit, endpoint)
         return method
 
     @abc.abstractmethod
     def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Call a service method by its name.
+        It takes the same arguments as the service method.
+        """
+
+    @abc.abstractmethod
+    def _submit(
+        self, __endpoint: ClientEndpoint, /, *args: t.Any, **kwargs: t.Any
+    ) -> t.Any:
+        """Submit a job to the service.
         It takes the same arguments as the service method.
         """
 

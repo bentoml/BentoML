@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -8,7 +10,14 @@ E2E_EXAMPLES = ["quickstart"]
 
 @pytest.fixture(scope="package", autouse=True)
 def prepare_models() -> None:
-    pass
+    for example in E2E_EXAMPLES:
+        if not (EXAMPLE_DIR / example / "prepare_model.py").exists():
+            continue
+        subprocess.run(
+            [sys.executable, str(EXAMPLE_DIR / example / "prepare_model.py")],
+            check=True,
+            cwd=str(EXAMPLE_DIR / example),
+        )
 
 
 @pytest.fixture

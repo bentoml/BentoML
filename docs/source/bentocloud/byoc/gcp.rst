@@ -10,9 +10,9 @@ Setup
 1. Log in to the `GCP console <https://console.cloud.google.com/>`_ and `create a separate project <https://developers.google.com/workspace/guides/create-project>`_ for BentoCloud to manage resources and permissions efficiently.
 2. Go to this newly created project. This can be verified at the top of the console, where the project name is displayed.
 3. Access the `API Library <https://console.cloud.google.com/apis/dashboard>`_ and enable the required APIs for BentoCloud to function correctly. You can use `this link <https://console.cloud.google.com/flows/enableapi?apiid=artifactregistry.googleapis.com,autoscaling.googleapis.com,bigquery.googleapis.com,bigquerymigration.googleapis.com,bigquerystorage.googleapis.com,cloudapis.googleapis.com,cloudresourcemanager.googleapis.com,cloudtrace.googleapis.com,compute.googleapis.com,container.googleapis.com,containerfilesystem.googleapis.com,containerregistry.googleapis.com,datastore.googleapis.com,deploymentmanager.googleapis.com,dns.googleapis.com,iam.googleapis.com,iamcredentials.googleapis.com,logging.googleapis.com,monitoring.googleapis.com,networkconnectivity.googleapis.com,oslogin.googleapis.com,pubsub.googleapis.com,redis.googleapis.com,servicemanagement.googleapis.com,serviceusage.googleapis.com,sql-component.googleapis.com,storage-api.googleapis.com,storage-component.googleapis.com,storage.googleapis.com&redirect=https://console.cloud.google.com>`_ for a quick setup.
- 
+
    .. dropdown:: Required APIs
-    
+
      .. list-table::
       :widths: 50 50
       :header-rows: 1
@@ -82,13 +82,13 @@ Setup
 5. Run the setup script, which will set up the necessary infrastructure components for BentoCloud in your GCP project and create a key file.
 
    a. Before running the script, set your GCP project ID as an environment variable. You can retrieve your project ID by `following the instructions here <https://support.google.com/googleapi/answer/7014113?hl=en>`_.
-    
+
       .. code-block:: bash
 
          export PROJECT=<project id>
-    
+
    b. Run the GCP setup script:
-    
+
       .. code-block:: bash
 
          bash <(curl https://l.bentoml.com/bentocloud_gcp_setup_script -sL)
@@ -98,7 +98,7 @@ Post setup
 
 Upon completion of the setup script, a service account key file named ``bentocloud-admin-$PROJECT.json`` is created, where ``$PROJECT`` is your GCP project ID. Please send the generated service account key and the GCP region where you want the cluster to be created (e.g. ``us-central1``) to the BentoML team.
 
-.. important:: 
+.. important::
 
    For security reasons, it's crucial to transfer this file through a secure channel. Please reach out to your BentoML contact for this step.
 

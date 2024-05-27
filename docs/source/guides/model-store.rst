@@ -67,7 +67,7 @@ To retrieve a model from the BentoML Model Store, use the ``get`` method.
 
 ``bentoml.models.get`` returns a ``bentoml.Model`` instance, linking to a saved model entry in the BentoML Model Store. You can then use the instance to get model information like tag, labels, and file system paths, or create a :doc:`Service </guides/services>` on top of it.
 
-For example, you can load the model into a Transformers pipeline from the ``path`` provided by the ``bentoml.Model`` instance as below, see more in :doc:`/get-started/quickstart`.
+For example, you can load the model into a Transformers pipeline from the ``path`` provided by the ``bentoml.Model`` instance as below. See more in :doc:`/get-started/quickstart`.
 
 .. code-block:: python
 

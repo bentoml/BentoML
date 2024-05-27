@@ -1,13 +1,8 @@
-service: "service.py:IrisClassifier"
+service: "service:Summarization"
 labels:
   owner: bentoml-team
   project: gallery
 include:
   - "*.py"
 python:
-  packages:
-    - scikit-learn
-    - pandas
-envs:
-- name: HF_TOKEN
-  value: xxx
+  requirements_txt: requirements.txt

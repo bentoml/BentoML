@@ -71,7 +71,7 @@ def test_build_and_prediction(examples: Path) -> None:
             f"{port}",
         ],
     )
-    
+
     sleep(30)
 
     try:

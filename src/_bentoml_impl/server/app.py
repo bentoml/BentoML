@@ -203,9 +203,19 @@ class ServiceAppFactory(BaseAppFactory):
 
         from bentoml._internal.container import BentoMLContainer
 
-        middlewares = super().middlewares + [
-            Middleware(ContextMiddleware, context=self.service.context)
-        ]
+        middlewares: list[Middleware] = []
+        # TrafficMetrics middleware should be the first middleware
+        if self.enable_metrics:
+            from bentoml._internal.server.http.instruments import (
+                RunnerTrafficMetricsMiddleware,
+            )
+
+            middlewares.append(
+                Middleware(RunnerTrafficMetricsMiddleware, namespace="bentoml_service")
+            )
+
+        middlewares.extend(super().middlewares)
+        middlewares.append(Middleware(ContextMiddleware, context=self.service.context))
 
         for middleware_cls, options in self.service.middlewares:
             middlewares.append(Middleware(middleware_cls, **options))
@@ -237,15 +247,6 @@ class ServiceAppFactory(BaseAppFactory):
                 tracer_provider=BentoMLContainer.tracer_provider.get(),
             )
         )
-
-        if self.enable_metrics:
-            from bentoml._internal.server.http.instruments import (
-                RunnerTrafficMetricsMiddleware,
-            )
-
-            middlewares.append(
-                Middleware(RunnerTrafficMetricsMiddleware, namespace="bentoml_service")
-            )
 
         access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():

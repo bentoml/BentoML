@@ -184,7 +184,7 @@ def raise_secret_error(err: BentoMLException, action: str) -> t.NoReturn:
     "-l",
     "--from-literal",
     type=click.STRING,
-    help="Key value pairs",
+    help="Pass key value pairs by --from-literal key1=value1 key2=value2",
     callback=parse_from_literal_argument_callback,
     multiple=True,
 )
@@ -192,7 +192,7 @@ def raise_secret_error(err: BentoMLException, action: str) -> t.NoReturn:
     "-f",
     "--from-file",
     type=click.STRING,
-    help="Key path pairs",
+    help="Pass key value pairs by --from-file key1=./path_to_file1 key2=./path_to_file2",
     callback=parse_from_file_argument_callback,
     multiple=True,
 )

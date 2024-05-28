@@ -3,6 +3,8 @@ from __future__ import annotations
 import typing as t
 from datetime import datetime
 
+from fastapi import FastAPI
+
 import attr
 
 from bentoml._internal.cloud.schemas.modelschemas import BentoManifestSchema
@@ -12,6 +14,7 @@ from bentoml._internal.cloud.schemas.modelschemas import LabelItemSchema
 from bentoml._internal.cloud.schemas.modelschemas import ModelManifestSchema
 from bentoml._internal.cloud.schemas.modelschemas import ResourceInstanceConfigSchema
 from bentoml._internal.cloud.schemas.modelschemas import TransmissionStrategy
+from flask.cli import F
 
 
 @attr.define
@@ -320,3 +323,38 @@ class DeploymentFullSchema(DeploymentSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
     urls: list[str]
+
+
+@attr.define
+class SecretItem:
+    key : str
+    sub_path : t.Optional[str] = attr.field(default=None)
+    value : t.Optional[str] = attr.field(default=None)
+
+@attr.define
+class SecretContentSchema:
+    type : str
+    items : t.List[SecretItem]
+    path : t.Optional[str] = attr.field(default=None)
+
+@attr.define
+class SecretSchema(ResourceSchema):
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    description: str
+    creator: UserSchema
+    content: SecretContentSchema
+    
+@attr.define
+class SecretListSchema(BaseListSchema):
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    items: t.List[SecretSchema]
+    
+@attr.define
+class CreateSecretSchema:
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    name : str
+    description: str
+    content: SecretContentSchema

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 import json
 import click
 import typing as t
@@ -36,7 +37,6 @@ def secret_command():
     default=None,
     help="Search for list request."
 )
-#@shared_decorator
 @click.pass_obj
 @click.option(
     "-o",
@@ -80,13 +80,11 @@ def list(
         console.print(Syntax(info, "yaml", background_color="default"))
 
 
-def parse_argument_callback(
+def parse_kvs_argument_callback(
     ctx: Context,
     params: Parameter,
     value: t.Any,  # pylint: disable=unused-argument
 ) -> t.List[t.Tuple[str, str]]:
-    if not value:
-        raise click.BadParameter("No keys provided")
     '''
     split "key1=value1 key2=value2" into [("key1", "value1"), ("key2", "value2")],
     '''
@@ -98,6 +96,43 @@ def parse_argument_callback(
         key_vals.append((key, val))
     return key_vals
 
+def parse_from_literal_argument_callback(
+    ctx: Context,
+    params: Parameter,
+    value: t.Any,  # pylint: disable=unused-argument
+) -> t.List[t.Tuple[str, str]]:
+    '''
+    split "key1=value1 key2=value2" into [("key1", "value1"), ("key2", "value2")],
+    '''
+    from_literal : t.List[t.Tuple[str, str]] = []
+    for key_val in value:
+        key, val = key_val.split("=")
+        if not key or not val:
+            raise click.BadParameter(f"Invalid key-value pair: {key_val}")
+        from_literal.append((key, val))
+    return from_literal
+
+def parse_from_file_argument_callback(
+    ctx: Context,
+    params: Parameter,
+    value: t.Any,  # pylint: disable=unused-argument
+) -> t.List[t.Tuple[str, str]]:
+    '''
+    split "key1=value1 key2=value2" into [("key1", "value1"), ("key2", "value2")],
+    '''
+    from_file : t.List[t.Tuple[str, str]] = []
+    for key_path in value:
+        key, path = key_path.split("=")
+        if not key or not path:
+            raise click.BadParameter(f"Invalid key-path pair: {key_path}")
+        if not os.path.exists(path) or not os.path.isfile(path):
+            raise click.BadParameter(f"Invalid path: {path}")
+        # read the file content
+        with open(path, "r") as f:
+            val = f.read()
+        from_file.append((key, val))
+    return from_file
+
 def raise_secret_error(err: BentoMLException, action: str) -> t.NoReturn:
     if err.error_code == HTTPStatus.UNAUTHORIZED:
         raise BentoMLException(
@@ -106,7 +141,7 @@ def raise_secret_error(err: BentoMLException, action: str) -> t.NoReturn:
             "https://docs.bentoml.com/en/latest/bentocloud/how-tos/manage-access-token.html"
         ) from None
     raise BentoMLException(
-        f"Failed to {action} deployment due to invalid configuration: {err}"
+        f"Failed to {action} secret due to invalid configuration: {err}"
     ) from None
 
 
@@ -137,13 +172,29 @@ def raise_secret_error(err: BentoMLException, action: str) -> t.NoReturn:
     "--path",
     type=click.STRING,
     help="Path where the secret will be mounted in the container",
+    default="$BENTOML_HOME",
 )
 @click.argument(
     "key_vals",
     nargs=-1,
     type=click.STRING,
-    callback=parse_argument_callback,
-    required=True,
+    callback=parse_kvs_argument_callback,
+)
+@click.option(
+    "-l",
+    "--from-literal",
+    type=click.STRING,
+    help="Key value pairs",
+    callback=parse_from_literal_argument_callback,
+    multiple=True,
+)
+@click.option(
+    "-f",
+    "--from-file",
+    type=click.STRING,
+    help="Key path pairs",
+    callback=parse_from_file_argument_callback,
+    multiple=True,
 )
 def create(
     shared_options: SharedOptions,
@@ -151,10 +202,21 @@ def create(
     description: str | None, 
     type: t.Literal["env", "file"], 
     path: str | None,
-    key_vals: t.List[t.Tuple[str, str]]
+    key_vals: t.List[t.Tuple[str, str]],
+    from_literal: t.List[t.Tuple[str, str]],
+    from_file: t.List[t.Tuple[str, str]],
 ):
     """Create a secret"""
     try:
+        if from_literal and from_file:
+            raise BentoMLException("options --from-literal and --from-file can not be used together")
+        
+        key_vals.extend(from_literal)
+        key_vals.extend(from_file)
+        
+        if not key_vals:
+            raise BentoMLException("no key-value pairs provided, please use --from-literal or --from-file or provide key-value pairs")
+        
         secret = Secret.create(context=shared_options.cloud_context, name=name, description=description, type=type, path=path, key_vals=key_vals)
         click.echo(f"Secret {secret.name} created successfully")
     except Exception as e:

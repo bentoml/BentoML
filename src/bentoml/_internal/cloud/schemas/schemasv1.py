@@ -3,8 +3,6 @@ from __future__ import annotations
 import typing as t
 from datetime import datetime
 
-from fastapi import FastAPI
-
 import attr
 
 from bentoml._internal.cloud.schemas.modelschemas import BentoManifestSchema
@@ -14,7 +12,6 @@ from bentoml._internal.cloud.schemas.modelschemas import LabelItemSchema
 from bentoml._internal.cloud.schemas.modelschemas import ModelManifestSchema
 from bentoml._internal.cloud.schemas.modelschemas import ResourceInstanceConfigSchema
 from bentoml._internal.cloud.schemas.modelschemas import TransmissionStrategy
-from flask.cli import F
 
 
 @attr.define

@@ -56,16 +56,16 @@ class Secret:
         path: str | None = None,
         key_vals: t.List[t.Tuple[str, str]] = [],
     ) -> SecretInfo:
+        typ = type if type != "file" else "mountfile"
         secret_schema = CreateSecretSchema(
             name=name,
             description=description,
             content=SecretContentSchema(
-                type=type,
+                type=typ,
                 path=path,
                 items=[SecretItem(key=key_val[0], value=key_val[1]) for key_val in key_vals],
             )
         )
-        
         cloud_rest_client = get_rest_api_client(context)
         secret = cloud_rest_client.v1.create_secret(secret_schema)
         return SecretInfo.from_secret_schema(secret)

@@ -13,6 +13,7 @@ from bentoml_cli.utils import BentoMLCommandGroup
 from bentoml._internal.cloud.secret import Secret
 from bentoml._internal.utils import rich_console as console
 from bentoml.exceptions import BentoMLException
+from bentoml._internal.utils import resolve_user_filepath
 
 if t.TYPE_CHECKING:
     from click import Context
@@ -123,6 +124,7 @@ def parse_from_file_argument_callback(
     from_file : t.List[t.Tuple[str, str]] = []
     for key_path in value:
         key, path = key_path.split("=")
+        path = resolve_user_filepath(path, ctx=None)
         if not key or not path:
             raise click.BadParameter(f"Invalid key-path pair: {key_path}")
         if not os.path.exists(path) or not os.path.isfile(path):

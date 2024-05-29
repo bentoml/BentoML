@@ -338,15 +338,15 @@ class HTTPClient(AbstractClient, t.Generic[C]):
 
     def _deserialize_output(self, payload: Payload, endpoint: ClientEndpoint) -> t.Any:
         data = iter(payload.data)
-        if endpoint.output_spec is not None:
+        if (ot := endpoint.output.get("type")) == "string":
+            return bytes(next(data)).decode("utf-8")
+        elif ot == "bytes":
+            return bytes(next(data))
+        elif endpoint.output_spec is not None:
             model = self.serde.deserialize_model(payload, endpoint.output_spec)
             if isinstance(model, RootModel):
                 return model.root  # type: ignore
             return model
-        elif (ot := endpoint.output.get("type")) == "string":
-            return bytes(next(data)).decode("utf-8")
-        elif ot == "bytes":
-            return bytes(next(data))
         else:
             return self.serde.deserialize(payload, endpoint.output)
 

@@ -132,7 +132,7 @@ def deploy_command(
     instance_type: str | None,
     strategy: str | None,
     env: tuple[str] | None,
-    secret: tuple[str] |None,
+    secret: tuple[str] | None,
     config_file: str | t.TextIO | None,
     config_dict: str | None,
     wait: bool,

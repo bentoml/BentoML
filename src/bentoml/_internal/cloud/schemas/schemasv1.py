@@ -324,15 +324,17 @@ class DeploymentFullSchema(DeploymentSchema):
 
 @attr.define
 class SecretItem:
-    key : str
-    sub_path : t.Optional[str] = attr.field(default=None)
-    value : t.Optional[str] = attr.field(default=None)
+    key: str
+    sub_path: t.Optional[str] = attr.field(default=None)
+    value: t.Optional[str] = attr.field(default=None)
+
 
 @attr.define
 class SecretContentSchema:
-    type : str
-    items : t.List[SecretItem]
-    path : t.Optional[str] = attr.field(default=None)
+    type: str
+    items: t.List[SecretItem]
+    path: t.Optional[str] = attr.field(default=None)
+
 
 @attr.define
 class SecretSchema(ResourceSchema):
@@ -341,17 +343,19 @@ class SecretSchema(ResourceSchema):
     description: str
     creator: UserSchema
     content: SecretContentSchema
-    
+
+
 @attr.define
 class SecretListSchema(BaseListSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
     items: t.List[SecretSchema]
-    
+
+
 @attr.define
 class CreateSecretSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    name : str
+    name: str
     description: str
     content: SecretContentSchema

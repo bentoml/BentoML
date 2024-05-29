@@ -22,6 +22,7 @@ from .schemas.schemasv1 import CreateBentoSchema
 from .schemas.schemasv1 import CreateDeploymentSchema as CreateDeploymentSchemaV1
 from .schemas.schemasv1 import CreateModelRepositorySchema
 from .schemas.schemasv1 import CreateModelSchema
+from .schemas.schemasv1 import CreateSecretSchema
 from .schemas.schemasv1 import DeploymentFullSchema
 from .schemas.schemasv1 import DeploymentListSchema
 from .schemas.schemasv1 import FinishUploadBentoSchema
@@ -32,12 +33,11 @@ from .schemas.schemasv1 import ModelWithRepositoryListSchema
 from .schemas.schemasv1 import OrganizationSchema
 from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
 from .schemas.schemasv1 import ResourceInstanceSchema
+from .schemas.schemasv1 import SecretListSchema
+from .schemas.schemasv1 import SecretSchema
 from .schemas.schemasv1 import UpdateBentoSchema
 from .schemas.schemasv1 import UpdateDeploymentSchema
 from .schemas.schemasv1 import UserSchema
-from .schemas.schemasv1 import SecretSchema
-from .schemas.schemasv1 import SecretListSchema
-from .schemas.schemasv1 import CreateSecretSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentFullSchema as DeploymentFullSchemaV2
 from .schemas.schemasv2 import DeploymentListSchema as DeploymentListSchemaV2
@@ -564,12 +564,13 @@ class RestApiClientV1(BaseRestApiClient):
         models = resp.json()["items"]
         return schema_from_object(models[0], ModelSchema) if models else None
 
-    def list_secrets(self, 
-            count: int | None = None,
-            q: str | None = None,
-            search: str | None = None,
-            start: int | None = None,
-        ) -> SecretListSchema:
+    def list_secrets(
+        self,
+        count: int | None = None,
+        q: str | None = None,
+        search: str | None = None,
+        start: int | None = None,
+    ) -> SecretListSchema:
         url = urljoin(self.endpoint, "/api/v1/org_secrets")
         if not count:
             count = 10
@@ -592,6 +593,12 @@ class RestApiClientV1(BaseRestApiClient):
         resp = self.session.post(url, content=schema_to_json(secret))
         self._check_resp(resp)
         return schema_from_json(resp.text, SecretSchema)
+
+    def delete_secret(self, secret_name: str):
+        url = urljoin(self.endpoint, f"/api/v1/org_secrets/name/{secret_name}")
+        resp = self.session.delete(url)
+        self._check_resp(resp)
+
 
 class RestApiClientV2(BaseRestApiClient):
     def create_deployment(

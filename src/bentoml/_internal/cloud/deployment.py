@@ -62,7 +62,7 @@ class DeploymentConfigParameters:
     instance_type: str | None = None
     strategy: str | None = None
     envs: t.List[dict[str, t.Any]] | None = None
-    secrets: t.List[str] | None = None,
+    secrets: t.List[str] | None = (None,)
     extras: dict[str, t.Any] | None = None
     config_dict: dict[str, t.Any] | None = None
     config_file: str | t.TextIO | None = None

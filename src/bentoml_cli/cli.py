@@ -14,10 +14,10 @@ def create_bentoml_cli() -> click.Command:
     from bentoml_cli.deployment import deployment_command
     from bentoml_cli.env import env_command
     from bentoml_cli.models import model_command
+    from bentoml_cli.secret import secret_command
     from bentoml_cli.serve import serve_command
     from bentoml_cli.start import start_command
     from bentoml_cli.utils import BentoMLCommandGroup
-    from bentoml_cli.secret import secret_command
 
     server_context.service_type = "cli"
 

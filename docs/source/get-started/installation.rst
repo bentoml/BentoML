@@ -76,12 +76,7 @@ This command installs the bleeding edge ``main`` version of BentoML, which is us
 Editable install
 ----------------
 
-You may want an editable install to:
-
-- Stay up-to-date with the latest features and bug fixes;
-- Contribute to the BentoML project and test code changes.
-
-Clone the repository to your local folder and install BentoML with ``pip``:
+Install BentoML in editable mode is useful when you are testing your code changes in a local copy of the BentoML project. First, Clone the repository locally and install BentoML with ``pip install -e``:
 
 .. code-block:: bash
 
@@ -89,8 +84,21 @@ Clone the repository to your local folder and install BentoML with ``pip``:
     cd bentoml
     pip install -e .
 
-This command installs BentoML in `editable mode <https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs>`_, which allows you to install the project without copying any files. Python links this folder and adds it to Python library paths. This means that any changes to the folder can be tested immediately. For more information, see the `Developer Guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_.
+This command installs BentoML in `editable mode <https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs>`_, which allows you to test any local code changes immediately by importing the ``bentoml`` library again or running a BentoML CLI command. For more information, see the `Developer Guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_.
 
-.. warning::
+.. note::
 
-    To keep using the library, you must not remove the ``bentoml`` folder after installing it in editable mode.
+    In editable mode, Python links this folder and adds it to Python library paths. To keep using the library, you must not move or delete the ``bentoml`` folder after installing it in editable mode.
+
+Deploy With Custom Branch
+-------------------------
+
+In order to build and deploy a Bento that's using a custom fork of BentoML, add the repo URL to your packages list defined in ``bentofile.yaml``. For example, to use BentoML from the main branch:
+
+.. code-block:: yaml
+
+    python:
+        packages:
+        - bentoml @ git+https://github.com/bentoml/BentoML.git@main
+
+During ``bentoml build``, the specificed branch will be downloaded from repo url, built and packaged as a wheel file in the Bento created.

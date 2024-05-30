@@ -359,3 +359,11 @@ class CreateSecretSchema:
     name: str
     description: str
     content: SecretContentSchema
+
+
+@attr.define
+class UpdateSecretSchema:
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    description: str
+    content: SecretContentSchema

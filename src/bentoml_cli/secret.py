@@ -142,8 +142,8 @@ def raise_secret_error(err: BentoMLException, action: str) -> t.NoReturn:
             f"{err}\n* BentoCloud sign up: https://cloud.bentoml.com/\n"
             "* Login with your API token: "
             "https://docs.bentoml.com/en/latest/bentocloud/how-tos/manage-access-token.html"
-        ) from None
-    raise BentoMLException(f"Failed to {action} secret due to: {err}") from None
+        )
+    raise BentoMLException(f"Failed to {action} secret due to: {err}")
 
 
 def map_choice_to_type(ctx: Context, params: Parameter, value: t.Any):
@@ -153,12 +153,17 @@ def map_choice_to_type(ctx: Context, params: Parameter, value: t.Any):
 
 @secret_command.command(name="create")
 @click.pass_obj
-@click.option(
-    "-n",
-    "--name",
+@click.argument(
+    "name",
+    nargs=1,
     type=click.STRING,
-    help="Secret name",
     required=True,
+)
+@click.argument(
+    "key_vals",
+    nargs=-1,
+    type=click.STRING,
+    callback=parse_kvs_argument_callback,
 )
 @click.option(
     "-d",
@@ -179,12 +184,6 @@ def map_choice_to_type(ctx: Context, params: Parameter, value: t.Any):
     "--path",
     type=click.STRING,
     help="Path where the secret will be mounted in the container. The path must be under the ($BENTOML_HOME) directory.",
-)
-@click.argument(
-    "key_vals",
-    nargs=-1,
-    type=click.STRING,
-    callback=parse_kvs_argument_callback,
 )
 @click.option(
     "-l",
@@ -257,3 +256,93 @@ def delete(shared_options: SharedOptions, name: str):
         click.echo(f"Secret {name} deleted successfully")
     except Exception as e:
         raise_secret_error(e, "delete")
+
+
+@secret_command.command(name="apply")
+@click.pass_obj
+@click.argument(
+    "name",
+    nargs=1,
+    type=click.STRING,
+    required=True,
+)
+@click.argument(
+    "key_vals",
+    nargs=-1,
+    type=click.STRING,
+    callback=parse_kvs_argument_callback,
+)
+@click.option(
+    "-d",
+    "--description",
+    type=click.STRING,
+    help="Secret description",
+)
+@click.option(
+    "-t",
+    "--type",
+    type=click.Choice(["env", "file"]),
+    help="Mount as Environment Variable or File",
+    default="env",
+    callback=map_choice_to_type,
+)
+@click.option(
+    "-p",
+    "--path",
+    type=click.STRING,
+    help="Path where the secret will be mounted in the container. The path must be under the ($BENTOML_HOME) directory.",
+)
+@click.option(
+    "-l",
+    "--from-literal",
+    type=click.STRING,
+    help="Pass key value pairs by --from-literal key1=value1 key2=value2",
+    callback=parse_from_literal_argument_callback,
+    multiple=True,
+)
+@click.option(
+    "-f",
+    "--from-file",
+    type=click.STRING,
+    help="Pass key value pairs by --from-file key1=./path_to_file1 key2=./path_to_file2",
+    callback=parse_from_file_argument_callback,
+    multiple=True,
+)
+def apply(
+    shared_options: SharedOptions,
+    name: str,
+    description: str | None,
+    type: t.Literal["env", "mountfile"],
+    path: str | None,
+    key_vals: t.List[t.Tuple[str, str]],
+    from_literal: t.List[t.Tuple[str, str]],
+    from_file: t.List[t.Tuple[str, str]],
+):
+    """Apply a secret update on BentoCloud."""
+    try:
+        if from_literal and from_file:
+            raise BentoMLException(
+                "options --from-literal and --from-file can not be used together"
+            )
+
+        key_vals.extend(from_literal)
+        key_vals.extend(from_file)
+
+        if not key_vals:
+            raise BentoMLException(
+                "no key-value pairs provided, please use --from-literal or --from-file or provide key-value pairs"
+            )
+
+        if type == "mountfile" and not path:
+            path = "$BENTOML_HOME"
+        secret = Secret.update(
+            context=shared_options.cloud_context,
+            name=name,
+            description=description,
+            type=type,
+            path=path,
+            key_vals=key_vals,
+        )
+        click.echo(f"Secret {secret.name} applied successfully")
+    except Exception as e:
+        raise_secret_error(e, "apply")

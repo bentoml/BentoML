@@ -11,6 +11,7 @@ from .schemas.schemasv1 import CreateSecretSchema
 from .schemas.schemasv1 import SecretContentSchema
 from .schemas.schemasv1 import SecretItem
 from .schemas.schemasv1 import SecretSchema
+from .schemas.schemasv1 import UpdateSecretSchema
 
 
 @attr.define
@@ -88,3 +89,27 @@ class Secret:
             raise ValueError("name is required")
         cloud_rest_client = get_rest_api_client(context)
         cloud_rest_client.v1.delete_secret(name)
+
+    @classmethod
+    def update(
+        cls,
+        context: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        type: str | None = None,
+        path: str | None = None,
+        key_vals: t.List[t.Tuple[str, str]] = [],
+    ) -> SecretInfo:
+        secret_schema = UpdateSecretSchema(
+            description=description,
+            content=SecretContentSchema(
+                type=type,
+                path=path,
+                items=[
+                    SecretItem(key=key_val[0], value=key_val[1]) for key_val in key_vals
+                ],
+            ),
+        )
+        cloud_rest_client = get_rest_api_client(context)
+        secret = cloud_rest_client.v1.update_secret(name, secret_schema)
+        return SecretInfo.from_secret_schema(secret)

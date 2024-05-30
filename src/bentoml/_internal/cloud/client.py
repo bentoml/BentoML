@@ -37,6 +37,7 @@ from .schemas.schemasv1 import SecretListSchema
 from .schemas.schemasv1 import SecretSchema
 from .schemas.schemasv1 import UpdateBentoSchema
 from .schemas.schemasv1 import UpdateDeploymentSchema
+from .schemas.schemasv1 import UpdateSecretSchema
 from .schemas.schemasv1 import UserSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentFullSchema as DeploymentFullSchemaV2
@@ -594,10 +595,16 @@ class RestApiClientV1(BaseRestApiClient):
         self._check_resp(resp)
         return schema_from_json(resp.text, SecretSchema)
 
-    def delete_secret(self, secret_name: str):
-        url = urljoin(self.endpoint, f"/api/v1/org_secrets/name/{secret_name}")
+    def delete_secret(self, name: str):
+        url = urljoin(self.endpoint, f"/api/v1/org_secrets/name/{name}")
         resp = self.session.delete(url)
         self._check_resp(resp)
+
+    def update_secret(self, name: str, secret: UpdateSecretSchema) -> SecretSchema:
+        url = urljoin(self.endpoint, f"/api/v1/org_secrets/name/{name}")
+        resp = self.session.patch(url, content=schema_to_json(secret))
+        self._check_resp(resp)
+        return schema_from_json(resp.text, SecretSchema)
 
 
 class RestApiClientV2(BaseRestApiClient):

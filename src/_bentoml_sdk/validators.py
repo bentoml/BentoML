@@ -143,8 +143,12 @@ class FileSchema:
                 if (fn := getattr(obj, "name", None)) is not None
                 else None
             )
+        elif not isinstance(obj, bytes):
+            from pydantic_core import PydanticCustomError
+
+            raise PydanticCustomError("path_type", "Invalid file type")
         else:
-            body = t.cast(bytes, obj)
+            body = obj
             filename = None
         if media_type is not None and self.content_type is not None:
             if not fnmatch.fnmatch(media_type, self.content_type):

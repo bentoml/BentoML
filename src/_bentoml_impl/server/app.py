@@ -199,8 +199,6 @@ class ServiceAppFactory(BaseAppFactory):
 
     @property
     def middlewares(self) -> list[Middleware]:
-        from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
-
         from bentoml._internal.container import BentoMLContainer
 
         middlewares: list[Middleware] = []
@@ -214,28 +212,14 @@ class ServiceAppFactory(BaseAppFactory):
                 Middleware(RunnerTrafficMetricsMiddleware, namespace="bentoml_service")
             )
 
-        middlewares.extend(super().middlewares)
-        middlewares.append(Middleware(ContextMiddleware, context=self.service.context))
-
-        for middleware_cls, options in self.service.middlewares:
-            middlewares.append(Middleware(middleware_cls, **options))
-
-        if self.enable_access_control:
-            assert (
-                self.access_control_options.get("allow_origins") is not None
-            ), "To enable cors, access_control_allow_origin must be set"
-
-            from starlette.middleware.cors import CORSMiddleware
-
-            middlewares.append(
-                Middleware(CORSMiddleware, **self.access_control_options)
-            )
-
+        # OpenTelemetry middleware
         def server_request_hook(span: Span | None, _scope: dict[str, t.Any]) -> None:
             from bentoml._internal.context import trace_context
 
             if span is not None:
                 trace_context.request_id = span.context.span_id
+
+        from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
         middlewares.append(
             Middleware(
@@ -247,7 +231,7 @@ class ServiceAppFactory(BaseAppFactory):
                 tracer_provider=BentoMLContainer.tracer_provider.get(),
             )
         )
-
+        # AccessLog middleware
         access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():
             from bentoml._internal.server.http.access import AccessLogMiddleware
@@ -262,7 +246,24 @@ class ServiceAppFactory(BaseAppFactory):
                     skip_paths=access_log_config.skip_paths.get(),
                 )
             )
+        # TimeoutMiddleware and MaxConcurrencyMiddleware
+        middlewares.extend(super().middlewares)
+        for middleware_cls, options in self.service.middlewares:
+            middlewares.append(Middleware(middleware_cls, **options))
+        # CORS middleware
+        if self.enable_access_control:
+            assert (
+                self.access_control_options.get("allow_origins") is not None
+            ), "To enable cors, access_control_allow_origin must be set"
 
+            from starlette.middleware.cors import CORSMiddleware
+
+            middlewares.append(
+                Middleware(CORSMiddleware, **self.access_control_options)
+            )
+
+        # ContextMiddleware
+        middlewares.append(Middleware(ContextMiddleware, context=self.service.context))
         return middlewares
 
     def create_instance(self) -> None:

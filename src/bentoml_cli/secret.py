@@ -61,10 +61,15 @@ def list(
 
         for secret in secrets:
             keys = [item.key for item in secret.content.items]
+            mountAs = secret.content.type
+            if mountAs == "env":
+                mountAs = "Environment Variable"
+            elif mountAs == "mountfile":
+                mountAs = "File"
             table.add_row(
                 secret.name,
                 secret.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                secret.content.type,
+                mountAs,
                 ", ".join(keys),
                 secret.content.path if secret.content.path else "-",
             )

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import io
+import logging
 import pathlib
 import sys
 import typing as t
@@ -34,6 +35,7 @@ if t.TYPE_CHECKING:
 
 
 DEFAULT_TEXT_MEDIA_TYPE = "text/plain"
+logger = logging.getLogger("bentoml.serve")
 
 
 def is_file_type(type_: type) -> bool:
@@ -180,29 +182,35 @@ class IOMixin:
         if inspect.isasyncgen(obj):
 
             async def async_stream() -> t.AsyncGenerator[str | bytes, None]:
-                async for item in obj:
-                    if isinstance(item, (str, bytes)):
-                        yield item
-                    else:
-                        obj_item = cls(item) if issubclass(cls, RootModel) else item
-                        for chunk in serde.serialize_model(
-                            t.cast(IODescriptor, obj_item)
-                        ).data:
-                            yield chunk
+                try:
+                    async for item in obj:
+                        if isinstance(item, (str, bytes)):
+                            yield item
+                        else:
+                            obj_item = cls(item) if issubclass(cls, RootModel) else item
+                            for chunk in serde.serialize_model(
+                                t.cast(IODescriptor, obj_item)
+                            ).data:
+                                yield chunk
+                except Exception:
+                    logger.exception("Error while streaming response")
 
             return StreamingResponse(async_stream(), media_type=cls.mime_type())
 
         elif inspect.isgenerator(obj):
 
             def content_stream() -> t.Generator[str | bytes, None, None]:
-                for item in obj:
-                    if isinstance(item, (str, bytes)):
-                        yield item
-                    else:
-                        obj_item = cls(item) if issubclass(cls, RootModel) else item
-                        yield from serde.serialize_model(
-                            t.cast(IODescriptor, obj_item)
-                        ).data
+                try:
+                    for item in obj:
+                        if isinstance(item, (str, bytes)):
+                            yield item
+                        else:
+                            obj_item = cls(item) if issubclass(cls, RootModel) else item
+                            yield from serde.serialize_model(
+                                t.cast(IODescriptor, obj_item)
+                            ).data
+                except Exception:
+                    logger.exception("Error while streaming response")
 
             return StreamingResponse(content_stream(), media_type=cls.mime_type())
         elif not issubclass(cls, RootModel):

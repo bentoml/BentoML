@@ -21,6 +21,7 @@ from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
 from bentoml._internal.models import Model
 from bentoml._internal.utils import dict_filter_none
+from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
 
 from ..method import APIMethod
@@ -139,7 +140,20 @@ class Service(t.Generic[T]):
         """Get a map of the service and all recursive dependencies"""
         services: dict[str, Service[t.Any]] = {self.name: self}
         for dependency in self.dependencies.values():
-            services.update(dependency.on.all_services())
+            dependents = dependency.on.all_services()
+            conflict = next(
+                (
+                    k
+                    for k in dependents
+                    if k in services and dependents[k] is not services[k]
+                ),
+                None,
+            )
+            if conflict:
+                raise BentoMLConfigException(
+                    f"Dependency conflict: {conflict} is already defined by {services[conflict].inner}"
+                )
+            services.update(dependents)
         return services
 
     @property

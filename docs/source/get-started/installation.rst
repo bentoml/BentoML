@@ -2,9 +2,7 @@
 Installation
 ============
 
-BentoML is distributed as a Python package available on `PyPI <https://pypi.org/project/bentoml/>`_. You can install BentoML on Linux/UNIX, Windows, or macOS along with your preferred deep learning library to get started.
-
-This document describes how to install BentoML.
+BentoML is distributed as a Python package available on `PyPI <https://pypi.org/project/bentoml/>`_. You can install BentoML on Linux/UNIX, Windows, or macOS to get started.
 
 Prerequisites
 -------------
@@ -16,17 +14,17 @@ Prerequisites
 Install BentoML
 ---------------
 
-To install BentoML, use the following command:
+Install BentoML Python package with `pip <https://pip.pypa.io/en/stable/installation/>`:
 
 .. code-block:: bash
 
     pip install bentoml
 
-To verify your installation, run the following to see :
+To verify your installation:
 
 .. code-block:: bash
 
-    bentoml -h
+    bentoml --help
 
 Expected output:
 
@@ -62,21 +60,32 @@ Expected output:
     push                Push Bento to a remote Bento store server.
     serve (serve-http)  Start a HTTP BentoServer from a given 🍱
 
+
 Install BentoML from source code
 --------------------------------
 
-If you want to install BentoML from the source, run the following command:
+To install BentoML from the main branch, run the following command:
 
 .. code-block:: bash
 
     pip install git+https://github.com/bentoml/BentoML
 
-This command installs the bleeding edge ``main`` version of BentoML, which is useful for staying up-to-date with the latest features and bug fixes. However, the ``main`` version may not always be stable. If you run into any issues, please either create `an issue <https://github.com/bentoml/BentoML/issues/new/choose>`_ or join our community on `Slack <https://l.bentoml.com/join-slack>`_ to get help.
+This command installs the bleeding edge ``main`` branch of BentoML, which is useful for staying up-to-date with the latest unreleased features and bug fixes. However, the ``main`` branch may not always be stable. If you run into any issues, please either create `an issue <https://github.com/bentoml/BentoML/issues/new/choose>`_ or join our community on `Slack <https://l.bentoml.com/join-slack>`_ to get help.
+
+In order to deploy a Bento using a custom fork of BentoML, either use the Editable install option below, or add the repo URL to your packages list defined in ``bentofile.yaml``. For example:
+
+.. code-block:: yaml
+    python:
+        packages:
+        - bentoml @ git+https://github.com/bentoml/BentoML.git@main
+
+During ``bentoml build``, the specificed repo will be downloaded, built into a wheel file, and packaged into the Bento created.
+
 
 Editable install
 ----------------
 
-Install BentoML in editable mode is useful when you are testing your code changes in a local copy of the BentoML project. First, Clone the repository locally and install BentoML with ``pip install -e``:
+Install BentoML in editable mode is useful when you are contributing to BentoML and testing your code changes in a local copy of the BentoML project. First, Clone the repository locally and install BentoML with ``pip install -e``:
 
 .. code-block:: bash
 
@@ -90,15 +99,7 @@ This command installs BentoML in `editable mode <https://pip.pypa.io/en/stable/t
 
     In editable mode, Python links this folder and adds it to Python library paths. To keep using the library, you must not move or delete the ``bentoml`` folder after installing it in editable mode.
 
-Deploy With Custom Branch
--------------------------
 
-In order to build and deploy a Bento that's using a custom fork of BentoML, add the repo URL to your packages list defined in ``bentofile.yaml``. For example, to use BentoML from the main branch:
+.. warning::
 
-.. code-block:: yaml
-
-    python:
-        packages:
-        - bentoml @ git+https://github.com/bentoml/BentoML.git@main
-
-During ``bentoml build``, the specificed branch will be downloaded from repo url, built and packaged as a wheel file in the Bento created.
+    When running ``bentoml build`` using an editable installation of BentoML, a wheel will be built from your local BentoML copy linked with the editable installation, and packaged into the generated Bento. Thus, containers built from this Bento will install the exact same version of BentoML. This feature is meant for helping BentoML contributors to verify their changes, ensuring a consistent behavior across dev, testing and prod environments. If you need to use a custom fork of BentoML for production, make sure to fully test it.

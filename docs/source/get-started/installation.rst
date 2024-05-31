@@ -64,15 +64,15 @@ Expected output:
 Install BentoML from source code
 --------------------------------
 
-To install BentoML from the main branch, run the following command:
+You can also install BentoML from source code. For example:
 
 .. code-block:: bash
 
     pip install git+https://github.com/bentoml/BentoML
 
-This command installs the bleeding edge ``main`` branch of BentoML, which is useful for staying up-to-date with the latest unreleased features and bug fixes. However, the ``main`` branch may not always be stable. If you run into any issues, please either create `an issue <https://github.com/bentoml/BentoML/issues/new/choose>`_ or join our community on `Slack <https://l.bentoml.com/join-slack>`_ to get help.
+This command installs the bleeding edge ``main`` branch of BentoML, which is useful for trying the latest unreleased features and bug fixes. However, the ``main`` branch may not always be stable. If you run into any issues, please either create `an issue <https://github.com/bentoml/BentoML/issues/new/choose>`_ or join our community on `Slack <https://l.bentoml.com/join-slack>`_ to get help.
 
-In order to deploy a Bento using a custom fork of BentoML, either use the Editable install option below, or add the repo URL to your packages list defined in ``bentofile.yaml``. For example:
+In order to deploy a Bento using the same version of BentoML, either use the Editable install option below, or add the same repo URL to your packages list defined in ``bentofile.yaml``. For example:
 
 .. code-block:: yaml
     python:

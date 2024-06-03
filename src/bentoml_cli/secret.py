@@ -20,11 +20,7 @@ if t.TYPE_CHECKING:
     from click import Context
     from click import Parameter
 
-if t.TYPE_CHECKING:
-    TupleStrAny = tuple[str, ...]
     from .utils import SharedOptions
-else:
-    TupleStrAny = tuple
 
 
 @click.group(name="secret", cls=BentoMLCommandGroup)

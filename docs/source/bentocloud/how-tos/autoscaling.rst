@@ -18,7 +18,7 @@ Scale-to-zero is a feature that allows the autoscaler to scale the number of rep
 
 To enable scale-to-zero, set the minimum replicas to 0 in the :ref:`deployment configuration <bentocloud/how-tos/configure-deployments:scaling>`.
 
-The deployment will automatically scale up from zero replicas when the Service receives requests. The request will be enqueued in the external queue and timeout timer would not be started until the Service is scaled up.
+The deployment will automatically scale up from zero replicas when the Service receives requests. The request will be enqueued in the external queue and the timeout timer would not be started until the Service is scaled up.
 
 .. note::
 

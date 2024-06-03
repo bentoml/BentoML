@@ -176,9 +176,7 @@ def main(
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
     server_context.service_name = service.name
 
-    asgi_app = service.to_asgi(
-        is_main=server_context.service_type == "entry_service", init=False
-    )
+    asgi_app = service.to_asgi(is_main=server_context.service_type == "entry_service")
 
     uvicorn_extra_options: dict[str, t.Any] = {}
     if ssl_version is not None:

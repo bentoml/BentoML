@@ -14,7 +14,7 @@ Prerequisites
 Install BentoML
 ---------------
 
-Install BentoML Python package with `pip <https://pip.pypa.io/en/stable/installation/>`:
+Install BentoML Python package with `pip <https://pip.pypa.io/en/stable/installation/>_`:
 
 .. code-block:: bash
 
@@ -72,9 +72,10 @@ You can also install BentoML from source code. For example:
 
 This command installs the bleeding edge ``main`` branch of BentoML, which is useful for trying the latest unreleased features and bug fixes. However, the ``main`` branch may not always be stable. If you run into any issues, please either create `an issue <https://github.com/bentoml/BentoML/issues/new/choose>`_ or join our community on `Slack <https://l.bentoml.com/join-slack>`_ to get help.
 
-In order to deploy a Bento using the same version of BentoML, either use the Editable install option below, or add the same repo URL to your packages list defined in ``bentofile.yaml``. For example:
+In order to deploy a :doc:`Bento </guides/build-options>` using the same version of BentoML, either use the Editable install option below, or add the same repo URL to your packages list defined in ``bentofile.yaml``. For example:
 
 .. code-block:: yaml
+
     python:
         packages:
         - bentoml @ git+https://github.com/bentoml/BentoML.git@main
@@ -85,7 +86,7 @@ During ``bentoml build``, the specificed repo will be downloaded, built into a w
 Editable install
 ----------------
 
-Install BentoML in editable mode is useful when you are contributing to BentoML and testing your code changes in a local copy of the BentoML project. First, Clone the repository locally and install BentoML with ``pip install -e``:
+Installing BentoML in editable mode is useful when you are contributing to BentoML and testing your code changes in a local copy of the BentoML project. First, clone the repository locally and install BentoML with ``pip install -e``:
 
 .. code-block:: bash
 

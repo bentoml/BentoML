@@ -596,12 +596,12 @@ class RestApiClientV1(BaseRestApiClient):
         return schema_from_json(resp.text, SecretSchema)
 
     def delete_secret(self, name: str):
-        url = urljoin(self.endpoint, f"/api/v1/org_secrets/name/{name}")
+        url = urljoin(self.endpoint, f"/api/v1/org_secrets/{name}")
         resp = self.session.delete(url)
         self._check_resp(resp)
 
     def update_secret(self, name: str, secret: UpdateSecretSchema) -> SecretSchema:
-        url = urljoin(self.endpoint, f"/api/v1/org_secrets/name/{name}")
+        url = urljoin(self.endpoint, f"/api/v1/org_secrets/{name}")
         resp = self.session.patch(url, content=schema_to_json(secret))
         self._check_resp(resp)
         return schema_from_json(resp.text, SecretSchema)

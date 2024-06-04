@@ -124,7 +124,7 @@ class FileSchema:
         return obj.read_bytes()
 
     def decode(self, obj: bytes | t.BinaryIO | UploadFile | PurePath | str) -> t.Any:
-        from bentoml._internal.context import request_directory
+        from bentoml._internal.context import request_temp_dir
 
         media_type: str | None = None
 
@@ -156,7 +156,7 @@ class FileSchema:
                     f"Invalid content type {media_type}, expected {self.content_type}"
                 )
         with tempfile.NamedTemporaryFile(
-            suffix=filename, dir=request_directory.get(), delete=False
+            suffix=filename, dir=request_temp_dir(), delete=False
         ) as f:
             f.write(body)
             return Path(f.name)

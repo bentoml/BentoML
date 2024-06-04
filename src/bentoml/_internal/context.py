@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import contextvars
 import os
+import shutil
 import tempfile
 import typing as t
 from abc import ABC
@@ -18,10 +19,19 @@ if TYPE_CHECKING:
     import starlette.requests
     import starlette.responses
 
-# A request-unique directory for storing temporary files
-request_directory: contextvars.ContextVar[str] = contextvars.ContextVar(
-    "request_directory"
+_request_var: contextvars.ContextVar[starlette.requests.Request] = (
+    contextvars.ContextVar("request")
 )
+_response_var: contextvars.ContextVar[ServiceContext.ResponseContext] = (
+    contextvars.ContextVar("response")
+)
+
+
+def request_temp_dir() -> str:
+    request = _request_var.get()
+    if "temp_dir" not in request.state:
+        request.state["temp_dir"] = tempfile.mkdtemp(prefix="bentoml-request-")
+    return t.cast(str, request.state["temp_dir"])
 
 
 class Metadata(t.Mapping[str, str], ABC):
@@ -81,12 +91,6 @@ class Metadata(t.Mapping[str, str], ABC):
 
 class ServiceContext:
     def __init__(self) -> None:
-        self._request_var: contextvars.ContextVar[starlette.requests.Request] = (
-            contextvars.ContextVar("request")
-        )
-        self._response_var: contextvars.ContextVar[ServiceContext.ResponseContext] = (
-            contextvars.ContextVar("response")
-        )
         # A dictionary for storing global state shared by the process
         self.state: dict[str, t.Any] = {}
 
@@ -95,28 +99,29 @@ class ServiceContext:
         self, request: starlette.requests.Request
     ) -> t.Generator[ServiceContext, None, None]:
         request.metadata = request.headers  # type: ignore[attr-defined]
-        request_token = self._request_var.set(request)
-        response_token = self._response_var.set(ServiceContext.ResponseContext())
-        with tempfile.TemporaryDirectory(prefix="bentoml-request-") as temp_dir:
-            dir_token = request_directory.set(temp_dir)
-            try:
-                yield self
-            finally:
-                self._request_var.reset(request_token)
-                self._response_var.reset(response_token)
-                request_directory.reset(dir_token)
+        request_token = _request_var.set(request)
+        response_token = _response_var.set(ServiceContext.ResponseContext())
+        try:
+            yield self
+        finally:
+            if "temp_dir" in request.state:
+                shutil.rmtree(
+                    t.cast(str, request.state["temp_dir"]), ignore_errors=True
+                )
+            _request_var.reset(request_token)
+            _response_var.reset(response_token)
 
     @property
     def request(self) -> starlette.requests.Request:
-        return self._request_var.get()
+        return _request_var.get()
 
     @property
     def response(self) -> ResponseContext:
-        return self._response_var.get()
+        return _response_var.get()
 
     @property
     def temp_dir(self) -> str:
-        return request_directory.get()
+        return request_temp_dir()
 
     @attr.define
     class ResponseContext:

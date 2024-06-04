@@ -30,7 +30,7 @@ _response_var: contextvars.ContextVar[ServiceContext.ResponseContext] = (
 def request_temp_dir() -> str:
     """A request-unique directory for storing temporary files"""
     request = _request_var.get()
-    if hasattr(request.state, "temp_dir"):
+    if not hasattr(request.state, "temp_dir"):
         request.state.temp_dir = tempfile.mkdtemp(prefix="bentoml-request-")
     return request.state.temp_dir
 

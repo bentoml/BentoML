@@ -21,7 +21,7 @@ class ClientEndpoint:
     input_spec: type[IODescriptor] | None = None
     output_spec: type[IODescriptor] | None = None
     stream_output: bool = False
-    is_async: bool = False
+    is_task: bool = False
 
 
 class AbstractClient(abc.ABC):
@@ -47,7 +47,7 @@ class AbstractClient(abc.ABC):
         if endpoint.input_spec is not None:
             method.__annotations__ = endpoint.input_spec.__annotations__
             method.__signature__ = endpoint.input_spec.__signature__
-        if endpoint.is_async:
+        if endpoint.is_task:
             method.submit = functools.partial(self._submit, endpoint)
         return method
 

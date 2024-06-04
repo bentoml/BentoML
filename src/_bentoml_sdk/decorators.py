@@ -198,7 +198,7 @@ def task(
             params["input_spec"] = input_spec
         if output_spec is not None:
             params["output_spec"] = output_spec
-        meth = APIMethod(func, **params, is_async=True)
+        meth = APIMethod(func, **params, is_task=True)
         if meth.is_stream:
             raise ValueError("Async task cannot return a stream.")
         return meth

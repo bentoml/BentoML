@@ -142,7 +142,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     input_spec=method.input_spec,
                     output_spec=method.output_spec,
                     stream_output=method.is_stream,
-                    is_async=method.is_async,
+                    is_task=method.is_task,
                 )
 
             from bentoml._internal.context import server_context
@@ -183,7 +183,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                         output=route["output"],
                         doc=route.get("doc"),
                         stream_output=route["output"].get("is_stream", False),
-                        is_async=route.get("is_async", False),
+                        is_task=route.get("is_task", False),
                     )
         super().__init__()
 

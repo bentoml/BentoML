@@ -466,7 +466,7 @@ class ServiceAppFactory(BaseAppFactory):
             if not route_path.startswith("/"):
                 route_path = "/" + route_path
             routes.append(Route(route_path, api_endpoint, methods=["POST"], name=name))
-            if method.is_async:
+            if method.is_task:
                 routes.append(
                     Route(
                         f"{route_path}/submit",

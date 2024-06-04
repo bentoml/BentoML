@@ -137,7 +137,7 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
                 "operationId": f"{svc.name}__{api.name}",
             },
         )
-        if api.is_async:
+        if api.is_task:
             routes[f"{api.route}/status"] = PathItem(
                 get={
                     "responses": {

@@ -30,9 +30,9 @@ _response_var: contextvars.ContextVar[ServiceContext.ResponseContext] = (
 def request_temp_dir() -> str:
     """A request-unique directory for storing temporary files"""
     request = _request_var.get()
-    if "temp_dir" not in request.state:
-        request.state["temp_dir"] = tempfile.mkdtemp(prefix="bentoml-request-")
-    return t.cast(str, request.state["temp_dir"])
+    if hasattr(request.state, "temp_dir"):
+        request.state.temp_dir = tempfile.mkdtemp(prefix="bentoml-request-")
+    return request.state.temp_dir
 
 
 class Metadata(t.Mapping[str, str], ABC):
@@ -105,10 +105,8 @@ class ServiceContext:
         try:
             yield self
         finally:
-            if "temp_dir" in request.state:
-                shutil.rmtree(
-                    t.cast(str, request.state["temp_dir"]), ignore_errors=True
-                )
+            if hasattr(request.state, "temp_dir"):
+                shutil.rmtree(request.state.temp_dir, ignore_errors=True)
             _request_var.reset(request_token)
             _response_var.reset(response_token)
 

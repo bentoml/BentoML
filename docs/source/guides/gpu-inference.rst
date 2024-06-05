@@ -14,7 +14,7 @@ When creating your BentoML Service, you need to make sure your Service implement
 A single device
 ^^^^^^^^^^^^^^^
 
-When a single GPU is available, frameworks like PyTorch and TensorFlow default to using ``cuda:0`` or ``cuda``.  In PyTorch, for example, to assign a model to use the GPU, you use ``.to('cuda:0')``. An example of setting up a BentoML Service to use the a single GPU:
+When a single GPU is available, frameworks like PyTorch and TensorFlow default to using ``cuda:0`` or ``cuda``.  In PyTorch, for example, to assign a model to use the GPU, you use ``.to('cuda:0')``. An example of setting up a BentoML Service to use a single GPU:
 
 .. code-block:: python
 

@@ -22,6 +22,7 @@ from .schemas.schemasv1 import CreateBentoSchema
 from .schemas.schemasv1 import CreateDeploymentSchema as CreateDeploymentSchemaV1
 from .schemas.schemasv1 import CreateModelRepositorySchema
 from .schemas.schemasv1 import CreateModelSchema
+from .schemas.schemasv1 import CreateSecretSchema
 from .schemas.schemasv1 import DeploymentFullSchema
 from .schemas.schemasv1 import DeploymentListSchema
 from .schemas.schemasv1 import FinishUploadBentoSchema
@@ -32,8 +33,11 @@ from .schemas.schemasv1 import ModelWithRepositoryListSchema
 from .schemas.schemasv1 import OrganizationSchema
 from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
 from .schemas.schemasv1 import ResourceInstanceSchema
+from .schemas.schemasv1 import SecretListSchema
+from .schemas.schemasv1 import SecretSchema
 from .schemas.schemasv1 import UpdateBentoSchema
 from .schemas.schemasv1 import UpdateDeploymentSchema
+from .schemas.schemasv1 import UpdateSecretSchema
 from .schemas.schemasv1 import UserSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentFullSchema as DeploymentFullSchemaV2
@@ -560,6 +564,47 @@ class RestApiClientV1(BaseRestApiClient):
         self._check_resp(resp)
         models = resp.json()["items"]
         return schema_from_object(models[0], ModelSchema) if models else None
+
+    def list_secrets(
+        self,
+        count: int | None = None,
+        q: str | None = None,
+        search: str | None = None,
+        start: int | None = None,
+    ) -> SecretListSchema:
+        url = urljoin(self.endpoint, "/api/v1/org_secrets")
+        if not count:
+            count = 10
+        if not start:
+            start = 0
+        resp = self.session.get(
+            url,
+            params={
+                "count": count,
+                "q": q,
+                "search": search,
+                "start": start,
+            },
+        )
+        self._check_resp(resp)
+        return schema_from_json(resp.text, SecretListSchema)
+
+    def create_secret(self, secret: CreateSecretSchema) -> SecretSchema:
+        url = urljoin(self.endpoint, "/api/v1/org_secrets")
+        resp = self.session.post(url, content=schema_to_json(secret))
+        self._check_resp(resp)
+        return schema_from_json(resp.text, SecretSchema)
+
+    def delete_secret(self, name: str):
+        url = urljoin(self.endpoint, f"/api/v1/org_secrets/{name}")
+        resp = self.session.delete(url)
+        self._check_resp(resp)
+
+    def update_secret(self, name: str, secret: UpdateSecretSchema) -> SecretSchema:
+        url = urljoin(self.endpoint, f"/api/v1/org_secrets/{name}")
+        resp = self.session.patch(url, content=schema_to_json(secret))
+        self._check_resp(resp)
+        return schema_from_json(resp.text, SecretSchema)
 
 
 class RestApiClientV2(BaseRestApiClient):

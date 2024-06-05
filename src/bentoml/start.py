@@ -23,7 +23,7 @@ API_SERVER = "api_server"
 RUNNER = "runner"
 
 
-@inject
+@inject(squeeze_none=True)
 def start_runner_server(
     bento_identifier: str,
     working_dir: str,

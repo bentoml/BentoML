@@ -300,7 +300,7 @@ def _get_runner_socket_windows(
     )
 
 
-@inject
+@inject(squeeze_none=True)
 def serve_http_production(
     bento_identifier: str,
     working_dir: str,

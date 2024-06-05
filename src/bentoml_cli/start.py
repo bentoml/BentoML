@@ -55,29 +55,25 @@ def build_start_command() -> click.Group:
     @click.option(
         "--port",
         type=click.INT,
-        default=BentoMLContainer.http.port.get(),
         help="The port to listen on for the REST api server",
         envvar="BENTOML_PORT",
-        show_default=True,
+        show_envvar=True,
     )
     @click.option(
         "--host",
         type=click.STRING,
-        default=BentoMLContainer.http.host.get(),
         help="The host to bind for the REST api server [defaults: 127.0.0.1(dev), 0.0.0.0(production)]",
-        envvar="BENTOML_HOST",
+        show_envvar="BENTOML_HOST",
     )
     @click.option(
         "--backlog",
         type=click.INT,
-        default=BentoMLContainer.api_server_config.backlog.get(),
         help="The maximum number of pending connections.",
-        show_default=True,
+        show_envvar=True,
     )
     @click.option(
         "--api-workers",
         type=click.INT,
-        default=BentoMLContainer.api_server_workers.get(),
         help="Specify the number of API server workers to start. Default to number of available CPU cores in production mode",
         envvar="BENTOML_API_WORKERS",
     )
@@ -94,47 +90,20 @@ def build_start_command() -> click.Group:
         default=None,
         show_default=True,
     )
+    @click.option("--ssl-certfile", type=str, help="SSL certificate file")
+    @click.option("--ssl-keyfile", type=str, help="SSL key file")
+    @click.option("--ssl-keyfile-password", type=str, help="SSL keyfile password")
     @click.option(
-        "--ssl-certfile",
-        type=str,
-        default=BentoMLContainer.ssl.certfile.get(),
-        help="SSL certificate file",
-    )
-    @click.option(
-        "--ssl-keyfile",
-        type=str,
-        default=BentoMLContainer.ssl.keyfile.get(),
-        help="SSL key file",
-    )
-    @click.option(
-        "--ssl-keyfile-password",
-        type=str,
-        default=BentoMLContainer.ssl.keyfile_password.get(),
-        help="SSL keyfile password",
-    )
-    @click.option(
-        "--ssl-version",
-        type=int,
-        default=BentoMLContainer.ssl.version.get(),
-        help="SSL version to use (see stdlib 'ssl' module)",
+        "--ssl-version", type=int, help="SSL version to use (see stdlib 'ssl' module)"
     )
     @click.option(
         "--ssl-cert-reqs",
         type=int,
-        default=BentoMLContainer.ssl.cert_reqs.get(),
         help="Whether client certificate is required (see stdlib 'ssl' module)",
     )
+    @click.option("--ssl-ca-certs", type=str, help="CA certificates file")
     @click.option(
-        "--ssl-ca-certs",
-        type=str,
-        default=BentoMLContainer.ssl.ca_certs.get(),
-        help="CA certificates file",
-    )
-    @click.option(
-        "--ssl-ciphers",
-        type=str,
-        default=BentoMLContainer.ssl.ciphers.get(),
-        help="Ciphers to use (see stdlib 'ssl' module)",
+        "--ssl-ciphers", type=str, help="Ciphers to use (see stdlib 'ssl' module)"
     )
     @click.option(
         "--timeout-keep-alive",
@@ -154,9 +123,9 @@ def build_start_command() -> click.Group:
         depends: list[str] | None,
         runner_map: str | None,
         bind: str | None,
-        port: int,
-        host: str,
-        backlog: int,
+        port: int | None,
+        host: str | None,
+        backlog: int | None,
         working_dir: str | None,
         api_workers: int | None,
         timeout: int | None,

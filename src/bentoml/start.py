@@ -142,7 +142,7 @@ def start_runner_server(
         )
 
 
-@inject
+@inject(squeeze_none=True)
 def start_http_server(
     bento_identifier: str,
     runner_map: dict[str, str],

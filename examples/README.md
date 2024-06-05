@@ -31,4 +31,5 @@ You can also try the following example projects.
 - [BentoVLLM](https://github.com/bentoml/BentoVLLM) - Accelerate your model inference and improve serving throughput by using vLLM as your LLM backend.
 - [BentoBark](https://github.com/bentoml/BentoBark) - Generate highly realistic audio like music, background noise and simple sound effects with Bark.
 - [BentoYolo](https://github.com/bentoml/BentoYolo) - Build an object detection inference API server with YOLO.
-- [RAG](https://github.com/bentoml/rag-tutorials) - Self-host a RAG web service with BentoML step by step, including an embedding model, a large language model, and a vector database.
+- [RAG](https://github.com/bentoml/rag-tutorials) - Self-host a private RAG app using custom embedding and language models.
+- [BentoChatTTS](https://github.com/bentoml/BentoChatTTS) - Deploy a text-to-speech model ChatTTS for dialogue scenarios like chatbots and virtual assistants.

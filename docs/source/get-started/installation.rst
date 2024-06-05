@@ -14,7 +14,7 @@ Prerequisites
 Install BentoML
 ---------------
 
-Install BentoML Python package with `pip <https://pip.pypa.io/en/stable/installation/>_`:
+Install BentoML Python package with `pip <https://pip.pypa.io/en/stable/installation/>`_:
 
 .. code-block:: bash
 

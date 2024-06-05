@@ -88,6 +88,12 @@ def raise_deployment_config_error(err: BentoMLException, action: str) -> t.NoRet
     multiple=True,
 )
 @click.option(
+    "--secret",
+    type=click.STRING,
+    help="List of secret names pass by --secret name1, --secret name2, ...",
+    multiple=True,
+)
+@click.option(
     "-f",
     "--config-file",
     type=click.File(),
@@ -125,6 +131,7 @@ def deploy_command(
     instance_type: str | None,
     strategy: str | None,
     env: tuple[str] | None,
+    secret: tuple[str] | None,
     config_file: str | t.TextIO | None,
     config_dict: str | None,
     wait: bool,
@@ -146,6 +153,7 @@ def deploy_command(
         instance_type=instance_type,
         strategy=strategy,
         env=env,
+        secret=secret,
         config_file=config_file,
         config_dict=config_dict,
         wait=wait,
@@ -474,6 +482,12 @@ def apply(  # type: ignore
     multiple=True,
 )
 @click.option(
+    "--secret",
+    type=click.STRING,
+    help="List of secret names pass by --secret name1, --secret name2, ...",
+    multiple=True,
+)
+@click.option(
     "-f",
     "--config-file",
     type=click.File(),
@@ -511,6 +525,7 @@ def create(
     instance_type: str | None,
     strategy: str | None,
     env: tuple[str] | None,
+    secret: tuple[str] | None,
     config_file: str | t.TextIO | None,
     config_dict: str | None,
     wait: bool,
@@ -532,6 +547,7 @@ def create(
         instance_type=instance_type,
         strategy=strategy,
         env=env,
+        secret=secret,
         config_file=config_file,
         config_dict=config_dict,
         wait=wait,
@@ -705,6 +721,7 @@ def create_deployment(
     instance_type: str | None,
     strategy: str | None,
     env: tuple[str] | None,
+    secret: tuple[str] | None,
     config_file: str | t.TextIO | None,
     config_dict: str | None,
     wait: bool,
@@ -728,6 +745,7 @@ def create_deployment(
             if env is not None
             else None
         ),
+        secrets=secret,
         config_file=config_file,
         config_dict=cfg_dict,
     )

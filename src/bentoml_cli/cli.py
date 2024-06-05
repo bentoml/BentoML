@@ -14,6 +14,7 @@ def create_bentoml_cli() -> click.Command:
     from bentoml_cli.deployment import deployment_command
     from bentoml_cli.env import env_command
     from bentoml_cli.models import model_command
+    from bentoml_cli.secret import secret_command
     from bentoml_cli.serve import serve_command
     from bentoml_cli.start import start_command
     from bentoml_cli.utils import BentoMLCommandGroup
@@ -45,6 +46,7 @@ def create_bentoml_cli() -> click.Command:
     bentoml_cli.add_command(containerize_command)
     bentoml_cli.add_command(deploy_command)
     bentoml_cli.add_command(deployment_command)
+    bentoml_cli.add_command(secret_command)
 
     if psutil.WINDOWS:
         import sys

@@ -64,6 +64,7 @@ class DeploymentConfigParameters:
     instance_type: str | None = None
     strategy: str | None = None
     envs: t.List[dict[str, t.Any]] | None = None
+    secrets: t.List[str] | None = (None,)
     extras: dict[str, t.Any] | None = None
     config_dict: dict[str, t.Any] | None = None
     config_file: str | t.TextIO | None = None
@@ -85,6 +86,7 @@ class DeploymentConfigParameters:
             or self.instance_type
             or self.strategy
             or self.envs
+            or self.secrets
             or self.extras
         )
 
@@ -109,6 +111,7 @@ class DeploymentConfigParameters:
                     ("cluster", self.cluster),
                     ("access_authorization", self.access_authorization),
                     ("envs", self.envs if self.envs else None),
+                    ("secrets", self.secrets),
                 ]
                 if v is not None
             }

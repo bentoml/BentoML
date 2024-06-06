@@ -949,13 +949,12 @@ class BentoPathSpec:
             and not self._exclude.match_file(path)
             and not self.extra.match_file(path)
         )
-        if to_include:
-            if recurse_exclude_spec is not None:
-                return not any(
-                    ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
-                    for ignore_parent, ignore_spec in recurse_exclude_spec
-                )
-        return False
+        if to_include and recurse_exclude_spec is not None:
+            return not any(
+                ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
+                for ignore_parent, ignore_spec in recurse_exclude_spec
+            )
+        return to_include
 
     def from_path(self, path: str) -> t.Generator[t.Tuple[str, PathSpec], None, None]:
         """
@@ -963,7 +962,7 @@ class BentoPathSpec:
         """
         fs_ = fs.open_fs(path)
         for file in fs_.walk.files(filter=[".bentoignore"]):
-            dir_path = "".join(fs.path.parts(file)[:-1])
+            dir_path = fs.path.dirname(file)
             yield dir_path, PathSpec.from_lines("gitwildmatch", fs_.open(file))
 
 

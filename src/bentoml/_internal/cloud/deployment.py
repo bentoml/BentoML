@@ -487,7 +487,7 @@ class DeploymentInfo:
         spinner: Spinner | None = None,
         spinner_task_id: TaskID | None = None,
     ) -> None:
-        from httpcore import TimeoutException
+        from httpx import TimeoutException
 
         start_time = time.time()
         if spinner is not None and spinner_task_id is not None:

@@ -7,6 +7,7 @@ from typing import Dict
 from typing import Tuple
 
 import numpy as np
+import pyarrow
 import pytest
 
 from bentoml.client import AsyncHTTPClient
@@ -138,6 +139,36 @@ async def test_pandas(host: str):
 
         headers = {"Content-Type": "text/csv", "Origin": ORIGIN}
         data = df.to_csv()
+        response = await client.client.post(
+            "/predict_dataframe", headers=headers, data=data
+        )
+        assert response.status_code == 200
+        assert await response.aread() == b'[{"col1":202}]'
+
+        headers = {
+            "Content-Type": "application/vnd.apache.arrow.stream",
+            "Origin": ORIGIN,
+        }
+        sink = pyarrow.BufferOutputStream()
+        batch = pyarrow.RecordBatch.from_pandas(df, preserve_index=True)
+        with pyarrow.ipc.new_stream(sink, batch.schema) as writer:
+            writer.write_batch(batch)
+        data = sink.getvalue().to_pybytes()
+        response = await client.client.post(
+            "/predict_dataframe", headers=headers, data=data
+        )
+        assert response.status_code == 200
+        assert await response.aread() == b'[{"col1":202}]'
+
+        headers = {
+            "Content-Type": "application/vnd.apache.arrow.file",
+            "Origin": ORIGIN,
+        }
+        sink = pyarrow.BufferOutputStream()
+        batch = pyarrow.RecordBatch.from_pandas(df, preserve_index=True)
+        with pyarrow.ipc.new_file(sink, batch.schema) as writer:
+            writer.write_batch(batch)
+        data = sink.getvalue().to_pybytes()
         response = await client.client.post(
             "/predict_dataframe", headers=headers, data=data
         )

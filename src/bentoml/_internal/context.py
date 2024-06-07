@@ -3,8 +3,6 @@ from __future__ import annotations
 import contextlib
 import contextvars
 import os
-import shutil
-import tempfile
 import typing as t
 from abc import ABC
 from abc import abstractmethod
@@ -14,6 +12,7 @@ import attr
 import starlette.datastructures
 
 from .utils.http import Cookie
+from .utils.temp import TempfilePool
 
 if TYPE_CHECKING:
     import starlette.requests
@@ -26,12 +25,14 @@ _response_var: contextvars.ContextVar[ServiceContext.ResponseContext] = (
     contextvars.ContextVar("response")
 )
 
+request_tempdir_pool = TempfilePool(prefix="bentoml-request-")
+
 
 def request_temp_dir() -> str:
     """A request-unique directory for storing temporary files"""
     request = _request_var.get()
     if not hasattr(request.state, "temp_dir"):
-        request.state.temp_dir = tempfile.mkdtemp(prefix="bentoml-request-")
+        request.state.temp_dir = request_tempdir_pool.acquire()
     return request.state.temp_dir
 
 
@@ -106,7 +107,7 @@ class ServiceContext:
             yield self
         finally:
             if hasattr(request.state, "temp_dir"):
-                shutil.rmtree(request.state.temp_dir, ignore_errors=True)
+                request_tempdir_pool.release(request.state.temp_dir)
             _request_var.reset(request_token)
             _response_var.reset(response_token)
 

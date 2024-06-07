@@ -106,7 +106,7 @@ class DeploymentConfigParameters:
                     ("bento", self.bento),
                     ("cluster", self.cluster),
                     ("access_authorization", self.access_authorization),
-                    ("envs", self.envs),
+                    ("envs", self.envs if len(self.envs) > 0 else None),
                 ]
                 if v is not None
             }
@@ -693,8 +693,6 @@ class Deployment:
         cloud_rest_client = get_rest_api_client(context)
         deployment_schema = cloud_rest_client.v2.get_deployment(name, cluster)
         orig_dict = cls._convert_schema_to_update_schema(deployment_schema)
-        for service in orig_dict.get("services", {}).values():
-            service.pop("envs", None)
 
         config_params = deployment_config_params.get_config_dict(
             orig_dict.get("bento"),

@@ -7,6 +7,9 @@ import tempfile
 import typing as t
 from typing import TYPE_CHECKING
 
+import numpy as np
+from typing_extensions import deprecated
+
 import bentoml
 from bentoml import Tag
 from bentoml.exceptions import BentoMLException
@@ -17,6 +20,10 @@ from bentoml.models import ModelContext
 if TYPE_CHECKING:
     from types import ModuleType
 
+    from typing_extensions import Unpack
+
+    from _bentoml_sdk import Service
+    from _bentoml_sdk import ServiceConfig
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
@@ -34,33 +41,7 @@ MODULE_NAME = "bentoml.mlflow"
 MLFLOW_MODEL_FOLDER = "mlflow_model"
 API_VERSION = "v1"
 
-logger = logging.getLogger(__name__)
-
-
-def get(tag_like: str | Tag) -> bentoml.Model:
-    """
-    Get the BentoML model with the given tag.
-
-    Args:
-        tag_like: The tag of the model to retrieve from the model store.
-
-    Returns:
-        :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
-
-    Example:
-
-    .. code-block:: python
-
-       import bentoml
-       # target model must be from the BentoML model store
-       model = bentoml.mlflow.get("my_mlflow_model")
-    """
-    model = bentoml.models.get(tag_like)
-    if model.info.module not in (MODULE_NAME, __name__):
-        raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
-        )
-    return model
+logger = logging.getLogger(MODULE_NAME)
 
 
 def load_model(
@@ -85,7 +66,7 @@ def load_model(
         pyfunc_model.predict( input_df )
     """  # noqa
     if not isinstance(bento_model, bentoml.Model):
-        bento_model = get(bento_model)
+        bento_model = bentoml.models.get(bento_model)
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
@@ -230,6 +211,7 @@ def import_model(
         return bento_model
 
 
+@deprecated("`get_runnable` is a legacy API, use `get_service` instead.")
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
@@ -262,6 +244,30 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     return MLflowPyfuncRunnable
 
 
-def get_mlflow_model(tag_like: str | Tag) -> mlflow.models.Model:
-    bento_model = get(tag_like)
-    return mlflow.models.Model.load(bento_model.path_of(MLFLOW_MODEL_FOLDER))
+def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.Any]:
+    """
+    Get a BentoML service from a MLflow model.
+
+    Args:
+        model_name: The name of the model to load.
+        **config: Additional configuration for the service.
+
+    Returns:
+        A BentoML service instance that can be used to serve the MLflow model.
+    """
+
+    @bentoml.service(**config)
+    class MLflowService:
+        bento_model = bentoml.models.get(model_name)
+
+        def __init__(self):
+            self.model = load_model(self.bento_model)
+
+        @bentoml.api
+        def predict(
+            self, input_data: np.ndarray[t.Any, t.Any]
+        ) -> np.ndarray[t.Any, t.Any]:
+            rv = self.model.predict(input_data)
+            return np.asarray(rv)
+
+    return MLflowService

@@ -169,5 +169,5 @@ def test_mlflow_invalid_import_mlproject():
 
 def test_get_mlflow_model(URI: Path):
     bento_model = bentoml.mlflow.import_model(MODEL_NAME, str(URI))
-    mlflow_model = bentoml.mlflow.get_mlflow_model(bento_model.tag)
+    mlflow_model = bentoml.mlflow.load_model(bento_model.tag)
     assert isinstance(mlflow_model, mlflow.models.Model)

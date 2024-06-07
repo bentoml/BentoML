@@ -8,21 +8,24 @@ from typing import TYPE_CHECKING
 
 import attr
 import numpy as np
+from typing_extensions import deprecated
 
 import bentoml
 from bentoml import Tag
+from bentoml._internal.models.model import ModelContext
+from bentoml._internal.utils.pkg import get_pkg_version
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
 from bentoml.models import ModelOptions
 
-from ..models.model import ModelContext
-from ..utils.pkg import get_pkg_version
-
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from _bentoml_sdk import Service
+    from _bentoml_sdk import ServiceConfig
     from bentoml.types import ModelSignature
-    from bentoml.types import ModelSignatureDict
 
 
 try:
@@ -30,7 +33,7 @@ try:
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'xgboost' is required in order to use module 'bentoml.xgboost', install xgboost with 'pip install xgboost'. For more information, refer to https://xgboost.readthedocs.io/en/latest/install.html"
-    )
+    ) from None
 
 try:
     from xgboost import XGBModel
@@ -53,34 +56,7 @@ class XGBoostOptions(ModelOptions):
     model_class: str | None = None
 
 
-def get(tag_like: str | Tag) -> bentoml.Model:
-    """
-    Get the BentoML model with the given tag.
-
-    Args:
-        tag_like (``str`` ``|`` :obj:`~bentoml.Tag`):
-            The tag of the model to retrieve from the model store.
-    Returns:
-        :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
-    Example:
-
-    .. code-block:: python
-
-        import bentoml
-        # target model must be from the BentoML model store
-        model = bentoml.xgboost.get("my_xgboost_model")
-    """
-    model = bentoml.models.get(tag_like)
-    if model.info.module not in (MODULE_NAME, __name__):
-        raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
-        )
-    return model
-
-
-def load_model(
-    bento_model: str | Tag | bentoml.Model,
-) -> xgb.Booster | xgb.XGBModel:
+def load_model(bento_model: str | Tag | bentoml.Model) -> xgb.Booster | xgb.XGBModel:
     """
     Load the XGBoost model with the given tag from the local BentoML model store.
 
@@ -99,7 +75,7 @@ def load_model(
         booster = bentoml.xgboost.load_model("my_xgboost_model")
     """  # noqa: LN001
     if not isinstance(bento_model, bentoml.Model):
-        bento_model = get(bento_model)
+        bento_model = bentoml.models.get(bento_model)
         assert isinstance(bento_model, bentoml.Model)
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
@@ -144,7 +120,6 @@ def save_model(
     name: Tag | str,
     model: xgb.Booster | xgb.XGBModel,
     *,
-    signatures: dict[str, ModelSignatureDict] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     external_modules: t.List[ModuleType] | None = None,
@@ -209,20 +184,17 @@ def save_model(
     else:
         raise TypeError(f"Given model ({model}) is not a xgboost.Booster.")
 
-    context: ModelContext = ModelContext(
+    context = ModelContext(
         framework_name="xgboost",
         framework_versions={"xgboost": get_pkg_version("xgboost")},
     )
 
-    if signatures is None:
-        signatures = {
-            "predict": {"batchable": False},
-        }
-        logger.info(
-            'Using the default model signature for xgboost (%s) for model "%s".',
-            signatures,
-            name,
-        )
+    signatures = {"predict": {"batchable": False}}
+    logger.info(
+        'Using the default model signature for xgboost (%s) for model "%s".',
+        signatures,
+        name,
+    )
 
     with bentoml.models._create(  # type: ignore
         name,
@@ -241,6 +213,7 @@ def save_model(
         return bento_model
 
 
+@deprecated("`get_runnable` is a legacy API, use `get_service` instead.")
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
@@ -307,3 +280,93 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         add_runnable_method(method_name, options)
 
     return XGBoostRunnable
+
+
+def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.Any]:
+    """
+    Get a BentoML service instance from an XGBoost model.
+
+    Args:
+        model_name (``str``):
+            The name of the model to get the service for.
+        **config (``Unpack[ServiceConfig]``):
+            Configuration options for the service.
+    Returns:
+        A BentoML service instance that wraps the XGBoost model.
+    """
+
+    @bentoml.service(**config)
+    class XGBoostService:
+        bento_model = bentoml.models.get(model_name)
+
+        def __init__(self) -> None:
+            self.model = load_model(self.bento_model)
+            self.booster = (
+                self.model
+                if isinstance(self.model, xgb.Booster)
+                else self.model.get_booster()
+            )
+
+            # check for resources
+            if os.getenv("CUDA_VISIBLE_DEVICES") not in (None, "", "-1"):
+                self.booster.set_param({"predictor": "gpu_predictor", "gpu_id": 0})  # type: ignore (incomplete XGBoost types)
+            else:
+                nthreads = os.getenv("OMP_NUM_THREADS")
+                if nthreads is not None and nthreads != "":
+                    nthreads = max(int(nthreads), 1)
+                else:
+                    nthreads = 1
+                self.booster.set_param(
+                    {"predictor": "cpu_predictor", "nthread": nthreads}
+                )  # type: ignore (incomplete XGBoost types)
+
+        if bento_model.info.options.model_class == "Booster":
+
+            @bentoml.api
+            def predict(
+                self,
+                data: np.ndarray[t.Any, t.Any],
+                output_margin: bool = False,
+                pred_leaf: bool = False,
+                pred_contribs: bool = False,
+                approx_contribs: bool = False,
+                pred_interactions: bool = False,
+                validate_features: bool = True,
+                training: bool = False,
+                iteration_range: t.Tuple[int, int] = (0, 0),
+                strict_shape: bool = False,
+            ) -> np.ndarray[t.Any, t.Any]:
+                assert isinstance(self.model, xgb.Booster)
+                return self.model.predict(
+                    xgb.DMatrix(data),
+                    output_margin=output_margin,
+                    pred_leaf=pred_leaf,
+                    pred_contribs=pred_contribs,
+                    approx_contribs=approx_contribs,
+                    pred_interactions=pred_interactions,
+                    validate_features=validate_features,
+                    training=training,
+                    iteration_range=iteration_range,
+                    strict_shape=strict_shape,
+                )  # type: ignore (incomplete XGBoost types)
+        else:
+
+            @bentoml.api
+            def predict(
+                self,
+                data: np.ndarray[t.Any, t.Any],
+                output_margin: bool = False,
+                validate_features: bool = True,
+                base_margin: t.Optional[t.List[t.Any]] = None,
+                iteration_range: t.Optional[t.Tuple[int, int]] = None,
+            ) -> np.ndarray[t.Any, t.Any]:
+                assert isinstance(self.model, XGBModel)
+                return self.model.predict(
+                    data,
+                    output_margin=output_margin,
+                    validate_features=validate_features,
+                    base_margin=base_margin,
+                    iteration_range=iteration_range,
+                )
+
+    return XGBoostService

@@ -6,17 +6,21 @@ from types import ModuleType
 from typing import TYPE_CHECKING
 
 import numpy as np
+from typing_extensions import deprecated
 
 import bentoml
 from bentoml import Tag
+from bentoml._internal.models.model import ModelContext
+from bentoml._internal.utils.pkg import get_pkg_version
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
 
-from ..models.model import ModelContext
-from ..utils.pkg import get_pkg_version
-
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from _bentoml_sdk import Service
+    from _bentoml_sdk import ServiceConfig
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
@@ -32,32 +36,7 @@ MODULE_NAME = "bentoml.lightgbm"
 MODEL_FILENAME = "saved_model.ubj"
 API_VERSION = "v1"
 
-logger = logging.getLogger(__name__)
-
-
-def get(tag_like: str | Tag) -> bentoml.Model:
-    """
-    Get the BentoML model with the given tag.
-
-    Args:
-        tag_like (``str`` ``|`` :obj:`~bentoml.Tag`):
-            The tag of the model to retrieve from the model store.
-    Returns:
-        :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
-    Example:
-
-    .. code-block:: python
-
-        import bentoml
-        # target model must be from the BentoML model store
-        model = bentoml.lightgbm.get("my_lightgbm_model:latest")
-    """
-    model = bentoml.models.get(tag_like)
-    if model.info.module not in (MODULE_NAME, __name__):
-        raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
-        )
-    return model
+logger = logging.getLogger(MODULE_NAME)
 
 
 def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:  # type: ignore (incomplete ligthgbm type stubs)
@@ -79,7 +58,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:  # 
         gbm = bentoml.lightgbm.load("my_lightgbm_model:latest")
     """  # noqa
     if not isinstance(bento_model, bentoml.Model):
-        bento_model = get(bento_model)
+        bento_model = bentoml.models.get(bento_model)
         assert isinstance(bento_model, bentoml.Model)
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
@@ -223,6 +202,7 @@ def save_model(
         return bento_model
 
 
+@deprecated("`get_runnable` is a legacy API, use `get_service` instead.")
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
@@ -264,3 +244,58 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         add_runnable_method(method_name, options)
 
     return LightGBMRunnable
+
+
+def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.Any]:
+    """
+    Get a BentoML service instance from a LightGBM model.
+
+    Args:
+        model_name (``str``):
+            The name of the model to get the service for.
+        **config (``Unpack[ServiceConfig]``):
+            Configuration options for the service.
+    Returns:
+        A BentoML service instance that wraps the LightGBM model.
+    """
+
+    @bentoml.service(**config)
+    class LightGBMService:
+        bento_model = bentoml.models.get(model_name)
+
+        def __init__(self) -> None:
+            self.model = load_model(self.bento_model)
+
+        @bentoml.api
+        def predict(
+            self,
+            data: np.ndarray[t.Any, t.Any],
+            start_iteration: int = 0,
+            num_iteration: t.Optional[int] = None,
+            raw_score: bool = False,
+            pred_leaf: bool = False,
+            pred_contrib: bool = False,
+            data_has_header: bool = False,
+            validate_features: bool = False,
+            kwargs: dict[str, t.Any] | None = None,
+        ) -> np.ndarray[t.Any, t.Any]:
+            from scipy.sparse import isspmatrix
+
+            preds = self.model.predict(
+                data=data,
+                start_iteration=start_iteration,
+                num_iteration=num_iteration,
+                raw_score=raw_score,
+                pred_leaf=pred_leaf,
+                pred_contrib=pred_contrib,
+                data_has_header=data_has_header,
+                validate_features=validate_features,
+                **(kwargs or {}),
+            )
+            if isinstance(preds, list):
+                return np.asarray([m.toarray() for m in preds])
+            elif isspmatrix(preds):
+                return preds.toarray()
+            return np.asarray(preds)
+
+    return LightGBMService

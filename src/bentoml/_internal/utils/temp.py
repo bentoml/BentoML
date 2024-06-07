@@ -9,8 +9,8 @@ from threading import Lock
 
 
 class TempfilePool:
-    """A simple pool to get temp directories
-    so they are reused as most as possible.
+    """A simple pool to get temp directories,
+    so they are reused as much as possible.
     """
 
     def __init__(

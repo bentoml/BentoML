@@ -36,10 +36,10 @@ class TempfilePool:
                 return self._pool.popleft()
 
     def release(self, dir: str) -> None:
+        for child in Path(dir).iterdir():
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
         with self._lock:
-            for child in Path(dir).iterdir():
-                if child.is_dir():
-                    shutil.rmtree(child)
-                else:
-                    child.unlink()
             self._pool.append(dir)

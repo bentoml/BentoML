@@ -20,10 +20,10 @@
 BentoML is an open-source model serving framework, simplifying how AI/ML models gets into production:
 
 - **🍱 Easily build APIs for Any AI/ML Model.** Turn any model inference script into a REST API server with just a few lines of code and standard Python type hints.
-- **🐳 Docker Containers made simple.** No more dependency hell! Manage your environments, dependencies and models with a simple config file. BentoML automatically generates Docker images, ensures reproducibility, and simplifies how you run inference across different environments.
-- **🧭 Maximize CPU/GPU utilization.** Improve your API throughput and latency performance leveraging built-in serving optimization features like dynamic batching, model parallelism, multi-stage pipeline and multi-model inference-graph orchestration.
-- **👩‍💻 Build Custom AI Applications.** BentoML is highly flexible for advanced customizations. Easily implement your own API specifications, asynchronous inference tasks; customize pre/post-processing, model inference logic; and define model composition; all using Python code. Supports any ML framework, modality, and inference runtime.
-- **🚀 Build for Production.** Develop, run and debug locally. Seamlessly deploy to production with Docker containers or [BentoCloud](https://www.bentoml.com/).
+- **🐳 Docker Containers made simple.** No more dependency hell! Manage your environments, dependencies and model versions with a simple config file. BentoML automatically generates Docker images, ensures reproducibility, and simplifies how you deploy to different environments.
+- **🧭 Maximize CPU/GPU utilization.** Build high performance inference APIs leveraging built-in serving optimization features like dynamic batching, model parallelism, multi-stage pipeline and multi-model inference-graph orchestration.
+- **👩‍💻 Build Custom AI Applications.** Easily implement your own API specifications, asynchronous inference tasks; customize pre/post-processing, model inference and model composition logic, all using Python code. Supports any ML framework, modality, and inference runtime.
+- **🚀 Ready for Production.** Develop, run and debug locally. Seamlessly deploy to production with Docker containers or [BentoCloud](https://www.bentoml.com/).
 
 
 ## Getting started
@@ -32,25 +32,28 @@ Install BentoML:
 
 ```
 # Requires Python≥3.8
-pip install bentoml torch transformers
+pip install -U bentoml
+pip install torch transformers  # additional dependencies for demo purpose
 ```
 
 Define APIs in a `service.py` file.
 
 ```python
+from __future__ import annotations
+
 import bentoml
-from transformers import pipeline
 from typing import List
 
 @bentoml.service
 class Summarization:
-    def __init__(self):
+    def __init__(self) -> None:
+        from transformers import pipeline
         self.pipeline = pipeline('summarization')
 
     @bentoml.api(batchable=True)
     def summarize(self, texts: List[str]) -> List[str]:
         results = self.pipeline(texts)
-        return list(map(lambda res: res['summary_text'], results))
+        return [item['summary_text'] for item in results]
 ```
 
 Run the service code locally (serving at http://localhost:3000 by default):
@@ -79,6 +82,7 @@ service: "service:Summarization" # Entry service import path
 include:
   - "*.py" # Include all .py files in current directory
 python:
+  lock_packages: false # option to lock versions found in current environment
   packages: # Python dependencies to include
   - torch
   - transformers
@@ -135,10 +139,10 @@ For detailed explanations, read [Quickstart](https://docs.bentoml.com/en/latest/
 - LLMs: [Llama 3](https://github.com/bentoml/BentoVLLM/tree/main/llama3-8b-instruct), [Mixtral](https://github.com/bentoml/BentoVLLM/tree/main/mixtral-8x7b-instruct), [Solar](https://github.com/bentoml/BentoVLLM/tree/main/solar-10.7b-instruct), [Mistral](https://github.com/bentoml/BentoVLLM/tree/main/mistral-7b-instruct), and [more](https://github.com/bentoml/BentoVLLM)
 - Image Generation: [Stable Diffusion](https://github.com/bentoml/BentoSD2Upscaler), [Stable Video Diffusion](https://github.com/bentoml/BentoSVD), [Stable Diffusion XL Turbo](https://github.com/bentoml/BentoSDXLTurbo), [ControlNet](https://github.com/bentoml/BentoControlNet/), [LCM LoRAs](https://github.com/bentoml/BentoLCM)
 - Text Embeddings: [SentenceTransformers](https://github.com/bentoml/BentoSentenceTransformers)
-- Audio: [XTTS](https://github.com/bentoml/BentoXTTS), [WhisperX](https://github.com/bentoml/BentoWhisperX), [Bark](https://github.com/bentoml/BentoBark)
+- Audio: [XTTS](https://github.com/bentoml/BentoXTTS), [WhisperX](https://github.com/bentoml/BentoWhisperX), [Bark](https://github.com/bentoml/BentoBark), [ChatTTS](https://github.com/bentoml/BentoChatTTS)
 - Computer Vision: [YOLO](https://github.com/bentoml/BentoYolo)
 - Multimodal: [BLIP](https://github.com/bentoml/BentoBlip), [CLIP](https://github.com/bentoml/BentoClip)
-- Compound AI systems: [Serving RAG with custom models](https://github.com/bentoml/rag-tutorials)
+- RAG: [RAG-as-a-Service with custom models](https://github.com/bentoml/rag-tutorials)
 
 Check out the [examples](./examples/) folder for more sample code and usage.
 

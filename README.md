@@ -139,7 +139,7 @@ For detailed explanations, read [Quickstart](https://docs.bentoml.com/en/latest/
 - LLMs: [Llama 3](https://github.com/bentoml/BentoVLLM/tree/main/llama3-8b-instruct), [Mixtral](https://github.com/bentoml/BentoVLLM/tree/main/mixtral-8x7b-instruct), [Solar](https://github.com/bentoml/BentoVLLM/tree/main/solar-10.7b-instruct), [Mistral](https://github.com/bentoml/BentoVLLM/tree/main/mistral-7b-instruct), and [more](https://github.com/bentoml/BentoVLLM)
 - Image Generation: [Stable Diffusion](https://github.com/bentoml/BentoSD2Upscaler), [Stable Video Diffusion](https://github.com/bentoml/BentoSVD), [Stable Diffusion XL Turbo](https://github.com/bentoml/BentoSDXLTurbo), [ControlNet](https://github.com/bentoml/BentoControlNet/), [LCM LoRAs](https://github.com/bentoml/BentoLCM)
 - Text Embeddings: [SentenceTransformers](https://github.com/bentoml/BentoSentenceTransformers)
-- Audio: [XTTS](https://github.com/bentoml/BentoXTTS), [WhisperX](https://github.com/bentoml/BentoWhisperX), [Bark](https://github.com/bentoml/BentoBark), [ChatTTS](https://github.com/bentoml/BentoChatTTS)
+- Audio: [ChatTTS](https://github.com/bentoml/BentoChatTTS), [XTTS](https://github.com/bentoml/BentoXTTS), [WhisperX](https://github.com/bentoml/BentoWhisperX), [Bark](https://github.com/bentoml/BentoBark)
 - Computer Vision: [YOLO](https://github.com/bentoml/BentoYolo)
 - Multimodal: [BLIP](https://github.com/bentoml/BentoBlip), [CLIP](https://github.com/bentoml/BentoClip)
 - RAG: [RAG-as-a-Service with custom models](https://github.com/bentoml/rag-tutorials)

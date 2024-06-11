@@ -288,6 +288,7 @@ def update(  # type: ignore
         ),
         config_file=config_file,
         config_dict=cfg_dict,
+        cli=True,
     )
     try:
         config_params.verify()
@@ -410,6 +411,7 @@ def apply(  # type: ignore
         ),
         config_file=config_file,
         config_dict=cfg_dict,
+        cli=True,
     )
     try:
         config_params.verify()
@@ -730,6 +732,7 @@ def create_deployment(
         ),
         config_file=config_file,
         config_dict=cfg_dict,
+        cli=True,
     )
     try:
         config_params.verify()

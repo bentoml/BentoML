@@ -159,18 +159,16 @@ class DeploymentConfigParameters:
         if bento_name:
             if isinstance(bento_name, str) and path.exists(bento_name):
                 # target is a path
-                if self.cli:
-                    click.echo(f"building bento from {bento_name} ...")
                 bento_info = get_bento_info(
                     project_path=bento_name,
                     context=self.context,
+                    cli=self.cli,
                 )
             else:
-                if self.cli:
-                    click.echo(f"using bento {bento_name}...")
                 bento_info = get_bento_info(
                     bento=str(bento_name),
                     context=self.context,
+                    cli=self.cli,
                 )
             self.cfg_dict["bento"] = bento_info.tag
             if self.service_name is None:
@@ -288,12 +286,22 @@ def get_args_from_config(
 def get_bento_info(
     project_path: str | None = None,
     bento: str | Tag | None = None,
+    cli: bool = False,
     context: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> BentoInfo:
+    if cli:
+        sp = Spinner() # Use a new spinner so logs won't be shown after tasks finish
     if project_path:
         from bentoml.bentos import build_bentofile
+        if cli:
+            with Live(sp.progress_group):
+                task_id = sp.spinner_progress.add_task(
+                    "build bento",
+                action = f"[bold blue]building bento from {project_path}"
+            )
+                bento_obj = build_bentofile(build_ctx=project_path, _bento_store=_bento_store)
 
         with _cloud_client.spinner as spinner:
             with spinner.spin(text=f"🍱 Building bento from project: {project_path}"):
@@ -320,6 +328,11 @@ def get_bento_info(
             bento_schema = None
 
         if bento_obj is not None:
+            if cli: 
+                with Live(sp.progress_group):
+                    sp.log_progress.add_task(
+                        f"[bold blue]Using bento {bento_obj.info.name} from local to deploy"
+                    )
             # push to bentocloud
             _cloud_client.push_bento(bento=bento_obj, context=context)
             return bento_obj.info

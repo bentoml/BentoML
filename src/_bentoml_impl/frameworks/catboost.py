@@ -20,6 +20,7 @@ from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
 from bentoml.models import ModelOptions
+from bentoml.models import get as get
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -271,6 +272,25 @@ class PredictionType(enum.Enum):
 
 
 def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.Any]:
+    """
+    Get a BentoML service for the catboost model given by name.
+
+    Args:
+        model_name (``str``):
+            The name of the model to get the service for.
+        **config (``Unpack[ServiceConfig]``):
+            Configuration options for the service.
+    Returns:
+        A BentoML service instance that wraps the CatBoost model.
+    Example:
+
+    .. code-block:: python
+
+        import bentoml
+
+        service = bentoml.catboost.get_service("my_catboost_model")
+    """
+
     @bentoml.service(**config)
     class CatBoostService:
         bento_model = bentoml.models.get(model_name)

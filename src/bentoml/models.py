@@ -40,6 +40,7 @@ def get(
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     model_aliases: t.Dict[str, str] = Provide[BentoMLContainer.model_aliases],
 ) -> "Model":
+    """Get a model by tag. If the tag is a string, it will be looked up in the model_aliases dict."""
     if isinstance(tag, str) and tag in model_aliases:
         tag = model_aliases[tag]
     return _model_store.get(tag)

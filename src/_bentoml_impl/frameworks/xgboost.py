@@ -19,6 +19,7 @@ from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
 from bentoml.models import ModelOptions
+from bentoml.models import get as get
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -293,6 +294,13 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
             Configuration options for the service.
     Returns:
         A BentoML service instance that wraps the XGBoost model.
+    Example:
+
+    .. code-block:: python
+
+        import bentoml
+
+        service = bentoml.xgboost.get_service("my_xgboost_model")
     """
 
     @bentoml.service(**config)

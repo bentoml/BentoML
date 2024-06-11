@@ -16,3 +16,5 @@ LightGBM
 .. autofunction:: bentoml.lightgbm.load_model
 
 .. autofunction:: bentoml.lightgbm.get
+
+.. autofunction:: bentoml.lightgbm.get_service

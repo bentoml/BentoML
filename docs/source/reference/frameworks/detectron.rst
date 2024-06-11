@@ -5,7 +5,7 @@ Detectron
 .. admonition:: About this page
 
    This is an API reference for Detectron in BentoML. Please refer to
-   :doc:`Detectron guide </frameworks/detectron>` for more information about how to use
+   :doc:`Detectron guide </reference/frameworks/detectron>` for more information about how to use
    Detectron in BentoML.
 
 .. currentmodule:: bentoml.detectron

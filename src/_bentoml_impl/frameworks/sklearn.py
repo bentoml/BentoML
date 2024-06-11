@@ -15,6 +15,7 @@ from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
 from bentoml.models import Model
 from bentoml.models import ModelContext
+from bentoml.models import get as get
 
 if TYPE_CHECKING:
     from sklearn.base import BaseEstimator

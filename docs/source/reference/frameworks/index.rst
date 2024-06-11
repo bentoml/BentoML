@@ -5,7 +5,7 @@ Framework APIs
 .. note::
 
     This page contains the API reference for all frameworks. For more information on a specific
-    framework, please see :doc:`/frameworks/index`
+    framework, please see :doc:`/reference/frameworks/index`
 
 .. grid:: 1 2 2 2
     :gutter: 3

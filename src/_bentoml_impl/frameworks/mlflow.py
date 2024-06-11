@@ -16,6 +16,7 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
 from bentoml.models import ModelContext
+from bentoml.models import get as get
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -254,6 +255,14 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
 
     Returns:
         A BentoML service instance that can be used to serve the MLflow model.
+
+    Example:
+
+    .. code-block:: python
+
+        import bentoml
+
+        service = bentoml.mlflow.get_service("my_mlflow_model")
     """
 
     @bentoml.service(**config)

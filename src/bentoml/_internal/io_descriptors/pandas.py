@@ -170,7 +170,7 @@ def _infer_serialization_format_from_request(
     if content_type == "application/json":
         return SerializationFormat.JSON
     # We accept octet-stream as Parquet to avoid breaking legacy code.
-    elif content_type in ("vnd.apache.parquet", "application/octet-stream"):
+    elif content_type in ("application/vnd.apache.parquet", "application/octet-stream"):
         return SerializationFormat.PARQUET
     elif content_type == "text/csv":
         return SerializationFormat.CSV

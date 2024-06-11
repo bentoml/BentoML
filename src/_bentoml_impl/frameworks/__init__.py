@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 import importlib.util
 from importlib.abc import MetaPathFinder
-from importlib.machinery import ModuleSpec
-from types import ModuleType
-from typing import Sequence
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from importlib.machinery import ModuleSpec
+    from types import ModuleType
+    from typing import Sequence
 
 
 class FrameworkImporter(MetaPathFinder):

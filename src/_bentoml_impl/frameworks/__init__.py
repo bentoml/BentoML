@@ -28,4 +28,8 @@ class FrameworkImporter(MetaPathFinder):
     def install(cls) -> None:
         import sys
 
+        for finder in sys.meta_path:
+            if isinstance(finder, cls):
+                return
+
         sys.meta_path.append(cls())

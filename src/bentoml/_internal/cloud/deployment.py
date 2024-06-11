@@ -106,7 +106,7 @@ class DeploymentConfigParameters:
                     ("bento", self.bento),
                     ("cluster", self.cluster),
                     ("access_authorization", self.access_authorization),
-                    ("envs", self.envs if len(self.envs) > 0 else None),
+                    ("envs", self.envs if self.envs else None),
                 ]
                 if v is not None
             }

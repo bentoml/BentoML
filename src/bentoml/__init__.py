@@ -76,10 +76,10 @@ if TYPE_CHECKING:
     from ._internal.frameworks import flax
     from ._internal.frameworks import keras
     from ._internal.frameworks import onnx
-    from ._internal.frameworks import picklable as picklable_model
+    from ._internal.frameworks import picklable_model
     from ._internal.frameworks import pytorch
     from ._internal.frameworks import pytorch_lightning
-    from ._internal.frameworks import tensorflow_v2 as tensorflow
+    from ._internal.frameworks import tensorflow
     from ._internal.frameworks import torchscript
     from ._internal.frameworks import transformers
 
@@ -109,8 +109,12 @@ if TYPE_CHECKING:
     from _bentoml_sdk import runner_service
     from _bentoml_sdk import service
 else:
+    from _bentoml_impl.frameworks import FrameworkImporter
+
     from ._internal.utils import LazyLoader as _LazyLoader
     from ._internal.utils.pkg import pkg_version_info
+
+    FrameworkImporter.install()
 
     # ML Frameworks
     catboost = _LazyLoader(
@@ -156,10 +160,12 @@ else:
         "bentoml._internal.frameworks.pytorch_lightning",
     )
     picklable_model = _LazyLoader(
-        "bentoml.picklable_model", globals(), "bentoml._internal.frameworks.picklable"
+        "bentoml.picklable_model",
+        globals(),
+        "bentoml._internal.frameworks.picklable_model",
     )
     tensorflow = _LazyLoader(
-        "bentoml.tensorflow", globals(), "bentoml._internal.frameworks.tensorflow_v2"
+        "bentoml.tensorflow", globals(), "bentoml._internal.frameworks.tensorflow"
     )
     torchscript = _LazyLoader(
         "bentoml.torchscript", globals(), "bentoml._internal.frameworks.torchscript"
@@ -184,7 +190,7 @@ else:
     cloud = _LazyLoader("bentoml.cloud", globals(), "bentoml.cloud")
     deployment = _LazyLoader("bentoml.deployment", globals(), "bentoml.deployment")
     validators = _LazyLoader("bentoml.validators", globals(), "bentoml.validators")
-    del _LazyLoader
+    del _LazyLoader, FrameworkImporter
 
     _NEW_SDK_ATTRS = [
         "service",

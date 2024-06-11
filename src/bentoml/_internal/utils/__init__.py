@@ -147,7 +147,7 @@ def validate_or_create_dir(*path: PathType) -> None:
             if not path_obj.is_dir():
                 raise OSError(20, f"{path_obj} is not a directory")
         else:
-            path_obj.mkdir(parents=True)
+            path_obj.mkdir(parents=True, exist_ok=True)
 
 
 def calc_dir_size(path: PathType) -> int:

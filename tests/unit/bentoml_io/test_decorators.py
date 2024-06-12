@@ -67,13 +67,6 @@ def test_service_instantiate():
             for i in range(3):
                 yield f"Hello, {name}! {i}"
 
-        @bentoml.api
-        def numpy(
-            self,
-            arr: npt.NDArray[np.float64],
-        ) -> Annotated[npt.NDArray[Any], DType("float64"), Shape((1,))]:
-            return arr
-
     svc = TestService()
     assert svc.hello("world") == "Hello, world!"
     assert list(svc.stream("world")) == [
@@ -81,10 +74,6 @@ def test_service_instantiate():
         "Hello, world! 1",
         "Hello, world! 2",
     ]
-    np.testing.assert_array_equal(
-        svc.numpy(np.array([1.0, 2.0, 3.0])),
-        np.array([1.0, 2.0, 3.0]),
-    )
 
 
 @pytest.mark.asyncio
@@ -100,13 +89,6 @@ async def test_service_instantiate_to_async():
             for i in range(3):
                 yield f"Hello, {name}! {i}"
 
-        @bentoml.api
-        def numpy(
-            self,
-            arr: npt.NDArray[np.float64],
-        ) -> Annotated[npt.NDArray[Any], DType("float64"), Shape((1,))]:
-            return arr
-
     svc = TestService()
     assert await svc.to_async.hello("world") == "Hello, world!"
     assert [text async for text in svc.to_async.stream("world")] == [
@@ -114,7 +96,29 @@ async def test_service_instantiate_to_async():
         "Hello, world! 1",
         "Hello, world! 2",
     ]
-    np.testing.assert_array_equal(
-        await svc.to_async.numpy(np.array([1.0, 2.0, 3.0])),
-        np.array([1.0, 2.0, 3.0]),
-    )
+
+
+def test_api_decorator_numpy():
+    @bentoml.api
+    def numpy_func(
+        _,  # The decorator assumes `self` is the first arg.
+        arr: npt.NDArray[np.float64],
+    ) -> Annotated[npt.NDArray[np.int64], DType("int64"), Shape((1,))]:
+        return arr.astype(np.int64)
+
+    numpy_func.input_spec.model_fields["arr"].annotation is npt.NDArray[np.float64]
+    numpy_func.output_spec.model_fields["root"].annotation is Annotated[
+        npt.NDArray[np.int64], DType("int64"), Shape((1,))
+    ]
+
+    with pytest.raises(
+        TypeError,
+        match=r"Unable to infer the output spec for function .+, please specify output_spec manually",
+    ):
+
+        @bentoml.api
+        def numpy_func(
+            _,  # The decorator assumes `self` is the first arg.
+            arr: npt.NDArray[np.float64],
+        ) -> Annotated[npt.NDArray[np.float64], DType("int64"), Shape((1,))]:
+            return arr.astype(np.int64)

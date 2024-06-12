@@ -1,5 +1,4 @@
 from typing import Annotated
-from typing import Any
 from typing import Generator
 
 import numpy as np

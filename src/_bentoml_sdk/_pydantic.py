@@ -47,7 +47,7 @@ def numpy_prepare_pydantic_annotations(
         return None
 
     args = get_args(source)
-    dtype = np.dtype(args[1]).name if args else None
+    dtype = np.dtype(get_args(args[1])[0]).name if args else None
     shape: tuple[int, ...] | None = None
 
     _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(

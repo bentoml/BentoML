@@ -1,8 +1,14 @@
+from typing import Annotated
+from typing import Any
 from typing import Generator
 
+import numpy as np
+import numpy.typing as npt
 import pytest
 
 import bentoml
+from bentoml.validators import DType
+from bentoml.validators import Shape
 
 
 @pytest.mark.asyncio
@@ -61,6 +67,13 @@ def test_service_instantiate():
             for i in range(3):
                 yield f"Hello, {name}! {i}"
 
+        @bentoml.api
+        def numpy(
+            self,
+            arr: npt.NDArray[np.float64],
+        ) -> Annotated[npt.NDArray[Any], DType("float64"), Shape((1,))]:
+            return arr
+
     svc = TestService()
     assert svc.hello("world") == "Hello, world!"
     assert list(svc.stream("world")) == [
@@ -68,6 +81,10 @@ def test_service_instantiate():
         "Hello, world! 1",
         "Hello, world! 2",
     ]
+    np.testing.assert_array_equal(
+        svc.numpy(np.array([1.0, 2.0, 3.0])),
+        np.array([1.0, 2.0, 3.0]),
+    )
 
 
 @pytest.mark.asyncio
@@ -83,6 +100,13 @@ async def test_service_instantiate_to_async():
             for i in range(3):
                 yield f"Hello, {name}! {i}"
 
+        @bentoml.api
+        def numpy(
+            self,
+            arr: npt.NDArray[np.float64],
+        ) -> Annotated[npt.NDArray[Any], DType("float64"), Shape((1,))]:
+            return arr
+
     svc = TestService()
     assert await svc.to_async.hello("world") == "Hello, world!"
     assert [text async for text in svc.to_async.stream("world")] == [
@@ -90,3 +114,7 @@ async def test_service_instantiate_to_async():
         "Hello, world! 1",
         "Hello, world! 2",
     ]
+    np.testing.assert_array_equal(
+        await svc.to_async.numpy(np.array([1.0, 2.0, 3.0])),
+        np.array([1.0, 2.0, 3.0]),
+    )

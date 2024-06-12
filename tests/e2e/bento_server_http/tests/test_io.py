@@ -136,6 +136,14 @@ async def test_pandas(host: str):
         assert response.status_code == 200
         assert await response.aread() == b'[{"col1":202}]'
 
+        headers = {"Content-Type": "application/vnd.apache.parquet", "Origin": ORIGIN}
+        data = df.to_parquet()
+        response = await client.client.post(
+            "/predict_dataframe", headers=headers, data=data
+        )
+        assert response.status_code == 200
+        assert await response.aread() == b'[{"col1":202}]'
+
         headers = {"Content-Type": "text/csv", "Origin": ORIGIN}
         data = df.to_csv()
         response = await client.client.post(

@@ -3,9 +3,9 @@ from __future__ import annotations
 import typing as t
 
 from pydantic._internal import _known_annotated_metadata
-from typing_extensions import get_args
-from typing_extensions import get_origin
 
+from .typing_utils import get_args
+from .typing_utils import get_origin
 from .validators import ContentType
 from .validators import DataframeSchema
 from .validators import DType
@@ -41,7 +41,7 @@ def numpy_prepare_pydantic_annotations(
     if not getattr(source, "__module__", "").startswith("numpy"):
         return None
 
-    origin = get_origin(source) or source
+    origin = get_origin(source)
 
     if origin is not np.ndarray:
         return None
@@ -73,7 +73,7 @@ def torch_prepare_pydantic_annotations(
     if not getattr(source, "__module__", "").startswith("torch"):
         return None
 
-    origin = get_origin(source) or source
+    origin = get_origin(source)
 
     if not issubclass(origin, torch.Tensor):
         return None
@@ -100,7 +100,7 @@ def tf_prepare_pydantic_annotations(
     if not getattr(source, "__module__", "").startswith("tensorflow"):
         return None
 
-    origin = get_origin(source) or source
+    origin = get_origin(source)
     if not issubclass(origin, tf.Tensor):
         return None
 
@@ -126,7 +126,7 @@ def pandas_prepare_pydantic_annotations(
     if not getattr(source, "__module__", "").startswith("pandas"):
         return None
 
-    origin = get_origin(source) or source
+    origin = get_origin(source)
     if not issubclass(origin, pd.DataFrame):
         return None
 

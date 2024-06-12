@@ -1,9 +1,9 @@
-from typing import Annotated
 from typing import Generator
 
 import numpy as np
 import numpy.typing as npt
 import pytest
+from typing_extensions import Annotated
 
 import bentoml
 from bentoml.validators import DType

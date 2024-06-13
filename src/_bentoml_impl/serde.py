@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import io
-import json
 import pickle
 import posixpath
 import typing as t
@@ -10,6 +9,7 @@ from urllib.parse import unquote
 from urllib.parse import urlparse
 
 import attrs
+import orjson
 from pydantic import BaseModel
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile
@@ -157,10 +157,10 @@ class JSONSerde(GenericSerde, Serde):
         return cls.model_validate_json(b"".join(payload.data) or b"{}")
 
     def serialize_value(self, obj: t.Any) -> Payload:
-        return Payload((json.dumps(obj).encode("utf-8"),))
+        return Payload((orjson.dumps(obj),))
 
     def deserialize_value(self, payload: Payload) -> t.Any:
-        return json.loads(b"".join(payload.data) or b"{}")
+        return orjson.loads(b"".join(payload.data) or b"{}")
 
 
 class MultipartSerde(JSONSerde):
@@ -199,8 +199,8 @@ class MultipartSerde(JSONSerde):
             else:
                 assert isinstance(v := form[k], str)
                 try:
-                    data[k] = json.loads(v)
-                except json.JSONDecodeError:
+                    data[k] = orjson.loads(v)
+                except orjson.JSONDecodeError:
                     data[k] = v
         return cls.model_validate(data)
 

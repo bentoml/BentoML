@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import inspect
 import io
-import json
 import logging
 import mimetypes
 import os
@@ -18,6 +17,7 @@ from urllib.parse import urlparse
 
 import attr
 import httpx
+import orjson
 from pydantic import RootModel
 
 from _bentoml_sdk import IODescriptor
@@ -295,7 +295,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
 
         for name, value in fields.items():
             if not is_file_field(name):
-                data[name] = json.dumps(value)
+                data[name] = orjson.dumps(value)
                 continue
             if not isinstance(value, (list, tuple)):
                 value = [value]

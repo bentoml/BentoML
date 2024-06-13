@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
     from _bentoml_sdk import Service
     from _bentoml_sdk import ServiceConfig
+    from bentoml._internal.models.model import ModelSignaturesType
     from bentoml.types import ModelSignature
 
 
@@ -121,6 +122,7 @@ def save_model(
     name: Tag | str,
     model: xgb.Booster | xgb.XGBModel,
     *,
+    signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     external_modules: t.List[ModuleType] | None = None,

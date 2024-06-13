@@ -51,7 +51,7 @@ TextualInversionOptionType = t.Union[str, t.Dict[str, str]]
 
 
 @attr.define
-class ModelOptons(PartialKwargsModelOptions):
+class ModelOptions(PartialKwargsModelOptions):
     """Options for the diffusers model."""
 
     pipeline_class: str | type[diffusers.DiffusionPipeline] | None = None
@@ -494,7 +494,7 @@ def import_model(
     if variant:
         options_dict["variant"] = variant
 
-    options = ModelOptons(**options_dict) if options_dict else None
+    options = ModelOptions(**options_dict) if options_dict else None
 
     if os.path.isdir(model_name_or_path):
         src_dir = model_name_or_path
@@ -643,7 +643,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    bento_options = t.cast(ModelOptons, bento_model.info.options)
+    bento_options = t.cast(ModelOptions, bento_model.info.options)
     partial_kwargs: dict[str, t.Any] = bento_options.partial_kwargs  # type: ignore
     pipeline_class: str | type[diffusers.DiffusionPipeline] = (
         bento_options.pipeline_class or diffusers.DiffusionPipeline

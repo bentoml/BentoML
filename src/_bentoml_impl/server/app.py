@@ -361,7 +361,7 @@ class ServiceAppFactory(BaseAppFactory):
             log_exception(request)
             resp = JSONResponse({"error": str(e)}, status_code=500)
         else:
-            resp = JSONResponse({"task_id": task_id, "status": status.value})
+            resp = JSONResponse(status.to_json())
         self._add_response_headers(resp)
         return resp
 
@@ -373,16 +373,17 @@ class ServiceAppFactory(BaseAppFactory):
             return resp
         try:
             row = await self._result_store.get(task_id)
-            resp = row.result
         except KeyError:
             resp = JSONResponse({"error": "task_id not found"}, status_code=404)
         except RuntimeError:
             resp = JSONResponse(
-                {"error": "task_id is not completed yet"}, status_code=400
+                {"error": f"task {task_id} is not completed yet"}, status_code=400
             )
         except Exception as e:
             log_exception(request)
             resp = JSONResponse({"error": str(e)}, status_code=500)
+        else:
+            resp = row.result
         self._add_response_headers(resp)
         return resp
 
@@ -398,8 +399,7 @@ class ServiceAppFactory(BaseAppFactory):
             resp = JSONResponse({"error": "task_id not found"}, status_code=404)
         except RuntimeError:
             resp = JSONResponse(
-                {"error": "can't retry a task if it is not completed yet"},
-                status_code=400,
+                {"error": f"task {task_id} is not completed yet"}, status_code=400
             )
         else:
             resp = await self.submit_task(row.name, row.input)

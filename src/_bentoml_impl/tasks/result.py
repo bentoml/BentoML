@@ -29,21 +29,44 @@ class ResultStatus(enum.Enum):
 
 
 @attrs.frozen
-class ResultRow(t.Generic[Ti, To]):
+class ResultRow:
     task_id: str
     name: str
-    input: Ti
     status: ResultStatus
+    created_at: datetime.datetime
+    executed_at: datetime.datetime | None
+
+    def to_json(self) -> dict[str, t.Any]:
+        return {
+            "task_id": self.task_id,
+            "status": self.status.value,
+            "created_at": self.created_at.isoformat(),
+            "executed_at": self.executed_at.isoformat() if self.executed_at else None,
+        }
+
+
+@attrs.frozen
+class CompletedResultRow(ResultRow, t.Generic[Ti, To]):
+    input: Ti
     result: To
+    completed_at: datetime.datetime | None
+
+    def to_json(self) -> dict[str, t.Any]:
+        return {
+            **super().to_json(),
+            "completed_at": self.completed_at.isoformat()
+            if self.completed_at
+            else None,
+        }
 
 
 class ResultStore(abc.ABC, t.Generic[Ti, To]):
     @abc.abstractmethod
-    async def get_status(self, task_id: str) -> ResultStatus:
+    async def get_status(self, task_id: str) -> ResultRow:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def get(self, task_id: str) -> ResultRow[Ti, To]:
+    async def get(self, task_id: str) -> CompletedResultRow[Ti, To]:
         raise NotImplementedError
 
     async def get_or_none(self, task_id: str) -> t.Optional[ResultRow[Ti, To]]:
@@ -75,9 +98,13 @@ class Sqlite3Store(ResultStore[Request, Response]):
         self.serializer = serializer
 
     def _connect(self, db_file: str) -> Connection:
+        import sqlite3
+
         import aiosqlite
 
-        return aiosqlite.connect(db_file)
+        return aiosqlite.connect(
+            db_file, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+        )
 
     async def __aenter__(self) -> "t.Self":
         self._conn = await self._conn
@@ -97,7 +124,8 @@ class Sqlite3Store(ResultStore[Request, Response]):
                 status TEXT,
                 result BLOB,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                completed_at TIMESTAMP DEFAULT NULL
             )
             """)
         )
@@ -117,31 +145,44 @@ class Sqlite3Store(ResultStore[Request, Response]):
         await self._conn.commit()
         return task_id
 
-    async def get_status(self, task_id: str) -> ResultStatus:
+    async def get(self, task_id: str) -> CompletedResultRow[Request, Response]:
         result = await self._conn.execute(
-            "SELECT status FROM result WHERE task_id = ?", (task_id,)
-        )
-        row = await result.fetchone()
-        if row is None:
-            raise KeyError(task_id)
-        return ResultStatus(row[0])
-
-    async def get(self, task_id: str) -> ResultRow[Request, Response]:
-        result = await self._conn.execute(
-            "SELECT name, input, status, result FROM result WHERE task_id = ?",
+            "SELECT name, input, status, result, created_at, executed_at, completed_at "
+            "FROM result WHERE task_id = ?",
             (task_id,),
         )
         row = await result.fetchone()
         if row is None:
             raise KeyError(task_id)
-        if row[2] == ResultStatus.IN_PROGRESS.value:
-            raise RuntimeError(f"Task {task_id} is still in progress")
+        if row[6] is None:
+            raise RuntimeError(f"Task {task_id} is not completed")
+        return CompletedResultRow(
+            task_id,
+            row[0],
+            ResultStatus(row[2]),
+            row[4],
+            row[5],
+            await self.serializer.deserialize_request(row[1]),
+            await self.serializer.deserialize_request(row[1]),
+            row[6],
+        )
+
+    async def get_status(self, task_id: str) -> ResultRow:
+        result = await self._conn.execute(
+            "SELECT name, status, created_at, executed_at "
+            "FROM result WHERE task_id = ?",
+            (task_id,),
+        )
+        row = await result.fetchone()
+        if row is None:
+            raise KeyError(task_id)
+
         return ResultRow(
             task_id,
             row[0],
-            await self.serializer.deserialize_request(row[1]),
-            ResultStatus(row[2]),
-            await self.serializer.deserialize_response(row[3]),
+            ResultStatus(row[1]),
+            row[2],
+            row[3],
         )
 
     async def set_status(self, task_id: str, status: ResultStatus) -> None:
@@ -160,7 +201,7 @@ class Sqlite3Store(ResultStore[Request, Response]):
         self, task_id: str, result: Response, status: ResultStatus
     ) -> None:
         await self._conn.execute(
-            "UPDATE result SET status = ?, result = ?, updated_at = ? WHERE task_id = ?",
+            "UPDATE result SET status = ?, result = ?, completed_at = ? WHERE task_id = ?",
             (
                 status.value,
                 await self.serializer.serialize_response(result),
@@ -170,7 +211,7 @@ class Sqlite3Store(ResultStore[Request, Response]):
         )
         # delete older results
         await self._conn.execute(
-            "DELETE FROM result WHERE updated_at < ?",
+            "DELETE FROM result WHERE completed_at IS NOT NULL AND completed_at < ?",
             (
                 datetime.datetime.now(tz=datetime.timezone.utc)
                 - datetime.timedelta(seconds=self.RESULT_RETENTION),

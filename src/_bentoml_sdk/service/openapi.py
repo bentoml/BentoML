@@ -95,6 +95,8 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
 class TaskStatusResponse(pydantic.BaseModel):
     task_id: str
     status: t.Literal["in_progress", "success", "failure", "cancelled"]
+    created_at: str
+    executed_at: t.Optional[str]
 
 
 task_status_response = {

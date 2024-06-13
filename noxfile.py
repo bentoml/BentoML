@@ -16,10 +16,11 @@ PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11"]
 
 FRAMEWORK_DEPENDENCIES = {
     "catboost": ["catboost"],
-    "diffusers": ["diffusers"],
+    "diffusers": ["diffusers", "transformers", "tokenizer"],
     "easyocr": ["easyocr"],
     "fastai": ["fastai"],
     "flax": [
+        "tensorflow~=2.13.1",
         "flax; platform_system!='Windows'",
         "jax[cpu]; platform_system!='Windows'",
         "jaxlib; platform_system!='Windows'",
@@ -60,6 +61,7 @@ def run_framework_integration_test(session: nox.Session, framework: str):
     deps = FRAMEWORK_DEPENDENCIES[framework]
     if deps:
         session.install(*deps)
+    session.run("pdm", "list", "--tree")
     session.run(
         *TEST_ARGS,
         "tests/integration/frameworks/test_frameworks.py",

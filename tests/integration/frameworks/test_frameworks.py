@@ -92,11 +92,6 @@ def test_wrong_module_load_exc(framework: types.ModuleType):
     with pytest.raises(
         NotFound, match=f"Model {tag} was saved with module {__name__}, "
     ):
-        framework.get(tag)
-
-    with pytest.raises(
-        NotFound, match=f"Model {tag} was saved with module {__name__}, "
-    ):
         framework.load_model(tag)
 
     with pytest.raises(

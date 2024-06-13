@@ -18,7 +18,7 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
-from bentoml.models import ModelOptions
+from bentoml.models import ModelOptions as BaseModelOptions
 from bentoml.models import get as get
 
 if TYPE_CHECKING:
@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 
 @attr.define
-class XGBoostOptions(ModelOptions):
+class ModelOptions(BaseModelOptions):
     model_class: str | None = None
 
 
@@ -94,7 +94,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> xgb.Booster | xgb.XGBM
                 "Got an XGBoost model with an unsupported version '%s', unexpected errors may occur.",
                 model_api_version,
             )
-        model_class = t.cast(XGBoostOptions, bento_model.info.options).model_class
+        model_class = t.cast(ModelOptions, bento_model.info.options).model_class
         if model_class is None:
             raise BentoMLException(
                 f"Model '{bento_model.tag}' is missing the required 'model_class' option. This should not be possible; please file an issue if you encounter this error."
@@ -207,7 +207,7 @@ def save_model(
         external_modules=external_modules,
         metadata=metadata,
         context=context,
-        options=XGBoostOptions(model_class=model_class),
+        options=ModelOptions(model_class=model_class),
     ) as bento_model:
         model.save_model(bento_model.path_of(MODEL_FILENAME))  # type: ignore (incomplete XGBoost types)
 

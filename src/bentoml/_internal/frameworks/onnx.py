@@ -14,7 +14,7 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
 from bentoml.models import ModelContext
-from bentoml.models import ModelOptions
+from bentoml.models import ModelOptions as BaseModelOptions
 
 from ..utils.pkg import PackageNotFoundError
 from ..utils.pkg import get_pkg_version
@@ -57,7 +57,7 @@ def flatten_providers_list(lst: ProvidersType) -> list[str]:
 
 
 @attr.define
-class ONNXOptions(ModelOptions):
+class ModelOptions(BaseModelOptions):
     """Options for the ONNX model"""
 
     input_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
@@ -299,7 +299,7 @@ def save_model(
     input_specs = {"run": run_input_specs}
     output_specs = {"run": run_output_specs}
 
-    options = ONNXOptions(input_specs=input_specs, output_specs=output_specs)
+    options = ModelOptions(input_specs=input_specs, output_specs=output_specs)
 
     with bentoml.models._create(  # type: ignore
         name,
@@ -327,7 +327,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     # input_specs/output_specs for onnx model
     if bento_model.info.api_version == "v1":
         raw_model: onnx.ModelProto | None = None
-        options = t.cast(ONNXOptions, bento_model.info.options)
+        options = t.cast(ModelOptions, bento_model.info.options)
 
         if not options.input_specs:
             raw_model = _load_raw_model(bento_model)
@@ -436,7 +436,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         )
 
     for method_name, signatures in bento_model.info.signatures.items():
-        options = t.cast(ONNXOptions, bento_model.info.options)
+        options = t.cast(ModelOptions, bento_model.info.options)
         input_specs = options.input_specs[method_name]
         output_specs = options.output_specs[method_name]
         add_runnable_method(method_name, signatures, input_specs, output_specs)

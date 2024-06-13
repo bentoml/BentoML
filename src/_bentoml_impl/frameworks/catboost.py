@@ -19,7 +19,7 @@ from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
-from bentoml.models import ModelOptions
+from bentoml.models import ModelOptions as BaseModelOptions
 from bentoml.models import get as get
 
 if TYPE_CHECKING:
@@ -85,7 +85,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> cb.CatBoost:
 
 
 @attr.define
-class CatBoostOptions(ModelOptions):
+class ModelOptions(BaseModelOptions):
     training_class_name: str = attr.field(factory=str)
 
 
@@ -179,7 +179,7 @@ def save_model(
             name,
         )
 
-    options = CatBoostOptions(
+    options = ModelOptions(
         training_class_name=model.__class__.__name__,
     )
 

@@ -181,6 +181,8 @@ def test_get_runnable(
     framework: types.ModuleType,
     saved_model: bentoml.Model,
 ):
+    if not hasattr(framework, "get_runnable"):
+        pytest.skip(f"No get_runnable for framework '{framework.__name__}'")
     runnable = framework.get_runnable(saved_model)
 
     assert isinstance(
@@ -192,6 +194,16 @@ def test_get_runnable(
     assert (
         len(runnable.bentoml_runnable_methods__) > 0
     ), "get_runnable for {bento_model.info.name} gives a runnable with no methods"
+
+
+def test_get_service(framework: types.ModuleType, saved_model: bentoml.Model):
+    if not hasattr(framework, "get_service"):
+        pytest.skip(f"No get_service for framework '{framework.__name__}'")
+    from _bentoml_sdk import Service
+
+    service = framework.get_service(str(saved_model.tag))
+    assert isinstance(service, Service), "get_service does not return a Service"
+    assert len(service.apis) > 0, "get_service gives a service with no APIs"
 
 
 def test_load(
@@ -214,9 +226,12 @@ def test_load(
 
 
 def test_runnable(
+    framework: types.ModuleType,
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
+    if not hasattr(framework, "get_runnable"):
+        pytest.skip(f"No get_runnable for framework '{framework.__name__}'")
     for config in test_model.configurations:
         runner = saved_model.with_options(**config.load_kwargs).to_runner()
         runner.init_local()
@@ -227,12 +242,16 @@ def test_runnable(
 
 
 def test_runner_batching(
+    framework: types.ModuleType,
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
     from bentoml._internal.runner.container import AutoContainer
     from bentoml._internal.runner.utils import Params
     from bentoml._internal.runner.utils import payload_paramss_to_batch_params
+
+    if not hasattr(framework, "get_runnable"):
+        pytest.skip(f"No get_runnable for framework '{framework.__name__}'")
 
     ran_tests = False
 
@@ -279,6 +298,8 @@ def test_runner_cpu_multi_threading(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
+    if not hasattr(framework, "get_runnable"):
+        pytest.skip(f"No get_runnable for framework '{framework.__name__}'")
     resource_cfg = {"cpu": 2.0}
     ran_tests = False
     for config in test_model.configurations:
@@ -324,6 +345,8 @@ def test_runner_cpu(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
+    if not hasattr(framework, "get_runnable"):
+        pytest.skip(f"No get_runnable for framework '{framework.__name__}'")
     resource_cfg = {"cpu": 1.0}
 
     ran_tests = False
@@ -372,6 +395,8 @@ def test_runner_nvidia_gpu(
     test_model: FrameworkTestModel,
     saved_model: bentoml.Model,
 ):
+    if not hasattr(framework, "get_runnable"):
+        pytest.skip(f"No get_runnable for framework '{framework.__name__}'")
     resource_cfg = {"nvidia.com/gpu": 1}
 
     ran_tests = False
@@ -412,3 +437,20 @@ def test_runner_nvidia_gpu(
         pytest.skip(
             f"no configurations for model '{test_model.name}' supported running on Nvidia GPU"
         )
+
+
+def test_service(
+    framework: types.ModuleType,
+    test_model: FrameworkTestModel,
+    saved_model: bentoml.Model,
+):
+    if not hasattr(framework, "get_service"):
+        pytest.skip(f"No get_service for framework '{framework.__name__}'")
+
+    service = framework.get_service(str(saved_model.tag))
+    instance = service()
+    for config in test_model.configurations:
+        for meth, inputs in config.test_inputs.items():
+            for inp in inputs:
+                outp = getattr(instance, meth)(*inp.input_args, **inp.input_kwargs)
+                inp.check_output(outp)

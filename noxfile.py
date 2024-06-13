@@ -21,6 +21,7 @@ FRAMEWORK_DEPENDENCIES = {
     "fastai": ["fastai"],
     "flax": [
         "tensorflow~=2.13.1",
+        "pydantic<2",
         "flax; platform_system!='Windows'",
         "jax[cpu]; platform_system!='Windows'",
         "jaxlib; platform_system!='Windows'",
@@ -33,7 +34,7 @@ FRAMEWORK_DEPENDENCIES = {
     "pytorch": [],
     "pytorch_lightning": ["lightning"],
     "sklearn": ["scikit-learn"],
-    "tensorflow": ["tensorflow~=2.15.1"],
+    "tensorflow": ["tensorflow~=2.13.1", "pydantic<2"],
     "torchscript": [],
     "xgboost": ["xgboost"],
     "detectron": ["detectron2"],

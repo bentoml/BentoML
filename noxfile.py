@@ -33,7 +33,7 @@ FRAMEWORK_DEPENDENCIES = {
     "pytorch": [],
     "pytorch_lightning": ["lightning"],
     "sklearn": ["scikit-learn"],
-    "tensorflow": ["tensorflow~=2.13.1"],
+    "tensorflow": ["tensorflow~=2.15.1"],
     "torchscript": [],
     "xgboost": ["xgboost"],
     "detectron": ["detectron2"],

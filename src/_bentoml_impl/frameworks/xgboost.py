@@ -335,7 +335,7 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
             @bentoml.api
             def predict(
                 self,
-                data: np.ndarray[t.Any, t.Any],
+                data: np.ndarray,
                 output_margin: bool = False,
                 pred_leaf: bool = False,
                 pred_contribs: bool = False,
@@ -345,7 +345,7 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
                 training: bool = False,
                 iteration_range: t.Tuple[int, int] = (0, 0),
                 strict_shape: bool = False,
-            ) -> np.ndarray[t.Any, t.Any]:
+            ) -> np.ndarray:
                 assert isinstance(self.model, xgb.Booster)
                 return self.model.predict(
                     xgb.DMatrix(data),
@@ -364,12 +364,12 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
             @bentoml.api
             def predict(
                 self,
-                data: np.ndarray[t.Any, t.Any],
+                data: np.ndarray,
                 output_margin: bool = False,
                 validate_features: bool = True,
                 base_margin: t.Optional[t.List[t.Any]] = None,
                 iteration_range: t.Optional[t.Tuple[int, int]] = None,
-            ) -> np.ndarray[t.Any, t.Any]:
+            ) -> np.ndarray:
                 assert isinstance(self.model, XGBModel)
                 return self.model.predict(
                     data,

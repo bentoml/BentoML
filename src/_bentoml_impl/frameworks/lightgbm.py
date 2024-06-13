@@ -277,7 +277,7 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
         @bentoml.api
         def predict(
             self,
-            data: np.ndarray[t.Any, t.Any],
+            data: np.ndarray,
             start_iteration: int = 0,
             num_iteration: t.Optional[int] = None,
             raw_score: bool = False,
@@ -286,7 +286,7 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
             data_has_header: bool = False,
             validate_features: bool = False,
             kwargs: dict[str, t.Any] | None = None,
-        ) -> np.ndarray[t.Any, t.Any]:
+        ) -> np.ndarray:
             from scipy.sparse import isspmatrix
 
             preds = self.model.predict(

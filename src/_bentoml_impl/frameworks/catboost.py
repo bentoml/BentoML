@@ -314,11 +314,11 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
         @bentoml.api
         def predict(
             self,
-            data: np.ndarray[t.Any, t.Any],
+            data: np.ndarray,
             prediction_type: PredictionType = PredictionType.raw_formula_val,
             ntree_start: int = 0,
             ntree_end: int = 0,
-        ) -> np.ndarray[t.Any, t.Any]:
+        ) -> np.ndarray:
             rv = self.model.predict(
                 data=cb.Pool(data),
                 prediction_type=prediction_type.value,

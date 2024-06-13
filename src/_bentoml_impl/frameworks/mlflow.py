@@ -273,9 +273,7 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
             self.model = load_model(self.bento_model)
 
         @bentoml.api
-        def predict(
-            self, input_data: np.ndarray[t.Any, t.Any]
-        ) -> np.ndarray[t.Any, t.Any]:
+        def predict(self, input_data: np.ndarray) -> np.ndarray:
             rv = self.model.predict(input_data)
             return np.asarray(rv)
 

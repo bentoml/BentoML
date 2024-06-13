@@ -191,13 +191,13 @@ def save_model(
         framework_name="xgboost",
         framework_versions={"xgboost": get_pkg_version("xgboost")},
     )
-
-    signatures = {"predict": {"batchable": False}}
-    logger.info(
-        'Using the default model signature for xgboost (%s) for model "%s".',
-        signatures,
-        name,
-    )
+    if signatures is None:
+        signatures = {"predict": {"batchable": False}}
+        logger.info(
+            'Using the default model signature for xgboost (%s) for model "%s".',
+            signatures,
+            name,
+        )
 
     with bentoml.models._create(  # type: ignore
         name,

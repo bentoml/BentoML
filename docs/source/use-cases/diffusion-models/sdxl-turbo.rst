@@ -43,13 +43,15 @@ Create a BentoML :doc:`Service </guides/services>` in a ``service.py`` file to d
     sample_prompt = "A cinematic shot of a baby racoon wearing an intricate italian priest robe."
 
     @bentoml.service(
-        traffic={"timeout": 300},
+        traffic={
+            "timeout": 300,
+            "external_queue": True,
+            "concurrency": 1,
+        },
         workers=1,
         resources={
             "gpu": 1,
             "gpu_type": "nvidia-l4",
-            # You can also specify GPU memory requirement:
-            # "memory": "16Gi",
         },
     )
     class SDXLTurbo:

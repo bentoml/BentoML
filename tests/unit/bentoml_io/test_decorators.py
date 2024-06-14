@@ -7,9 +7,9 @@ import pytest
 from typing_extensions import Annotated
 
 import bentoml
+from bentoml.validators import DataframeSchema
 from bentoml.validators import DType
 from bentoml.validators import Shape
-from bentoml.validators import DataframeSchema
 
 
 @pytest.mark.asyncio
@@ -124,7 +124,7 @@ def test_api_decorator_numpy():
         ) -> Annotated[npt.NDArray[np.float64], DType("int64"), Shape((1,))]:
             return arr.astype(np.int64)
 
- 
+
 def test_api_decorator_pandas():
     @bentoml.api
     def pandas_func(

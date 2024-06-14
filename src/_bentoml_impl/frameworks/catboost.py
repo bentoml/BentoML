@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import enum
 import logging
 import os
 import typing as t
@@ -263,14 +262,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     return CatBoostRunnable
 
 
-class PredictionType(enum.Enum):
-    raw_formula_val = "RawFormulaVal"
-    class_ = "Class"
-    probability = "Probability"
-    exponent = "Exponent"
-    rms_with_uncertainty = "RMSEWithUncertainty"
-
-
 def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.Any]:
     """
     Get a BentoML service for the catboost model given by name.
@@ -312,20 +303,8 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
                 self.predict_params["thread_count"] = nthreads
 
         @bentoml.api
-        def predict(
-            self,
-            data: np.ndarray,
-            prediction_type: PredictionType = PredictionType.raw_formula_val,
-            ntree_start: int = 0,
-            ntree_end: int = 0,
-        ) -> np.ndarray:
-            rv = self.model.predict(
-                data=cb.Pool(data),
-                prediction_type=prediction_type.value,
-                ntree_start=ntree_start,
-                ntree_end=ntree_end,
-                **self.predict_params,
-            )
+        def predict(self, input_data: np.ndarray) -> np.ndarray:
+            rv = self.model.predict(data=cb.Pool(input_data), **self.predict_params)
             return np.asarray(rv)  # type: ignore (incomplete np types)
 
     return CatBoostService

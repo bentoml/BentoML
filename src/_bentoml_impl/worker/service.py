@@ -175,6 +175,12 @@ def main(
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
     server_context.service_name = service.name
+    if service.bento is None:
+        server_context.bento_name = service.name
+        server_context.bento_version = "not available"
+    else:
+        server_context.bento_name = service.bento.tag.name
+        server_context.bento_version = service.bento.tag.version or "not available"
 
     asgi_app = service.to_asgi(
         is_main=server_context.service_type == "entry_service", init=False

@@ -106,7 +106,7 @@ def import_service(
     `normalize_identifier` function.
     """
     from _bentoml_sdk import Service
-    from bentoml._internal.bento.bento import BentoInfo
+    from bentoml._internal.bento.bento import Bento
     from bentoml._internal.bento.build_config import BentoBuildConfig
     from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -144,10 +144,10 @@ def import_service(
         original_model_store = None
 
     # load model aliases
-    if (bento_yaml := bento_path.with_name(BENTO_YAML_FILENAME)).exists():
-        with open(bento_yaml, encoding="utf-8") as f:
-            info = BentoInfo.from_yaml_file(f)
-        model_aliases = {m.alias: str(m.tag) for m in info.all_models if m.alias}
+    bento: Bento | None = None
+    if bento_path.with_name(BENTO_YAML_FILENAME).exists():
+        bento = Bento.from_path(str(bento_path.parent))
+        model_aliases = {m.alias: str(m.tag) for m in bento.info.all_models if m.alias}
     elif (bentofile := bento_path.joinpath(BENTO_BUILD_CONFIG_FILENAME)).exists():
         with open(bentofile, encoding="utf-8") as f:
             build_config = BentoBuildConfig.from_yaml(f)
@@ -165,16 +165,18 @@ def import_service(
 
         module = importlib.import_module(module_name)
         root_service_name, _, depend_path = attrs_str.partition(".")
-        root_service = getattr(module, root_service_name)
+        root_service = t.cast("Service[t.Any]", getattr(module, root_service_name))
 
         assert isinstance(
             root_service, Service
         ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
 
         if not depend_path:
-            return root_service  # type: ignore
+            svc = root_service
         else:
-            return root_service.find_dependent(depend_path)
+            svc = root_service.find_dependent(depend_path)
+        svc.bento = bento
+        return svc
 
     except (ImportError, AttributeError, KeyError, AssertionError) as e:
         sys_path = sys.path.copy()

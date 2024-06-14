@@ -9,6 +9,11 @@ class BentoMLException(Exception):
     """
 
     error_code = HTTPStatus.INTERNAL_SERVER_ERROR
+    error_mapping: dict[HTTPStatus, type[BentoMLException]] = {}
+
+    def __init_subclass__(cls) -> None:
+        if "error_code" in cls.__dict__:
+            cls.error_mapping.setdefault(cls.error_code, cls)
 
     def __init__(self, message: str, *, error_code: HTTPStatus | None = None):
         self.message = message

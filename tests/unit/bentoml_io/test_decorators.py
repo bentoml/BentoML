@@ -2,12 +2,14 @@ from typing import Generator
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import pytest
 from typing_extensions import Annotated
 
 import bentoml
 from bentoml.validators import DType
 from bentoml.validators import Shape
+from bentoml.validators import DataframeSchema
 
 
 @pytest.mark.asyncio
@@ -121,3 +123,26 @@ def test_api_decorator_numpy():
             arr: npt.NDArray[np.float64],
         ) -> Annotated[npt.NDArray[np.float64], DType("int64"), Shape((1,))]:
             return arr.astype(np.int64)
+
+ 
+def test_api_decorator_pandas():
+    @bentoml.api
+    def pandas_func(
+        _,  # The decorator assumes `self` is the first arg.
+        df1: pd.DataFrame,
+        df2: Annotated[pd.DataFrame, DataframeSchema(columns=("b",))],
+    ) -> Annotated[
+        pd.DataFrame,
+        DataframeSchema(orient="columns", columns=["a", "b"]),
+    ]:
+        return pd.concat([df1, df2], axis=1)
+
+    pandas_func.input_spec.model_fields["df1"].annotation is pd.DataFrame
+    pandas_func.input_spec.model_fields["df2"].annotation is Annotated[
+        pd.DataFrame,
+        DataframeSchema(columns=("b",)),
+    ]
+    pandas_func.output_spec.model_fields["root"].annotation is Annotated[
+        pd.DataFrame,
+        DataframeSchema(orient="columns", columns=("a", "b")),
+    ]

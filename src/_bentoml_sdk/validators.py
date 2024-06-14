@@ -278,7 +278,10 @@ class TensorSchema:
 @attrs.frozen(unsafe_hash=True)
 class DataframeSchema:
     orient: str = "records"
-    columns: list[str] | None = None
+    columns: tuple[str] | None = attrs.field(
+        default=None,
+        converter=lambda x: tuple(x) if x else None,
+    )
 
     def __get_pydantic_json_schema__(
         self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler

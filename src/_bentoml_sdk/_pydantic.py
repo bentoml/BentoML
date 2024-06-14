@@ -3,9 +3,9 @@ from __future__ import annotations
 import typing as t
 
 from pydantic._internal import _known_annotated_metadata
-from typing_extensions import get_args
-from typing_extensions import get_origin
 
+from .typing_utils import get_args
+from .typing_utils import get_origin
 from .validators import ContentType
 from .validators import DataframeSchema
 from .validators import DType
@@ -41,13 +41,13 @@ def numpy_prepare_pydantic_annotations(
     if not getattr(source, "__module__", "").startswith("numpy"):
         return None
 
-    origin = get_origin(source) or source
+    origin = get_origin(source)
 
     if origin is not np.ndarray:
         return None
 
     args = get_args(source)
-    dtype = np.dtype(args[1]).name if args else None
+    dtype = np.dtype(get_args(args[1])[0]).name if args else None
     shape: tuple[int, ...] | None = None
 
     _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
@@ -58,6 +58,10 @@ def numpy_prepare_pydantic_annotations(
             shape = annotation.dimensions
             del remaining_annotations[i]
         elif isinstance(annotation, DType):
+            if dtype is not None and dtype != annotation.dtype:
+                raise ValueError(
+                    f"Conflicting dtype annotations: {dtype} and {annotation.dtype}"
+                )
             dtype = annotation.dtype
             del remaining_annotations[i]
     return source, [TensorSchema("numpy-array", dtype, shape), *remaining_annotations]
@@ -69,7 +73,7 @@ def torch_prepare_pydantic_annotations(
     if not getattr(source, "__module__", "").startswith("torch"):
         return None
 
-    origin = get_origin(source) or source
+    origin = get_origin(source)
 
     if not issubclass(origin, torch.Tensor):
         return None
@@ -96,7 +100,7 @@ def tf_prepare_pydantic_annotations(
     if not getattr(source, "__module__", "").startswith("tensorflow"):
         return None
 
-    origin = get_origin(source) or source
+    origin = get_origin(source)
     if not issubclass(origin, tf.Tensor):
         return None
 
@@ -122,7 +126,7 @@ def pandas_prepare_pydantic_annotations(
     if not getattr(source, "__module__", "").startswith("pandas"):
         return None
 
-    origin = get_origin(source) or source
+    origin = get_origin(source)
     if not issubclass(origin, pd.DataFrame):
         return None
 

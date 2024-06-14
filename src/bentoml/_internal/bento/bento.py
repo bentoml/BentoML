@@ -257,6 +257,8 @@ class Bento(StoreItem):
             )
         bento_fs.makedir(BENTO_PROJECT_DIR_NAME)
         target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
+        with target_fs.open(DEFAULT_BENTO_BUILD_FILE, "w") as bentofile_yaml:
+            build_config.to_yaml(bentofile_yaml)
         ignore_specs = list(specs.from_path(build_ctx))
 
         for dir_path, _, files in ctx_fs.walk():

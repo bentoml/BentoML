@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 import pathlib
 import sys
 import typing as t
@@ -89,8 +90,8 @@ def normalize_identifier(
             with open(yaml_path, "r") as f:
                 bento_yaml = yaml.safe_load(f)
             assert "service" in bento_yaml, "service field is required in bento.yaml"
-            return normalize_package(bento_yaml["service"]), yaml_path.parent.joinpath(
-                "src"
+            return normalize_package(bento_yaml["service"]), pathlib.Path(
+                bento.path_of("src")
             )
     else:
         raise ValueError(f"invalid service: {service_identifier}")
@@ -123,16 +124,19 @@ def import_service(
         extra_python_path = None
 
     # patch model store if needed
-    if (
-        bento_path.parent.joinpath(BENTO_YAML_FILENAME).exists()
-        and bento_path.parent.joinpath("models").exists()
-    ):
+    if (bento_parent_dir := bento_path.parent).joinpath(
+        BENTO_YAML_FILENAME
+    ).exists() and bento_parent_dir.joinpath("models").exists():
         from bentoml._internal.models import ModelStore
 
         original_model_store = BentoMLContainer.model_store.get()
+        # cwd into this for relative path to work
+        os.chdir(bento_parent_dir.absolute())
+
+        # check in bento source
 
         BentoMLContainer.model_store.set(
-            ModelStore((bento_path.parent.joinpath("models").absolute()))
+            ModelStore((bento_parent_dir.joinpath("models").absolute()))
         )
     else:
         original_model_store = None

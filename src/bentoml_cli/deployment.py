@@ -737,7 +737,7 @@ def create_deployment(
     except BentoMLException as e:
         raise_deployment_config_error(e, "create")
     spinner = Spinner()
-    with Live(spinner.progress_group):
+    with Live(spinner.progress_group) as live:
         task_id = spinner.spinner_progress.add_task(
             "deploy", action="Deploying to BentoCloud"
         )
@@ -757,6 +757,9 @@ def create_deployment(
                 action="[bold blue]Waiting for deployment to be ready, you can use --no-wait to skip this process[/bold blue]",
             )
             deployment.wait_until_ready(
-                timeout=timeout, spinner_task_id=task_id, spinner=spinner
+                timeout=timeout,
+                spinner_task_id=task_id,
+                spinner=spinner,
+                console=live.console,
             )
         spinner.spinner_progress.stop_task(task_id)

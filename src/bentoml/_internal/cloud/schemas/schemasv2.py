@@ -84,3 +84,42 @@ class DeploymentListSchema(BaseListSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
     items: t.List[DeploymentSchema]
+
+
+@attr.define
+class KubePodStatusSchema:
+    __forbid_extra_keys__ = False
+    status: str
+    reason: str
+
+
+@attr.define
+class KubePodSchema:
+    __forbid_extra_keys__ = False
+    name: str
+    namespace: str
+    labels: t.Dict[str, str]
+    pod_status: KubePodStatusSchema
+
+
+@attr.define
+class LogSchema:
+    __forbid_extra_keys__ = False
+    items: list[str]
+    type: str
+
+
+@attr.define
+class LogWSResponseSchema:
+    __forbid_extra_keys__ = False
+    message: str
+    type: str
+    payload: LogSchema
+
+
+@attr.define
+class KubePodWSResponseSchema:
+    __forbid_extra_keys__ = False
+    message: str
+    type: str
+    payload: list[KubePodSchema]

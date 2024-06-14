@@ -58,7 +58,7 @@ class CallbackIOWrapper(io.BytesIO):
         return res
 
 
-class Spinner(ABC):
+class Spinner:
     def __init__(self):
         self.log_progress = Progress(TextColumn("{task.description}"))
 

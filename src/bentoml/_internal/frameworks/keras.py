@@ -78,6 +78,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 def load_model(
     bento_model: str | Tag | bentoml.Model,
     device_name: str = "/device:CPU:0",
+    compile: bool = False,
 ) -> "tf_ext.KerasModel":
     """
     Load a model from BentoML local modelstore with given name.
@@ -126,6 +127,7 @@ def load_model(
         return keras.models.load_model(
             bento_model.path,
             custom_objects=bento_model.custom_objects,
+            compile = compile,
         )
 
 

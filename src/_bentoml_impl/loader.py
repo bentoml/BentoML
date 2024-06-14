@@ -124,20 +124,21 @@ def import_service(
         extra_python_path = None
 
     # patch model store if needed
-    if (bento_parent_dir := bento_path.parent).joinpath(
-        BENTO_YAML_FILENAME
-    ).exists() and bento_parent_dir.joinpath("models").exists():
+    if (
+        bento_path.with_name(BENTO_YAML_FILENAME).exists()
+        and bento_path.with_name("models").exists()
+    ):
         from bentoml._internal.models import ModelStore
 
         original_path = os.getcwd()
         original_model_store = BentoMLContainer.model_store.get()
         # cwd into this for relative path to work
-        os.chdir(bento_parent_dir.absolute())
+        os.chdir(bento_path.absolute())
 
         # check in bento source
 
         BentoMLContainer.model_store.set(
-            ModelStore((bento_parent_dir.joinpath("models").absolute()))
+            ModelStore((bento_path.with_name("models").absolute()))
         )
     else:
         original_path = None

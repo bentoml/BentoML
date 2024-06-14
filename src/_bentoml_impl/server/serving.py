@@ -138,7 +138,7 @@ def server_on_deployment(svc: AnyService) -> None:
             member()
 
 
-@inject
+@inject(squeeze_none=True)
 def serve_http(
     bento_identifier: str | AnyService,
     working_dir: str | None = None,

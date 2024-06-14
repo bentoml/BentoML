@@ -638,10 +638,10 @@ class PythonOptions:
                     "--no-annotate",
                 ]
             )
-            if get_quiet_mode():
-                pip_compile_args.append("--quiet")
-            elif get_debug_mode():
+            if get_debug_mode():
                 pip_compile_args.append("--verbose")
+            else:
+                pip_compile_args.append("--quiet")
             logger.info("Locking PyPI package versions.")
             cmd = [sys.executable, "-m", "piptools", "compile"]
             cmd.extend(pip_compile_args)

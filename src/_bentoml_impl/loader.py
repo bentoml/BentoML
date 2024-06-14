@@ -129,6 +129,7 @@ def import_service(
     ).exists() and bento_parent_dir.joinpath("models").exists():
         from bentoml._internal.models import ModelStore
 
+        original_path = os.getcwd()
         original_model_store = BentoMLContainer.model_store.get()
         # cwd into this for relative path to work
         os.chdir(bento_parent_dir.absolute())
@@ -139,6 +140,7 @@ def import_service(
             ModelStore((bento_parent_dir.joinpath("models").absolute()))
         )
     else:
+        original_path = None
         original_model_store = None
 
     # load model aliases
@@ -183,6 +185,10 @@ def import_service(
             from bentoml._internal.configuration.containers import BentoMLContainer
 
             BentoMLContainer.model_store.set(original_model_store)
+
+        if original_path is not None:
+            os.chdir(original_path)
+
         from bentoml.exceptions import ImportServiceError
 
         raise ImportServiceError(

@@ -50,20 +50,19 @@ def numpy_prepare_pydantic_annotations(
     dtype = np.dtype(get_args(args[1])[0]).name if args else None
     shape: tuple[int, ...] | None = None
 
-    _, remaining_annotations = _known_annotated_metadata.collect_known_metadata(
-        annotations
-    )
-    for i, annotation in reversed(list(enumerate(remaining_annotations))):
+    _, other_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+    remaining_annotations = []
+    for annotation in other_annotations:
         if isinstance(annotation, Shape):
             shape = annotation.dimensions
-            del remaining_annotations[i]
         elif isinstance(annotation, DType):
             if dtype is not None and dtype != annotation.dtype:
                 raise ValueError(
                     f"Conflicting dtype annotations: {dtype} and {annotation.dtype}"
                 )
             dtype = annotation.dtype
-            del remaining_annotations[i]
+        else:
+            remaining_annotations.append(annotation)
     return source, [TensorSchema("numpy-array", dtype, shape), *remaining_annotations]
 
 

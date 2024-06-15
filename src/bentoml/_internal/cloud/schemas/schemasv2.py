@@ -105,16 +105,16 @@ class KubePodSchema:
 @attr.define
 class LogSchema:
     __forbid_extra_keys__ = False
-    items: list[str]
+    items: t.List[str]
     type: str
 
 
 @attr.define
 class LogWSResponseSchema:
     __forbid_extra_keys__ = False
-    message: str
+    message: t.Optional[str]
     type: str
-    payload: LogSchema
+    payload: t.Optional[LogSchema]
 
 
 @attr.define
@@ -122,4 +122,4 @@ class KubePodWSResponseSchema:
     __forbid_extra_keys__ = False
     message: str
     type: str
-    payload: list[KubePodSchema]
+    payload: t.List[KubePodSchema]

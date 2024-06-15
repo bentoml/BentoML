@@ -737,29 +737,25 @@ def create_deployment(
     except BentoMLException as e:
         raise_deployment_config_error(e, "create")
     spinner = Spinner()
-    with Live(spinner.progress_group) as live:
+    with Live(spinner.progress_group, transient=True) as live:
         task_id = spinner.spinner_progress.add_task(
-            "deploy", action="Deploying to BentoCloud"
+            "deploy", action="Creating deployment on BentoCloud"
         )
         deployment = Deployment.create(
             deployment_config_params=config_params,
             context=context,
         )
-        spinner.log_progress.add_task(
-            f"[bold green]Successfully created deployment '{deployment.name}' in cluster '{deployment.cluster}'[/bold green]"
-        )
-        spinner.log_progress.add_task(
-            f"[bold blue]To check the deployment details, go to:\n{deployment.admin_console}[/bold blue]"
-        )
-        if wait:
-            spinner.spinner_progress.update(
-                task_id,
-                action="[bold blue]Waiting for deployment to be ready, you can use --no-wait to skip this process[/bold blue]",
-            )
-            deployment.wait_until_ready(
-                timeout=timeout,
-                spinner_task_id=task_id,
-                spinner=spinner,
-                console=live.console,
-            )
         spinner.spinner_progress.stop_task(task_id)
+        live.console.print(
+            f'✅ Created deployment "{deployment.name}" in cluster "{deployment.cluster}"'
+        )
+        live.console.print(f"💻 View Dashboard: {deployment.admin_console}")
+    if wait:
+        spinner.spinner_progress.update(
+            task_id,
+            action="[bold blue]Waiting for deployment to be ready, you can use --no-wait to skip this process[/bold blue]",
+        )
+        deployment.wait_until_ready(
+            timeout=timeout,
+            show_spinner=True,
+        )

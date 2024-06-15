@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import base64
 import contextlib
 import logging
 import signal
+import sys
 import time
 import typing as t
 from os import path
+from threading import Event
 from threading import Lock
 from threading import Thread
 
@@ -16,11 +19,8 @@ from deepmerge.merger import Merger
 from httpx_ws import WebSocketSession
 from rich.console import Console
 from rich.live import Live
-from rich.progress import TaskID
 from simple_di import Provide
 from simple_di import inject
-
-from bentoml._internal.cloud.base import Spinner
 
 if t.TYPE_CHECKING:
     from _bentoml_impl.client import AsyncHTTPClient
@@ -41,6 +41,7 @@ from .schemas.modelschemas import DeploymentTargetHPAConf
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentSchema
 from .schemas.schemasv2 import DeploymentTargetSchema
+from .schemas.schemasv2 import KubePodSchema
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 
 logger = logging.getLogger(__name__)
@@ -154,6 +155,9 @@ class DeploymentConfigParameters:
             raise BentoMLException(
                 "Must provide either config_dict, config_file, or the other parameters"
             )
+
+        if self.cfg_dict is None:
+            self.cfg_dict = {}
 
         bento_name = self.cfg_dict.get("bento")
         # determine if bento is a path or a name
@@ -296,7 +300,17 @@ def get_bento_info(
     if project_path:
         from bentoml.bentos import build_bentofile
 
-        bento_obj = build_bentofile(build_ctx=project_path, _bento_store=_bento_store)
+        with Live(_cloud_client.spinner.progress_group, transient=True):
+            with _cloud_client.spinner.spin(
+                text=f"🍱 Building bento from project: {project_path}"
+            ):
+                bento_obj = build_bentofile(
+                    build_ctx=project_path, _bento_store=_bento_store
+                )
+                _cloud_client.spinner.spinner_progress.console.print(
+                    f'🍱 Built bento "{bento_obj.info.tag}"'
+                )
+
         _cloud_client.push_bento(bento=bento_obj, context=context)
         return bento_obj.info
     elif bento:
@@ -490,132 +504,139 @@ class DeploymentInfo:
         self,
         timeout: int = 3600,
         check_interval: int = 10,
-        spinner: Spinner | None = None,
-        spinner_task_id: TaskID | None = None,
-        console: Console | None = None,
+        show_spinner: bool = False,
     ) -> None:
         from httpx import TimeoutException
 
         start_time = time.time()
-        if spinner is not None and spinner_task_id is not None:
+        if show_spinner:
             lock = Lock()
-            stop_tail = False
+            stop_tail_event = Event()
             tail_thread: Thread | None = None
             ws_session: WebSocketSession | None = None
 
             def stop_tail_thread():
-                nonlocal stop_tail, ws_session, tail_thread
+                nonlocal ws_session
+                stop_tail_event.set()
                 with lock:
-                    stop_tail = True
-                    tail_thread = None
                     if ws_session is not None:
                         ws = ws_session
                         ws_session = None
                         ws.close()
+                if tail_thread is not None:
+                    tail_thread.join()
 
-            signal.signal(signal.SIGINT, lambda sig, frame: stop_tail_thread())
+            def signal_handler(sig, frame):
+                stop_tail_thread()
+                sys.exit(1)
 
-            def stop_spinner():
-                spinner.spinner_progress.stop_task(spinner_task_id)
+            signal.signal(signal.SIGINT, signal_handler)
+            console = Console()
 
-            def tail_image_builder_logs():
+            def tail_image_builder_logs(stop_spinner: t.Callable[[], None]):
                 nonlocal ws_session
-                if console is None:
-                    return
 
                 cloud_rest_client = get_rest_api_client(self._context)
+                pod: KubePodSchema | None = None
                 while True:
-                    with lock:
-                        if stop_tail:
-                            return
                     pod = cloud_rest_client.v2.get_deployment_image_builder_pod(
                         self.name, self.cluster
                     )
                     if pod is None:
-                        time.sleep(check_interval)
+                        if stop_tail_event.wait(check_interval):
+                            return
                         continue
-                    if pod.pod_status.status != "Running":
-                        time.sleep(check_interval)
-                        continue
-                    for line, ws in cloud_rest_client.v2.tail_logs(
-                        cluster_name=self.cluster,
-                        namespace=self._schema.kube_namespace,
-                        pod_name=pod.name,
-                        container_name="builder",
-                    ):
-                        with lock:
-                            ws_session = ws
-                        console.print(line, markup=False)
-                    with lock:
-                        ws_session = None
+                    if pod.pod_status.status == "Running":
+                        break
+                    if stop_tail_event.wait(check_interval):
+                        return
+                if pod is None:
+                    console.print(
+                        "🚨 [bold red]Can't found the image builder pod.[/bold red]"
+                    )
                     return
+
+                is_first = True
+                for piece, ws in cloud_rest_client.v2.tail_logs(
+                    cluster_name=self.cluster,
+                    namespace=self._schema.kube_namespace,
+                    pod_name=pod.name,
+                    container_name="builder",
+                    stop_event=stop_tail_event,
+                ):
+                    with lock:
+                        ws_session = ws
+                    decoded_bytes = base64.b64decode(piece)
+                    decoded_str = decoded_bytes.decode("utf-8")
+                    if is_first:
+                        is_first = False
+                        stop_spinner()
+                        console.print("🚧 Image building...")
+                    print(decoded_str, end="")
+                with lock:
+                    ws_session = None
+                return
 
             with contextlib.ExitStack() as stack:
                 stack.callback(stop_tail_thread)
-                stack.callback(stop_spinner)
-                while time.time() - start_time < timeout:
-                    status: DeploymentState | None = None
-                    for _ in range(3):
-                        try:
-                            status = self.get_status()
-                            break
-                        except TimeoutException:
-                            spinner.spinner_progress.update(
-                                spinner_task_id,
-                                action="Unable to get deployment status, retrying...",
+                status: DeploymentState | None = None
+                with console.status(
+                    f'🔄 Waiting for deployment "{self.name}" to be ready...'
+                ) as rich_status:
+                    while time.time() - start_time < timeout:
+                        for _ in range(3):
+                            try:
+                                status = self.get_status()
+                                break
+                            except TimeoutException:
+                                rich_status.update(
+                                    "⚠️ Unable to get deployment status, retrying..."
+                                )
+                        if status is None:
+                            console.print(
+                                "🚨 [bold red]Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website.[/bold red]"
                             )
-                    if status is None:
-                        spinner.spinner_progress.update(
-                            spinner_task_id,
-                            action="[bold red]Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website.[/bold red]",
+                            return
+                        rich_status.update(
+                            f'🔄 Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
                         )
-                        spinner.spinner_progress.stop_task(spinner_task_id)
-                        return
-                    spinner.spinner_progress.update(
-                        spinner_task_id,
-                        action=f"Waiting for deployment '{self.name}' to be ready. Current status: '{status.status}'.",
+                        if status.status == DeploymentStatus.ImageBuilding.value:
+                            if tail_thread is None:
+                                tail_thread = Thread(
+                                    target=tail_image_builder_logs,
+                                    args=(rich_status.stop,),
+                                    daemon=True,
+                                )
+                                tail_thread.start()
+                        else:
+                            rich_status.start()
+
+                        if (
+                            status.status == DeploymentStatus.Running.value
+                            or status.status == DeploymentStatus.ScaledToZero.value
+                        ):
+                            console.print(
+                                f'✅ [bold green] Deployment "{self.name}" is ready:[/bold green] {self.admin_console}'
+                            )
+                            return
+                        if status.status in [
+                            DeploymentStatus.Failed.value,
+                            DeploymentStatus.ImageBuildFailed.value,
+                            DeploymentStatus.Terminated.value,
+                            DeploymentStatus.Terminating.value,
+                            DeploymentStatus.Unhealthy.value,
+                        ]:
+                            console.print(
+                                f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}"[/bold red]'
+                            )
+                            return
+
+                        time.sleep(check_interval)
+
+                    console.print(
+                        f'🚨 [bold red]Time out waiting for Deployment "{self.name}" ready[/bold red]'
                     )
-                    if (
-                        console is not None
-                        and status.status == DeploymentStatus.ImageBuilding.value
-                    ):
-                        if tail_thread is None:
-                            tail_thread = Thread(
-                                target=tail_image_builder_logs,
-                                args=(),
-                                daemon=True,
-                            )
-                            tail_thread.start()
-
-                    if (
-                        status.status == DeploymentStatus.Running.value
-                        or status.status == DeploymentStatus.ScaledToZero.value
-                    ):
-                        spinner.spinner_progress.update(
-                            spinner_task_id,
-                            action=f'[bold green] Deployment "{self.name}" is ready. Current status: "{status.status}"[/bold green]',
-                        )
-                        return
-                    if status.status in [
-                        DeploymentStatus.Failed.value,
-                        DeploymentStatus.ImageBuildFailed.value,
-                        DeploymentStatus.Terminated.value,
-                        DeploymentStatus.Terminating.value,
-                        DeploymentStatus.Unhealthy.value,
-                    ]:
-                        spinner.spinner_progress.update(
-                            spinner_task_id,
-                            action=f'[bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}".[/bold red]',
-                        )
-                        return
-
-                    time.sleep(check_interval)
-
-                spinner.spinner_progress.update(
-                    spinner_task_id,
-                    action=f'[bold red]Time out waiting for Deployment "{self.name}" ready.[/bold red]',
-                )
-                return
+                    return
         else:
             while time.time() - start_time < timeout:
                 status: DeploymentState | None = None

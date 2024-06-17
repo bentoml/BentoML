@@ -55,8 +55,30 @@ If you want to use multiple GPUs for distributed operations (multiple GPUs for t
 - PyTorch: `DataParallel <https://pytorch.org/docs/stable/generated/torch.nn.DataParallel.html>`_ and `DistributedDataParallel <https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html>`_
 - TensorFlow: `Distributed training <https://www.tensorflow.org/guide/distributed_training>`_
 
-Deployment on BentoCloud
-^^^^^^^^^^^^^^^^^^^^^^^^
+GPU deployment
+--------------
+
+To make sure a Bento is using GPUs during deployment, configure its required CUDA version in the ``docker`` field of ``bentofile.yaml``. BentoML will install the corresponding version in the Docker image created. An example:
+
+.. code-block:: yaml
+
+    service: "service:GPUSVC"
+    labels:
+      owner: bentoml-team
+      stage: demo
+    include:
+    - "*.py"
+    python:
+      requirements_txt: "./requirements.txt"
+    docker:
+      cuda_version: "12.1.1" # Set your CUDA version
+      distro: debian
+      python_version: "3.11.7"
+
+If the desired CUDA version is not natively supported by BentoML, you can customize the installation of CUDA driver and libraries via ``system_packages``, ``setup_script``, or ``base_image`` options under the :ref:`docker-configuration` field.
+
+BentoCloud
+^^^^^^^^^^
 
 When deploying on BentoCloud, specify ``resources`` with ``gpu`` or ``gpu_type`` in the ``@bentoml.service`` decorator to allow BentoCloud to allocate the necessary GPU resources:
 
@@ -85,6 +107,65 @@ To list available GPU types on your BentoCloud account, run:
     gpu.t4.1    *      2000m  8Gi     1    nvidia-tesla-t4
     gpu.l4.1    *      4000m  16Gi    1    nvidia-l4
     gpu.a100.1  *      6000m  43Gi    1    nvidia-tesla-a100
+
+After your Service is ready, you can then deploy it to BentoCloud by running ``bentoml deploy .``. See :doc:`/bentocloud/how-tos/create-deployments` for details.
+
+Docker
+^^^^^^
+
+You need to install the NVIDIA Container Toolkit for running Docker containers with Nvidia GPUs. NVIDIA provides `detailed instructions <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker>`_ for installing both ``Docker CE`` and ``nvidia-docker``.
+
+After you build a Docker image for your Bento with ``bentoml containerize``, you can run it on all available GPUs like this:
+
+.. code-block:: bash
+
+    docker run --gpus all -p 3000:3000 bento_image:latest
+
+You can use the ``device`` option to specify GPUs:
+
+.. code-block:: bash
+
+    docker run --gpus all --device /dev/nvidia0 \
+                --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
+                --device /dev/nvidia-modeset --device /dev/nvidiactl <docker-args>
+
+To view GPU usage, use the ``nvidia-smi`` tool to see if a BentoML Service or Bento is using GPU. You can run it in a separate terminal while your BentoML Service is handling requests.
+
+.. code-block:: bash
+
+    # Refresh the output of every second
+    watch -n 1 nvidia-smi
+
+Example output:
+
+.. code-block:: bash
+
+    Every 1.0s: nvidia-smi                            ps49pl48tek0: Mon Jun 17 13:09:46 2024
+
+    Mon Jun 17 13:09:46 2024
+    +---------------------------------------------------------------------------------------+
+    | NVIDIA-SMI 535.129.03             Driver Version: 535.129.03   CUDA Version: 12.2     |
+    |-----------------------------------------+----------------------+----------------------+
+    | GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+    | Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+    |                                         |                      |               MIG M. |
+    |=========================================+======================+======================|
+    |   0  NVIDIA A100-SXM4-80GB          On  | 00000000:00:05.0 Off |                    0 |
+    | N/A   30C    P0              60W / 400W |   3493MiB / 81920MiB |      0%      Default |
+    |                                         |                      |             Disabled |
+    +-----------------------------------------+----------------------+----------------------+
+
+    +---------------------------------------------------------------------------------------+
+    | Processes:                                                                            |
+    |  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+    |        ID   ID                                                             Usage      |
+    |=======================================================================================|
+    |    0   N/A  N/A      1813      G   /usr/lib/xorg/Xorg                           70MiB |
+    |    0   N/A  N/A      1946      G   /usr/bin/gnome-shell                         78MiB |
+    |    0   N/A  N/A     11197      C   /Home/Documents/BentoML/demo/bin/python     3328MiB |
+    +---------------------------------------------------------------------------------------+
+
+For more information, see `the Docker documentation <https://docs.docker.com/config/containers/resource_constraints/#gpu>`_.
 
 Limit GPU visibility
 --------------------

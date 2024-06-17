@@ -373,6 +373,8 @@ To add it in your ``bentofile.yaml``:
     the ``debian`` and ``alpine`` distro support ``conda``. Learn more in
     the ``docker`` section below.
 
+.. _docker-configuration:
+
 ``docker``
 ^^^^^^^^^^
 

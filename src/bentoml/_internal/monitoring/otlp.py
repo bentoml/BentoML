@@ -182,6 +182,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         if self.protocol == "http":
             exporter = OTLPHttpLogExporter(
                 endpoint=self.endpoint,
+                certificate_file=self.credentials,
                 headers=self.headers,
                 timeout=self.timeout,
                 compression=self.compression,

@@ -6,7 +6,7 @@ Stable Diffusion XL Turbo (SDXL Turbo) is a distilled version of SDXL 1.0 and is
 
 This document demonstrates how to create an image generation application with SDXL Turbo and BentoML.
 
-All the source code in this tutorial is available in the `BentoSDXLTurbo GitHub repository <https://github.com/bentoml/BentoSDXLTurbo>`_.
+All the source code in this tutorial is available in the `BentoDiffusion GitHub repository <https://github.com/bentoml/BentoDiffusion>`_.
 
 Prerequisites
 -------------
@@ -23,8 +23,8 @@ Clone the project repository and install all the dependencies.
 
 .. code-block:: bash
 
-    git clone https://github.com/bentoml/BentoSDXLTurbo.git
-    cd BentoSDXLTurbo
+    git clone https://github.com/bentoml/BentoDiffusion.git
+    cd BentoDiffusion/sdxl-turbo
     pip install -r requirements.txt
 
 Create a BentoML Service

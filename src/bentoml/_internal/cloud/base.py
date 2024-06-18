@@ -139,6 +139,7 @@ class Spinner:
         self._live.stop()
         if self._spinner_task_id is not None:
             self._spinner_progress.stop_task(self._spinner_task_id)
+            self._spinner_progress.update(self._spinner_task_id, visible=False)
             self._spinner_task_id = None
 
     def log(self, message: str) -> None:

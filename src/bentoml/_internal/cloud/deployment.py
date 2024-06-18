@@ -334,8 +334,8 @@ def get_bento_info(
             return bento_obj.info
         if bento_schema is not None:
             assert bento_schema.manifest is not None
-            with Live(_cloud_client.spinner.progress_group):
-                _cloud_client.spinner.log_progress.add_task(
+            with _cloud_client.spinner as spinner:
+                spinner.log(
                     f"[bold blue]Using bento {bento.name}:{bento.version} from bentocloud to deploy"
                 )
             return BentoInfo(
@@ -651,7 +651,10 @@ class DeploymentInfo:
                         f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website."
                     )
                     return
-                if status.status == DeploymentStatus.Running.value:
+                if status.status in (
+                    DeploymentStatus.Running.value,
+                    DeploymentStatus.ScaledToZero.value,
+                ):
                     logger.info(
                         f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Deployment '{self.name}' is ready."
                     )

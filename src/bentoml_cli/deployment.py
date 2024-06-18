@@ -6,7 +6,6 @@ from http import HTTPStatus
 
 import click
 import yaml
-from rich.live import Live
 from rich.syntax import Syntax
 from rich.table import Table
 
@@ -737,25 +736,18 @@ def create_deployment(
     except BentoMLException as e:
         raise_deployment_config_error(e, "create")
     spinner = Spinner()
-    with Live(spinner.progress_group, transient=True) as live:
-        task_id = spinner.spinner_progress.add_task(
-            "deploy", action="Creating deployment on BentoCloud"
-        )
+    with spinner:
+        spinner.update("Creating deployment on BentoCloud")
         deployment = Deployment.create(
             deployment_config_params=config_params,
             context=context,
         )
-        spinner.spinner_progress.stop_task(task_id)
-        live.console.print(
+        spinner.log(
             f'✅ Created deployment "{deployment.name}" in cluster "{deployment.cluster}"'
         )
-        live.console.print(f"💻 View Dashboard: {deployment.admin_console}")
-    if wait:
-        spinner.spinner_progress.update(
-            task_id,
-            action="[bold blue]Waiting for deployment to be ready, you can use --no-wait to skip this process[/bold blue]",
-        )
-        deployment.wait_until_ready(
-            timeout=timeout,
-            show_spinner=True,
-        )
+        spinner.log(f"💻 View Dashboard: {deployment.admin_console}")
+        if wait:
+            spinner.update(
+                "[bold blue]Waiting for deployment to be ready, you can use --no-wait to skip this process[/]",
+            )
+            deployment.wait_until_ready(timeout=timeout, show_spinner=True)

@@ -43,6 +43,7 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
 
     @bentoml.service(
         resources={
+            "cpu" : 1,
             "memory" : "4Gi"
         }
     )

@@ -48,11 +48,15 @@ Create a BentoML :doc:`Service </guides/services>` in a ``service.py`` file to d
 
 
     @bentoml.service(
+        traffic={
+            "timeout": 600,
+            "external_queue": True,
+            "concurrency": 1,
+        },
         resources={
             "gpu": 1,
             "gpu_type": "nvidia-l4",
         },
-        traffic={"timeout": 600},
     )
     class StableDiffusionVideo:
 

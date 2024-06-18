@@ -45,7 +45,8 @@ Define a :doc:`BentoML Service </guides/services>` in a ``service.py`` file to w
 
     @bentoml.service(
         resources={
-            "memory" : "4Gi"
+            "cpu": 1
+            "memory": "4Gi"
         }
     )
     class CLIP:

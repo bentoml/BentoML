@@ -53,11 +53,14 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
     }
 
     @bentoml.service(
+        traffic={
+            "timeout": 30,
+            "concurrency": 1,
+        },
         resources={
             "gpu": 1,
-            "memory": "8Gi",
+            "gpu_type": "nvidia_tesla_t4",
         },
-        traffic={"timeout": 300},
     )
     class XTTS:
         def __init__(self) -> None:

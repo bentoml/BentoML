@@ -55,7 +55,11 @@ Create BentoML :doc:`/guides/services` in a ``service.py`` file to specify the s
     BASE_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 
     @bentoml.service(
-        traffic={"timeout": 600},
+        traffic={
+            "timeout": 600,
+            "external_queue": True,
+            "concurrency": 1,
+        },
         workers=1,
         resources={
             "gpu": 1,

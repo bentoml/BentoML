@@ -735,8 +735,7 @@ def create_deployment(
         config_params.verify()
     except BentoMLException as e:
         raise_deployment_config_error(e, "create")
-    spinner = Spinner()
-    with spinner:
+    with Spinner() as spinner:
         spinner.update("Creating deployment on BentoCloud")
         deployment = Deployment.create(
             deployment_config_params=config_params,
@@ -750,4 +749,4 @@ def create_deployment(
             spinner.update(
                 "[bold blue]Waiting for deployment to be ready, you can use --no-wait to skip this process[/]",
             )
-            deployment.wait_until_ready(timeout=timeout, show_spinner=True)
+            deployment.wait_until_ready(timeout=timeout, spinner=spinner)

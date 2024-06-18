@@ -69,6 +69,7 @@ dependencies = [
     "tomli-w",
     "httpx-ws>=0.6.0",
     "aiosqlite>=0.20.0",
+    "InquirerPy>=0.3.4",
 ]
 dynamic = ["version"]
 [project.urls]

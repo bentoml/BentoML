@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import logging
-import sys
 import threading
 import typing as t
 import uuid
@@ -793,7 +792,6 @@ class RestApiClientV2(BaseRestApiClient):
                                 continue
                             if jsn.payload is None:
                                 continue
-                            print(">>>", jsn.payload, file=sys.stderr)
                             for line in jsn.payload.items:
                                 yield line
                         except WebSocketNetworkError:

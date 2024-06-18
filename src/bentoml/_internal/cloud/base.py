@@ -136,11 +136,11 @@ class Spinner:
 
     def stop(self) -> None:
         """Stop live updating."""
-        self._live.stop()
         if self._spinner_task_id is not None:
             self._spinner_progress.stop_task(self._spinner_task_id)
             self._spinner_progress.update(self._spinner_task_id, visible=False)
             self._spinner_task_id = None
+        self._live.stop()
 
     def log(self, message: str) -> None:
         """Add a log message line."""

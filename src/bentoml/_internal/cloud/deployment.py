@@ -580,10 +580,11 @@ class DeploymentInfo:
                             )
                             tail_thread.start()
 
-                    if (
-                        status.status == DeploymentStatus.Running.value
-                        or status.status == DeploymentStatus.ScaledToZero.value
+                    if status.status in (
+                        DeploymentStatus.Running.value,
+                        DeploymentStatus.ScaledToZero.value,
                     ):
+                        spinner.stop()
                         spinner.console.print(
                             f'✅ [bold green] Deployment "{self.name}" is ready:[/] {self.admin_console}'
                         )
@@ -595,6 +596,7 @@ class DeploymentInfo:
                         DeploymentStatus.Terminating.value,
                         DeploymentStatus.Unhealthy.value,
                     ]:
+                        spinner.stop()
                         spinner.console.print(
                             f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}"[/]'
                         )
@@ -602,6 +604,7 @@ class DeploymentInfo:
 
                     time.sleep(check_interval)
 
+                spinner.stop()
                 spinner.console.print(
                     f'🚨 [bold red]Time out waiting for Deployment "{self.name}" ready[/]'
                 )

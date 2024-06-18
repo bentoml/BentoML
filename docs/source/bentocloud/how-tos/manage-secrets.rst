@@ -18,7 +18,7 @@ Create a secret
 3. On the setup page, provide the necessary information for the secret:
 
    .. image:: ../../_static/img/bentocloud/how-to/manage-secrets/create-a-secret-bentocloud.png
-    
+
    - **Name**: The name of the secret.
    - **Description**: A description of the secret, detailing its usage.
    - **Mounted as**:
@@ -30,13 +30,13 @@ Create a secret
    - **Value**: The value of the secret key. If it is mounted as a file, you can optionally specify the sub path where it should be located in the secret path. For example, if the secret path is ``$BENTOML_HOME/demo`` and the sub path is ``secrets/password``, the full path of the secret key will be ``$BENTOML_HOME/demo/secrets/password/<KEY_NAME>``.
 
 4. Click **Add** to add another key-value pair for the secret if necessary.
-5. Click **Save** to store the secret. 
+5. Click **Save** to store the secret.
 
 Modify a secret
 ---------------
 
 1. Click an existing secret on the **Secrets** page.
-2. On the details page, click **Edit** and update your desired field. 
+2. On the details page, click **Edit** and update your desired field.
 3. Click **Update** to save your change. It is important to note that:
 
    - You can't modify a secret key's name.

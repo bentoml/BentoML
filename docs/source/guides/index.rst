@@ -121,7 +121,7 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
         :link: /guides/error-handling
         :link-type: doc
 
-        Define Custom Error Handling Logic for your BentoML Service.
+        Define custom error handling logic for your BentoML Service.
 
 .. toctree::
     :hidden:
@@ -144,3 +144,4 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     asgi
     configurations
     lifecycle-hooks
+    error-handling

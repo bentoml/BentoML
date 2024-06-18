@@ -68,13 +68,14 @@ class BentoCloudClient(CloudClient):
         threads: int = 10,
         context: str | None = None,
     ):
-        with Live(self.spinner.progress_group):
+        with Live(self.spinner.progress_group, transient=True) as live:
             upload_task_id = self.spinner.transmission_progress.add_task(
                 f'Pushing Bento "{bento.tag}"', start=False, visible=False
             )
             self._do_push_bento(
                 bento, upload_task_id, force=force, threads=threads, context=context
             )
+            live.console.print(f'✅ Pushed Bento "{bento.tag}"')
 
     @inject
     def _do_push_bento(

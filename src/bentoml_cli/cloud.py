@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import http.server
 import json
 import socket
-import threading
 import typing as t
 import webbrowser
 
@@ -19,6 +17,7 @@ from bentoml._internal.cloud.config import default_context_name
 from bentoml._internal.utils import bentoml_cattr
 from bentoml.exceptions import CLIException
 from bentoml.exceptions import CloudRESTApiClientError
+from bentoml_cli.auth_server import AuthCallbackHttpServer
 from bentoml_cli.utils import BentoMLCommandGroup
 
 if t.TYPE_CHECKING:
@@ -29,34 +28,6 @@ def find_free_port():
         s.bind(('', 0))
         s.listen(1)
         return s.getsockname()[1]
-
-
-# 定义回调处理程序
-class CallbackHandler(http.server.SimpleHTTPRequestHandler):
-    verification_code = None
-    server_instance = None
-
-    def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        data = json.loads(post_data)
-
-        if data.get("verification_code") == self.verification_code:
-            token = data.get("api_token")
-            print(f"Received token: {token}")
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"Login successful! You can close this window.")
-            self.server.token = token  # 将令牌存储在服务器实例中
-            # 关闭服务器
-            def shutdown_server(server):
-                server.shutdown()
-                server.server_close()
-            threading.Thread(target=shutdown_server, args=(self.server_instance,)).start()
-        else:
-            self.send_response(400)
-            self.end_headers()
-            self.wfile.write(b"Invalid verification code")
 
 @click.group(name="cloud", cls=BentoMLCommandGroup)
 def cloud_command():
@@ -92,19 +63,17 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
         
         if choice == "create":
             port = find_free_port()
-            createURL = f'{endpoint}/api-tokens/new?callback=http://localhost:{port}'
-            click.echo(f'ℹ You can generate an API Token at {createURL}')
-            ## Press Enter to open https://cloud.bentoml.com/api_tokens/new in your browser..
-            # 提示用户按下回车键以继续
-            input("Press Enter to open {} in your browser...".format(createURL))
-            ## define a handler 
-            ## start a server
-            ## open webbrowser
-            if webbrowser.open_new_tab(createURL):
-                click.echo(f"✓ Opened {createURL} in your web browser.")
+            callback_server = AuthCallbackHttpServer(port)
+            authURL = f'{endpoint}/api-tokens/new?callback={callback_server.callback_url}'
+            input(f'Press Enter to open {authURL} in your browser...')
+            if webbrowser.open_new_tab(authURL):
+                click.echo(f"✓ Opened {authURL} in your web browser.")
             else:
-                click.echo(f"✗ Failed to open browser. Try create a new API token at {endpoint}/api_tokens/")
-            return
+                click.echo(f"✗ Failed to open browser. Try create a new API token at {endpoint}/api_tokens/new")
+            code = callback_server.wait_indefinitely_for_code()
+            if code is None:
+                raise ValueError("No code could be obtained from browser callback page")
+            api_token = code
         elif choice == "paste":
             api_token = click.prompt("? Paste your authentication token", type=str, hide_input=True)
     try:

@@ -5,7 +5,7 @@
 groups = ["default", "all", "testing", "io", "grpc-channelz", "tracing-otlp", "monitor-otlp", "io-image", "aws", "docs", "tracing-zipkin", "grpc-reflection", "grpc", "tracing", "tooling", "tracing-jaeger", "io-pandas", "triton", "opentelemetry-exporter-otlp-proto-grpc==1.20.0"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:b24e49033b37d472b6ccee324e811bb67172d2a9f756a12f81e6963e9bfe1646"
+content_hash = "sha256:fee713326ac267d2fb5bfb0d8c2657640f5ce78f0e555608c017b8f4c458312e"
 
 [[package]]
 name = "aiohttp"
@@ -136,6 +136,20 @@ dependencies = [
 files = [
     {file = "aiosignal-1.3.1-py3-none-any.whl", hash = "sha256:f8376fb07dd1e86a584e4fcdec80b36b7f81aac666ebc724e2c090300dd83b17"},
     {file = "aiosignal-1.3.1.tar.gz", hash = "sha256:54cd96e15e1649b75d6c87526a6ff0b6c1b0dd3459f43d9ca11d48c339b68cfc"},
+]
+
+[[package]]
+name = "aiosqlite"
+version = "0.20.0"
+requires_python = ">=3.8"
+summary = "asyncio bridge to the standard sqlite3 module"
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+dependencies = [
+    "typing-extensions>=4.0",
+]
+files = [
+    {file = "aiosqlite-0.20.0-py3-none-any.whl", hash = "sha256:36a1deaca0cac40ebe32aac9977a6e2bbc7f5189f23f4a54d5908986729e5bd6"},
+    {file = "aiosqlite-0.20.0.tar.gz", hash = "sha256:6d35c8c256637f4672f843c31021464090805bf925385ac39473fb16eaaca3d7"},
 ]
 
 [[package]]

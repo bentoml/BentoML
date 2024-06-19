@@ -182,9 +182,7 @@ def main(
         server_context.bento_name = service.bento.tag.name
         server_context.bento_version = service.bento.tag.version or "not available"
 
-    asgi_app = service.to_asgi(
-        is_main=server_context.service_type == "entry_service", init=False
-    )
+    asgi_app = service.to_asgi(is_main=server_context.service_type == "entry_service")
 
     uvicorn_extra_options: dict[str, t.Any] = {}
     if ssl_version is not None:

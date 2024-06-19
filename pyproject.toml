@@ -68,6 +68,7 @@ dependencies = [
     "tomli>=1.1.0; python_version < \"3.11\"",
     "tomli-w",
     "httpx-ws>=0.6.0",
+    "aiosqlite>=0.20.0",
 ]
 dynamic = ["version"]
 [project.urls]

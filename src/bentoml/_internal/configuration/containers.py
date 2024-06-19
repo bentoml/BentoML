@@ -170,6 +170,16 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
+    def result_store_file(bentoml_home: str = Provide[bentoml_home]) -> str:
+        path = os.getenv(
+            "BENTOML_RESULT_STORE", os.path.join(bentoml_home, "task_result.db")
+        )
+        return (
+            os.path.realpath(os.path.expanduser(path)) if path != ":memory:" else path
+        )
+
+    @providers.SingletonFactory
+    @staticmethod
     def tmp_bento_store_dir(bentoml_home: str = Provide[bentoml_home]):
         return os.path.join(bentoml_home, "tmp")
 

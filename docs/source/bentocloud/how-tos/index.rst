@@ -13,6 +13,7 @@ They are recipes, directions to achieve a specific end result, and are wholly **
 * :doc:`autoscaling`
 * :doc:`manage-access-token`
 * :doc:`manage-users`
+* :doc:`batch-inference-jobs`
 * :doc:`byoc`
 
 .. toctree::
@@ -25,4 +26,5 @@ They are recipes, directions to achieve a specific end result, and are wholly **
    autoscaling
    manage-access-token
    manage-users
+   batch-inference-jobs
    byoc

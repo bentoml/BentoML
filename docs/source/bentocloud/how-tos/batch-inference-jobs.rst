@@ -6,7 +6,7 @@ Some AI-powered tasks are best suited for batch inference, such as embedding gen
 
 Using BentoML and BentoCloud, you can efficiently manage these batch inference jobs with several key advantages:
 
-- **On-demand Deployment**: Deploy your model only when needed and terminate the Deployment after the job completes, ensuring you pay only for the resources you use. You can run batch inference jobs once or on a recurring basis. 
+- **On-demand Deployment**: Deploy your model only when needed and terminate the Deployment after the job completes, ensuring you pay only for the resources you use. You can run batch inference jobs once or on a recurring basis.
 - **Automatic scaling**: Scale your resources automatically based on the traffic demands for your job.
 - **Dedicated hardware for inference**: Run model inference on dedicated GPUs, ensuring that the inference tasks do not interfere with batch processing.
 
@@ -61,7 +61,7 @@ Make sure you have an existing BentoML project or a Bento. The example below is 
             self.index.storage_context.persist()
             return "Successfully Loaded Document"
 
-        
+
         @bentoml.api
         def ingest_text_batch(self, txt: Annotated[Path, bentoml.validators.ContentType("text/plain")]) -> str:
 
@@ -69,7 +69,7 @@ Make sure you have an existing BentoML project or a Bento. The example below is 
                 text = f.read()
 
             doc = Document(text=text)
-            
+
             # Insert document into vector index and persist to storage
             if self.index is None:
                 self.index = VectorStoreIndex.from_documents(
@@ -132,7 +132,7 @@ Once your Deployment is active, you can interact with it by creating a client th
 Step 4: Clean up
 ^^^^^^^^^^^^^^^^
 
-After completing the job, it's important to terminate the Deployment to conserve resources. 
+After completing the job, it's important to terminate the Deployment to conserve resources.
 
 .. code-block:: python
 

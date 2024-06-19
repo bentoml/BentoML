@@ -779,23 +779,22 @@ class RestApiClientV2(BaseRestApiClient):
                 try:
                     while True:
                         try:
-                            try:
-                                data = ws.receive_json(timeout=1)
-                            except Empty:
-                                continue
-                            jsn = schema_from_object(data, LogWSResponseSchema)
-                            if jsn.type == "error":
-                                if jsn.message is None:
-                                    raise CloudRESTApiClientError("Unknown error")
-                                raise CloudRESTApiClientError(jsn.message)
-                            if jsn.type == "heartbeat":
-                                continue
-                            if jsn.payload is None:
-                                continue
-                            for line in jsn.payload.items:
-                                yield line
-                        except WebSocketNetworkError:
-                            break
+                            data = ws.receive_json(timeout=1)
+                        except Empty:
+                            continue
+                        jsn = schema_from_object(data, LogWSResponseSchema)
+                        if jsn.type == "error":
+                            if jsn.message is None:
+                                raise CloudRESTApiClientError("Unknown error")
+                            raise CloudRESTApiClientError(jsn.message)
+                        if jsn.type == "heartbeat":
+                            continue
+                        if jsn.payload is None:
+                            continue
+                        for line in jsn.payload.items:
+                            yield line
+                except WebSocketNetworkError:
+                    pass
                 finally:
                     heartbeat_canceled_event.set()
                     ws.close()
@@ -803,7 +802,7 @@ class RestApiClientV2(BaseRestApiClient):
 
             # Clone to a new exit stack so the websocket session can live outside this method.
             new_stack = stack.pop_all()
-            # Return a close handle to the caller.
+            # Return a stream and a close handle to the caller.
             return gen(), new_stack.close
 
 

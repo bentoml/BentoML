@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import base64
-import binascii
 import contextlib
 import logging
 import time
@@ -301,7 +300,7 @@ def get_bento_info(
                 bento_obj = build_bentofile(
                     build_ctx=project_path, _bento_store=_bento_store
                 )
-                _cloud_client.spinner.log(f'🍱 Built bento "{bento_obj.info.tag}"')
+                spinner.log(f'🍱 Built bento "{bento_obj.info.tag}"')
 
         _cloud_client.push_bento(bento=bento_obj, context=context)
         return bento_obj.info
@@ -532,12 +531,8 @@ class DeploymentInfo:
                 for piece in logs_tailer:
                     if stop_tail_event.is_set():
                         break
-                    try:
-                        decoded_bytes = base64.b64decode(piece)
-                    except binascii.Error:
-                        decoded_str = piece
-                    else:
-                        decoded_str = decoded_bytes.decode("utf-8")
+                    decoded_bytes = base64.b64decode(piece)
+                    decoded_str = decoded_bytes.decode("utf-8")
                     if is_first:
                         is_first = False
                         spinner.update("🚧 Image building...")

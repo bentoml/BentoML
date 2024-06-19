@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 import json
-import socket
 import typing as t
 import webbrowser
+from os import environ
 
 import click
 import click_option_group as cog
@@ -15,6 +16,7 @@ from bentoml._internal.cloud.config import CloudClientContext
 from bentoml._internal.cloud.config import add_context
 from bentoml._internal.cloud.config import default_context_name
 from bentoml._internal.utils import bentoml_cattr
+from bentoml._internal.utils import reserve_free_port
 from bentoml.exceptions import CLIException
 from bentoml.exceptions import CloudRESTApiClientError
 from bentoml_cli.auth_server import AuthCallbackHttpServer
@@ -22,12 +24,6 @@ from bentoml_cli.utils import BentoMLCommandGroup
 
 if t.TYPE_CHECKING:
     from .utils import SharedOptions
-    
-def find_free_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('', 0))
-        s.listen(1)
-        return s.getsockname()[1]
 
 @click.group(name="cloud", cls=BentoMLCommandGroup)
 def cloud_command():
@@ -42,12 +38,13 @@ def cloud_command():
     "--endpoint",
     type=click.STRING,
     help="BentoCloud or Yatai endpoint, default as https://cloud.bentoml.com",
-    default="https://cloud.bentoml.com",
+    default=environ["BENTO_CLOUD_API_ENDPOINT"] if "BENTO_CLOUD_API_ENDPOINT" in environ else "https://cloud.bentoml.com",
 )
 @cog.optgroup.option(
     "--api-token",
     type=click.STRING,
     help="BentoCloud or Yatai user API token",
+    default=environ["BENTO_CLOUD_API_KEY"] if "BENTO_CLOUD_API_KEY" in environ else None,
 )
 @click.pass_obj
 def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
@@ -56,26 +53,38 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
         choice = inquirer.select(
             message="How would you like to authenticate BentoML CLI? [Use arrows to move]",
             choices=[
-                {"name": "Create a new API token with a web browser", "value": "create"},
+                {
+                    "name": "Create a new API token with a web browser",
+                    "value": "create",
+                },
                 {"name": "Paste an existing API token", "value": "paste"},
             ],
         ).execute()
-        
+
         if choice == "create":
-            port = find_free_port()
+            with contextlib.ExitStack() as port_stack:
+                port = port_stack.enter_context(
+                    reserve_free_port(enable_so_reuseport=True)
+                )
             callback_server = AuthCallbackHttpServer(port)
-            authURL = f'{endpoint}/api-tokens/new?callback={callback_server.callback_url}'
-            input(f'Press Enter to open {authURL} in your browser...')
+            authURL = (
+                f"{endpoint}/api-tokens/new?callback={callback_server.callback_url}"
+            )
+            input(f"Press Enter to open {authURL} in your browser...")
             if webbrowser.open_new_tab(authURL):
-                click.echo(f"✓ Opened {authURL} in your web browser.")
+                click.echo(f"✅ Opened {authURL} in your web browser.")
             else:
-                click.echo(f"✗ Failed to open browser. Try create a new API token at {endpoint}/api_tokens/new")
+                click.echo(
+                    f"🚨 Failed to open browser. Try create a new API token at {endpoint}/api_tokens/new"
+                )
             code = callback_server.wait_indefinitely_for_code()
             if code is None:
                 raise ValueError("No code could be obtained from browser callback page")
             api_token = code
         elif choice == "paste":
-            api_token = click.prompt("? Paste your authentication token", type=str, hide_input=True)
+            api_token = click.prompt(
+                "? Paste your authentication token", type=str, hide_input=True
+            )
     try:
         cloud_rest_client = RestApiClient(endpoint, api_token)
         user = cloud_rest_client.v1.get_current_user()
@@ -98,13 +107,16 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
         )
 
         add_context(ctx)
-        click.echo(f"✓ Configured BentoCloud credentials (current-context: {ctx.name})")
-        click.echo(f"✓ Logged in as {user.email} at {org.name}")
+        click.echo(f"✅ Configured BentoCloud credentials (current-context: {ctx.name})")
+        click.echo(f"✅ Logged in as {user.email} at {org.name}")
     except CloudRESTApiClientError  as e:
         if e.error_code == 401:
-            click.echo(f"✗ Error validating token: HTTP 401: Bad credentials ({endpoint}/api-token)")
+            click.echo(
+                f"🚨 Error validating token: HTTP 401: Bad credentials ({endpoint}/api-token)"
+            )
         else:
             click.echo(f"✗ Error validating token: HTTP {e.error_code}")
+
 
 @cloud_command.command()
 def current_context() -> None:  # type: ignore (not accessed)

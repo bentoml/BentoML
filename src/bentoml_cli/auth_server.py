@@ -30,6 +30,7 @@ def _method_with_timeout(your_method, timeout_seconds=5, *args, **kwargs):
 
     return result
 
+
 class AuthRedirectHandler(BaseHTTPRequestHandler):
     """
     HTTPRequest Handler that is intended to be used as oauth2 callback page
@@ -70,13 +71,15 @@ class AuthRedirectHandler(BaseHTTPRequestHandler):
         Provides callback page for the oauth2 redirect using POST request
         """
         try:
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length).decode('utf-8')
+            content_length = int(self.headers["Content-Length"])
+            post_data = self.rfile.read(content_length).decode("utf-8")
             params = parse_qs(post_data)
 
-            has_error = ("code" not in params
-                         or len(params['code']) != 1
-                         or params['code'][0].strip() == "")
+            has_error = (
+                "code" not in params
+                or len(params["code"]) != 1
+                or params["code"][0].strip() == ""
+            )
 
             if has_error:
                 self.send_response(400)
@@ -88,7 +91,6 @@ class AuthRedirectHandler(BaseHTTPRequestHandler):
         except Exception:
             self.send_response(500)
             self.end_headers()
-            
 
 
 class AuthCallbackHttpServer(HTTPServer):
@@ -129,14 +131,16 @@ class AuthCallbackHttpServer(HTTPServer):
         """
         for _ in range(0, attempts):
             try:
-                _method_with_timeout(self.handle_request, timeout_seconds=timeout_per_attempt)
+                _method_with_timeout(
+                    self.handle_request, timeout_seconds=timeout_per_attempt
+                )
             except TimeoutException:
                 continue
             if self.get_code() is not None:
                 return self.get_code()
 
         return None
-    
+
     def wait_indefinitely_for_code(self) -> Optional[str]:
         """
         Wait indefinitely for the server to open the callback page containing the code query parameter.

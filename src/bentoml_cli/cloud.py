@@ -25,6 +25,7 @@ from bentoml_cli.utils import BentoMLCommandGroup
 if t.TYPE_CHECKING:
     from .utils import SharedOptions
 
+
 @click.group(name="cloud", cls=BentoMLCommandGroup)
 def cloud_command():
     """BentoCloud Subcommands Groups."""
@@ -38,13 +39,17 @@ def cloud_command():
     "--endpoint",
     type=click.STRING,
     help="BentoCloud or Yatai endpoint, default as https://cloud.bentoml.com",
-    default=environ["BENTO_CLOUD_API_ENDPOINT"] if "BENTO_CLOUD_API_ENDPOINT" in environ else "https://cloud.bentoml.com",
+    default=environ["BENTO_CLOUD_API_ENDPOINT"]
+    if "BENTO_CLOUD_API_ENDPOINT" in environ
+    else "https://cloud.bentoml.com",
 )
 @cog.optgroup.option(
     "--api-token",
     type=click.STRING,
     help="BentoCloud or Yatai user API token",
-    default=environ["BENTO_CLOUD_API_KEY"] if "BENTO_CLOUD_API_KEY" in environ else None,
+    default=environ["BENTO_CLOUD_API_KEY"]
+    if "BENTO_CLOUD_API_KEY" in environ
+    else None,
 )
 @click.pass_obj
 def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
@@ -107,9 +112,11 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
         )
 
         add_context(ctx)
-        click.echo(f"✅ Configured BentoCloud credentials (current-context: {ctx.name})")
+        click.echo(
+            f"✅ Configured BentoCloud credentials (current-context: {ctx.name})"
+        )
         click.echo(f"✅ Logged in as {user.email} at {org.name}")
-    except CloudRESTApiClientError  as e:
+    except CloudRESTApiClientError as e:
         if e.error_code == 401:
             click.echo(
                 f"🚨 Error validating token: HTTP 401: Bad credentials ({endpoint}/api-token)"

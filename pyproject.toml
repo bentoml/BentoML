@@ -50,7 +50,6 @@ dependencies = [
     "opentelemetry-util-http==0.41b0",
     "packaging>=22.0",
     "pathspec",
-    "pip-tools>=6.6.2",
     "pip-requirements-parser>=31.2.0",
     "prometheus-client>=0.10.0",
     "psutil",
@@ -70,6 +69,7 @@ dependencies = [
     "httpx-ws>=0.6.0",
     "aiosqlite>=0.20.0",
     "InquirerPy>=0.3.4",
+    "uv",
 ]
 dynamic = ["version"]
 [project.urls]

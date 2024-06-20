@@ -643,7 +643,7 @@ class PythonOptions:
             else:
                 pip_compile_args.append("--quiet")
             logger.info("Locking PyPI package versions.")
-            cmd = [sys.executable, "-m", "piptools", "compile"]
+            cmd = [sys.executable, "-m", "uv", "pip", "compile"]
             cmd.extend(pip_compile_args)
             try:
                 subprocess.check_call(

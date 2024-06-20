@@ -3,22 +3,16 @@ from __future__ import annotations
 import base64
 import contextlib
 import logging
-import signal
-import sys
 import time
 import typing as t
 from os import path
 from threading import Event
-from threading import Lock
 from threading import Thread
 
 import attr
 import click
 import yaml
 from deepmerge.merger import Merger
-from httpx_ws import WebSocketSession
-from rich.console import Console
-from rich.live import Live
 from simple_di import Provide
 from simple_di import inject
 
@@ -35,6 +29,7 @@ from ..configuration.containers import BentoMLContainer
 from ..tag import Tag
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
+from .base import Spinner
 from .config import get_rest_api_client
 from .schemas.modelschemas import DeploymentStatus
 from .schemas.modelschemas import DeploymentTargetHPAConf
@@ -300,16 +295,12 @@ def get_bento_info(
     if project_path:
         from bentoml.bentos import build_bentofile
 
-        with Live(_cloud_client.spinner.progress_group, transient=True):
-            with _cloud_client.spinner.spin(
-                text=f"🍱 Building bento from project: {project_path}"
-            ):
+        with _cloud_client.spinner as spinner:
+            with spinner.spin(text=f"🍱 Building bento from project: {project_path}"):
                 bento_obj = build_bentofile(
                     build_ctx=project_path, _bento_store=_bento_store
                 )
-                _cloud_client.spinner.spinner_progress.console.print(
-                    f'🍱 Built bento "{bento_obj.info.tag}"'
-                )
+                spinner.log(f'🍱 Built bento "{bento_obj.info.tag}"')
 
         _cloud_client.push_bento(bento=bento_obj, context=context)
         return bento_obj.info
@@ -334,8 +325,8 @@ def get_bento_info(
             return bento_obj.info
         if bento_schema is not None:
             assert bento_schema.manifest is not None
-            with Live(_cloud_client.spinner.progress_group):
-                _cloud_client.spinner.log_progress.add_task(
+            with _cloud_client.spinner as spinner:
+                spinner.log(
                     f"[bold blue]Using bento {bento.name}:{bento.version} from bentocloud to deploy"
                 )
             return BentoInfo(
@@ -504,38 +495,16 @@ class DeploymentInfo:
         self,
         timeout: int = 3600,
         check_interval: int = 10,
-        show_spinner: bool = False,
+        spinner: Spinner | None = None,
     ) -> None:
         from httpx import TimeoutException
 
         start_time = time.time()
-        if show_spinner:
-            lock = Lock()
+        if spinner is not None:
             stop_tail_event = Event()
-            tail_thread: Thread | None = None
-            ws_session: WebSocketSession | None = None
+            stack = contextlib.ExitStack()
 
-            def stop_tail_thread():
-                nonlocal ws_session
-                stop_tail_event.set()
-                with lock:
-                    if ws_session is not None:
-                        ws = ws_session
-                        ws_session = None
-                        ws.close()
-                if tail_thread is not None:
-                    tail_thread.join()
-
-            def signal_handler(sig, frame):
-                stop_tail_thread()
-                sys.exit(1)
-
-            signal.signal(signal.SIGINT, signal_handler)
-            console = Console()
-
-            def tail_image_builder_logs(stop_spinner: t.Callable[[], None]):
-                nonlocal ws_session
-
+            def tail_image_builder_logs():
                 cloud_rest_client = get_rest_api_client(self._context)
                 pod: KubePodSchema | None = None
                 while True:
@@ -550,93 +519,91 @@ class DeploymentInfo:
                         break
                     if stop_tail_event.wait(check_interval):
                         return
-                if pod is None:
-                    console.print(
-                        "🚨 [bold red]Can't found the image builder pod.[/bold red]"
-                    )
-                    return
 
                 is_first = True
-                for piece, ws in cloud_rest_client.v2.tail_logs(
+                logs_tailer, close_tail = cloud_rest_client.v2.tail_logs(
                     cluster_name=self.cluster,
                     namespace=self._schema.kube_namespace,
                     pod_name=pod.name,
                     container_name="builder",
-                    stop_event=stop_tail_event,
-                ):
-                    with lock:
-                        ws_session = ws
+                )
+                stack.callback(close_tail)
+                for piece in logs_tailer:
+                    if stop_tail_event.is_set():
+                        break
                     decoded_bytes = base64.b64decode(piece)
                     decoded_str = decoded_bytes.decode("utf-8")
                     if is_first:
                         is_first = False
-                        stop_spinner()
-                        console.print("🚧 Image building...")
-                    print(decoded_str, end="")
-                with lock:
-                    ws_session = None
-                return
+                        spinner.update("🚧 Image building...")
+                    print(decoded_str, end="", flush=True)
 
-            with contextlib.ExitStack() as stack:
-                stack.callback(stop_tail_thread)
+            tail_thread: Thread | None = None
+
+            @stack.callback
+            def stop_tail_thread():
+                stop_tail_event.set()
+                if tail_thread is not None:
+                    tail_thread.join()
+
+            with stack:
                 status: DeploymentState | None = None
-                with console.status(
+                spinner.update(
                     f'🔄 Waiting for deployment "{self.name}" to be ready...'
-                ) as rich_status:
-                    while time.time() - start_time < timeout:
-                        for _ in range(3):
-                            try:
-                                status = self.get_status()
-                                break
-                            except TimeoutException:
-                                rich_status.update(
-                                    "⚠️ Unable to get deployment status, retrying..."
-                                )
-                        if status is None:
-                            console.print(
-                                "🚨 [bold red]Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website.[/bold red]"
+                )
+                while time.time() - start_time < timeout:
+                    for _ in range(3):
+                        try:
+                            status = self.get_status()
+                            break
+                        except TimeoutException:
+                            spinner.update(
+                                "⚠️ Unable to get deployment status, retrying..."
                             )
-                            return
-                        rich_status.update(
-                            f'🔄 Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
+                    if status is None:
+                        spinner.log(
+                            "🚨 [bold red]Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website.[/bold red]"
                         )
-                        if status.status == DeploymentStatus.ImageBuilding.value:
-                            if tail_thread is None:
-                                tail_thread = Thread(
-                                    target=tail_image_builder_logs,
-                                    args=(rich_status.stop,),
-                                    daemon=True,
-                                )
-                                tail_thread.start()
-                        else:
-                            rich_status.start()
-
-                        if (
-                            status.status == DeploymentStatus.Running.value
-                            or status.status == DeploymentStatus.ScaledToZero.value
-                        ):
-                            console.print(
-                                f'✅ [bold green] Deployment "{self.name}" is ready:[/bold green] {self.admin_console}'
-                            )
-                            return
-                        if status.status in [
-                            DeploymentStatus.Failed.value,
-                            DeploymentStatus.ImageBuildFailed.value,
-                            DeploymentStatus.Terminated.value,
-                            DeploymentStatus.Terminating.value,
-                            DeploymentStatus.Unhealthy.value,
-                        ]:
-                            console.print(
-                                f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}"[/bold red]'
-                            )
-                            return
-
-                        time.sleep(check_interval)
-
-                    console.print(
-                        f'🚨 [bold red]Time out waiting for Deployment "{self.name}" ready[/bold red]'
+                        return
+                    spinner.update(
+                        f'🔄 Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
                     )
-                    return
+                    if status.status == DeploymentStatus.ImageBuilding.value:
+                        if tail_thread is None:
+                            tail_thread = Thread(
+                                target=tail_image_builder_logs, daemon=True
+                            )
+                            tail_thread.start()
+
+                    if status.status in (
+                        DeploymentStatus.Running.value,
+                        DeploymentStatus.ScaledToZero.value,
+                    ):
+                        spinner.stop()
+                        spinner.console.print(
+                            f'✅ [bold green] Deployment "{self.name}" is ready:[/] {self.admin_console}'
+                        )
+                        return
+                    if status.status in [
+                        DeploymentStatus.Failed.value,
+                        DeploymentStatus.ImageBuildFailed.value,
+                        DeploymentStatus.Terminated.value,
+                        DeploymentStatus.Terminating.value,
+                        DeploymentStatus.Unhealthy.value,
+                    ]:
+                        spinner.stop()
+                        spinner.console.print(
+                            f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}"[/]'
+                        )
+                        return
+
+                    time.sleep(check_interval)
+
+                spinner.stop()
+                spinner.console.print(
+                    f'🚨 [bold red]Time out waiting for Deployment "{self.name}" ready[/]'
+                )
+                return
         else:
             while time.time() - start_time < timeout:
                 status: DeploymentState | None = None
@@ -651,7 +618,10 @@ class DeploymentInfo:
                         f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website."
                     )
                     return
-                if status.status == DeploymentStatus.Running.value:
+                if status.status in (
+                    DeploymentStatus.Running.value,
+                    DeploymentStatus.ScaledToZero.value,
+                ):
                     logger.info(
                         f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Deployment '{self.name}' is ready."
                     )

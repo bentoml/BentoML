@@ -343,8 +343,8 @@ BentoML also supports lists input and output of complex types, such as images an
     @bentoml.service
     class BatchImageService:
         @bentoml.api
-        def enhance_images(self, images: List[PILImage]) -> List[PILImage]:
-            # Process images and return a list of images
+        def enhance_images(self, images: List[PILImage]) -> PILImage:
+            # Process images and return a single image
             ...
 
         @bentoml.api
@@ -352,7 +352,7 @@ BentoML also supports lists input and output of complex types, such as images an
             # Process files and return a list of dictionaries
             ...
 
-Note that currently BentoML does not support output that combines raw binary data (like images or files) with plain dictionary data directly.
+Note that currently BentoML does not support output that contains multiple raw binary data or combines raw binary data (like images or files) with plain dictionary data directly.
 
 Validate data
 -------------

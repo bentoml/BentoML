@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import io
+import logging
 import pathlib
 import sys
 import typing as t
@@ -34,6 +35,7 @@ if t.TYPE_CHECKING:
 
 
 DEFAULT_TEXT_MEDIA_TYPE = "text/plain"
+logger = logging.getLogger("bentoml.serve")
 
 
 def is_file_type(type_: type) -> bool:
@@ -80,18 +82,18 @@ class IOMixin:
     def openapi_components(cls, name: str) -> dict[str, Schema]:
         from .service.openapi import REF_TEMPLATE
 
-        if issubclass(cls, RootModel):
-            return {}
-        assert issubclass(cls, IOMixin) and issubclass(cls, BaseModel)
+        assert issubclass(cls, BaseModel)
         json_schema = cls.model_json_schema(ref_template=REF_TEMPLATE)
         defs = json_schema.pop("$defs", None)
-        main_name = (
-            f"{name}__{cls.__name__}"
-            if cls.__name__ in ("Input", "Output")
-            else cls.__name__
-        )
-        json_schema["title"] = main_name
-        components: dict[str, Schema] = {main_name: Schema(**json_schema)}
+        components: dict[str, Schema] = {}
+        if not issubclass(cls, RootModel):
+            main_name = (
+                f"{name}__{cls.__name__}"
+                if cls.__name__ in ("Input", "Output")
+                else cls.__name__
+            )
+            json_schema["title"] = main_name
+            components[main_name] = Schema(**json_schema)
         if defs is not None:
             # NOTE: This is a nested models, hence we will update the definitions
             components.update({k: Schema(**v) for k, v in defs.items()})
@@ -180,29 +182,35 @@ class IOMixin:
         if inspect.isasyncgen(obj):
 
             async def async_stream() -> t.AsyncGenerator[str | bytes, None]:
-                async for item in obj:
-                    if isinstance(item, (str, bytes)):
-                        yield item
-                    else:
-                        obj_item = cls(item) if issubclass(cls, RootModel) else item
-                        for chunk in serde.serialize_model(
-                            t.cast(IODescriptor, obj_item)
-                        ).data:
-                            yield chunk
+                try:
+                    async for item in obj:
+                        if isinstance(item, (str, bytes)):
+                            yield item
+                        else:
+                            obj_item = cls(item) if issubclass(cls, RootModel) else item
+                            for chunk in serde.serialize_model(
+                                t.cast(IODescriptor, obj_item)
+                            ).data:
+                                yield chunk
+                except Exception:
+                    logger.exception("Error while streaming response")
 
             return StreamingResponse(async_stream(), media_type=cls.mime_type())
 
         elif inspect.isgenerator(obj):
 
             def content_stream() -> t.Generator[str | bytes, None, None]:
-                for item in obj:
-                    if isinstance(item, (str, bytes)):
-                        yield item
-                    else:
-                        obj_item = cls(item) if issubclass(cls, RootModel) else item
-                        yield from serde.serialize_model(
-                            t.cast(IODescriptor, obj_item)
-                        ).data
+                try:
+                    for item in obj:
+                        if isinstance(item, (str, bytes)):
+                            yield item
+                        else:
+                            obj_item = cls(item) if issubclass(cls, RootModel) else item
+                            yield from serde.serialize_model(
+                                t.cast(IODescriptor, obj_item)
+                            ).data
+                except Exception:
+                    logger.exception("Error while streaming response")
 
             return StreamingResponse(content_stream(), media_type=cls.mime_type())
         elif not issubclass(cls, RootModel):

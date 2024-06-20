@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 
 import bentoml
+from bentoml.client import AsyncHTTPClient
 from bentoml.exceptions import BentoMLException
-from bentoml.testing.utils import async_request
 
 
 @pytest.mark.usefixtures("bentoml_home")
@@ -167,12 +167,15 @@ async def test_serve_with_lifecycle_hooks(tmp_path: Path):
 
     with server.start(env=env, stdout=sys.stdout, stderr=sys.stderr) as client:
         assert client is not None
-        status, _, body = await async_request(
-            "POST", f"{client.server_url}/use_context?state=data"
-        )
+        async with await AsyncHTTPClient.from_url(client.server_url) as http_client:
+            response = await http_client.client.post(
+                "/use_context", params={"state": "data"}
+            )
 
-        assert status == 200
-        assert body == b"hello", "The state data can't be read correctly"
+            assert response.status_code == 200
+            assert (
+                await response.aread() == b"hello"
+            ), "The state data can't be read correctly"
 
     data_files = list(tmp_path.glob("data-*.txt"))
     assert len(data_files) == 4, "on_startup should be run 4 times"

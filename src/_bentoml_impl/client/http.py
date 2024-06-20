@@ -25,6 +25,8 @@ from _bentoml_sdk.typing_utils import is_image_type
 from bentoml import __version__
 from bentoml._internal.utils.uri import uri_to_path
 from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import ServiceUnavailable
 
 from ..serde import Payload
 from .base import AbstractClient
@@ -44,6 +46,12 @@ C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
 AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
 logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
+
+
+def map_exception(resp: httpx.Response) -> BentoMLException:
+    status = HTTPStatus(resp.status_code)
+    exc = BentoMLException.error_mapping.get(status, BentoMLException)
+    return exc(resp.text, error_code=status)
 
 
 def is_http_url(url: str) -> bool:
@@ -269,7 +277,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                         return
                 except (httpx.TimeoutException, httpx.ConnectError):
                     pass
-        raise BentoMLException(f"Server is not ready after {timeout} seconds")
+        raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
 
     def _build_multipart(
         self,
@@ -338,15 +346,15 @@ class HTTPClient(AbstractClient, t.Generic[C]):
 
     def _deserialize_output(self, payload: Payload, endpoint: ClientEndpoint) -> t.Any:
         data = iter(payload.data)
-        if endpoint.output_spec is not None:
+        if (ot := endpoint.output.get("type")) == "string":
+            return bytes(next(data)).decode("utf-8")
+        elif ot == "bytes":
+            return bytes(next(data))
+        elif endpoint.output_spec is not None:
             model = self.serde.deserialize_model(payload, endpoint.output_spec)
             if isinstance(model, RootModel):
                 return model.root  # type: ignore
             return model
-        elif (ot := endpoint.output.get("type")) == "string":
-            return bytes(next(data)).decode("utf-8")
-        elif ot == "bytes":
-            return bytes(next(data))
         else:
             return self.serde.deserialize(payload, endpoint.output)
 
@@ -354,7 +362,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         try:
             endpoint = self.endpoints[__name]
         except KeyError:
-            raise BentoMLException(f"Endpoint {__name} not found") from None
+            raise NotFound(f"Endpoint {__name} not found") from None
         if endpoint.stream_output:
             return self._get_stream(endpoint, args, kwargs)
         else:
@@ -427,10 +435,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
             resp = self.client.send(req, stream=endpoint.stream_output)
             if resp.is_error:
                 resp.read()
-                raise BentoMLException(
-                    f"Error making request: {resp.status_code}: {resp.text}",
-                    error_code=HTTPStatus(resp.status_code),
-                )
+                raise map_exception(resp)
             if endpoint.stream_output:
                 return self._parse_stream_response(endpoint, resp)
             elif (
@@ -529,10 +534,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
             resp = await self.client.send(req, stream=endpoint.stream_output)
             if resp.is_error:
                 await resp.aread()
-                raise BentoMLException(
-                    f"Error making request: {resp.status_code}: {resp.text}",
-                    error_code=HTTPStatus(resp.status_code),
-                )
+                raise map_exception(resp)
             if endpoint.stream_output:
                 return self._parse_stream_response(endpoint, resp)
             elif (

@@ -85,7 +85,6 @@ class TraceRecordFilter(logging.Filter):
 
 SERVER_LOGGING_CONFIG: dict[str, t.Any] = {
     "version": 1,
-    "disable_existing_loggers": True,
     "formatters": {
         "traced": {
             "format": TRACED_LOG_FORMAT,

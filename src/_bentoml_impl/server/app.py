@@ -119,6 +119,7 @@ class ServiceAppFactory(BaseAppFactory):
                 get_batch_size=functools.partial(
                     AutoContainer.get_batch_size, batch_dim=method.batch_dim[0]
                 ),
+                batch_dim=method.batch_dim,
             )
 
     @functools.cached_property
@@ -198,45 +199,10 @@ class ServiceAppFactory(BaseAppFactory):
 
     @property
     def middlewares(self) -> list[Middleware]:
-        from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
-
         from bentoml._internal.container import BentoMLContainer
 
-        middlewares = super().middlewares + [
-            Middleware(ContextMiddleware, context=self.service.context)
-        ]
-
-        for middleware_cls, options in self.service.middlewares:
-            middlewares.append(Middleware(middleware_cls, **options))
-
-        if self.enable_access_control:
-            assert (
-                self.access_control_options.get("allow_origins") is not None
-            ), "To enable cors, access_control_allow_origin must be set"
-
-            from starlette.middleware.cors import CORSMiddleware
-
-            middlewares.append(
-                Middleware(CORSMiddleware, **self.access_control_options)
-            )
-
-        def client_request_hook(span: Span | None, _scope: dict[str, t.Any]) -> None:
-            from bentoml._internal.context import trace_context
-
-            if span is not None:
-                trace_context.request_id = span.context.span_id
-
-        middlewares.append(
-            Middleware(
-                OpenTelemetryMiddleware,
-                excluded_urls=BentoMLContainer.tracing_excluded_urls.get(),
-                default_span_details=None,
-                server_request_hook=None,
-                client_request_hook=client_request_hook,
-                tracer_provider=BentoMLContainer.tracer_provider.get(),
-            )
-        )
-
+        middlewares: list[Middleware] = []
+        # TrafficMetrics middleware should be the first middleware
         if self.enable_metrics:
             from bentoml._internal.server.http.instruments import (
                 RunnerTrafficMetricsMiddleware,
@@ -246,6 +212,26 @@ class ServiceAppFactory(BaseAppFactory):
                 Middleware(RunnerTrafficMetricsMiddleware, namespace="bentoml_service")
             )
 
+        # OpenTelemetry middleware
+        def server_request_hook(span: Span | None, _scope: dict[str, t.Any]) -> None:
+            from bentoml._internal.context import trace_context
+
+            if span is not None:
+                trace_context.request_id = span.context.span_id
+
+        from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+
+        middlewares.append(
+            Middleware(
+                OpenTelemetryMiddleware,
+                excluded_urls=BentoMLContainer.tracing_excluded_urls.get(),
+                default_span_details=None,
+                server_request_hook=server_request_hook,
+                client_request_hook=None,
+                tracer_provider=BentoMLContainer.tracer_provider.get(),
+            )
+        )
+        # AccessLog middleware
         access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():
             from bentoml._internal.server.http.access import AccessLogMiddleware
@@ -260,23 +246,49 @@ class ServiceAppFactory(BaseAppFactory):
                     skip_paths=access_log_config.skip_paths.get(),
                 )
             )
+        # TimeoutMiddleware and MaxConcurrencyMiddleware
+        middlewares.extend(super().middlewares)
+        for middleware_cls, options in self.service.middlewares:
+            middlewares.append(Middleware(middleware_cls, **options))
+        # CORS middleware
+        if self.enable_access_control:
+            assert (
+                self.access_control_options.get("allow_origins") is not None
+            ), "To enable cors, access_control_allow_origin must be set"
 
+            from starlette.middleware.cors import CORSMiddleware
+
+            middlewares.append(
+                Middleware(CORSMiddleware, **self.access_control_options)
+            )
+
+        # ContextMiddleware
+        middlewares.append(Middleware(ContextMiddleware, context=self.service.context))
         return middlewares
 
     def create_instance(self) -> None:
         self._service_instance = self.service()
         set_current_service(self._service_instance)
 
-    def _add_response_headers(self, resp: Response) -> None:
+    @inject
+    def _add_response_headers(
+        self,
+        resp: Response,
+        logging_format: dict[str, str] = Provide[BentoMLContainer.logging_formatting],
+    ) -> None:
         from bentoml._internal.context import trace_context
 
         if trace_context.request_id is not None:
-            resp.headers["X-BentoML-Request-ID"] = str(trace_context.request_id)
+            resp.headers["X-BentoML-Request-ID"] = format(
+                trace_context.request_id, logging_format["span_id"]
+            )
         if (
             BentoMLContainer.http.response.trace_id.get()
             and trace_context.trace_id is not None
         ):
-            resp.headers["X-BentoML-Trace-ID"] = str(trace_context.trace_id)
+            resp.headers["X-BentoML-Trace-ID"] = format(
+                trace_context.trace_id, logging_format["trace_id"]
+            )
 
     async def destroy_instance(self) -> None:
         from _bentoml_sdk.service.dependency import cleanup

@@ -251,6 +251,17 @@ this behavior by setting the ``lock_packages`` field to ``false``:
       requirements_txt: "requirements.txt"
       lock_packages: false
 
+When including Python packages from GitHub repositories, use the ``pack_git_packages`` option (it defaults to ``true``) to control whether these packages should be cloned and packaged during the build process. This is useful for dependencies that may not be available via standard PyPI sources or for ensuring consistency with specific versions (for example, tags and commits) of a dependency directly from a Git repository.
+
+.. code-block:: yaml
+
+    python:
+      pack_git_packages: true  # Enable packaging of Git-based packages
+      packages:
+        - "git+https://github.com/username/repository.git@abcdef1234567890abcdef1234567890abcdef12"
+
+Note that ``lock_packages`` controls whether the versions of all dependencies, not just those from Git, are pinned at the time of building the Bento. Disabling ``pack_git_packages`` will also disable package locking (``lock_packages``) unless explicitly set.
+
 Python wheels
 """""""""""""
 
@@ -361,6 +372,8 @@ To add it in your ``bentofile.yaml``:
     that comes with Miniconda pre-installed in the generated Dockerfile. Note that only
     the ``debian`` and ``alpine`` distro support ``conda``. Learn more in
     the ``docker`` section below.
+
+.. _docker-configuration:
 
 ``docker``
 ^^^^^^^^^^

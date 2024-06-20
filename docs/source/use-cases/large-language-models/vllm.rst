@@ -34,7 +34,7 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
 
 .. note::
 
-    This example Service uses the model ``mistralai/Mistral-7B-Instruct-v0.2``. You can choose other models in the `BentoVLLM repository <https://github.com/bentoml/BentoVLLM>`_ or any other model supported by vLLM based on your needs.
+    This example Service uses the model ``mistralai/Mistral-7B-Instruct-v0.2``, which requires you to [accept relevant conditions to gain access](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2). You can choose other models in the `BentoVLLM repository <https://github.com/bentoml/BentoVLLM>`_ or any other model supported by vLLM based on your needs.
 
 .. code-block:: python
     :caption: `service.py`
@@ -59,11 +59,12 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
 
     MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.2"
 
-    @openai_endpoints(served_model=MODEL_ID)
+    @openai_endpoints(model_id=MODEL_ID)
     @bentoml.service(
         name="mistral-7b-instruct-service",
         traffic={
             "timeout": 300,
+            "concurrency": 256, # Matches the default max_num_seqs in the VLLM engine
         },
         resources={
             "gpu": 1,
@@ -75,7 +76,8 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
             from vllm import AsyncEngineArgs, AsyncLLMEngine
             ENGINE_ARGS = AsyncEngineArgs(
                 model=MODEL_ID,
-                max_model_len=MAX_TOKENS
+                max_model_len=MAX_TOKENS,
+                enable_prefix_caching=True
             )
 
             self.engine = AsyncLLMEngine.from_engine_args(ENGINE_ARGS)
@@ -255,12 +257,14 @@ First, specify a configuration YAML file (``bentofile.yaml``) to define the buil
       owner: bentoml-team
       stage: demo
     include:
-    - "*.py"
-    - "bentovllm_openai/*.py"
+      - "*.py"
+      - "bentovllm_openai/*.py"
     python:
       requirements_txt: "./requirements.txt"
+    envs:
+      - name: HF_TOKEN
 
-:ref:`Create an API token with Developer Operations Access to log in to BentoCloud <bentocloud/how-tos/manage-access-token:create an api token>`, then run the following command to deploy the project.
+:ref:`Create an API token with Developer Operations Access to log in to BentoCloud <bentocloud/how-tos/manage-access-token:create an api token>`, set the environment variable for your Hugging Face token, then run the following command to deploy the project.
 
 .. code-block:: bash
 

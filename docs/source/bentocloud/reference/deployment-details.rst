@@ -39,16 +39,15 @@ Replicas
    * - Instance Type
      - The instance where the Service runs.
    * - Status
-     - The status of the Service, indicating whether it is running or if it needs your attention. Possible statuses include ``Running`` and ``Failed``.
+     - The status of a Service replica, indicating whether it is running or if it needs your attention. Possible statuses include ``Running``, ``Pending`` and ``Failed``.
    * - Launch Time
      - The time when the Service was deployed.
    * - Replica ID
      - A unique identifier of the Service replica.
    * - Actions
-     - Operations that you can perform:
+     - Operations that you can perform depending on the role assigned to your account:
 
        - Logs: Inspect the logs of different containers within the Pod replica. You can use the drop-down menu at the top to switch between containers.
-       - Events: View the operational events of the replica.
        - Terminal: `Exec into different containers <https://kubernetes.io/docs/tasks/debug/debug-application/get-shell-running-container/>`_ of the Pod replica. You can click **Show File Manager** to upload files to and download files from the container.
        - Debug: `Troubleshoot issues with an ephemeral debug container <https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/#ephemeral-container>`_. You can click **Show File Manager** to upload files to and download files from the container.
 
@@ -98,13 +97,15 @@ Monitoring
    * - Property
      - Description
    * - Number of Replicas
-     - Displays the count of active replicas in the Deployment. It provides a detailed count for both the total number of replicas and the individual number of API Servers and Runners.
+     - Displays the count of active replicas in the Deployment.
    * - Request Percentile Response Times
      - Displays the response time across different percentiles (for example, P95), giving insight into the range of response speeds that users may experience. It includes the total response time as well as the response time by API endpoints.
    * - Request Volume
      - Tracks the number of requests made to the Deployment over time, which is helpful in understanding the demand and traffic patterns. It includes the total request volume as well as the volume by API endpoints.
    * - Request Success Rate (non-4|5xx responses)
      - Indicates the proportion of requests that are successfully processed without any client-side (4xx) or server-side (5xx) errors. It includes the total success rate as well as the success rate by API endpoints.
+   * - In-Progress Request Volume
+     - Tracks the number of requests currently being processed but have not yet finished. This metric is important for understanding the real-time load on the server and helps you identify bottlenecks or potential performance issues.
    * - CPU Usage
      - Displays the CPU utilization of the Deployment, which includes the total usage as well as the usage by individual components.
    * - Memory Usage
@@ -133,5 +134,5 @@ Revisions
      - The user who created this Bento Deployment.
    * - Created at
      - The date and time when the Bento Deployment was initially created.
-   * - Operation
+   * - Operations
      - Actions that can be performed on each revision. For example, you can roll back your Deployment to a specific version.

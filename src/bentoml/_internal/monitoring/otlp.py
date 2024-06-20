@@ -27,7 +27,12 @@ from ..context import trace_context
 from .base import MonitorBase
 
 try:
-    from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+    from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
+        OTLPLogExporter as OTLPGrpcLogExporter,
+    )
+    from opentelemetry.exporter.otlp.proto.http._log_exporter import (
+        OTLPLogExporter as OTLPHttpLogExporter,
+    )
 except ImportError:
     raise MissingDependencyException(
         "'opentelemetry-exporter-otlp' is required to use OTLP exporter. Make sure to install it with 'pip install \"bentoml[monitor-otlp]\""
@@ -89,9 +94,10 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
 
     """
 
-    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_META) = (
+    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_TID, COLUMN_META) = (
         "timestamp",
         "request_id",
+        "trace_id",
         "bento_meta",
     )
 
@@ -105,6 +111,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         timeout: int | str | None = None,
         compression: str | None = None,
         meta_sample_rate: float = 1.0,
+        protocol: t.Literal["http", "grpc"] = "http",
         **_: t.Any,
     ) -> None:
         """
@@ -118,6 +125,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
             headers: The headers to use.
             timeout: The timeout to use.
             compression: The compression to use.
+            protocol: The protocol to use.
         """
         super().__init__(name, **_)
 
@@ -133,6 +141,8 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         self.data_logger: logging.Logger | None = None
         self._schema: dict[str, dict[str, str]] = {}
         self._will_export_schema = False
+
+        self.protocol = protocol
 
     def _init_logger(self) -> None:
         from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
@@ -168,7 +178,27 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         if self.compression is not None:
             os.environ[OTEL_EXPORTER_OTLP_COMPRESSION] = self.compression
 
-        exporter = OTLPLogExporter()
+        exporter: OTLPHttpLogExporter | OTLPGrpcLogExporter
+        if self.protocol == "http":
+            exporter = OTLPHttpLogExporter(
+                endpoint=self.endpoint,
+                certificate_file=self.credentials,
+                headers=self.headers,
+                timeout=self.timeout,
+                compression=self.compression,
+            )
+        elif self.protocol == "grpc":
+            exporter = OTLPGrpcLogExporter(
+                endpoint=self.endpoint,
+                insecure=self.insecure,
+                credentials=self.credentials,
+                headers=self.headers,
+                timeout=self.timeout,
+                compression=self.compression,
+            )
+        else:
+            raise ValueError(f"Invalid protocol: {self.protocol}")
+
         self.logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
         handler = LoggingHandler(
             level=logging.NOTSET, logger_provider=self.logger_provider
@@ -211,23 +241,22 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
             self._init_logger()
             assert self.data_logger is not None
 
+        extra_columns: dict[str, t.Any] = {
+            self.COLUMN_TIME: datetime.datetime.now().timestamp(),
+            self.COLUMN_RID: str(trace_context.request_id),
+            self.COLUMN_TID: str(trace_context.trace_id),
+        }
+
         if self._will_export_schema or random.random() < self.meta_sample_rate:
-            extra_columns = {
-                self.COLUMN_TIME: datetime.datetime.now().timestamp(),
-                self.COLUMN_RID: str(trace_context.request_id),
-                self.COLUMN_META: {
-                    "bento_name": server_context.bento_name,
-                    "bento_version": server_context.bento_version,
-                    "monitor_name": self.name,
-                    "schema": self._schema,
-                },
+            extra_columns[self.COLUMN_META] = {
+                "bento_name": server_context.bento_name,
+                "bento_version": server_context.bento_version,
+                "monitor_name": self.name,
+                "schema": self._schema,
             }
+
             self._will_export_schema = False
-        else:
-            extra_columns = {
-                self.COLUMN_TIME: datetime.datetime.now().timestamp(),
-                self.COLUMN_RID: str(trace_context.request_id),
-            }
+
         while True:
             try:
                 record = {k: v.popleft() for k, v in datas.items()}

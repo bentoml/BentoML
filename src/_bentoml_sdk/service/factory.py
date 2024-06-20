@@ -21,6 +21,7 @@ from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
 from bentoml._internal.models import Model
 from bentoml._internal.utils import dict_filter_none
+from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
 
 from ..method import APIMethod
@@ -127,12 +128,32 @@ class Service(t.Generic[T]):
             return self.dependencies[attr_name].on.find_dependent(path)
         return self.dependencies[attr_name].on
 
+    @property
+    def url(self) -> str | None:
+        """Get the URL of the service, or None if the service is not served"""
+        dependency_map = BentoMLContainer.remote_runner_mapping.get()
+        url = dependency_map.get(self.name)
+        return url.replace("tcp://", "http://") if url else None
+
     @lru_cache(maxsize=1)
     def all_services(self) -> dict[str, Service[t.Any]]:
         """Get a map of the service and all recursive dependencies"""
         services: dict[str, Service[t.Any]] = {self.name: self}
         for dependency in self.dependencies.values():
-            services.update(dependency.on.all_services())
+            dependents = dependency.on.all_services()
+            conflict = next(
+                (
+                    k
+                    for k in dependents
+                    if k in services and dependents[k] is not services[k]
+                ),
+                None,
+            )
+            if conflict:
+                raise BentoMLConfigException(
+                    f"Dependency conflict: {conflict} is already defined by {services[conflict].inner}"
+                )
+            services.update(dependents)
         return services
 
     @property

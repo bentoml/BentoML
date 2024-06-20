@@ -463,7 +463,11 @@ class PythonOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    lock_packages: t.Optional[bool] = attr.field(
+    lock_packages: bool = attr.field(
+        default=True,
+        validator=attr.validators.optional(attr.validators.instance_of(bool)),
+    )
+    pack_git_packages: bool = attr.field(
         default=True,
         validator=attr.validators.optional(attr.validators.instance_of(bool)),
     )
@@ -514,12 +518,14 @@ class PythonOptions:
 
     @property
     def _jinja_environment(self) -> jinja2.Environment:
-        return jinja2.Environment(
+        env = jinja2.Environment(
             extensions=["jinja2.ext.debug"],
             variable_start_string="<<",
             variable_end_string=">>",
             loader=jinja2.FileSystemLoader(os.path.dirname(__file__), followlinks=True),
         )
+        env.filters["bash_quote"] = shlex.quote
+        return env
 
     def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
         from .bentoml_builder import build_bentoml_sdist
@@ -632,10 +638,10 @@ class PythonOptions:
                     "--no-annotate",
                 ]
             )
-            if get_quiet_mode():
-                pip_compile_args.append("--quiet")
-            elif get_debug_mode():
+            if get_debug_mode():
                 pip_compile_args.append("--verbose")
+            else:
+                pip_compile_args.append("--quiet")
             logger.info("Locking PyPI package versions.")
             cmd = [sys.executable, "-m", "piptools", "compile"]
             cmd.extend(pip_compile_args)
@@ -658,6 +664,11 @@ class PythonOptions:
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
+        if not self.pack_git_packages and self.lock_packages is not False:
+            logger.warning(
+                "Setting 'lock_packages' to False since 'pack_git_packages' is False"
+            )
+            return attr.evolve(self, lock_packages=False)
         return self
 
     def _fix_dep_urls(self, requirements_txt: str, wheels_folder: str) -> None:
@@ -677,10 +688,10 @@ class PythonOptions:
 
             if "/env/python/wheels" in link.url:
                 filename = link.filename
-            elif link.url.startswith("git+ssh://"):
+            elif self.pack_git_packages and link.url.startswith("git+"):
                 # We are only able to handle SSH Git URLs
                 url, ref = link.url_without_fragment[4:], ""
-                if url.count("@") > 1:  # ssh://git@owner/repo@ref
+                if "@" in link.path:  # ssh://git@owner/repo@ref
                     url, _, ref = url.rpartition("@")
                 filename = download_and_zip_git_repo(
                     url, ref, link.subdirectory_fragment, wheels_folder
@@ -800,7 +811,7 @@ class BentoBuildConfig:
         # satisfies type checker. docker, python, and conda accepts
         # dict[str, t.Any] since our converter will handle the conversion.
         # There is no way to tell type checker signatures of the converter from attrs
-        # if given attribute is alrady has a type annotation.
+        # if given attribute is already has a type annotation.
         from typing_extensions import TypedDict
 
         class EnvironmentEntry(TypedDict):
@@ -938,13 +949,12 @@ class BentoPathSpec:
             and not self._exclude.match_file(path)
             and not self.extra.match_file(path)
         )
-        if to_include:
-            if recurse_exclude_spec is not None:
-                return not any(
-                    ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
-                    for ignore_parent, ignore_spec in recurse_exclude_spec
-                )
-        return False
+        if to_include and recurse_exclude_spec is not None:
+            return not any(
+                ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
+                for ignore_parent, ignore_spec in recurse_exclude_spec
+            )
+        return to_include
 
     def from_path(self, path: str) -> t.Generator[t.Tuple[str, PathSpec], None, None]:
         """
@@ -952,7 +962,7 @@ class BentoPathSpec:
         """
         fs_ = fs.open_fs(path)
         for file in fs_.walk.files(filter=[".bentoignore"]):
-            dir_path = "".join(fs.path.parts(file)[:-1])
+            dir_path = fs.path.dirname(file)
             yield dir_path, PathSpec.from_lines("gitwildmatch", fs_.open(file))
 
 

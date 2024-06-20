@@ -6,7 +6,7 @@ ControlNet is a neural network architecture designed to enhance the precision an
 
 This document demonstrates how to use ControlNet and Stable Diffusion XL to create an image generation application for specific user requirements.
 
-All the source code in this tutorial is available in the `BentoControlNet GitHub repository <https://github.com/bentoml/BentoControlNet>`_.
+All the source code in this tutorial is available in the `BentoDiffusion GitHub repository <https://github.com/bentoml/BentoDiffusion>`_.
 
 Prerequisites
 -------------
@@ -22,8 +22,8 @@ Clone the project repository and install all the dependencies.
 
 .. code-block:: bash
 
-    git clone https://github.com/bentoml/BentoControlNet.git
-    cd BentoControlNet
+    git clone https://github.com/bentoml/BentoDiffusion.git
+    cd BentoDiffusion/controlnet
     pip install -r requirements.txt
 
 Define the model serving logic
@@ -55,7 +55,11 @@ Create BentoML :doc:`/guides/services` in a ``service.py`` file to specify the s
     BASE_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 
     @bentoml.service(
-        traffic={"timeout": 600},
+        traffic={
+            "timeout": 600,
+            "external_queue": True,
+            "concurrency": 1,
+        },
         workers=1,
         resources={
             "gpu": 1,

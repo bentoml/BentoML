@@ -153,6 +153,7 @@ def main(
     from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
 
+    configure_server_logging()
     if runner_map:
         BentoMLContainer.remote_runner_mapping.set(
             t.cast(t.Dict[str, str], json.loads(runner_map))
@@ -169,12 +170,17 @@ def main(
     if worker_id is not None:
         server_context.worker_index = worker_id
 
-    configure_server_logging()
     BentoMLContainer.development_mode.set(development_mode)
 
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
     server_context.service_name = service.name
+    if service.bento is None:
+        server_context.bento_name = service.name
+        server_context.bento_version = "not available"
+    else:
+        server_context.bento_name = service.bento.tag.name
+        server_context.bento_version = service.bento.tag.version or "not available"
 
     asgi_app = service.to_asgi(
         is_main=server_context.service_type == "entry_service", init=False

@@ -122,6 +122,7 @@ python:
   requirements_txt: null
   packages: null
   lock_packages: true
+  pack_git_packages: true
   index_url: null
   no_index: null
   trusted_host: null
@@ -361,6 +362,7 @@ def test_bento(model_store: ModelStore):
         assert set(bento_fs.listdir("src")) == {
             "simplebento.py",
             "subdir",
+            "bentofile.yaml",
             ".bentoignore",
         }
         assert set(bento_fs.listdir("src/subdir")) == {"somefile"}

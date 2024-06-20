@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "all", "testing", "io", "grpc-channelz", "tracing-otlp", "monitor-otlp", "io-image", "aws", "docs", "tracing-zipkin", "grpc-reflection", "grpc", "tracing", "tooling", "tracing-jaeger", "io-pandas", "triton"]
+groups = ["default", "all", "testing", "io", "grpc-channelz", "tracing-otlp", "monitor-otlp", "io-image", "aws", "docs", "tracing-zipkin", "grpc-reflection", "grpc", "tracing", "tooling", "tracing-jaeger", "io-pandas", "triton", "opentelemetry-exporter-otlp-proto-grpc==1.20.0"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:5cf1da64b609193bb96742f04b8701869268af8c9d029fc9be7d2c375a21c222"
+content_hash = "sha256:b24e49033b37d472b6ccee324e811bb67172d2a9f756a12f81e6963e9bfe1646"
 
 [[package]]
 name = "aiohttp"
@@ -1391,7 +1391,7 @@ name = "grpcio"
 version = "1.59.0"
 requires_python = ">=3.7"
 summary = "HTTP/2-based RPC framework"
-groups = ["all", "docs", "grpc", "grpc-channelz", "grpc-reflection", "tracing", "tracing-jaeger", "tracing-otlp", "triton"]
+groups = ["all", "docs", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "triton"]
 files = [
     {file = "grpcio-1.59.0-cp310-cp310-linux_armv7l.whl", hash = "sha256:225e5fa61c35eeaebb4e7491cd2d768cd8eb6ed00f2664fa83a58f29418b39fd"},
     {file = "grpcio-1.59.0-cp310-cp310-macosx_12_0_universal2.whl", hash = "sha256:b95ec8ecc4f703f5caaa8d96e93e40c7f589bad299a2617bdb8becbcce525539"},
@@ -1499,7 +1499,7 @@ files = [
 
 [[package]]
 name = "httpcore"
-version = "1.0.2"
+version = "1.0.5"
 requires_python = ">=3.8"
 summary = "A minimal low-level HTTP client."
 groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
@@ -1508,8 +1508,8 @@ dependencies = [
     "h11<0.15,>=0.13",
 ]
 files = [
-    {file = "httpcore-1.0.2-py3-none-any.whl", hash = "sha256:096cc05bca73b8e459a1fc3dcf585148f63e534eae4339559c9b8a8d6399acc7"},
-    {file = "httpcore-1.0.2.tar.gz", hash = "sha256:9fc092e4799b26174648e54b74ed5f683132a464e95643b226e00c2ed2fa6535"},
+    {file = "httpcore-1.0.5-py3-none-any.whl", hash = "sha256:421f18bac248b25d310f3cacd198d55b8e6125c107797b609ff9b7a6ba7991b5"},
+    {file = "httpcore-1.0.5.tar.gz", hash = "sha256:34a38e2f9291467ee3b44e89dd52615370e152954ba21721378a87b2960f7a61"},
 ]
 
 [[package]]
@@ -1573,6 +1573,23 @@ dependencies = [
 files = [
     {file = "httpx-0.26.0-py3-none-any.whl", hash = "sha256:8915f5a3627c4d47b73e8202457cb28f1266982d1159bd5779d86a80c0eab1cd"},
     {file = "httpx-0.26.0.tar.gz", hash = "sha256:451b55c30d5185ea6b23c2c793abf9bb237d2a7dfb901ced6ff69ad37ec1dfaf"},
+]
+
+[[package]]
+name = "httpx-ws"
+version = "0.6.0"
+requires_python = ">=3.8"
+summary = "WebSockets support for HTTPX"
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+dependencies = [
+    "anyio>=4",
+    "httpcore>=1.0.4",
+    "httpx>=0.23.1",
+    "wsproto",
+]
+files = [
+    {file = "httpx_ws-0.6.0-py3-none-any.whl", hash = "sha256:437cfca94519a4e6ae06eb5573192df6c0da85c22b1a19cc1ea0b02b05a51d25"},
+    {file = "httpx_ws-0.6.0.tar.gz", hash = "sha256:60218f531fb474a2143af38568f4b7d94ba356780973443365c8e2c87882bb8c"},
 ]
 
 [[package]]
@@ -2281,7 +2298,7 @@ name = "opentelemetry-exporter-otlp-proto-grpc"
 version = "1.20.0"
 requires_python = ">=3.7"
 summary = "OpenTelemetry Collector Protobuf over gRPC Exporter"
-groups = ["all", "tracing", "tracing-otlp"]
+groups = ["all", "monitor-otlp", "tracing", "tracing-otlp"]
 dependencies = [
     "backoff<3.0.0,>=1.10.0; python_version >= \"3.7\"",
     "deprecated>=1.2.6",
@@ -4684,6 +4701,20 @@ files = [
     {file = "wrapt-1.15.0-cp39-cp39-win_amd64.whl", hash = "sha256:eef4d64c650f33347c1f9266fa5ae001440b232ad9b98f1f43dfe7a79435c0a6"},
     {file = "wrapt-1.15.0-py3-none-any.whl", hash = "sha256:64b1df0f83706b4ef4cfb4fb0e4c2669100fd7ecacfb59e091fad300d4e04640"},
     {file = "wrapt-1.15.0.tar.gz", hash = "sha256:d06730c6aed78cee4126234cf2d071e01b44b915e725a6cb439a879ec9754a3a"},
+]
+
+[[package]]
+name = "wsproto"
+version = "1.2.0"
+requires_python = ">=3.7.0"
+summary = "WebSockets state-machine based protocol implementation"
+groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+dependencies = [
+    "h11<1,>=0.9.0",
+]
+files = [
+    {file = "wsproto-1.2.0-py3-none-any.whl", hash = "sha256:b9acddd652b585d75b20477888c56642fdade28bdfd3579aa24a4d2c037dd736"},
+    {file = "wsproto-1.2.0.tar.gz", hash = "sha256:ad565f26ecb92588a3e43bc3d96164de84cd9902482b130d0ddbaa9664a85065"},
 ]
 
 [[package]]

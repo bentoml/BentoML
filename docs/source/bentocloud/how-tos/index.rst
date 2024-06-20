@@ -12,7 +12,9 @@ They are recipes, directions to achieve a specific end result, and are wholly **
 * :doc:`call-deployment-endpoints`
 * :doc:`autoscaling`
 * :doc:`manage-access-token`
+* :doc:`manage-secrets`
 * :doc:`manage-users`
+* :doc:`batch-inference-jobs`
 * :doc:`byoc`
 
 .. toctree::
@@ -24,5 +26,7 @@ They are recipes, directions to achieve a specific end result, and are wholly **
    call-deployment-endpoints
    autoscaling
    manage-access-token
+   manage-secrets
    manage-users
+   batch-inference-jobs
    byoc

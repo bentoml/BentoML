@@ -115,7 +115,13 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
         :link: /guides/lifecycle-hooks
         :link-type: doc
 
-        Confgiure hooks to run custom logic at different stages of a Service's lifecycle.
+        Configure hooks to run custom logic at different stages of a Service's lifecycle.
+
+    .. grid-item-card:: :doc:`/guides/error-handling`
+        :link: /guides/error-handling
+        :link-type: doc
+
+        Define custom error handling logic for your BentoML Service.
 
 .. toctree::
     :hidden:
@@ -138,3 +144,4 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     asgi
     configurations
     lifecycle-hooks
+    error-handling

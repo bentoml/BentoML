@@ -81,26 +81,23 @@ def build_serve_command() -> click.Group:
         "-p",
         "--port",
         type=click.INT,
-        default=BentoMLContainer.http.port.get(),
         help="The port to listen on for the REST api server",
         envvar="BENTOML_PORT",
-        show_default=True,
+        show_envvar=True,
     )
     @click.option(
         "--host",
         type=click.STRING,
-        default=BentoMLContainer.http.host.get(),
         help="The host to bind for the REST api server",
         envvar="BENTOML_HOST",
-        show_default=True,
+        show_envvar=True,
     )
     @click.option(
         "--api-workers",
         type=click.INT,
-        default=BentoMLContainer.api_server_workers.get(),
         help="Specify the number of API server workers to start. Default to number of available CPU cores in production mode",
         envvar="BENTOML_API_WORKERS",
-        show_default=True,
+        show_envvar=True,
         hidden=True,
     )
     @click.option(
@@ -113,7 +110,6 @@ def build_serve_command() -> click.Group:
     @click.option(
         "--backlog",
         type=click.INT,
-        default=BentoMLContainer.api_server_config.backlog.get(),
         help="The maximum number of pending connections.",
         show_default=True,
         hidden=True,
@@ -136,7 +132,6 @@ def build_serve_command() -> click.Group:
     @click.option(
         "--ssl-certfile",
         type=str,
-        default=BentoMLContainer.ssl.certfile.get(),
         help="SSL certificate file",
         show_default=True,
         hidden=True,
@@ -144,7 +139,6 @@ def build_serve_command() -> click.Group:
     @click.option(
         "--ssl-keyfile",
         type=str,
-        default=BentoMLContainer.ssl.keyfile.get(),
         help="SSL key file",
         show_default=True,
         hidden=True,
@@ -152,7 +146,6 @@ def build_serve_command() -> click.Group:
     @click.option(
         "--ssl-keyfile-password",
         type=str,
-        default=BentoMLContainer.ssl.keyfile_password.get(),
         help="SSL keyfile password",
         show_default=True,
         hidden=True,
@@ -160,7 +153,6 @@ def build_serve_command() -> click.Group:
     @click.option(
         "--ssl-version",
         type=int,
-        default=BentoMLContainer.ssl.version.get(),
         help="SSL version to use (see stdlib 'ssl' module)",
         show_default=True,
         hidden=True,
@@ -168,7 +160,6 @@ def build_serve_command() -> click.Group:
     @click.option(
         "--ssl-cert-reqs",
         type=int,
-        default=BentoMLContainer.ssl.cert_reqs.get(),
         help="Whether client certificate is required (see stdlib 'ssl' module)",
         show_default=True,
         hidden=True,
@@ -176,7 +167,6 @@ def build_serve_command() -> click.Group:
     @click.option(
         "--ssl-ca-certs",
         type=str,
-        default=BentoMLContainer.ssl.ca_certs.get(),
         help="CA certificates file",
         show_default=True,
         hidden=True,
@@ -184,7 +174,6 @@ def build_serve_command() -> click.Group:
     @click.option(
         "--ssl-ciphers",
         type=str,
-        default=BentoMLContainer.ssl.ciphers.get(),
         help="Ciphers to use (see stdlib 'ssl' module)",
         show_default=True,
         hidden=True,

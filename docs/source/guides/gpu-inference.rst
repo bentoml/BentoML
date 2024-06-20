@@ -133,7 +133,7 @@ To view GPU usage, use the ``nvidia-smi`` tool to see if a BentoML Service or Be
 
 .. code-block:: bash
 
-    # Refresh the output of every second
+    # Refresh the output every second
     watch -n 1 nvidia-smi
 
 Example output:

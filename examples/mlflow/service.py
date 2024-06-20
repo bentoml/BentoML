@@ -1,5 +1,7 @@
-import bentoml
 import numpy as np
+
+import bentoml
+
 
 @bentoml.service(
     resources={"cpu": "2"},
@@ -7,7 +9,7 @@ import numpy as np
 )
 class IrisClassifier:
     bento_model = bentoml.models.get("iris:latest")
-    
+
     def __init__(self):
         self.model = bentoml.mlflow.load_model(self.bento_model)
 

@@ -55,7 +55,7 @@ After training, use the ``bentoml.xgboost.save_model`` API to save the model to 
 
     import bentoml
 
-    # Specify the model name and the model to be saved 
+    # Specify the model name and the model to be saved
     bentoml.xgboost.save_model("cancer", model)
 
 To verify that the model has been successfully saved, run:
@@ -86,7 +86,7 @@ To ensure that the saved model works correctly, try loading it and running a pre
         1.383e+00, 1.467e+01, 4.097e-03, 1.898e-02, 1.698e-02, 6.490e-03,
         1.678e-02, 2.425e-03, 1.450e+01, 2.049e+01, 9.609e+01, 6.305e+02,
         1.312e-01, 2.776e-01, 1.890e-01, 7.283e-02, 3.184e-01, 8.183e-02]]))
-    
+
     print(res)
 
 Expected result:

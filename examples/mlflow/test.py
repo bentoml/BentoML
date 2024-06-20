@@ -1,4 +1,5 @@
 import numpy as np
+
 import bentoml
 
 # Load the model by specifying the model tag

@@ -98,7 +98,7 @@ Create a separate ``service.py`` file where you define a BentoML :doc:`Service <
     )
     class IrisClassifier:
         bento_model = bentoml.models.get("iris:latest")
-        
+
         def __init__(self):
             self.model = bentoml.mlflow.load_model(self.bento_model)
 

@@ -1,7 +1,10 @@
-import bentoml
+import os
+
 import numpy as np
 import xgboost as xgb
-import os
+
+import bentoml
+
 
 @bentoml.service(
     resources={"cpu": "2"},
@@ -23,9 +26,7 @@ class CancerClassifier:
                 nthreads = max(int(nthreads), 1)
             else:
                 nthreads = 1
-            self.model.set_param(
-                {"predictor": "cpu_predictor", "nthread": nthreads}
-            )
+            self.model.set_param({"predictor": "cpu_predictor", "nthread": nthreads})
 
     @bentoml.api
     def predict(self, data: np.ndarray) -> np.ndarray:

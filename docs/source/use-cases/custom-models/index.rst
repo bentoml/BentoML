@@ -13,7 +13,7 @@ This section provides example projects for custom models.
         :link: /use-cases/custom-models/mlflow
         :link-type: doc
 
-        Deploy a classification model built with MLflow using BentoML. 
+        Deploy a classification model built with MLflow using BentoML.
 
     .. grid-item-card:: :doc:`/use-cases/custom-models/xgboost`
         :link: /use-cases/custom-models/xgboost

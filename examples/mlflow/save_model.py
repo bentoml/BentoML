@@ -1,6 +1,8 @@
+from pathlib import Path
+
 from sklearn.datasets import load_iris
 from sklearn.neighbors import KNeighborsClassifier
-from pathlib import Path
+
 import bentoml
 
 iris = load_iris()

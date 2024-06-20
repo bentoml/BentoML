@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import json
 import typing as t
+import urllib.parse
 import webbrowser
 from os import environ
 
@@ -68,20 +69,24 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
                     reserve_free_port(enable_so_reuseport=True)
                 )
             callback_server = AuthCallbackHttpServer(port)
-            authURL = (
-                f"{endpoint}/api-tokens/new?callback={callback_server.callback_url}"
-            )
+            baseURL = f'{endpoint}/api-tokens/new'
+            encodedURI = urllib.parse.quote(f'callback={callback_server.callback_url}')
+            authURL = f'{baseURL}?{encodedURI}'
             input(f"Press Enter to open {authURL} in your browser...")
             if webbrowser.open_new_tab(authURL):
                 click.echo(f"✅ Opened {authURL} in your web browser.")
             else:
                 click.echo(
-                    f"🚨 Failed to open browser. Try create a new API token at {endpoint}/api_tokens/new"
+                    f"🚨 Failed to open browser. Try create a new API token at {baseURL}"
                 )
-            code = callback_server.wait_indefinitely_for_code()
-            if code is None:
-                raise ValueError("No code could be obtained from browser callback page")
-            api_token = code
+            try:
+                code = callback_server.wait_indefinitely_for_code()
+                if code is None:
+                    raise ValueError("No code could be obtained from browser callback page")
+                api_token = code
+            except Exception:
+                click.echo("🚨 Error accquiring token from web browser")
+                return
         elif choice == "paste":
             api_token = click.prompt(
                 "? Paste your authentication token", type=str, hide_input=True

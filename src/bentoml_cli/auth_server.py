@@ -95,7 +95,7 @@ class AuthRedirectHandler(BaseHTTPRequestHandler):
 
 class AuthCallbackHttpServer(HTTPServer):
     """
-    Simplistic HTTP Server to provide local callback URL for oauth2 provider
+    Simplistic HTTP Server to provide local callback URL for token provider
     """
 
     def __init__(self, port):
@@ -120,7 +120,7 @@ class AuthCallbackHttpServer(HTTPServer):
 
     def wait_for_code(self, attempts: int = 3, timeout_per_attempt=10) -> Optional[str]:
         """
-        Wait for the server to open the callback page containing the code query parameter.
+        Wait for the server to callback from token provider.
 
         It tries for #attempts with a timeout of #timeout_per_attempts for each attempt.
         This prevents the CLI from getting stuck by unsolved callback URls
@@ -143,14 +143,8 @@ class AuthCallbackHttpServer(HTTPServer):
 
     def wait_indefinitely_for_code(self) -> Optional[str]:
         """
-        Wait indefinitely for the server to open the callback page containing the code query parameter.
+        Wait indefinitely for ther server to callback from token provider.
         """
-        while True:
-            try:
-                _method_with_timeout(self.handle_request, timeout_seconds=None)
-            except TimeoutException:
-                continue
-            if self.get_code() is not None:
-                return self.get_code()
-
-        return None
+        self.handle_request()
+        return self.get_code()
+            

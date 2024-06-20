@@ -147,4 +147,3 @@ class AuthCallbackHttpServer(HTTPServer):
         """
         self.handle_request()
         return self.get_code()
-            

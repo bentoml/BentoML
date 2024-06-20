@@ -257,7 +257,7 @@ In a separate terminal, start your BentoML Service with ``otlp`` tracing configu
 	:caption: `collector-output.txt`
 
 	...
-	Resource SchemaURL: 
+	Resource SchemaURL:
 	Resource attributes:
 	     -> telemetry.sdk.language: Str(python)
 	     -> telemetry.sdk.name: Str(opentelemetry)
@@ -266,7 +266,7 @@ In a separate terminal, start your BentoML Service with ``otlp`` tracing configu
 	     -> service.instance.id: Int(1)
 	     -> service.version: Str(not available)
 	ScopeSpans #0
-	ScopeSpans SchemaURL: 
+	ScopeSpans SchemaURL:
 	InstrumentationScope opentelemetry.instrumentation.asgi 0.41b0
 	Span #0
 	    Trace ID       : 55f76a6172e5ef154bef3024cb7244a4
@@ -277,7 +277,7 @@ In a separate terminal, start your BentoML Service with ``otlp`` tracing configu
 	    Start time     : 2024-05-10 06:14:04.614485867 +0000 UTC
 	    End time       : 2024-05-10 06:14:04.614835736 +0000 UTC
 	    Status code    : Unset
-	    Status message : 
+	    Status message :
 	Attributes:
 	     -> http.status_code: Int(200)
 	     -> type: Str(http.response.start)
@@ -290,19 +290,19 @@ In a separate terminal, start your BentoML Service with ``otlp`` tracing configu
 	    Start time     : 2024-05-10 06:14:04.615378986 +0000 UTC
 	    End time       : 2024-05-10 06:14:04.615539025 +0000 UTC
 	    Status code    : Unset
-	    Status message : 
+	    Status message :
 	Attributes:
 	     -> type: Str(http.response.body)
 	Span #2
 	    Trace ID       : 55f76a6172e5ef154bef3024cb7244a4
-	    Parent ID      : 
+	    Parent ID      :
 	    ID             : 80ebf4a29195d793
 	    Name           : POST /summarize
 	    Kind           : Server
 	    Start time     : 2024-05-10 06:13:59.653244649 +0000 UTC
 	    End time       : 2024-05-10 06:14:04.615805503 +0000 UTC
 	    Status code    : Unset
-	    Status message : 
+	    Status message :
 	Attributes:
 	     -> http.scheme: Str(http)
 	     -> http.host: Str(xx.x.xxx.x:3000)

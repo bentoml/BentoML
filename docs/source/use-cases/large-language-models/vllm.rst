@@ -34,7 +34,7 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
 
 .. note::
 
-    This example Service uses the model ``mistralai/Mistral-7B-Instruct-v0.2``, which requires you to [accept relevant conditions to gain access](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2). You can choose other models in the `BentoVLLM repository <https://github.com/bentoml/BentoVLLM>`_ or any other model supported by vLLM based on your needs.
+    This example Service uses the model ``mistralai/Mistral-7B-Instruct-v0.2``, which requires you to `accept relevant conditions to gain access <https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2>`_. You can choose other models in the `BentoVLLM repository <https://github.com/bentoml/BentoVLLM>`_ or any other model supported by vLLM based on your needs.
 
 .. code-block:: python
     :caption: `service.py`

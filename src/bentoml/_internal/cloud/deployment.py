@@ -10,7 +10,6 @@ from threading import Event
 from threading import Thread
 
 import attr
-import click
 import yaml
 from deepmerge.merger import Merger
 from simple_di import Provide
@@ -293,15 +292,20 @@ def get_bento_info(
 ) -> BentoInfo:
     if project_path:
         from bentoml.bentos import build_bentofile
+
         if cli:
             with _cloud_client.spinner as spinner:
-                with spinner.spin(text=f"🍱 Building bento from project: {project_path}"):
+                with spinner.spin(
+                    text=f"🍱 Building bento from project: {project_path}"
+                ):
                     bento_obj = build_bentofile(
                         build_ctx=project_path, _bento_store=_bento_store
                     )
                     spinner.log(f'🍱 Built bento "{bento_obj.info.tag}"')
         else:
-            bento_obj = build_bentofile(build_ctx=project_path, _bento_store=_bento_store)
+            bento_obj = build_bentofile(
+                build_ctx=project_path, _bento_store=_bento_store
+            )
 
         _cloud_client.push_bento(bento=bento_obj, context=context)
         return bento_obj.info

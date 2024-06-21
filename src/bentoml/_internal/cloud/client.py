@@ -734,20 +734,18 @@ class RestApiClientV2(BaseRestApiClient):
         namespace: str,
         pod_name: str,
         container_name: str = "main",
-    ) -> tuple[t.Generator[str, None, None], t.Callable[[], None]]:
+        stop_event: threading.Event,
+    ) -> t.Generator[str, None, None]:
         url_ = urlparse(self.endpoint)
         scheme = "wss"
         if url_.scheme == "http":
             scheme = "ws"
         endpoint = f"{scheme}://{url_.netloc}"
 
-        with contextlib.ExitStack() as stack:
-            ws = stack.enter_context(
-                connect_ws(
-                    url=f"{endpoint}/ws/v1/clusters/{cluster_name}/tail?{urlencode(dict(namespace=namespace, pod_name=pod_name))}",
-                    client=self.session,
-                )
-            )
+        with connect_ws(
+            url=f"{endpoint}/ws/v1/clusters/{cluster_name}/tail?{urlencode(dict(namespace=namespace, pod_name=pod_name))}",
+            client=self.session,
+        ) as ws:
             req_id = str(uuid.uuid4())
             ws.send_json(
                 {
@@ -761,49 +759,38 @@ class RestApiClientV2(BaseRestApiClient):
                 }
             )
 
-            heartbeat_canceled_event = threading.Event()
-
             def heartbeat():
                 while True:
                     try:
                         ws.send_json({"type": "heartbeat"})
                     except (WebSocketNetworkError, LocalProtocolError):
                         pass
-                    if heartbeat_canceled_event.wait(5):
+                    if stop_event.wait(5):
                         break
 
-            def gen() -> t.Generator[str, None, None]:
-                heartbeat_thread = threading.Thread(target=heartbeat)
-                heartbeat_thread.start()
+            heartbeat_thread = threading.Thread(target=heartbeat)
+            heartbeat_thread.start()
 
-                try:
-                    while True:
-                        try:
-                            data = ws.receive_json(timeout=1)
-                        except Empty:
-                            continue
-                        jsn = schema_from_object(data, LogWSResponseSchema)
-                        if jsn.type == "error":
-                            if jsn.message is None:
-                                raise CloudRESTApiClientError("Unknown error")
-                            raise CloudRESTApiClientError(jsn.message)
-                        if jsn.type == "heartbeat":
-                            continue
-                        if jsn.payload is None:
-                            continue
-                        for line in jsn.payload.items:
-                            yield line
-                except WebSocketNetworkError:
-                    pass
-                finally:
-                    heartbeat_canceled_event.set()
-                    ws.close()
-                    heartbeat_thread.join()
-
-            # Clone to a new exit stack so the websocket session can live outside this method.
-            new_stack = stack.pop_all()
-            # Return a stream and a close handle to the caller.
-            return gen(), new_stack.close
+            try:
+                while True:
+                    if stop_event.is_set():
+                        break
+                    try:
+                        data = ws.receive_json(timeout=1)
+                    except Empty:
+                        continue
+                    jsn = schema_from_object(data, LogWSResponseSchema)
+                    if jsn.type == "error":
+                        raise CloudRESTApiClientError(jsn.message or "Unknown error")
+                    if jsn.type == "heartbeat" or jsn.payload is None:
+                        continue
+                    for line in jsn.payload.items:
+                        yield line
+            except WebSocketNetworkError:
+                pass
+            finally:
+                stop_event.set()
+                heartbeat_thread.join()
 
 
 class RestApiClient:

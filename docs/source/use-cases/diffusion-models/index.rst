@@ -1,8 +1,8 @@
-================
-Diffusion models
-================
+==========================
+Image and video generation
+==========================
 
-This section provides example projects for diffusion models.
+This section provides example projects for image and video generation use cases.
 
 .. grid:: 1 2 2 2
     :gutter: 3

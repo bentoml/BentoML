@@ -160,6 +160,10 @@ class PrometheusClient:
         """
         A Metric family and its samples.
 
-        This is a base class to be used by instrumentation client. Custom collectors should use ``bentoml.metrics.metrics_core.GaugeMetricFamily``, ``bentoml.metrics.metrics_core.CounterMetricFamily``, ``bentoml.metrics.metrics_core.SummaryMetricFamily`` instead.
+        This is a base class to be used by instrumentation client.
+        Custom collectors should use
+        ``prometheus_client.metrics_core.GaugeMetricFamily``,
+        ``prometheus_client.metrics_core.CounterMetricFamily``,
+        ``prometheus_client.metrics_core.SummaryMetricFamily`` instead.
         """
         return partial(self.prometheus_client.Metric, registry=self.registry)

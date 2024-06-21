@@ -78,9 +78,12 @@ async def echo_delay(data: dict[str, t.Any]) -> JSONSerializable:
 
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
 def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-argument
+    from prometheus_client import generate_latest
+    from prometheus_client.parser import text_string_to_metric_families
+
     counters = [
         m.name
-        for m in bentoml.metrics.text_string_to_metric_families()
+        for m in text_string_to_metric_families(generate_latest().decode())
         if m.type == "counter"
     ]
     assert "test_metrics" in counters

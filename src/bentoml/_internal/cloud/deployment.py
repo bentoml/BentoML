@@ -166,6 +166,7 @@ class DeploymentConfigParameters:
                 bento_info = get_bento_info(
                     project_path=bento_name,
                     context=self.context,
+                    cli=self.cli,
                 )
             else:
                 if self.cli:
@@ -173,6 +174,7 @@ class DeploymentConfigParameters:
                 bento_info = get_bento_info(
                     bento=str(bento_name),
                     context=self.context,
+                    cli=self.cli,
                 )
             self.cfg_dict["bento"] = bento_info.tag
             if self.service_name is None:
@@ -290,6 +292,7 @@ def get_args_from_config(
 def get_bento_info(
     project_path: str | None = None,
     bento: str | Tag | None = None,
+    cli: bool = False,
     context: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
@@ -297,12 +300,19 @@ def get_bento_info(
     if project_path:
         from bentoml.bentos import build_bentofile
 
-        with Spinner() as spinner:
-            with spinner.spin(text=f"🍱 Building bento from project: {project_path}"):
-                bento_obj = build_bentofile(
-                    build_ctx=project_path, _bento_store=_bento_store
-                )
-                spinner.log(f'🍱 Built bento "{bento_obj.info.tag}"')
+        if cli:
+            with Spinner() as spinner:
+                with spinner.spin(
+                    text=f"🍱 Building bento from project: {project_path}"
+                ):
+                    bento_obj = build_bentofile(
+                        build_ctx=project_path, _bento_store=_bento_store
+                    )
+                    spinner.log(f'🍱 Built bento "{bento_obj.info.tag}"')
+        else:
+            bento_obj = build_bentofile(
+                build_ctx=project_path, _bento_store=_bento_store
+            )
 
         _cloud_client.push_bento(bento=bento_obj, context=context)
         return bento_obj.info
@@ -327,10 +337,11 @@ def get_bento_info(
             return bento_obj.info
         if bento_schema is not None:
             assert bento_schema.manifest is not None
-            with _cloud_client.spinner as spinner:
-                spinner.log(
-                    f"[bold blue]Using bento {bento.name}:{bento.version} from bentocloud to deploy"
-                )
+            if cli:
+                with _cloud_client.spinner as spinner:
+                    spinner.log(
+                        f"[bold blue]Using bento {bento.name}:{bento.version} from bentocloud to deploy"
+                    )
             return BentoInfo(
                 tag=Tag(name=bento.name, version=bento.version),
                 entry_service=bento_schema.manifest.entry_service,

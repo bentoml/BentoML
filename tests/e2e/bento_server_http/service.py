@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
+import prometheus_client
 import pydantic
 from fastapi import FastAPI
 from PIL.Image import Image as PILImage
@@ -59,7 +60,7 @@ svc = bentoml.Service(
 TEST_DIR = os.getenv("BENTOML_TEST_DATA")
 
 
-metric_test = bentoml.metrics.Counter(
+metric_test = prometheus_client.Counter(
     name="test_metrics", documentation="Counter test metric"
 )
 

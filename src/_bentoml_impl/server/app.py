@@ -29,6 +29,7 @@ from bentoml.exceptions import ServiceUnavailable
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
+    from prometheus_client import Histogram
     from starlette.applications import Starlette
     from starlette.requests import Request
     from starlette.routing import BaseRoute
@@ -36,7 +37,6 @@ if t.TYPE_CHECKING:
     from bentoml._internal import external_typing as ext
     from bentoml._internal.context import ServiceContext
     from bentoml._internal.types import LifecycleHook
-    from bentoml.metrics import Histogram
 
 R = t.TypeVar("R")
 

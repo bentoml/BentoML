@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import base64
-import contextlib
 import logging
 import time
 import typing as t
@@ -294,7 +293,7 @@ def get_bento_info(
         from bentoml.bentos import build_bentofile
 
         if cli:
-            with _cloud_client.spinner as spinner:
+            with Spinner() as spinner:
                 with spinner.spin(
                     text=f"🍱 Building bento from project: {project_path}"
                 ):
@@ -508,7 +507,6 @@ class DeploymentInfo:
         start_time = time.time()
         if spinner is not None:
             stop_tail_event = Event()
-            stack = contextlib.ExitStack()
 
             def tail_image_builder_logs():
                 cloud_rest_client = get_rest_api_client(self._context)
@@ -527,16 +525,15 @@ class DeploymentInfo:
                         return
 
                 is_first = True
-                logs_tailer, close_tail = cloud_rest_client.v2.tail_logs(
+                logs_tailer = cloud_rest_client.v2.tail_logs(
                     cluster_name=self.cluster,
                     namespace=self._schema.kube_namespace,
                     pod_name=pod.name,
                     container_name="builder",
+                    stop_event=stop_tail_event,
                 )
-                stack.callback(close_tail)
+
                 for piece in logs_tailer:
-                    if stop_tail_event.is_set():
-                        break
                     decoded_bytes = base64.b64decode(piece)
                     decoded_str = decoded_bytes.decode("utf-8")
                     if is_first:
@@ -546,13 +543,7 @@ class DeploymentInfo:
 
             tail_thread: Thread | None = None
 
-            @stack.callback
-            def stop_tail_thread():
-                stop_tail_event.set()
-                if tail_thread is not None:
-                    tail_thread.join()
-
-            with stack:
+            try:
                 status: DeploymentState | None = None
                 spinner.update(
                     f'🔄 Waiting for deployment "{self.name}" to be ready...'
@@ -610,6 +601,10 @@ class DeploymentInfo:
                     f'🚨 [bold red]Time out waiting for Deployment "{self.name}" ready[/]'
                 )
                 return
+            finally:
+                stop_tail_event.set()
+                if tail_thread is not None:
+                    tail_thread.join()
         else:
             while time.time() - start_time < timeout:
                 status: DeploymentState | None = None

@@ -6,6 +6,11 @@ from sklearn.utils import Bunch
 
 import bentoml
 
+if t.TYPE_CHECKING:
+    from sklearn.utils import Bunch
+
+    from bentoml._internal import external_typing as ext
+
 # Load the data
 cancer: Bunch = t.cast("Bunch", load_breast_cancer())
 cancer_data = t.cast("ext.NpNDArray", cancer.data)

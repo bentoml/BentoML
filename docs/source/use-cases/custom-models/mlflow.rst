@@ -23,13 +23,14 @@ Install dependencies
 Train and save a model
 ----------------------
 
-This example uses the ``scikit-learn`` framework to train a classification model and save it with MLflow.
+This example uses the ``scikit-learn`` framework to train a classification model and saves it with MLflow.
 
 .. code-block:: python
 
     from sklearn.datasets import load_iris
     from sklearn.neighbors import KNeighborsClassifier
     from pathlib import Path
+    import mlflow.sklearn
 
     iris = load_iris()
     X_train = iris.data[:, :4]

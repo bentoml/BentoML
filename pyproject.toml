@@ -167,7 +167,7 @@ docs = [
     "sphinx-autobuild",
     "sphinx-hoverxref",
     "pyspark",
-    "ray[serve]",
+    "ray[serve]; python_version < \"3.12\"",
 ]
 tooling = ["pre-commit", "setuptools-scm", "pandas-stubs", "nox"]
 testing = [

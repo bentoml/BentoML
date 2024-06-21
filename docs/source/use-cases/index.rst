@@ -39,6 +39,12 @@ This section provides a variety of example projects for you to learn how BentoML
 
         Deploy a BLIP (Bootstrapping Language Image Pre-training) application with BentoML.
 
+    .. grid-item-card:: :doc:`/use-cases/custom-models/index`
+        :link: /use-cases/custom-models/index
+        :link-type: doc
+
+        Deploy custom models with BentoML.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
@@ -49,3 +55,4 @@ This section provides a variety of example projects for you to learn how BentoML
     embeddings/index
     audio/index
     blip
+    custom-models/index

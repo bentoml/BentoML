@@ -161,7 +161,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
                     max_tokens=1024
                 )
                 for response in response_generator:
-                    print(response)
+                    print(response, end='')
 
     .. tab-item:: OpenAI-compatible endpoints
 

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
 import typing as t
 from functools import partial
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from prometheus_client import Metric
+
     from ... import external_typing as ext
 
 logger = logging.getLogger(__name__)
@@ -45,20 +46,6 @@ class PrometheusClient:
 
     @property
     def prometheus_client(self):
-        if self.multiproc and not self._imported:
-            # step 1: check environment
-            assert (
-                "prometheus_client" not in sys.modules
-            ), "prometheus_client is already imported, multiprocessing will not work properly"
-
-            assert (
-                self.multiproc_dir
-            ), f"Invalid prometheus multiproc directory: {self.multiproc_dir}"
-            assert os.path.isdir(self.multiproc_dir)
-
-            os.environ["PROMETHEUS_MULTIPROC_DIR"] = self.multiproc_dir
-
-        # step 2:
         import prometheus_client
         import prometheus_client.exposition
         import prometheus_client.metrics
@@ -173,6 +160,10 @@ class PrometheusClient:
         """
         A Metric family and its samples.
 
-        This is a base class to be used by instrumentation client. Custom collectors should use ``bentoml.metrics.metrics_core.GaugeMetricFamily``, ``bentoml.metrics.metrics_core.CounterMetricFamily``, ``bentoml.metrics.metrics_core.SummaryMetricFamily`` instead.
+        This is a base class to be used by instrumentation client.
+        Custom collectors should use
+        ``prometheus_client.metrics_core.GaugeMetricFamily``,
+        ``prometheus_client.metrics_core.CounterMetricFamily``,
+        ``prometheus_client.metrics_core.SummaryMetricFamily`` instead.
         """
         return partial(self.prometheus_client.Metric, registry=self.registry)

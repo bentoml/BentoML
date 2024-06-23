@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import socket
 import typing as t
 
@@ -152,7 +153,9 @@ def main(
     BentoMLContainer.development_mode.set(development_mode)
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = (
+        BentoMLContainer.prometheus_multiproc_dir.get()
+    )
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
     if timeout is not None:

@@ -174,6 +174,9 @@ def main(
 
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = (
+        BentoMLContainer.prometheus_multiproc_dir.get()
+    )
     server_context.service_name = service.name
     if service.bento is None:
         server_context.bento_name = service.name

@@ -67,6 +67,8 @@ dependencies = [
     # for manipulating pyproject.toml
     "tomli>=1.1.0; python_version < \"3.11\"",
     "tomli-w",
+    "httpx-ws>=0.6.0",
+    "aiosqlite>=0.20.0",
 ]
 dynamic = ["version"]
 [project.urls]
@@ -107,7 +109,10 @@ tracing = [
 tracing-jaeger = ["opentelemetry-exporter-jaeger==1.20.0"]
 tracing-zipkin = ["opentelemetry-exporter-zipkin==1.20.0"]
 tracing-otlp = ["opentelemetry-exporter-otlp==1.20.0"]
-monitor-otlp = ["opentelemetry-exporter-otlp-proto-http==1.20.0"]
+monitor-otlp = [
+    "opentelemetry-exporter-otlp-proto-http==1.20.0",
+    "opentelemetry-exporter-otlp-proto-grpc==1.20.0",
+]
 
 [build-system]
 requires = ['hatchling', "hatch-vcs>=0.3.0"]

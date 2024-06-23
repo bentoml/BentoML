@@ -133,3 +133,76 @@ def mount_asgi_app(
         return obj
 
     return decorator
+
+
+@t.overload
+def task(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]: ...
+
+
+@t.overload
+def task(
+    *,
+    route: str | None = ...,
+    name: str | None = ...,
+    input_spec: type[IODescriptor] | None = ...,
+    output_spec: type[IODescriptor] | None = ...,
+    batchable: bool = ...,
+    batch_dim: int | tuple[int, int] = ...,
+    max_batch_size: int = ...,
+    max_latency_ms: int = ...,
+) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]: ...
+
+
+def task(
+    func: t.Callable[t.Concatenate[t.Any, P], R] | None = None,
+    *,
+    route: str | None = None,
+    name: str | None = None,
+    input_spec: type[IODescriptor] | None = None,
+    output_spec: type[IODescriptor] | None = None,
+    batchable: bool = False,
+    batch_dim: int | tuple[int, int] = 0,
+    max_batch_size: int = 100,
+    max_latency_ms: int = 60000,
+) -> (
+    APIMethod[P, R]
+    | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]
+):
+    """Mark a method as a BentoML async task.
+    This decorator can be used either with or without arguments.
+
+    Args:
+        func: The function to be wrapped.
+        route: The route of the API. e.g. "/predict"
+        name: The name of the API.
+        input_spec: The input spec of the API, should be a subclass of ``pydantic.BaseModel``.
+        output_spec: The output spec of the API, should be a subclass of ``pydantic.BaseModel``.
+        batchable: Whether the API is batchable.
+        batch_dim: The batch dimension of the API.
+        max_batch_size: The maximum batch size of the API.
+        max_latency_ms: The maximum latency of the API.
+    """
+
+    def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
+        params: dict[str, t.Any] = {
+            "batchable": batchable,
+            "batch_dim": batch_dim,
+            "max_batch_size": max_batch_size,
+            "max_latency_ms": max_latency_ms,
+        }
+        if route is not None:
+            params["route"] = route
+        if name is not None:
+            params["name"] = name
+        if input_spec is not None:
+            params["input_spec"] = input_spec
+        if output_spec is not None:
+            params["output_spec"] = output_spec
+        meth = APIMethod(func, **params, is_task=True)
+        if meth.is_stream:
+            raise ValueError("Async task cannot return a stream.")
+        return meth
+
+    if func is not None:
+        return wrapper(func)
+    return wrapper

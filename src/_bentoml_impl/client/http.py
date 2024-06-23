@@ -25,10 +25,14 @@ from _bentoml_sdk.typing_utils import is_image_type
 from bentoml import __version__
 from bentoml._internal.utils.uri import uri_to_path
 from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import ServiceUnavailable
 
 from ..serde import Payload
 from .base import AbstractClient
 from .base import ClientEndpoint
+from .task import AsyncTask
+from .task import Task
 
 if t.TYPE_CHECKING:
     from httpx._types import RequestFiles
@@ -44,6 +48,12 @@ C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
 AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
 logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
+
+
+def map_exception(resp: httpx.Response) -> BentoMLException:
+    status = HTTPStatus(resp.status_code)
+    exc = BentoMLException.error_mapping.get(status, BentoMLException)
+    return exc(resp.text, error_code=status)
 
 
 def is_http_url(url: str) -> bool:
@@ -140,6 +150,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     input_spec=method.input_spec,
                     output_spec=method.output_spec,
                     stream_output=method.is_stream,
+                    is_task=method.is_task,
                 )
 
             from bentoml._internal.context import server_context
@@ -180,6 +191,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                         output=route["output"],
                         doc=route.get("doc"),
                         stream_output=route["output"].get("is_stream", False),
+                        is_task=route.get("is_task", False),
                     )
         super().__init__()
 
@@ -269,7 +281,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                         return
                 except (httpx.TimeoutException, httpx.ConnectError):
                     pass
-        raise BentoMLException(f"Server is not ready after {timeout} seconds")
+        raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
 
     def _build_multipart(
         self,
@@ -354,7 +366,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         try:
             endpoint = self.endpoints[__name]
         except KeyError:
-            raise BentoMLException(f"Endpoint {__name} not found") from None
+            raise NotFound(f"Endpoint {__name} not found") from None
         if endpoint.stream_output:
             return self._get_stream(endpoint, args, kwargs)
         else:
@@ -414,6 +426,26 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
     def request(self, method: str, url: str, **kwargs: t.Any) -> httpx.Response:
         return self.client.request(method, url, **kwargs)
 
+    def _submit(
+        self, __endpoint: ClientEndpoint, /, *args: t.Any, **kwargs: t.Any
+    ) -> Task:
+        try:
+            req = self._build_request(__endpoint, args, kwargs, {})
+            req.url = req.url.copy_with(path=f"{__endpoint.route}/submit")
+            resp = self.client.send(req)
+            if resp.is_error:
+                resp.read()
+                raise BentoMLException(
+                    f"Error making request: {resp.status_code}: {resp.text}",
+                    error_code=HTTPStatus(resp.status_code),
+                )
+            data = resp.json()
+            return Task(data["task_id"], __endpoint, self)
+        finally:
+            for f in self._opened_files:
+                f.close()
+            self._opened_files.clear()
+
     def _call(
         self,
         endpoint: ClientEndpoint,
@@ -427,10 +459,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
             resp = self.client.send(req, stream=endpoint.stream_output)
             if resp.is_error:
                 resp.read()
-                raise BentoMLException(
-                    f"Error making request: {resp.status_code}: {resp.text}",
-                    error_code=HTTPStatus(resp.status_code),
-                )
+                raise map_exception(resp)
             if endpoint.stream_output:
                 return self._parse_stream_response(endpoint, resp)
             elif (
@@ -516,6 +545,26 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
     async def request(self, method: str, url: str, **kwargs: t.Any) -> httpx.Response:
         return await self.client.request(method, url, **kwargs)
 
+    async def _submit(
+        self, __endpoint: ClientEndpoint, /, *args: t.Any, **kwargs: t.Any
+    ) -> AsyncTask:
+        try:
+            req = self._build_request(__endpoint, args, kwargs, {})
+            req.url = req.url.copy_with(path=f"{__endpoint.route}/submit")
+            resp = await self.client.send(req)
+            if resp.is_error:
+                resp.read()
+                raise BentoMLException(
+                    f"Error making request: {resp.status_code}: {resp.text}",
+                    error_code=HTTPStatus(resp.status_code),
+                )
+            data = resp.json()
+            return AsyncTask(data["task_id"], __endpoint, self)
+        finally:
+            for f in self._opened_files:
+                f.close()
+            self._opened_files.clear()
+
     async def _call(
         self,
         endpoint: ClientEndpoint,
@@ -529,10 +578,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
             resp = await self.client.send(req, stream=endpoint.stream_output)
             if resp.is_error:
                 await resp.aread()
-                raise BentoMLException(
-                    f"Error making request: {resp.status_code}: {resp.text}",
-                    error_code=HTTPStatus(resp.status_code),
-                )
+                raise map_exception(resp)
             if endpoint.stream_output:
                 return self._parse_stream_response(endpoint, resp)
             elif (

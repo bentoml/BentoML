@@ -59,11 +59,12 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
 
     MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.2"
 
-    @openai_endpoints(served_model=MODEL_ID)
+    @openai_endpoints(model_id=MODEL_ID)
     @bentoml.service(
         name="mistral-7b-instruct-service",
         traffic={
             "timeout": 300,
+            "concurrency": 256, # Matches the default max_num_seqs in the VLLM engine
         },
         resources={
             "gpu": 1,
@@ -75,7 +76,8 @@ Define a :doc:`BentoML Service </guides/services>` to customize the serving logi
             from vllm import AsyncEngineArgs, AsyncLLMEngine
             ENGINE_ARGS = AsyncEngineArgs(
                 model=MODEL_ID,
-                max_model_len=MAX_TOKENS
+                max_model_len=MAX_TOKENS,
+                enable_prefix_caching=True
             )
 
             self.engine = AsyncLLMEngine.from_engine_args(ENGINE_ARGS)

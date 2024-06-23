@@ -31,7 +31,15 @@ ASYNC_ITERATOR_TYPES: set[type] = {
 
 
 def get_origin(type_: t.Any) -> type:
+    if hasattr(type_, "__origin__"):
+        return type_.__origin__
     return t.get_origin(type_) or type_
+
+
+def get_args(type_: t.Any) -> t.Tuple[t.Any, ...]:
+    if hasattr(type_, "__args__"):
+        return type_.__args__
+    return t.get_args(type_)
 
 
 def is_literal_type(typ_: t.Any) -> bool:

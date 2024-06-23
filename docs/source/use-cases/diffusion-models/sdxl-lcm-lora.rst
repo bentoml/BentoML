@@ -6,7 +6,7 @@ Stable Diffusion XL with LCM LoRAs
 
 This document explains how to deploy `SDXL <https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0>`_ with `LCM LoRA weights <https://huggingface.co/latent-consistency/lcm-lora-sdxl>`_ using BentoML.
 
-All the source code in this tutorial is available in the `BentoLCM GitHub repository <https://github.com/bentoml/BentoLCM>`_.
+All the source code in this tutorial is available in the `BentoDiffusion GitHub repository <https://github.com/bentoml/BentoDiffusion>`_.
 
 Prerequisites
 -------------
@@ -23,8 +23,8 @@ Clone the project repository and install all the dependencies.
 
 .. code-block:: bash
 
-    git clone https://github.com/bentoml/BentoLCM.git
-    cd BentoLCM
+    git clone https://github.com/bentoml/BentoDiffusion.git
+    cd BentoDiffusion/lcm
     pip install -r requirements.txt
 
 Create a BentoML Service
@@ -44,7 +44,11 @@ Create a BentoML :doc:`Service </guides/services>` in a ``service.py`` file to w
     sample_prompt = "close-up photography of old man standing in the rain at night, in a street lit by lamps, leica 35mm summilux"
 
     @bentoml.service(
-        traffic={"timeout": 300},
+        traffic={
+            "timeout": 300,
+            "external_queue": True,
+            "concurrency": 1,
+        },
         workers=1,
         resources={
             "gpu": 1,

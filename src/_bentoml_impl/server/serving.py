@@ -131,14 +131,19 @@ def create_dependency_watcher(
     return watcher, socket, uri
 
 
-def server_on_deployment(svc: AnyService) -> None:
+@inject
+def server_on_deployment(
+    svc: AnyService, result_file: str = Provide[BentoMLContainer.result_store_file]
+) -> None:
     for name in dir(svc.inner):
         member = getattr(svc.inner, name)
         if callable(member) and getattr(member, "__bentoml_deployment_hook__", False):
             member()
+    if os.path.exists(result_file):
+        os.remove(result_file)
 
 
-@inject
+@inject(squeeze_none=True)
 def serve_http(
     bento_identifier: str | AnyService,
     working_dir: str | None = None,

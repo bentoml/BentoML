@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import json
 import logging
 import os
@@ -257,6 +258,9 @@ class Bento(StoreItem):
             )
         bento_fs.makedir(BENTO_PROJECT_DIR_NAME)
         target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
+        with target_fs.open(DEFAULT_BENTO_BUILD_FILE, "w") as bentofile_yaml:
+            build_config.to_yaml(bentofile_yaml)
+        ignore_specs = list(specs.from_path(build_ctx))
 
         for dir_path, _, files in ctx_fs.walk():
             for f in files:
@@ -264,8 +268,7 @@ class Bento(StoreItem):
                 if specs.includes(
                     path,
                     recurse_exclude_spec=filter(
-                        lambda s: fs.path.isparent(s[0], dir_path),
-                        specs.from_path(build_ctx),
+                        lambda s: fs.path.isparent(s[0], dir_path), ignore_specs
                     ),
                 ):
                     if ctx_fs.getsize(path) > 10 * 1024 * 1024:
@@ -693,7 +696,7 @@ class BentoInfo:
 
 
 bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, BentoInfo),
+    lambda cls: inspect.isclass(cls) and issubclass(cls, BentoInfo),
     make_dict_structure_fn(
         BentoInfo,
         bentoml_cattr,

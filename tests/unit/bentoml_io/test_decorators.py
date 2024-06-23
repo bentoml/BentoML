@@ -1,13 +1,19 @@
 from typing import Generator
 
+import numpy as np
+import numpy.typing as npt
+import pandas as pd
 import pytest
+from typing_extensions import Annotated
+from starlette.testclient import TestClient
 
 import bentoml
+from bentoml.validators import DataframeSchema
+from bentoml.validators import DType
+from bentoml.validators import Shape
 
 
-@pytest.mark.asyncio
-async def test_mount_asgi_app():
-    import httpx
+def test_mount_asgi_app():
     from fastapi import FastAPI
 
     app = FastAPI()
@@ -19,17 +25,13 @@ async def test_mount_asgi_app():
         def hello(self):
             return {"message": "Hello, world!"}
 
-    async with httpx.AsyncClient(
-        app=TestService.to_asgi(init=True), base_url="http://testserver"
-    ) as client:
-        response = await client.get("/test/hello")
+    with TestClient(app=TestService.to_asgi()) as client:
+        response = client.get("/test/hello")
         assert response.status_code == 200
         assert response.json()["message"] == "Hello, world!"
 
 
-@pytest.mark.asyncio
-async def test_mount_asgi_app_later():
-    import httpx
+def test_mount_asgi_app_later():
     from fastapi import FastAPI
 
     app = FastAPI()
@@ -41,10 +43,8 @@ async def test_mount_asgi_app_later():
         def hello(self):
             return {"message": "Hello, world!"}
 
-    async with httpx.AsyncClient(
-        app=TestService.to_asgi(init=True), base_url="http://testserver"
-    ) as client:
-        response = await client.get("/test/hello")
+    with TestClient(app=TestService.to_asgi()) as client:
+        response = client.get("/test/hello")
         assert response.status_code == 200
         assert response.json()["message"] == "Hello, world!"
 
@@ -89,4 +89,53 @@ async def test_service_instantiate_to_async():
         "Hello, world! 0",
         "Hello, world! 1",
         "Hello, world! 2",
+    ]
+
+
+def test_api_decorator_numpy():
+    @bentoml.api
+    def numpy_func(
+        _,  # The decorator assumes `self` is the first arg.
+        arr: npt.NDArray[np.float64],
+    ) -> Annotated[npt.NDArray[np.int64], DType("int64"), Shape((1,))]:
+        return arr.astype(np.int64)
+
+    numpy_func.input_spec.model_fields["arr"].annotation is npt.NDArray[np.float64]
+    numpy_func.output_spec.model_fields["root"].annotation is Annotated[
+        npt.NDArray[np.int64], DType("int64"), Shape((1,))
+    ]
+
+    with pytest.raises(
+        TypeError,
+        match=r"Unable to infer the output spec for function .+, please specify output_spec manually",
+    ):
+
+        @bentoml.api
+        def numpy_func(
+            _,  # The decorator assumes `self` is the first arg.
+            arr: npt.NDArray[np.float64],
+        ) -> Annotated[npt.NDArray[np.float64], DType("int64"), Shape((1,))]:
+            return arr.astype(np.int64)
+
+
+def test_api_decorator_pandas():
+    @bentoml.api
+    def pandas_func(
+        _,  # The decorator assumes `self` is the first arg.
+        df1: pd.DataFrame,
+        df2: Annotated[pd.DataFrame, DataframeSchema(columns=("b",))],
+    ) -> Annotated[
+        pd.DataFrame,
+        DataframeSchema(orient="columns", columns=["a", "b"]),
+    ]:
+        return pd.concat([df1, df2], axis=1)
+
+    pandas_func.input_spec.model_fields["df1"].annotation is pd.DataFrame
+    pandas_func.input_spec.model_fields["df2"].annotation is Annotated[
+        pd.DataFrame,
+        DataframeSchema(columns=("b",)),
+    ]
+    pandas_func.output_spec.model_fields["root"].annotation is Annotated[
+        pd.DataFrame,
+        DataframeSchema(orient="columns", columns=("a", "b")),
     ]

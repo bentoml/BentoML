@@ -81,8 +81,8 @@ def exception_components_schema() -> dict[str, Schema]:
 def exception_schema(ex: t.Type[BentoMLException]) -> t.Iterable[FilledExceptionSchema]:
     # convert BentoML exception to OpenAPI components schema
     error_properties = {
-        "msg": Schema(title="Message", type="string"),
-        "type": Schema(title="Error Type", type="string"),
+        "error": Schema(title="Message", type="string"),
+        "detail": Schema(title="Error Detail", type="string"),
     }
 
     yield FilledExceptionSchema(
@@ -90,7 +90,7 @@ def exception_schema(ex: t.Type[BentoMLException]) -> t.Iterable[FilledException
         type="object",
         description=ex.error_code.phrase,
         properties=error_properties,
-        required=list(error_properties),
+        required=["error"],
     )
 
 

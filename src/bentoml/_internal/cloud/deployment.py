@@ -1,20 +1,20 @@
 from __future__ import annotations
 
+import base64
+import contextlib
 import logging
 import time
 import typing as t
 from os import path
+from threading import Event
+from threading import Thread
 
 import attr
 import click
 import yaml
 from deepmerge.merger import Merger
-from rich.live import Live
-from rich.progress import TaskID
 from simple_di import Provide
 from simple_di import inject
-
-from bentoml._internal.cloud.base import Spinner
 
 if t.TYPE_CHECKING:
     from _bentoml_impl.client import AsyncHTTPClient
@@ -29,12 +29,14 @@ from ..configuration.containers import BentoMLContainer
 from ..tag import Tag
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
+from .base import Spinner
 from .config import get_rest_api_client
 from .schemas.modelschemas import DeploymentStatus
 from .schemas.modelschemas import DeploymentTargetHPAConf
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentSchema
 from .schemas.schemasv2 import DeploymentTargetSchema
+from .schemas.schemasv2 import KubePodSchema
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 
 logger = logging.getLogger(__name__)
@@ -108,7 +110,7 @@ class DeploymentConfigParameters:
                     ("bento", self.bento),
                     ("cluster", self.cluster),
                     ("access_authorization", self.access_authorization),
-                    ("envs", self.envs),
+                    ("envs", self.envs if self.envs else None),
                     ("secrets", self.secrets),
                 ]
                 if v is not None
@@ -151,6 +153,9 @@ class DeploymentConfigParameters:
             raise BentoMLException(
                 "Must provide either config_dict, config_file, or the other parameters"
             )
+
+        if self.cfg_dict is None:
+            self.cfg_dict = {}
 
         bento_name = self.cfg_dict.get("bento")
         # determine if bento is a path or a name
@@ -293,7 +298,13 @@ def get_bento_info(
     if project_path:
         from bentoml.bentos import build_bentofile
 
-        bento_obj = build_bentofile(build_ctx=project_path, _bento_store=_bento_store)
+        with _cloud_client.spinner as spinner:
+            with spinner.spin(text=f"🍱 Building bento from project: {project_path}"):
+                bento_obj = build_bentofile(
+                    build_ctx=project_path, _bento_store=_bento_store
+                )
+                spinner.log(f'🍱 Built bento "{bento_obj.info.tag}"')
+
         _cloud_client.push_bento(bento=bento_obj, context=context)
         return bento_obj.info
     elif bento:
@@ -317,8 +328,8 @@ def get_bento_info(
             return bento_obj.info
         if bento_schema is not None:
             assert bento_schema.manifest is not None
-            with Live(_cloud_client.spinner.progress_group):
-                _cloud_client.spinner.log_progress.add_task(
+            with _cloud_client.spinner as spinner:
+                spinner.log(
                     f"[bold blue]Using bento {bento.name}:{bento.version} from bentocloud to deploy"
                 )
             return BentoInfo(
@@ -488,52 +499,132 @@ class DeploymentInfo:
         timeout: int = 3600,
         check_interval: int = 10,
         spinner: Spinner | None = None,
-        spinner_task_id: TaskID | None = None,
     ) -> None:
+        from httpx import TimeoutException
+
         start_time = time.time()
-        if spinner is not None and spinner_task_id is not None:
-            while time.time() - start_time < timeout:
-                status = self.get_status()
-                spinner.spinner_progress.update(
-                    spinner_task_id,
-                    action=f"Waiting for deployment '{self.name}' to be ready. Current status: '{status.status}'.",
+        if spinner is not None:
+            stop_tail_event = Event()
+            stack = contextlib.ExitStack()
+
+            def tail_image_builder_logs():
+                cloud_rest_client = get_rest_api_client(self._context)
+                pod: KubePodSchema | None = None
+                while True:
+                    pod = cloud_rest_client.v2.get_deployment_image_builder_pod(
+                        self.name, self.cluster
+                    )
+                    if pod is None:
+                        if stop_tail_event.wait(check_interval):
+                            return
+                        continue
+                    if pod.pod_status.status == "Running":
+                        break
+                    if stop_tail_event.wait(check_interval):
+                        return
+
+                is_first = True
+                logs_tailer, close_tail = cloud_rest_client.v2.tail_logs(
+                    cluster_name=self.cluster,
+                    namespace=self._schema.kube_namespace,
+                    pod_name=pod.name,
+                    container_name="builder",
                 )
-                if (
-                    status.status == DeploymentStatus.Running.value
-                    or status.status == DeploymentStatus.ScaledToZero.value
-                ):
-                    spinner.spinner_progress.update(
-                        spinner_task_id,
-                        action=f'[bold green] Deployment "{self.name}" is ready. Current status: "{status.status}"[/bold green]',
-                    )
-                    spinner.spinner_progress.stop_task(spinner_task_id)
-                    return
-                if status.status in [
-                    DeploymentStatus.Failed.value,
-                    DeploymentStatus.ImageBuildFailed.value,
-                    DeploymentStatus.Terminated.value,
-                    DeploymentStatus.Terminating.value,
-                    DeploymentStatus.Unhealthy.value,
-                ]:
-                    spinner.spinner_progress.update(
-                        spinner_task_id,
-                        action=f'[bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}".[/bold red]',
-                    )
-                    spinner.spinner_progress.stop_task(spinner_task_id)
-                    return
+                stack.callback(close_tail)
+                for piece in logs_tailer:
+                    if stop_tail_event.is_set():
+                        break
+                    decoded_bytes = base64.b64decode(piece)
+                    decoded_str = decoded_bytes.decode("utf-8")
+                    if is_first:
+                        is_first = False
+                        spinner.update("🚧 Image building...")
+                    print(decoded_str, end="", flush=True)
 
-                time.sleep(check_interval)
+            tail_thread: Thread | None = None
 
-            spinner.spinner_progress.update(
-                spinner_task_id,
-                action=f'[bold red]Time out waiting for Deployment "{self.name}" ready.[/bold red]',
-            )
-            spinner.spinner_progress.stop_task(spinner_task_id)
-            return
+            @stack.callback
+            def stop_tail_thread():
+                stop_tail_event.set()
+                if tail_thread is not None:
+                    tail_thread.join()
+
+            with stack:
+                status: DeploymentState | None = None
+                spinner.update(
+                    f'🔄 Waiting for deployment "{self.name}" to be ready...'
+                )
+                while time.time() - start_time < timeout:
+                    for _ in range(3):
+                        try:
+                            status = self.get_status()
+                            break
+                        except TimeoutException:
+                            spinner.update(
+                                "⚠️ Unable to get deployment status, retrying..."
+                            )
+                    if status is None:
+                        spinner.log(
+                            "🚨 [bold red]Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website.[/bold red]"
+                        )
+                        return
+                    spinner.update(
+                        f'🔄 Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
+                    )
+                    if status.status == DeploymentStatus.ImageBuilding.value:
+                        if tail_thread is None:
+                            tail_thread = Thread(
+                                target=tail_image_builder_logs, daemon=True
+                            )
+                            tail_thread.start()
+
+                    if status.status in (
+                        DeploymentStatus.Running.value,
+                        DeploymentStatus.ScaledToZero.value,
+                    ):
+                        spinner.stop()
+                        spinner.console.print(
+                            f'✅ [bold green] Deployment "{self.name}" is ready:[/] {self.admin_console}'
+                        )
+                        return
+                    if status.status in [
+                        DeploymentStatus.Failed.value,
+                        DeploymentStatus.ImageBuildFailed.value,
+                        DeploymentStatus.Terminated.value,
+                        DeploymentStatus.Terminating.value,
+                        DeploymentStatus.Unhealthy.value,
+                    ]:
+                        spinner.stop()
+                        spinner.console.print(
+                            f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}"[/]'
+                        )
+                        return
+
+                    time.sleep(check_interval)
+
+                spinner.stop()
+                spinner.console.print(
+                    f'🚨 [bold red]Time out waiting for Deployment "{self.name}" ready[/]'
+                )
+                return
         else:
             while time.time() - start_time < timeout:
-                status = self.get_status()
-                if status.status == DeploymentStatus.Running.value:
+                status: DeploymentState | None = None
+                for _ in range(3):
+                    try:
+                        status = self.get_status()
+                        break
+                    except TimeoutException:
+                        pass
+                if status is None:
+                    logger.error(
+                        f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website."
+                    )
+                    return
+                if status.status in (
+                    DeploymentStatus.Running.value,
+                    DeploymentStatus.ScaledToZero.value,
+                ):
                     logger.info(
                         f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Deployment '{self.name}' is ready."
                     )
@@ -696,8 +787,6 @@ class Deployment:
         cloud_rest_client = get_rest_api_client(context)
         deployment_schema = cloud_rest_client.v2.get_deployment(name, cluster)
         orig_dict = cls._convert_schema_to_update_schema(deployment_schema)
-        for service in orig_dict.get("services", {}).values():
-            service.pop("envs", None)
 
         config_params = deployment_config_params.get_config_dict(
             orig_dict.get("bento"),

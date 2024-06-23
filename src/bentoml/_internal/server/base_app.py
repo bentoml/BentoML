@@ -43,7 +43,9 @@ class BaseAppFactory(abc.ABC):
 
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
-        return []
+        from ..context import request_tempdir_pool
+
+        return [request_tempdir_pool.cleanup]
 
     def mark_as_ready(self) -> None:
         self._is_ready = True

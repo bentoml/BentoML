@@ -6,6 +6,7 @@ import inspect
 import logging
 import typing as t
 
+from _bentoml_impl.client.base import ClientEndpoint
 from _bentoml_sdk import Service
 from bentoml.exceptions import BentoMLException
 
@@ -88,3 +89,27 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
             return self._async.call(__name, *args, **kwargs)
         else:
             return self._sync.call(__name, *args, **kwargs)
+
+    def _submit(
+        self, __endpoint: ClientEndpoint, /, *args: t.Any, **kwargs: t.Any
+    ) -> t.Any:
+        original_func = getattr(self._inner, __endpoint.name)
+        if not hasattr(original_func, "func"):
+            raise BentoMLException(
+                f"calling non-api method {__endpoint.name} is not allowed"
+            )
+        original_func = original_func.func
+        while isinstance(original_func, functools.partial):
+            original_func = original_func.func
+        is_async_func = (
+            asyncio.iscoroutinefunction(original_func)
+            or (
+                callable(original_func)
+                and asyncio.iscoroutinefunction(original_func.__call__)  # type: ignore
+            )
+            or inspect.isasyncgenfunction(original_func)
+        )
+        if is_async_func:
+            return self._async._submit(__endpoint, *args, **kwargs)
+        else:
+            return self._sync._submit(__endpoint, *args, **kwargs)

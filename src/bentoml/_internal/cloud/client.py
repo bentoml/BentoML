@@ -2,10 +2,18 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import threading
 import typing as t
+import uuid
+from queue import Empty
+from urllib.parse import urlencode
 from urllib.parse import urljoin
+from urllib.parse import urlparse
 
 import httpx
+from httpx_ws import WebSocketNetworkError
+from httpx_ws import connect_ws
+from wsproto.utilities import LocalProtocolError
 
 from ...exceptions import CloudRESTApiClientError
 from ...exceptions import NotFound
@@ -42,6 +50,9 @@ from .schemas.schemasv1 import UserSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeploymentFullSchema as DeploymentFullSchemaV2
 from .schemas.schemasv2 import DeploymentListSchema as DeploymentListSchemaV2
+from .schemas.schemasv2 import KubePodSchema
+from .schemas.schemasv2 import KubePodWSResponseSchema
+from .schemas.schemasv2 import LogWSResponseSchema
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 from .schemas.utils import schema_from_json
 from .schemas.utils import schema_from_object
@@ -720,6 +731,124 @@ class RestApiClientV2(BaseRestApiClient):
         resp = self.session.get(url, params={"cluster": cluster})
         self._check_resp(resp)
         return schema_from_json(resp.text, list[ResourceInstanceSchema])
+
+    def get_deployment_image_builder_pod(
+        self, name: str, cluster: str | None = None
+    ) -> KubePodSchema | None:
+        pods = self.list_deployment_pods(name, cluster=cluster)
+        if not pods:
+            raise NotFound(f"Deployment {name} pods is not found")
+        for pod in pods:
+            if pod.labels.get("yatai.ai/is-bento-image-builder") == "true":
+                return pod
+        return None
+
+    def list_deployment_pods(
+        self, name: str, cluster: str | None = None
+    ) -> list[KubePodSchema]:
+        deployment = self.get_deployment(name, cluster=cluster)
+        if not deployment.latest_revision:
+            raise NotFound(f"Deployment {name} latest revision is not found")
+        if not deployment.latest_revision.targets:
+            raise NotFound(f"Deployment {name} latest revision targets is not found")
+        target = deployment.latest_revision.targets[0]
+        if not target:
+            raise NotFound(f"Deployment {name} latest revision target is not found")
+        if not target.bento:
+            raise NotFound(
+                f"Deployment {name} latest revision target bento is not found"
+            )
+        url_ = urlparse(self.endpoint)
+        scheme = "wss"
+        if url_.scheme == "http":
+            scheme = "ws"
+        endpoint = f"{scheme}://{url_.netloc}"
+        with connect_ws(
+            url=f"{endpoint}/ws/v1/clusters/{deployment.cluster.name}/pods?{urlencode(dict(organization_name=deployment.cluster.organization_name, namespace=deployment.kube_namespace, selector=f'yatai.ai/bento-repository={target.bento.repository.name},yatai.ai/bento={target.bento.version}'))}",
+            client=self.session,
+        ) as ws:
+            jsn = schema_from_object(ws.receive_json(), KubePodWSResponseSchema)
+            if jsn.type == "error":
+                raise CloudRESTApiClientError(jsn.message)
+            return jsn.payload
+
+    def tail_logs(
+        self,
+        *,
+        cluster_name: str,
+        namespace: str,
+        pod_name: str,
+        container_name: str = "main",
+    ) -> tuple[t.Generator[str, None, None], t.Callable[[], None]]:
+        url_ = urlparse(self.endpoint)
+        scheme = "wss"
+        if url_.scheme == "http":
+            scheme = "ws"
+        endpoint = f"{scheme}://{url_.netloc}"
+
+        with contextlib.ExitStack() as stack:
+            ws = stack.enter_context(
+                connect_ws(
+                    url=f"{endpoint}/ws/v1/clusters/{cluster_name}/tail?{urlencode(dict(namespace=namespace, pod_name=pod_name))}",
+                    client=self.session,
+                )
+            )
+            req_id = str(uuid.uuid4())
+            ws.send_json(
+                {
+                    "type": "data",
+                    "payload": {
+                        "id": req_id,
+                        "container_name": container_name,
+                        "follow": True,
+                        "tail_lines": 50,
+                    },
+                }
+            )
+
+            heartbeat_canceled_event = threading.Event()
+
+            def heartbeat():
+                while True:
+                    try:
+                        ws.send_json({"type": "heartbeat"})
+                    except (WebSocketNetworkError, LocalProtocolError):
+                        pass
+                    if heartbeat_canceled_event.wait(5):
+                        break
+
+            def gen() -> t.Generator[str, None, None]:
+                heartbeat_thread = threading.Thread(target=heartbeat)
+                heartbeat_thread.start()
+
+                try:
+                    while True:
+                        try:
+                            data = ws.receive_json(timeout=1)
+                        except Empty:
+                            continue
+                        jsn = schema_from_object(data, LogWSResponseSchema)
+                        if jsn.type == "error":
+                            if jsn.message is None:
+                                raise CloudRESTApiClientError("Unknown error")
+                            raise CloudRESTApiClientError(jsn.message)
+                        if jsn.type == "heartbeat":
+                            continue
+                        if jsn.payload is None:
+                            continue
+                        for line in jsn.payload.items:
+                            yield line
+                except WebSocketNetworkError:
+                    pass
+                finally:
+                    heartbeat_canceled_event.set()
+                    ws.close()
+                    heartbeat_thread.join()
+
+            # Clone to a new exit stack so the websocket session can live outside this method.
+            new_stack = stack.pop_all()
+            # Return a stream and a close handle to the caller.
+            return gen(), new_stack.close
 
 
 class RestApiClient:

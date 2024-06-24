@@ -66,6 +66,18 @@ class AuthRedirectHandler(BaseHTTPRequestHandler):
     #         self.send_response(500)
     #         self.end_headers()
 
+    def end_headers(self):
+        """Add necessary headers for CORS"""
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        super().end_headers()
+    
+    def do_OPTIONS(self):
+        """Handle preflight CORS requests"""
+        self.send_response(200)
+        self.end_headers()
+
     def do_POST(self) -> None:
         """
         Provides callback page for the oauth2 redirect using POST request
@@ -98,7 +110,7 @@ class AuthCallbackHttpServer(HTTPServer):
     Simplistic HTTP Server to provide local callback URL for token provider
     """
 
-    def __init__(self, port):
+    def __init__(self, port: int):
         super().__init__(("", port), AuthRedirectHandler)
 
         self._code: str | None = None

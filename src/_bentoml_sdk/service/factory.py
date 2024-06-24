@@ -82,6 +82,7 @@ class Service(t.Generic[T]):
     def __attrs_post_init__(self) -> None:
         from .dependency import Dependency
 
+        has_task = False
         for field in dir(self.inner):
             value = getattr(self.inner, field)
             if isinstance(value, Dependency):
@@ -89,7 +90,14 @@ class Service(t.Generic[T]):
             elif isinstance(value, Model):
                 self.models.append(value)
             elif isinstance(value, APIMethod):
+                if value.is_task:
+                    has_task = True
                 self.apis[field] = t.cast("APIMethod[..., t.Any]", value)
+
+        if has_task:
+            traffic = self.config.setdefault("traffic", {})
+            traffic["external_queue"] = True
+            traffic.setdefault("concurrency", 1)
 
         pre_mount_apps = getattr(self.inner, "__bentoml_mounted_apps__", [])
         if pre_mount_apps:

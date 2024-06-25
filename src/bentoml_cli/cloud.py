@@ -69,10 +69,10 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
                     reserve_free_port(enable_so_reuseport=True)
                 )
             callback_server = AuthCallbackHttpServer(port)
-            baseURL = f'{endpoint}/api_tokens'
+            baseURL = f"{endpoint}/api_tokens"
             encodedCallback = urllib.parse.quote(callback_server.callback_url)
-            authURL = f'{baseURL}?callback={encodedCallback}'
-            authURL_display = click.style(authURL, fg='blue', underline=True)
+            authURL = f"{baseURL}?callback={encodedCallback}"
+            authURL_display = click.style(authURL, fg="blue", underline=True)
             input(f"Press Enter to open {authURL_display} in your browser...")
             if webbrowser.open_new_tab(authURL):
                 click.echo(f"✅ Opened {authURL_display} in your web browser.")

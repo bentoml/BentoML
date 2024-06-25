@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import json
 import typing as t
+import urllib.parse
 import webbrowser
 from os import environ
 
@@ -68,13 +69,13 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
                     reserve_free_port(enable_so_reuseport=True)
                 )
             callback_server = AuthCallbackHttpServer(port)
-            baseURL = f"{endpoint}/api_tokens"
-            # encodedURI = urllib.parse.quote(f'callback={callback_server.callback_url}')
-            encodedURI = f"callback={callback_server.callback_url}"
-            authURL = f"{baseURL}?{encodedURI}"
-            input(f"Press Enter to open {authURL} in your browser...")
+            baseURL = f'{endpoint}/api_tokens'
+            encodedCallback = urllib.parse.quote(callback_server.callback_url)
+            authURL = f'{baseURL}?callback={encodedCallback}'
+            authURL_display = click.style(authURL, fg='blue', underline=True)
+            input(f"Press Enter to open {authURL_display} in your browser...")
             if webbrowser.open_new_tab(authURL):
-                click.echo(f"✅ Opened {authURL} in your web browser.")
+                click.echo(f"✅ Opened {authURL_display} in your web browser.")
             else:
                 click.echo(
                     f"🚨 Failed to open browser. Try create a new API token at {baseURL}"
@@ -118,7 +119,9 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
         click.echo(
             f"✅ Configured BentoCloud credentials (current-context: {ctx.name})"
         )
-        click.echo(f"✅ Logged in as {user.email} at {org.name}")
+        email = click.style(user.email, fg="green")
+        org_name = click.style(org.name, fg="green")
+        click.echo(f"✅ Logged in as {email} at {org_name} organization")
     except CloudRESTApiClientError as e:
         if e.error_code == 401:
             click.echo(

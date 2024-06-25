@@ -1,34 +1,9 @@
 from __future__ import annotations
 
-import signal
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from typing import Optional
 from urllib.parse import parse_qs
-
-
-class TimeoutException(Exception):
-    pass
-
-
-def _timeout_handler(signum, frame):
-    raise TimeoutException("Operation timed out")
-
-
-def _method_with_timeout(your_method, timeout_seconds=5, *args, **kwargs):
-    if timeout_seconds is not None:
-        signal.signal(signal.SIGALRM, _timeout_handler)
-        signal.alarm(timeout_seconds)
-
-    try:
-        result = your_method(*args, **kwargs)
-    except TimeoutException as te:
-        raise te
-    finally:
-        if timeout_seconds is not None:
-            signal.alarm(0)  # Reset the alarm
-
-    return result
 
 
 class AuthRedirectHandler(BaseHTTPRequestHandler):
@@ -129,29 +104,6 @@ class AuthCallbackHttpServer(HTTPServer):
         Callback URL for the HTTP-Server
         """
         return f"http://localhost:{self.server_port}"
-
-    def wait_for_code(self, attempts: int = 3, timeout_per_attempt=10) -> Optional[str]:
-        """
-        Wait for the server to callback from token provider.
-
-        It tries for #attempts with a timeout of #timeout_per_attempts for each attempt.
-        This prevents the CLI from getting stuck by unsolved callback URls
-
-        :param attempts: Amount of attempts
-        :param timeout_per_attempt: Timeout for each attempt to be successful
-        :return: Code from callback page or None if the callback page is not called successfully
-        """
-        for _ in range(0, attempts):
-            try:
-                _method_with_timeout(
-                    self.handle_request, timeout_seconds=timeout_per_attempt
-                )
-            except TimeoutException:
-                continue
-            if self.get_code() is not None:
-                return self.get_code()
-
-        return None
 
     def wait_indefinitely_for_code(self) -> Optional[str]:
         """

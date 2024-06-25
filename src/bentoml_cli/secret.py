@@ -6,6 +6,7 @@ import typing as t
 from http import HTTPStatus
 
 import click
+import rich
 import yaml
 from rich.syntax import Syntax
 from rich.table import Table
@@ -237,7 +238,7 @@ def create(
             path=path,
             key_vals=key_vals,
         )
-        click.echo(f"Secret {secret.name} created successfully")
+        rich.print(f"Secret [green]{secret.name}[/] created successfully")
     except Exception as e:
         raise_secret_error(e, "create")
 
@@ -254,7 +255,7 @@ def delete(shared_options: SharedOptions, name: str):
     """Delete a secret on BentoCloud."""
     try:
         Secret.delete(context=shared_options.cloud_context, name=name)
-        click.echo(f"Secret {name} deleted successfully")
+        rich.print(f"Secret [green]{name}[/] deleted successfully")
     except Exception as e:
         raise_secret_error(e, "delete")
 
@@ -344,6 +345,6 @@ def apply(
             path=path,
             key_vals=key_vals,
         )
-        click.echo(f"Secret {secret.name} applied successfully")
+        rich.print(f"Secret [green]{secret.name}[/] applied successfully")
     except Exception as e:
         raise_secret_error(e, "apply")

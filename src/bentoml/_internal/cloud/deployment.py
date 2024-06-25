@@ -10,7 +10,7 @@ from threading import Event
 from threading import Thread
 
 import attr
-import click
+import rich
 import yaml
 from deepmerge.merger import Merger
 from simple_di import Provide
@@ -163,14 +163,14 @@ class DeploymentConfigParameters:
             if isinstance(bento_name, str) and path.exists(bento_name):
                 # target is a path
                 if self.cli:
-                    click.echo(f"building bento from {bento_name} ...")
+                    rich.print(f"building bento from [green]{bento_name}[/] ...")
                 bento_info = get_bento_info(
                     project_path=bento_name,
                     context=self.context,
                 )
             else:
                 if self.cli:
-                    click.echo(f"using bento {bento_name}...")
+                    rich.print(f"using bento [green]{bento_name}[/]...")
                 bento_info = get_bento_info(
                     bento=str(bento_name),
                     context=self.context,

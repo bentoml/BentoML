@@ -5,6 +5,7 @@ import typing as t
 from http import HTTPStatus
 
 import click
+import rich
 import yaml
 from rich.syntax import Syntax
 from rich.table import Table
@@ -306,7 +307,7 @@ def update(  # type: ignore
         context=shared_options.cloud_context,
     )
 
-    click.echo(f"Deployment '{deployment_info.name}' updated successfully.")
+    rich.print(f"Deployment [green]'{deployment_info.name}'[/] updated successfully.")
 
 
 @deployment_command.command()
@@ -428,7 +429,7 @@ def apply(  # type: ignore
         context=shared_options.cloud_context,
     )
 
-    click.echo(f"Deployment '{deployment_info.name}' applied successfully.")
+    rich.print(f"Deployment [green]'{deployment_info.name}'[/] applied successfully.")
 
 
 @deployment_command.command()
@@ -595,7 +596,7 @@ def terminate(  # type: ignore
 ) -> None:
     """Terminate a deployment on BentoCloud."""
     Deployment.terminate(name, context=shared_options.cloud_context, cluster=cluster)
-    click.echo(f"Deployment '{name}' terminated successfully.")
+    rich.print(f"Deployment [green]'{name}'[/] terminated successfully.")
 
 
 @deployment_command.command()
@@ -613,7 +614,7 @@ def delete(  # type: ignore
 ) -> None:
     """Delete a deployment on BentoCloud."""
     Deployment.delete(name, context=shared_options.cloud_context, cluster=cluster)
-    click.echo(f"Deployment '{name}' deleted successfully.")
+    rich.print(f"Deployment [green]'{name}'[/] deleted successfully.")
 
 
 @deployment_command.command(name="list")

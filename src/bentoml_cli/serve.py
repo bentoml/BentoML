@@ -6,6 +6,7 @@ import sys
 import typing as t
 
 import click
+import rich
 
 if t.TYPE_CHECKING:
     P = t.ParamSpec("P")
@@ -28,12 +29,11 @@ def deprecated_option(*param_decls: str, **attrs: t.Any):
     ):
         if value is not param.default and deprecated:
             name = "'--%(name)s'" if attrs.get("is_flag", False) else "'%(name)s'"
-            DEPRECATION_WARNING = f"DeprecationWarning: The parameter {name} is deprecated and will be removed in the future. (Current behaviour: %(new_behaviour)s)"
-            click.secho(
+            DEPRECATION_WARNING = f"[yellow]DeprecationWarning: The parameter {name} is deprecated and will be removed in the future. (Current behaviour: %(new_behaviour)s)[/]"
+            rich.print(
                 DEPRECATION_WARNING
                 % {"name": param.name, "new_behaviour": new_behaviour},
-                fg="yellow",
-                err=True,
+                file=sys.stderr,
             )
 
     def decorator(f: F[t.Any]) -> t.Callable[[F[t.Any]], click.Command]:

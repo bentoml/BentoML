@@ -181,7 +181,7 @@ Here is an example:
 ``logging``
 ^^^^^^^^^^^
 
-Customize access logging, including the content type and length of requests and responses, and trace ID formats.
+Customize server-side logging, including the content type and length of requests and responses, and trace ID formats.
 
 Here is an example:
 
@@ -202,6 +202,8 @@ Here is an example:
     })
     class MyService:
         # Service implementation
+
+For more information, see :doc:`/guides/observability/logging`.
 
 ``ssl``
 ^^^^^^^
@@ -264,7 +266,9 @@ By customizing the ``http`` configuration, you can fine-tune how your BentoML Se
 ``monitoring``
 ^^^^^^^^^^^^^^
 
-``monitoring`` allows you to collect logs and keep track of the performance and health of a Service for maintaining its reliability and efficiency. By default, BentoML provides a built-in monitoring mechanism, while you can customize it by setting a configuration file in YAML. For more information, see :doc:`/guides/observability/monitoring-and-data-collection`.
+``monitoring`` allows you to collect logs and keep track of the performance and health of a Service for maintaining its reliability and efficiency. By default, BentoML provides a built-in monitoring mechanism, while you can customize it by setting a configuration file in YAML.
+
+Here is an example:
 
 .. code-block:: python
 
@@ -279,9 +283,36 @@ By customizing the ``http`` configuration, you can fine-tune how your BentoML Se
     class MyService:
         # Service implementation
 
+For more information, see :doc:`/guides/observability/monitoring-and-data-collection`.
+
 ``tracing``
 ^^^^^^^^^^^
 
-You can configure tracing with different exporters like Zipkin, Jaeger, and OTLP and their specific settings.
+You can configure tracing with different exporters like Zipkin, Jaeger, and OTLP. The specific configurations may vary depending on the exporter type defined.
+
+Here is an example:
+
+.. code-block:: python
+
+    import bentoml
+
+    @bentoml.service(
+        resources={"cpu": "2"},
+        traffic={"timeout": 10},
+        tracing={
+            # Common configurations
+            "exporter_type": "jaeger",
+            "sample_rate": 1.0,
+            "timeout": 5,
+            "max_tag_value_length": 256,
+            "excluded_urls": "readyz",
+            "jaeger": {
+                # Specific configurations of the exporter
+        }
+    )
+    class MyService:
+       # Service implementation code
+
+For more information, see :doc:`/guides/observability/tracing`.
 
 For full schema of the configurations, see `this file <https://github.com/bentoml/BentoML/blob/1.2/src/bentoml/_internal/configuration/v2/default_configuration.yaml>`_.

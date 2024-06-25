@@ -77,7 +77,8 @@ class BaseRestApiClient:
     def _check_resp(self, resp: httpx.Response) -> None:
         if resp.status_code != 200:
             raise CloudRESTApiClientError(
-                f"request failed with status code {resp.status_code}: {resp.text}"
+                f"request failed with status code {resp.status_code}: {resp.text}",
+                error_code=resp.status_code,
             )
 
 

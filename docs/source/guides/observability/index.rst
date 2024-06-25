@@ -15,9 +15,23 @@ This section explains observability in BentoML.
 
         Learn how to implement monitoring and collect inference data in BentoML.
 
+    .. grid-item-card:: :doc:`/guides/observability/logging`
+        :link: /guides/observability/logging
+        :link-type: doc
+
+        Learn how to configure logging in BentoML.
+
+    .. grid-item-card:: :doc:`/guides/observability/tracing`
+        :link: /guides/observability/tracing
+        :link-type: doc
+
+        Learn how to configure tracing in BentoML.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
     :hidden:
 
     monitoring-and-data-collection
+    logging
+    tracing

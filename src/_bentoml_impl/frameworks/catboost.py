@@ -8,19 +8,24 @@ from typing import TYPE_CHECKING
 
 import attr
 import numpy as np
+from typing_extensions import deprecated
 
 import bentoml
 from bentoml import Tag
+from bentoml._internal.models.model import ModelContext
+from bentoml._internal.utils.pkg import get_pkg_version
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
-from bentoml.models import ModelOptions
-
-from ..models.model import ModelContext
-from ..utils.pkg import get_pkg_version
+from bentoml.models import ModelOptions as BaseModelOptions
+from bentoml.models import get as get
 
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from _bentoml_sdk import Service
+    from _bentoml_sdk import ServiceConfig
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
@@ -37,34 +42,7 @@ MODEL_FILENAME = "saved_model.cbm"
 DEFAULT_MODEL_TRAINING_CLASS_NAME = "CatBoost"
 API_VERSION = "v1"
 
-logger = logging.getLogger(__name__)
-
-
-def get(tag_like: str | Tag) -> bentoml.Model:
-    """
-    Get the BentoML model with the given tag.
-
-    Args:
-        tag_like (``str`` ``|`` :obj:`~bentoml.Tag`):
-            The tag of the model to retrieve from the model store.
-
-    Returns:
-        :obj:`~bentoml.Model`: A BentoML :obj:`~bentoml.Model` with the matching tag.
-
-    Example:
-
-    .. code-block:: python
-
-        import bentoml
-        # target model must be from the BentoML model store
-        model = bentoml.catboost.get("my_catboost_model")
-    """
-    model = bentoml.models.get(tag_like)
-    if model.info.module not in (MODULE_NAME, __name__):
-        raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
-        )
-    return model
+logger = logging.getLogger(MODULE_NAME)
 
 
 def load_model(bento_model: str | Tag | bentoml.Model) -> cb.CatBoost:
@@ -88,7 +66,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> cb.CatBoost:
         booster = bentoml.catboost.load_model("my_catboost_model")
     """  # noqa: LN001
     if not isinstance(bento_model, bentoml.Model):
-        bento_model = get(bento_model)
+        bento_model = bentoml.models.get(bento_model)
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
@@ -106,7 +84,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> cb.CatBoost:
 
 
 @attr.define
-class CatBoostOptions(ModelOptions):
+class ModelOptions(BaseModelOptions):
     training_class_name: str = attr.field(factory=str)
 
 
@@ -200,7 +178,7 @@ def save_model(
             name,
         )
 
-    options = CatBoostOptions(
+    options = ModelOptions(
         training_class_name=model.__class__.__name__,
     )
 
@@ -221,6 +199,7 @@ def save_model(
         return bento_model
 
 
+@deprecated("`get_runnable` is a legacy API, use `get_service` instead.")
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
@@ -281,3 +260,51 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         add_runnable_method(method_name, options)
 
     return CatBoostRunnable
+
+
+def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.Any]:
+    """
+    Get a BentoML service for the catboost model given by name.
+
+    Args:
+        model_name (``str``):
+            The name of the model to get the service for.
+        **config (``Unpack[ServiceConfig]``):
+            Configuration options for the service.
+    Returns:
+        A BentoML service instance that wraps the CatBoost model.
+    Example:
+
+    .. code-block:: python
+
+        import bentoml
+
+        service = bentoml.catboost.get_service("my_catboost_model")
+    """
+
+    @bentoml.service(**config)
+    class CatBoostService:
+        bento_model = bentoml.models.get(model_name)
+
+        def __init__(self) -> None:
+            self.model = load_model(self.bento_model)
+            self.predict_params = {"task_type": "CPU"}
+
+            # check for resources
+            available_gpus = os.getenv("CUDA_VISIBLE_DEVICES", "")
+            if available_gpus not in ("", "-1"):
+                self.predict_params["task_type"] = "GPU"
+            else:
+                nthreads = os.getenv("OMP_NUM_THREADS")
+                if nthreads is not None and nthreads != "":
+                    nthreads = max(int(nthreads), 1)
+                else:
+                    nthreads = -1
+                self.predict_params["thread_count"] = nthreads
+
+        @bentoml.api
+        def predict(self, input_data: np.ndarray) -> np.ndarray:
+            rv = self.model.predict(data=cb.Pool(input_data), **self.predict_params)
+            return np.asarray(rv)  # type: ignore (incomplete np types)
+
+    return CatBoostService

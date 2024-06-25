@@ -23,4 +23,4 @@ MLflow
 
 .. autofunction:: bentoml.mlflow.get
 
-.. autofunction:: bentoml.mlflow.get_mlflow_model
+.. autofunction:: bentoml.mlflow.get_service

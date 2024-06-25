@@ -5,7 +5,7 @@ CatBoost
 .. admonition:: About this page
 
    This is an API reference for CatBoost in BentoML. Please refer to
-   :ref:`CatBoost guides <frameworks/catboost:CatBoost>` for more information about how to use CatBoost
+   :ref:`CatBoost guides </reference/frameworks/catboost:CatBoost>` for more information about how to use CatBoost
    in BentoML.
 
 
@@ -16,3 +16,5 @@ CatBoost
 .. autofunction:: bentoml.catboost.load_model
 
 .. autofunction:: bentoml.catboost.get
+
+.. autofunction:: bentoml.catboost.get_service

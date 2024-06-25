@@ -18,29 +18,6 @@ class AuthRedirectHandler(BaseHTTPRequestHandler):
         # silence the log messages
         pass
 
-    # # noinspection PyPep8Naming
-    # def do_GET(self) -> None:
-    #     """
-    #     Provides callback page for the oauth2 redirect
-    #     """
-    #     try:
-    #         params = parse_qs(urlparse(self.path).query)
-
-    #         has_error = ("code" not in params
-    #                     or len(params['code']) != 1
-    #                     or params['code'][0].strip() == "")
-
-    #         if has_error:
-    #             self.send_response(400, "Something went wrong trying to authenticate you. Please try going back in your browser, or restart the auth process.")
-    #             self.end_headers()
-    #         else:
-    #             self.send_response(200, "You have been authenticated successfully. You may close this browser window now and go back to the terminal.")
-    #             self.end_headers()
-    #             self.server._code = params["code"][0]
-    #     except:
-    #         self.send_response(500)
-    #         self.end_headers()
-
     def end_headers(self):
         """Add necessary headers for CORS"""
         self.send_header("Access-Control-Allow-Origin", "*")

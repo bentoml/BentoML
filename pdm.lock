@@ -4,8 +4,8 @@
 [metadata]
 groups = ["default", "all", "testing", "io", "grpc-channelz", "tracing-otlp", "monitor-otlp", "io-image", "aws", "docs", "tracing-zipkin", "grpc-reflection", "grpc", "tracing", "tooling", "tracing-jaeger", "io-pandas", "triton", "opentelemetry-exporter-otlp-proto-grpc==1.20.0"]
 strategy = ["cross_platform", "inherit_metadata"]
-lock_version = "4.4.1"
-content_hash = "sha256:d6e24bb7677209e23f19066443802e4b31f0ef123697c8b93fe41163e8bd722e"
+lock_version = "4.4.2"
+content_hash = "sha256:8c1fed75c5c06e9dda0945cccfed148bffe81ae432b85a644c754457100ffa7d"
 
 [[package]]
 name = "aiohttp"

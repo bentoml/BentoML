@@ -4,6 +4,14 @@ set -exuo pipefail
 # Parent directory https://stackoverflow.com/a/246128/8643197
 BASEDIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )"
 
+pip_install() {
+    if command -v "uv" > /dev/null 2>&1; then
+        uv pip install "$@"
+    else
+        pip3 install "$@"
+    fi
+}
+
 PIP_ARGS=(<< pip_args >>)
 
 # BentoML by default generates two requirement files:
@@ -17,11 +25,11 @@ BENTOML_VERSION=${BENTOML_VERSION:-<< bentoml_version >>}
 pushd "$BASEDIR" &>/dev/null
 if [ -f "$REQUIREMENTS_LOCK" ]; then
     echo "Installing pip packages from 'requirements.lock.txt'.."
-    pip3 install "${PIP_ARGS[@]}" -r "$REQUIREMENTS_LOCK"
+    pip_install "${PIP_ARGS[@]}" -r "$REQUIREMENTS_LOCK"
 else
     if [ -f "$REQUIREMENTS_TXT" ]; then
         echo "Installing pip packages from 'requirements.txt'.."
-        pip3 install "${PIP_ARGS[@]}" -r "$REQUIREMENTS_TXT"
+        pip_install "${PIP_ARGS[@]}" -r "$REQUIREMENTS_TXT"
     fi
 fi
 popd &>/dev/null
@@ -33,7 +41,7 @@ wheels=($WHEELS_DIR/*.whl)
 {% raw %}
 if [ ${#wheels[@]} -gt 0 ]; then
     echo "Installing wheels packaged in Bento.."
-    pip3 install "${PIP_ARGS[@]}" "${wheels[@]}"
+    pip_install "${PIP_ARGS[@]}" "${wheels[@]}"
 fi
 {% endraw %}
 
@@ -44,5 +52,5 @@ if python3 -c "import bentoml" &> /dev/null; then
         echo "WARNING: using BentoML version ${existing_bentoml_version}"
     fi
 else
-    pip3 install bentoml=="$BENTOML_VERSION"
+    pip_install bentoml=="$BENTOML_VERSION"
 fi

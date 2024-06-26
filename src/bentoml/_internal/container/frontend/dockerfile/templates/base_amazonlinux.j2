@@ -13,8 +13,9 @@ USER root
     yum install -y python{{ __options__python_version.split(".") | join('') }} python{{ __options__python_version.split(".") | join('') }}-devel && \
     yum groupinstall -y "Development Tools"
 
-RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
-    python{{ __options__python_version }} get-pip.py
+ENV UV_SYSTEM_PYTHON=1
+RUN curl -LO https://astral.sh/uv/install.sh && \
+    sh install.sh && rm install.sh && mv $HOME/.cargo/bin/uv /usr/local/bin/
 {% if __options__system_packages is not none %}
 # Install user-defined system package
 {% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache("/var/cache/yum") }} {% endcall -%} set -eux && \

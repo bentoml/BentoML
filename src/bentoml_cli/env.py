@@ -165,6 +165,6 @@ def env_command(ctx: click.Context, output: t.Literal["md", "bash"]) -> None:  #
         info_dict["conda_packages"] = conda_packages
 
     # process info from `pip freeze`
-    pip_packages = run_cmd([sys.executable, "-m", "pip", "freeze"])
+    pip_packages = run_cmd([sys.executable, "-m", "uv", "pip", "freeze"])
     info_dict["pip_packages"] = pip_packages
     rich.print(pretty_format(info_dict, output=output))

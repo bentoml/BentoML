@@ -4,9 +4,13 @@
 
 # Install helpers
 {% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache("/var/cache/apk") }} {% endcall -%} set -eux && \
-    apk add --update bash gcc libc-dev shadow musl-dev build-base linux-headers g++
+    apk add --update bash gcc libc-dev shadow musl-dev build-base linux-headers g++ curl
 
 ENV ENV /root/.bashrc
+
+ENV UV_SYSTEM_PYTHON=1
+RUN curl -LO https://astral.sh/uv/install.sh && \
+    sh install.sh && rm install.sh && mv $HOME/.cargo/bin/uv /usr/local/bin/
 
 {% if __options__system_packages is not none %}
 # Install user-defined system package

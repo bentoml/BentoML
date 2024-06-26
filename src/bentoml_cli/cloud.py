@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import contextlib
-import json
 import typing as t
 import urllib.parse
 import webbrowser
-from os import environ
 
 import click
 import click_option_group as cog
+import rich
 from InquirerPy import inquirer
+from rich.prompt import Confirm
 
 from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.cloud.config import CloudClientConfig
@@ -39,14 +39,18 @@ def cloud_command():
 @cog.optgroup.option(
     "--endpoint",
     type=click.STRING,
-    help="BentoCloud or Yatai endpoint, default as https://cloud.bentoml.com",
-    default=environ.get("BENTO_CLOUD_API_ENDPOINT", "https://cloud.bentoml.com"),
+    help="BentoCloud or Yatai endpoint",
+    default="https://cloud.bentoml.com",
+    envvar="BENTO_CLOUD_API_ENDPOINT",
+    show_default=True,
+    show_envvar=True,
 )
 @cog.optgroup.option(
     "--api-token",
     type=click.STRING,
     help="BentoCloud or Yatai user API token",
-    default=environ.get("BENTO_CLOUD_API_KEY"),
+    envvar="BENTO_CLOUD_API_KEY",
+    show_envvar=True,
 )
 @click.pass_obj
 def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
@@ -72,12 +76,11 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
             baseURL = f"{endpoint}/api_tokens"
             encodedCallback = urllib.parse.quote(callback_server.callback_url)
             authURL = f"{baseURL}?callback={encodedCallback}"
-            authURL_display = click.style(authURL, fg="blue", underline=True)
-            input(f"Press Enter to open {authURL_display} in your browser...")
+            Confirm.ask(f"Press Enter to open [blue]{authURL}[/] in your browser...")
             if webbrowser.open_new_tab(authURL):
-                click.echo(f"✅ Opened {authURL_display} in your web browser.")
+                rich.print(f"✅ Opened [blue]{authURL}[/] in your web browser.")
             else:
-                click.echo(
+                rich.print(
                     f"🚨 Failed to open browser. Try create a new API token at {baseURL}"
                 )
             try:
@@ -88,7 +91,7 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
                     )
                 api_token = code
             except Exception:
-                click.echo("🚨 Error accquiring token from web browser")
+                rich.print("🚨 Error accquiring token from web browser")
                 return
         elif choice == "paste":
             api_token = click.prompt(
@@ -116,30 +119,27 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
         )
 
         add_context(ctx)
-        click.echo(
+        rich.print(
             f"✅ Configured BentoCloud credentials (current-context: {ctx.name})"
         )
         email = click.style(user.email, fg="green")
         org_name = click.style(org.name, fg="green")
-        click.echo(f"✅ Logged in as {email} at {org_name} organization")
+        rich.print(f"✅ Logged in as {email} at {org_name} organization")
     except CloudRESTApiClientError as e:
         if e.error_code == 401:
-            click.echo(
+            rich.print(
                 f"🚨 Error validating token: HTTP 401: Bad credentials ({endpoint}/api-token)"
             )
         else:
-            click.echo(f"✗ Error validating token: HTTP {e.error_code}")
+            rich.print(f"✗ Error validating token: HTTP {e.error_code}")
 
 
 @cloud_command.command()
 def current_context() -> None:  # type: ignore (not accessed)
     """Get current cloud context."""
-    click.echo(
-        json.dumps(
-            bentoml_cattr.unstructure(
-                CloudClientConfig.get_config().get_current_context()
-            ),
-            indent=2,
+    rich.print_json(
+        data=bentoml_cattr.unstructure(
+            CloudClientConfig.get_config().get_current_context()
         )
     )
 
@@ -148,11 +148,7 @@ def current_context() -> None:  # type: ignore (not accessed)
 def list_context() -> None:  # type: ignore (not accessed)
     """List all available context."""
     config = CloudClientConfig.get_config()
-    click.echo(
-        json.dumps(
-            bentoml_cattr.unstructure([i.name for i in config.contexts]), indent=2
-        )
-    )
+    rich.print_json(data=bentoml_cattr.unstructure([i.name for i in config.contexts]))
 
 
 @cloud_command.command()
@@ -160,4 +156,4 @@ def list_context() -> None:  # type: ignore (not accessed)
 def update_current_context(context_name: str) -> None:  # type: ignore (not accessed)
     """Update current context"""
     ctx = CloudClientConfig.get_config().set_current_context(context_name)
-    click.echo(f"Successfully switched to context: {ctx.name}")
+    rich.print(f"Successfully switched to context: {ctx.name}")

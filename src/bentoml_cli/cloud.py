@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import sys
 import typing as t
 import urllib.parse
 import webbrowser
@@ -14,8 +15,6 @@ from rich.prompt import Confirm
 from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.cloud.config import CloudClientConfig
 from bentoml._internal.cloud.config import CloudClientContext
-from bentoml._internal.cloud.config import add_context
-from bentoml._internal.cloud.config import default_context_name
 from bentoml._internal.utils import bentoml_cattr
 from bentoml._internal.utils import reserve_free_port
 from bentoml.exceptions import CLIException
@@ -110,16 +109,18 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
         if org is None:
             raise CLIException("current organization is not found")
 
+        current_context_name = CloudClientConfig.get_config().current_context_name
+
         ctx = CloudClientContext(
             name=shared_options.cloud_context
             if shared_options.cloud_context is not None
-            else default_context_name,
+            else current_context_name,
             endpoint=endpoint,
             api_token=api_token,
             email=user.email,
         )
 
-        add_context(ctx)
+        ctx.save()
         rich.print(
             f"✅ Configured BentoCloud credentials (current-context: {ctx.name})"
         )
@@ -129,19 +130,20 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
     except CloudRESTApiClientError as e:
         if e.error_code == 401:
             rich.print(
-                f"🚨 Error validating token: HTTP 401: Bad credentials ({endpoint}/api-token)"
+                f"🚨 Error validating token: HTTP 401: Bad credentials ({endpoint}/api-token)",
+                file=sys.stderr,
             )
         else:
-            rich.print(f"✗ Error validating token: HTTP {e.error_code}")
+            rich.print(
+                f"🚨 Error validating token: HTTP {e.error_code}", file=sys.stderr
+            )
 
 
 @cloud_command.command()
 def current_context() -> None:  # type: ignore (not accessed)
     """Get current cloud context."""
     rich.print_json(
-        data=bentoml_cattr.unstructure(
-            CloudClientConfig.get_config().get_current_context()
-        )
+        data=bentoml_cattr.unstructure(CloudClientConfig.get_config().get_context())
     )
 
 

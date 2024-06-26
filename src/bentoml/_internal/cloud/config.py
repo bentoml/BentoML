@@ -41,8 +41,22 @@ class CloudClientContext:
                     "Unable to get current user from yatai server"
                 )
             self.email = user.email
-            add_context(self, ignore_warning=True)
+            self.save(ignore_warning=True)
         return self.email
+
+    def save(self, *, ignore_warning: bool = False) -> None:
+        config = CloudClientConfig.get_config()
+        for idx, ctx in enumerate(config.contexts):
+            if ctx.name == self.name:
+                if not ignore_warning:
+                    logger.warning(
+                        "Overriding existing cloud context config: %s", ctx.name
+                    )
+                config.contexts[idx] = self
+                break
+        else:
+            config.contexts.append(self)
+        config.to_yaml_file()
 
 
 @attr.define
@@ -50,7 +64,7 @@ class CloudClientConfig:
     contexts: t.List[CloudClientContext] = attr.field(factory=list)
     current_context_name: str = attr.field(default=default_context_name)
 
-    def get_context(self, context: t.Optional[str]) -> CloudClientContext:
+    def get_context(self, context: t.Optional[str] = None) -> CloudClientContext:
         from os import environ
 
         if "BENTO_CLOUD_API_KEY" in environ and "BENTO_CLOUD_API_ENDPOINT" in environ:
@@ -59,6 +73,8 @@ class CloudClientConfig:
                 endpoint=environ["BENTO_CLOUD_API_ENDPOINT"],
                 api_token=environ["BENTO_CLOUD_API_KEY"],
             )
+        if context is None:
+            context = self.current_context_name
         for ctx in self.contexts:
             if ctx.name == context:
                 return ctx
@@ -76,9 +92,6 @@ class CloudClientConfig:
         new_config = attr.evolve(self, current_context_name=new_context.name)
         new_config.to_yaml_file()
         return new_context
-
-    def get_current_context(self) -> CloudClientContext:
-        return self.get_context(self.current_context_name)
 
     @inject
     def to_yaml_file(
@@ -116,24 +129,7 @@ class CloudClientConfig:
             return bentoml_cattr.structure(yaml_content, cls)
 
 
-def add_context(context: CloudClientContext, *, ignore_warning: bool = False) -> None:
-    config = CloudClientConfig.get_config()
-    for idx, ctx in enumerate(config.contexts):
-        if ctx.name == context.name:
-            if not ignore_warning:
-                logger.warning("Overriding existing cloud context config: %s", ctx.name)
-            config.contexts[idx] = context
-            break
-    else:
-        config.contexts.append(context)
-    config.to_yaml_file()
-
-
-def get_context(context: str | None) -> CloudClientContext:
-    return CloudClientConfig.get_config().get_context(context)
-
-
 def get_rest_api_client(context: str | None = None) -> RestApiClient:
     cfg = CloudClientConfig.get_config()
-    ctx = cfg.get_context(context) if context else cfg.get_current_context()
+    ctx = cfg.get_context(context)
     return ctx.get_rest_api_client()

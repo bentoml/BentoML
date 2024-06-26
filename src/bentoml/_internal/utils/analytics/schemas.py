@@ -82,7 +82,7 @@ def get_yatai_user_email(
     cloud_config: Path = Provide[BentoMLContainer.cloud_config],
 ) -> str | None:
     if cloud_config.exists():
-        return CloudClientConfig.get_config(cloud_config).get_current_context().email
+        return CloudClientConfig.get_config(cloud_config).get_context().email
 
 
 @lru_cache(maxsize=1)

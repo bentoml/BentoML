@@ -86,5 +86,6 @@ class AuthCallbackHttpServer(HTTPServer):
         """
         Wait indefinitely for ther server to callback from token provider.
         """
-        self.handle_request()
+        while self._code is None:
+            self.handle_request()
         return self.get_code()

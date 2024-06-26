@@ -1,4 +1,5 @@
 import os
+import sys
 
 import nox
 
@@ -44,7 +45,8 @@ FRAMEWORK_DEPENDENCIES = {
 
 @nox.session(python=PYTHON_VERSIONS, name="unit")
 def run_unittest(session: nox.Session):
-    session.run("pdm", "sync", "-G", "grpc,io,testing", external=True)
+    args = ("-v",) if sys.platform == "win32" else ()
+    session.run("pdm", "sync", *args, "-G", "grpc,io,testing", external=True)
     session.run(*TEST_ARGS, "-n", "auto", "tests/unit")
 
 

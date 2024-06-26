@@ -73,6 +73,7 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
                     reserve_free_port(enable_so_reuseport=True)
                 )
             callback_server = AuthCallbackHttpServer(port)
+            endpoint = endpoint.rstrip("/")
             baseURL = f"{endpoint}/api_tokens"
             encodedCallback = urllib.parse.quote(callback_server.callback_url)
             authURL = f"{baseURL}?callback={encodedCallback}"
@@ -122,9 +123,9 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
         rich.print(
             f"✅ Configured BentoCloud credentials (current-context: {ctx.name})"
         )
-        email = click.style(user.email, fg="green")
-        org_name = click.style(org.name, fg="green")
-        rich.print(f"✅ Logged in as {email} at {org_name} organization")
+        rich.print(
+            f"✅ Logged in as [blue]{user.email}[/] at [blue]{org.name}[/] organization"
+        )
     except CloudRESTApiClientError as e:
         if e.error_code == 401:
             rich.print(

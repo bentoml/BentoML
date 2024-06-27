@@ -284,6 +284,7 @@ class SyncHTTPClient(SyncClient):
                             meth_spec["x-bentoml-name"],
                             e,
                         )
+                        raise
 
         return cls(dummy_service, server_url)
 

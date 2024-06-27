@@ -312,8 +312,9 @@ class BentoMLCommandGroup(click.Group):
 
         command_name = name or func.__name__
 
-        @click.pass_context
-        def wrapper(ctx: Context, *args: P.args, **kwargs: P.kwargs) -> t.Any:
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+            ctx = click.get_current_context()
             options = ctx.ensure_object(SharedOptions)
             if options.do_not_track:
                 os.environ[BENTOML_DO_NOT_TRACK] = str(True)
@@ -403,8 +404,9 @@ class BentoMLCommandGroup(click.Group):
 
     def add_command(self, cmd: Command, name: str | None = None) -> None:
         assert cmd.callback is not None
+        callback = cmd.callback
         callback = BentoMLCommandGroup.bentoml_track_usage(
-            cmd.callback, self, name=cmd.name
+            callback, self, name=cmd.name
         )
         callback = BentoMLCommandGroup.raise_click_exception(
             callback, self, name=cmd.name

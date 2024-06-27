@@ -130,7 +130,7 @@ class AsyncHTTPClient(AsyncClient):
                         dummy_service.apis[meth_spec["x-bentoml-name"]] = api
                     except BentoMLException as e:
                         logger.error(
-                            "Failed to instantiate client for API %s: ",
+                            "Failed to instantiate client for API %s: %s",
                             meth_spec["x-bentoml-name"],
                             e,
                         )
@@ -280,7 +280,7 @@ class SyncHTTPClient(SyncClient):
                         dummy_service.apis[meth_spec["x-bentoml-name"]] = api
                     except BentoMLException as e:
                         logger.error(
-                            "Failed to instantiate client for API %s: ",
+                            "Failed to instantiate client for API %s: %s",
                             meth_spec["x-bentoml-name"],
                             e,
                         )

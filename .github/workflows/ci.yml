@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.11']
+        python-version: [3.8, 3.11, 3.12]
     name: unit-tests (python${{ matrix.python-version }}.${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     steps:
@@ -104,7 +104,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.11']
+        python-version: [3.8, 3.11, 3.12]
     name: monitoring-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -142,7 +142,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.8', '3.11']
+        python-version: [3.8, 3.11, 3.12]
         suite: ['bento_server_http', 'bento_new_sdk']
     name: ${{ matrix.suite }}-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})
     runs-on: ${{ matrix.os }}

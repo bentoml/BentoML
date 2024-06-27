@@ -18,6 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries",
@@ -167,7 +168,7 @@ docs = [
     "sphinx-autobuild",
     "sphinx-hoverxref",
     "pyspark",
-    "ray[serve]",
+    "ray[serve]; python_version < \"3.12\"",
 ]
 tooling = ["pre-commit", "setuptools-scm", "pandas-stubs", "nox"]
 testing = [
@@ -182,7 +183,6 @@ testing = [
     "pytest==7.4.0",
     "pytest-xdist[psutil]==3.3.1",
     "pytest-asyncio==0.21.1",
-    "Pillow<10",
 ]
 
 [tool.coverage.paths]

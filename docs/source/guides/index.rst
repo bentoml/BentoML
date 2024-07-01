@@ -69,12 +69,6 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Create distributed Services for advanced use cases.
 
-    .. grid-item-card:: :doc:`/guides/concurrency`
-        :link: /guides/concurrency
-        :link-type: doc
-
-        Set concurrency to enable your Service to handle multiple requests simultaneously.
-
     .. grid-item-card:: :doc:`/guides/testing`
         :link: /guides/testing
         :link-type: doc
@@ -136,7 +130,6 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     gpu-inference
     model-composition
     distributed-services
-    concurrency
     testing
     clients
     adaptive-batching

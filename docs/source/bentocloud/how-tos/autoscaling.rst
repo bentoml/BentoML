@@ -47,7 +47,7 @@ Use the ``@bentoml.service`` decorator to set concurrency:
 
 Setting this parameter means the Service will be automatically scaled on BentoCloud when the concurrent requests per replica exceeds the specified concurrency threshold.
 
-For instance, consider a scenario where ``concurrency`` is set to 32 and the Service is currently operating with 2 replicas. If the Service receives 100 concurrent requests, BentoCloud will automatically scale up to 4 replicas to effectively manage the increased traffic. Conversely, if the number of concurrent requests decreases to below 32, BentoCloud will intelligently scale down to 1 replica to optimize resource utilization.
+For instance, consider a scenario where ``concurrency`` is set to 32 and the Service is currently operating with 2 replicas; in this case, the Service will not scale up until it handles over 64 requests simultaneously. For example, if the Service receives 100 concurrent requests, BentoCloud will automatically scale up to 4 replicas to effectively manage the increased traffic. Conversely, if the number of concurrent requests decreases to below 32, BentoCloud will intelligently scale down to 1 replica to optimize resource utilization.
 
 In general, the autoscaler will scale the number of replicas based on the following formula, permitted by the ``min_replicas`` and ``max_replicas`` settings in the deployment:
 

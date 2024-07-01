@@ -64,7 +64,7 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
         equivalent is not None and len(equivalent) == 2
     ), "'equivalent' must be a tuple of (new_option, usage)"
 
-    prepend_msg = "(Equivalent to ``--%s %s``):" % (*equivalent,)
+    prepend_msg = "(Equivalent to ``--%s %s``):" % equivalent
 
     def obsolete_callback(ctx: Context, param: Parameter, value: ClickParamType):
         # NOTE: We want to transform memoized options to tuple[str] | bool | None
@@ -152,7 +152,6 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
 
 def compatible_options_group(f: F[t.Any]):
     import click
-    from click_option_group import optgroup
 
     optgroup_option = partial(compatible_option, factory=optgroup)
 
@@ -273,7 +272,6 @@ def compatible_options_group(f: F[t.Any]):
 
 def buildx_options_group(f: F[t.Any]):
     import click
-    from click_option_group import optgroup
 
     optgroup_option = partial(compatible_option, factory=optgroup)
 

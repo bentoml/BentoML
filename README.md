@@ -153,7 +153,7 @@ Check out the [examples](./examples/) folder for more sample code and usage.
 - [Adaptive batching](https://docs.bentoml.com/en/latest/guides/adaptive-batching.html)
 - [GPU inference](https://docs.bentoml.com/en/latest/guides/gpu-inference.html)
 - [Distributed serving systems](https://docs.bentoml.com/en/latest/guides/distributed-services.html)
-- [Concurrency](https://docs.bentoml.com/en/latest/guides/concurrency.html) and [autoscaling](https://docs.bentoml.com/en/latest/bentocloud/how-tos/autoscaling.html)
+- [Concurrency and autoscaling](https://docs.bentoml.com/en/latest/bentocloud/how-tos/autoscaling.html)
 - [Model packaging and Model Store](https://docs.bentoml.com/en/latest/guides/model-store.html)
 - [Observability](https://docs.bentoml.com/en/latest/guides/observability/index.html)
 - [BentoCloud deployment](https://docs.bentoml.com/en/latest/guides/deployment.html)

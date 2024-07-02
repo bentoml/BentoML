@@ -61,7 +61,8 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
         email=user.email,
     )
 
-    add_context(ctx)
+    new_config = add_context(ctx)
+    _ = new_config.set_current_context(ctx.name)
     click.echo(f"Successfully logged in to Cloud for {user.name} in {org.name}")
 
 

@@ -46,8 +46,8 @@ Featured use cases
 
         Deploy a speech recognition application.
 
-    .. grid-item-card:: :doc:`/use-cases/blip`
-        :link: /use-cases/blip
+    .. grid-item-card:: :doc:`/use-cases/multimodality/blip`
+        :link: /use-cases/multimodality/blip
         :link-type: doc
 
         Deploy an image captioning application.

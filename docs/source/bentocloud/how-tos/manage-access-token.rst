@@ -36,28 +36,43 @@ To create an API token, perform the following steps:
 Log in to BentoCloud using the BentoML CLI
 ==========================================
 
-After you create an token with Developer Operations Access, you can interact with BentoCloud programmatically via the BentoML Command Line
-Interface (CLI). Log in using the following command.
+CLI login requires an API token with Developer Operations Access.
 
-.. code-block:: bash
+1. Run the ``bentoml cloud login`` command.
 
-   bentoml cloud login --api-token <your-api-token> --endpoint <your-bentocloud-endpoint>
+   .. code-block:: bash
 
-.. note::
+      bentoml cloud login
 
-   The above command is displayed automatically after you create a token.
+2. Follow the on-screen instructions to log in.
 
-Expected output:
+   .. code-block:: bash
 
-.. code-block:: bash
+      ? How would you like to authenticate BentoML CLI? [Use arrows to move]
+      > Create a new API token with a web browser
+        Paste an existing API token
 
-   Successfully logged in as user "user" in organization "mybentocloud".
+3. Alternatively, you can log in by setting the ``api-token`` parameter if you already have an available token.
 
-To retrieve the current endpoint and API token locally, make sure you have installed ``jq``, and then run:
+   .. code-block:: bash
 
-.. code-block:: bash
+      bentoml cloud login --api-token <your-api-token>
 
-   bentoml cloud current-context | jq '("endpoint:" + .endpoint + ", api_token:" + .api_token)'
+   .. note::
+
+      The above command is displayed automatically after you create a token.
+
+   Expected output:
+
+   .. code-block:: bash
+
+      Successfully logged in as user "user" in organization "mybentocloud".
+
+4. To retrieve the current endpoint and API token locally, make sure you have installed ``jq``, and then run:
+
+   .. code-block:: bash
+
+      bentoml cloud current-context | jq '("endpoint:" + .endpoint + ", api_token:" + .api_token)'
 
 After you log in, you should be able to manage BentoCloud resources. For more information on the CLI, see :doc:`Reference - CLI </reference/cli>`.
 

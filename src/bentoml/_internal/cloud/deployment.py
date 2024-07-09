@@ -73,17 +73,19 @@ class DeploymentConfigParameters:
     def verify(
         self,
     ):
-        deploy_by_param = (
-            self.name
-            or self.bento
-            or self.cluster
-            or self.access_authorization
-            or self.scaling_min
-            or self.scaling_max
-            or self.instance_type
-            or self.strategy
-            or self.envs
-            or self.extras
+        deploy_by_param = any(
+            param is not None and not "" and len(param) > 0
+            for param in [
+                self.name,
+                self.cluster,
+                self.access_authorization,
+                self.scaling_min,
+                self.scaling_max,
+                self.instance_type,
+                self.strategy,
+                self.envs,
+                self.extras,
+            ]
         )
 
         if (
@@ -151,6 +153,11 @@ class DeploymentConfigParameters:
 
         if self.cfg_dict is None:
             self.cfg_dict = {}
+
+        # This is a special case to allow
+        # bentoml deploy . -f config.yaml to work
+        if self.bento is not None:
+            self.cfg_dict["bento"] = self.bento
 
         bento_name = self.cfg_dict.get("bento")
         # determine if bento is a path or a name

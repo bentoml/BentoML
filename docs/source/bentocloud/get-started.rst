@@ -12,16 +12,20 @@ Specifically, BentoCloud features:
 - Flexible APIs for continuous integration and deployments (CI/CD).
 - Built-in observability tools for monitoring model performance and troubleshooting.
 
-Access BentoCloud
------------------
+Log in to BentoCloud
+--------------------
 
-To gain access to BentoCloud, visit the `BentoML website <https://www.bentoml.com/>`_ to sign up.
+1. Visit the `BentoML website <https://www.bentoml.com/>`_ to sign up.
+2. After your BentoCloud account is approved, install BentoML by running ``pip install bentoml``. See :doc:`/get-started/installation` for details.
+3. Log in to BentoCloud with the ``bentoml cloud login`` command. Follow the on-screen instructions to create a new API token.
 
-Once you have your BentoCloud account, do the following to get started:
+   .. code-block:: bash
 
-1. Install BentoML by running ``pip install bentoml``. See :doc:`/get-started/installation` for details.
-2. Create an :doc:`API token with Developer Operations Access </bentocloud/how-tos/manage-access-token>`.
-3. Log in to BentoCloud with the ``bentoml cloud login`` command, which will be displayed on the BentoCloud console after you create the API token.
+      $ bentoml cloud login
+
+      ? How would you like to authenticate BentoML CLI? [Use arrows to move]
+      > Create a new API token with a web browser
+        Paste an existing API token
 
 Deploy your first model
 -----------------------

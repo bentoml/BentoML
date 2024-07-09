@@ -86,20 +86,20 @@ To specify the number of workers (for example, ``3``) within a Service:
 ``traffic`` in BentoML allows you to manage how requests are handled by your Service. It includes settings for managing request concurrency and ensuring timely responses, which are helpful for optimizing the Service's responsiveness and load management. The following fields are available:
 
 - ``timeout``: Determines the maximum time the Service will wait for a response to be sent back to the client. The default timeout is set to 60 seconds.
-- ``concurrency``: Represents the ideal number of simultaneous requests a Service is designed to handle. Concurrency helps optimize resource utilization and influences how BentoCloud autoscales your Service. By default, concurrency is set to allow infinite requests to avoid system bottlenecks.
 - ``max_concurrency``: Specifies the hard limit on the number of requests that can be processed simultaneously by a single Service instance. It helps you control the load and prevent the Service from being overwhelmed by too many simultaneous requests.
-- ``external_queue``: A BentoCloud-specific field. When deploying a Service on BentoCloud with this field enabled, an external request queue is used to manage incoming traffic more effectively. This is done by queuing excess requests until they can be processed within the defined concurrency limits.
+- ``concurrency``: A BentoCloud-specific field that represents the ideal number of simultaneous requests a Service is designed to handle. Concurrency helps optimize resource utilization and influences how BentoCloud autoscales your Service. By default, concurrency is set to allow infinite requests to avoid system bottlenecks. For detailed information, see :doc:`/bentocloud/how-tos/autoscaling`.
+- ``external_queue``: A BentoCloud-specific field. When deploying a Service on BentoCloud with this field enabled, an external request queue is used to manage incoming traffic more effectively. This is done by queuing excess requests until they can be processed within the defined ``concurrency`` limits.
 
-For detailed information, see :doc:`/guides/concurrency`. Here is an example of configuring these settings in your Service definition:
+Here is an example of configuring these settings in your Service definition:
 
 .. code-block:: python
 
     @bentoml.service(
         traffic={
             "timeout": 120,
-            "concurrency": 10,
             "max_concurrency": 50,
-            "external_queue": True,
+            "concurrency": 32, # BentoCloud only
+            "external_queue": True, # BentoCloud only
         }
     )
     class MyService:
@@ -181,7 +181,7 @@ Here is an example:
 ``logging``
 ^^^^^^^^^^^
 
-Customize access logging, including the content type and length of requests and responses, and trace ID formats.
+Customize server-side logging, including the content type and length of requests and responses, and trace ID formats.
 
 Here is an example:
 
@@ -202,6 +202,8 @@ Here is an example:
     })
     class MyService:
         # Service implementation
+
+For more information, see :doc:`/guides/observability/logging`.
 
 ``ssl``
 ^^^^^^^
@@ -264,7 +266,9 @@ By customizing the ``http`` configuration, you can fine-tune how your BentoML Se
 ``monitoring``
 ^^^^^^^^^^^^^^
 
-``monitoring`` allows you to collect logs and keep track of the performance and health of a Service for maintaining its reliability and efficiency. By default, BentoML provides a built-in monitoring mechanism, while you can customize it by setting a configuration file in YAML. For more information, see :doc:`/guides/observability/monitoring-and-data-collection`.
+``monitoring`` allows you to collect logs and keep track of the performance and health of a Service for maintaining its reliability and efficiency. By default, BentoML provides a built-in monitoring mechanism, while you can customize it by setting a configuration file in YAML.
+
+Here is an example:
 
 .. code-block:: python
 
@@ -279,9 +283,36 @@ By customizing the ``http`` configuration, you can fine-tune how your BentoML Se
     class MyService:
         # Service implementation
 
+For more information, see :doc:`/guides/observability/monitoring-and-data-collection`.
+
 ``tracing``
 ^^^^^^^^^^^
 
-You can configure tracing with different exporters like Zipkin, Jaeger, and OTLP and their specific settings.
+You can configure tracing with different exporters like Zipkin, Jaeger, and OTLP. The specific configurations may vary depending on the exporter type defined.
+
+Here is an example:
+
+.. code-block:: python
+
+    import bentoml
+
+    @bentoml.service(
+        resources={"cpu": "2"},
+        traffic={"timeout": 10},
+        tracing={
+            # Common configurations
+            "exporter_type": "jaeger",
+            "sample_rate": 1.0,
+            "timeout": 5,
+            "max_tag_value_length": 256,
+            "excluded_urls": "readyz",
+            "jaeger": {
+                # Specific configurations of the exporter
+        }
+    )
+    class MyService:
+       # Service implementation code
+
+For more information, see :doc:`/guides/observability/tracing`.
 
 For full schema of the configurations, see `this file <https://github.com/bentoml/BentoML/blob/1.2/src/bentoml/_internal/configuration/v2/default_configuration.yaml>`_.

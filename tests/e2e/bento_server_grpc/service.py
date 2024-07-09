@@ -4,6 +4,7 @@ import time
 import typing as t
 from typing import TYPE_CHECKING
 
+import prometheus_client
 from context_server_interceptor import AsyncContextInterceptor
 from pydantic import BaseModel
 
@@ -171,7 +172,7 @@ async def echo_image(f: PIL.Image.Image) -> NDArray[t.Any]:
     return np.array(f)
 
 
-histogram = bentoml.metrics.Histogram(
+histogram = prometheus_client.Histogram(
     name="inference_latency",
     documentation="Inference latency in seconds",
     labelnames=["model_name", "model_version"],
@@ -199,9 +200,12 @@ async def predict_multi_images(original: Image, compared: Image):
 
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
 def ensure_metrics_are_registered(_: str) -> None:
+    from prometheus_client import generate_latest
+    from prometheus_client.parser import text_string_to_metric_families
+
     histograms = [
         m.name
-        for m in bentoml.metrics.text_string_to_metric_families()
+        for m in text_string_to_metric_families(generate_latest().decode())
         if m.type == "histogram"
     ]
     assert "inference_latency" in histograms

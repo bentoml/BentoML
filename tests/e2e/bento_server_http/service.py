@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
+import prometheus_client
 import pydantic
 from fastapi import FastAPI
 from PIL.Image import Image as PILImage
@@ -59,7 +60,7 @@ svc = bentoml.Service(
 TEST_DIR = os.getenv("BENTOML_TEST_DATA")
 
 
-metric_test = bentoml.metrics.Counter(
+metric_test = prometheus_client.Counter(
     name="test_metrics", documentation="Counter test metric"
 )
 
@@ -78,9 +79,12 @@ async def echo_delay(data: dict[str, t.Any]) -> JSONSerializable:
 
 @svc.api(input=bentoml.io.Text(), output=bentoml.io.Text())
 def ensure_metrics_are_registered(data: str) -> str:  # pylint: disable=unused-argument
+    from prometheus_client import generate_latest
+    from prometheus_client.parser import text_string_to_metric_families
+
     counters = [
         m.name
-        for m in bentoml.metrics.text_string_to_metric_families()
+        for m in text_string_to_metric_families(generate_latest().decode())
         if m.type == "counter"
     ]
     assert "test_metrics" in counters

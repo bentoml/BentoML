@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -68,7 +69,9 @@ def main(fd: int, backlog: int, prometheus_dir: str | None):
     metrics_client = BentoMLContainer.metrics_client.get()
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = (
+        BentoMLContainer.prometheus_multiproc_dir.get()
+    )
     # create a ASGI app that wraps around the default HTTP prometheus server.
     prom_app = Starlette(
         debug=get_debug_mode(), middleware=[Middleware(GenerateLatestMiddleware)]

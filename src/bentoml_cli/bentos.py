@@ -349,6 +349,14 @@ def bento_management_commands() -> click.Group:
         help="Bento version. By default the version will be generated.",
     )
     @click.option(
+        "--label",
+        "labels",
+        type=click.STRING,
+        multiple=True,
+        help="(multiple)Bento labels",
+        metavar="KEY=VALUE",
+    )
+    @click.option(
         "-o",
         "--output",
         type=click.Choice(["tag", "default"]),
@@ -382,6 +390,7 @@ def bento_management_commands() -> click.Group:
         build_ctx: str,
         bentofile: str,
         version: str,
+        labels: tuple[str, ...],
         output: t.Literal["tag", "default"],
         push: bool,
         force: bool,
@@ -405,6 +414,12 @@ def bento_management_commands() -> click.Group:
 
         with open(bentofile, "r", encoding="utf-8") as f:
             build_config = BentoBuildConfig.from_yaml(f)
+
+        for label in labels:
+            key, label_value = label.split("=", 1)
+            if build_config.labels is None:
+                build_config.labels = {}
+            build_config.labels[key] = label_value
 
         bento = Bento.create(
             build_config=build_config,

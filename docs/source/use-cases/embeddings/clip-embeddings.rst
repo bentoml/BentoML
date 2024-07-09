@@ -1,6 +1,6 @@
-===============
-CLIP embeddings
-===============
+====
+CLIP
+====
 
 CLIP (Contrastive Language-Image Pre-training) is a machine learning model developed by OpenAI. It is versatile and excels in tasks like zero-shot learning, image classification, and image-text matching without needing specific training for each task. This makes it ideal for a wide range of applications, including content recommendation, image captioning, visual search, and automated content moderation.
 

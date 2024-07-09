@@ -33,11 +33,17 @@ This section provides a variety of example projects for you to learn how BentoML
 
         Deploy audio applications with BentoML.
 
-    .. grid-item-card:: :doc:`/use-cases/blip`
-        :link: /use-cases/blip
+    .. grid-item-card:: :doc:`/use-cases/multimodality/index`
+        :link: /use-cases/multimodality/index
         :link-type: doc
 
-        Deploy a BLIP (Bootstrapping Language Image Pre-training) application with BentoML.
+        Deploy multimodal applications with BentoML.
+
+    .. grid-item-card:: :doc:`/use-cases/custom-models/index`
+        :link: /use-cases/custom-models/index
+        :link-type: doc
+
+        Deploy custom models with BentoML.
 
 .. toctree::
     :maxdepth: 1
@@ -48,4 +54,5 @@ This section provides a variety of example projects for you to learn how BentoML
     diffusion-models/index
     embeddings/index
     audio/index
-    blip
+    multimodality/index
+    custom-models/index

@@ -106,7 +106,9 @@ def main(
 
     if prometheus_dir is not None:
         BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = (
+        BentoMLContainer.prometheus_multiproc_dir.get()
+    )
     if no_access_log:
         access_log_config = BentoMLContainer.runners_config.logging.access
         access_log_config.enabled.set(False)

@@ -13,6 +13,8 @@ The directory contains a collection of example projects demonstrating
 | [model-loading-saving](./model-loading-saving/) | Stable Diffusion | Model Store |
 | [monitoring/task_classification](./monitoring/task_classification/) | Classification | Model Monitoring, Classification Tasks |
 | [sk-learn](./sk-learn/) | Classification | Classification |
+| [mlflow](./mlflow/) | Classification | Classification |
+| [xgboost](./xgboost/) | Classification | Classification |
 
 ## More examples
 

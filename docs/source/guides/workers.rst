@@ -19,7 +19,7 @@ When you define a BentoML Service, use the ``workers`` parameter to set the numb
     class MyService:
         # Service implementation
 
-The number of workers isn't necessarily equivalent to the number of concurrent requests a BentoML Service can serve in parallel. With optimizations like :doc:`adaptable batching </guides/adaptive-batching>` and continuous batching, each worker can potentially handle many requests simultaneously to enhance the throughput of your Service. To specify the ideal number of concurrent requests for a Service (namely, all workers within the Service), you can configure :doc:`concurrency </guides/concurrency>`.
+The number of workers isn't necessarily equivalent to the number of concurrent requests a BentoML Service can serve in parallel. With optimizations like :doc:`adaptable batching </guides/adaptive-batching>` and continuous batching, each worker can potentially handle many requests simultaneously to enhance the throughput of your Service. To specify the ideal number of concurrent requests for a Service (namely, all workers within the Service), you can configure :doc:`concurrency </bentocloud/how-tos/autoscaling>`.
 
 Use cases
 ---------

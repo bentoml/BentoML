@@ -164,7 +164,7 @@ For synchronous logic, BentoML creates a pool of workers of optimal size to hand
 
         @bentoml.api
         def classify(self, input_series: np.ndarray) -> np.ndarray:
-            return this.model.predict(input_series)
+            return self.model.predict(input_series)
 
 However, for scenarios where you want to maximize performance and throughput, synchronous APIs may not suffice. Asynchronous APIs are ideal when the processing logic is IO-bound and async model execution is supported. Here is an example:
 
@@ -183,12 +183,12 @@ However, for scenarios where you want to maximize performance and throughput, sy
     class VLLMService:
         def __init__(self) -> None:
             self.engine = AsyncLLMEngine.from_engine_args(ENGINE_ARGS)
-            this.request_id = 0
+            self.request_id = 0
 
         @bentoml.api
         async def generate(self, prompt: str = "Explain superconductors like I'm five years old", tokens: Optional[List[int]] = None) -> AsyncGenerator[str, None]:
-            stream = await this.engine.add_request(this.request_id, prompt, SAMPLING_PARAM, prompt_token_ids=tokens)
-            this.request_id += 1
+            stream = await self.engine.add_request(self.request_id, prompt, SAMPLING_PARAM, prompt_token_ids=tokens)
+            self.request_id += 1
             async for request_output in stream:
                 yield request_output.outputs[0].text
 

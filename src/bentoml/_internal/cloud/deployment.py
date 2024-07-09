@@ -89,12 +89,9 @@ class DeploymentConfigParameters:
         )
 
         if (
-            self.config_dict
-            and self.config_file
-            or self.config_dict
-            and deploy_by_param
-            or self.config_file
-            and deploy_by_param
+            (self.config_dict and self.config_file)
+            or (self.config_dict and deploy_by_param)
+            or (self.config_file and deploy_by_param)
         ):
             raise BentoMLException(
                 "Configure a deployment can only use one of the following: config_dict, config_file, or the other parameters"

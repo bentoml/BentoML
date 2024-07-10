@@ -7,7 +7,7 @@ As part of our commitment to ensuring a smooth and efficient onboarding process,
 Setup
 -----
 
-1. Log in to `the Azure Portal <https://www.notion.so/BentoCloud-BYOC-Setup-Guide-for-Azure-b2e4a377ba6549d2a9d16967c65d9591?pvs=21>`_.
+1. Log in to `the Azure Portal <https://azure.microsoft.com/en-us/get-started/azure-portal>`_.
 2. Install `the Azure CLI <https://learn.microsoft.com/en-us/cli/azure/install-azure-cli>`_ and log in to your Azure account by running ``az login``.
 3. If you have multiple subscriptions, set the desired one by running:
 

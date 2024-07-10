@@ -16,11 +16,11 @@ Setup
       az account set --subscription <Subscription Name or ID>
 
 4. Run the setup script, which will configure necessary Azure resources such as virtual machines, networks, and other services required for BentoCloud. You will be prompted to specify a region for BentoCloud setup.
-    
+
    .. code-block:: bash
 
       bash <(curl https://l.bentoml.com/bentocloud_azure_setup_script -sL)
-    
+
    .. note::
 
       The script uses ``jq`` for parsing JSON output from Azure CLI commands. Ensure ``jq`` is installed on your system.
@@ -33,7 +33,7 @@ Post setup
 Upon completion of the setup script, a file named ``bcAdminSP.json`` will be created, containing the credentials and subscription ID to manage Azure resources under the specified subscription. Please send the file and the Azure region to the BentoML team.
 
 .. important::
-    
+
     For security reasons, it's crucial to transfer this file through a secure channel. Please reach out to your BentoML contact for this step.
 
 Getting help and troubleshooting

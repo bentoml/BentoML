@@ -74,7 +74,7 @@ class DeploymentConfigParameters:
         self,
     ):
         deploy_by_param = any(
-            param is not None and not "" and len(param) > 0
+            param is not None and len(param) > 0
             for param in [
                 self.name,
                 self.cluster,

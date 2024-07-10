@@ -19,7 +19,7 @@ Setup
     
    .. code-block:: bash
 
-    bash <(curl https://l.bentoml.com/bentocloud_azure_setup_script -sL)
+      bash <(curl https://l.bentoml.com/bentocloud_azure_setup_script -sL)
     
    .. note::
 

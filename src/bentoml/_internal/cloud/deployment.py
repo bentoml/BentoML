@@ -516,7 +516,7 @@ class DeploymentInfo:
         if spinner is not None:
             stop_tail_event = Event()
 
-            def tail_image_builder_logs():
+            def tail_image_builder_logs() -> None:
                 cloud_rest_client = get_rest_api_client(self._context)
                 pod: KubePodSchema | None = None
                 while True:
@@ -547,6 +547,7 @@ class DeploymentInfo:
                     if is_first:
                         is_first = False
                         spinner.update("🚧 Image building...")
+                        spinner.stop()
                     print(decoded_str, end="", flush=True)
 
             tail_thread: Thread | None = None

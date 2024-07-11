@@ -12,3 +12,8 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloa
     apt-get install -q -y --no-install-recommends --allow-remove-essential \
         ca-certificates gnupg2 bash build-essential {% if __options__system_packages is not none %}{{ __options__system_packages | join(' ') }}{% endif -%}
 {% endblock %}
+
+{% block SETUP_BENTO_USER %}
+{{ super() }}
+RUN groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID -g $BENTO_USER_GID -o -r $BENTO_USER
+{% endblock %}

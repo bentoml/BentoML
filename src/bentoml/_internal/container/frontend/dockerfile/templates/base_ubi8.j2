@@ -13,3 +13,8 @@ USER root
     yum install -y {{ __options__system_packages | join(' ') }}
 {% endif -%}
 {% endblock %}
+
+{% block SETUP_BENTO_USER %}
+{{ super() }}
+RUN groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID -g $BENTO_USER_GID -o -r $BENTO_USER
+{% endblock %}

@@ -198,6 +198,7 @@ class Exportable(ABC):
             if protocol is None:
                 protocol = "osfs"
                 resource = path if os.sep == "/" else path.replace(os.sep, "/")
+                path = f"{protocol}://{encode_path_for_uri(resource)}"
             else:
                 resource = path
         else:
@@ -256,7 +257,7 @@ class Exportable(ABC):
                 subpath += "." + output_format
         elif isOSPath:
             try:
-                dirfs = fs.open_fs(encode_path_for_uri(path))
+                dirfs = fs.open_fs(path)
             except fs.errors.CreateFailed:
                 pass
             else:
@@ -288,7 +289,7 @@ class Exportable(ABC):
             # we can safely ignore user / passwd / params
             # get the path on the system so we can skip the copy step
             try:
-                rsc_dir = fs.open_fs(f"{protocol}://{resource}")
+                rsc_dir = fs.open_fs(f"{protocol}://{encode_path_for_uri(resource)}")
                 path = rsc_dir.getsyspath(subpath)
                 self._compress(path, output_format)
             except fs.errors.CreateFailed:

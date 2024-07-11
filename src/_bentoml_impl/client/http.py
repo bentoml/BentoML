@@ -31,6 +31,7 @@ from bentoml.exceptions import ServiceUnavailable
 from ..serde import Payload
 from .base import AbstractClient
 from .base import ClientEndpoint
+from .base import map_exception
 from .task import AsyncTask
 from .task import Task
 
@@ -48,12 +49,6 @@ C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
 AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
 logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
-
-
-def map_exception(resp: httpx.Response) -> BentoMLException:
-    status = HTTPStatus(resp.status_code)
-    exc = BentoMLException.error_mapping.get(status, BentoMLException)
-    return exc(resp.text, error_code=status)
 
 
 def is_http_url(url: str) -> bool:

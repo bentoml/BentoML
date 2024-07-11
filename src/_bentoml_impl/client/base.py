@@ -3,12 +3,21 @@ from __future__ import annotations
 import abc
 import functools
 import typing as t
+from http import HTTPStatus
 
 import attrs
+import httpx
 
 from _bentoml_sdk import IODescriptor
+from bentoml.exceptions import BentoMLException
 
 T = t.TypeVar("T")
+
+
+def map_exception(resp: httpx.Response) -> BentoMLException:
+    status = HTTPStatus(resp.status_code)
+    exc = BentoMLException.error_mapping.get(status, BentoMLException)
+    return exc(resp.text, error_code=status)
 
 
 @attrs.define(slots=True)

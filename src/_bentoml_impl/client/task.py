@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from http import HTTPStatus
 from typing import TYPE_CHECKING
 from typing import Any
 
 import attrs
 
-from bentoml.exceptions import BentoMLException
-
 from ..tasks import ResultStatus
+from .base import map_exception
 
 if TYPE_CHECKING:
     from .http import AsyncHTTPClient
@@ -28,12 +26,17 @@ class Task:
         )
         if resp.is_error:
             resp.read()
-            raise BentoMLException(
-                f"Error making request: {resp.status_code}: {resp.text}",
-                error_code=HTTPStatus(resp.status_code),
-            )
+            raise map_exception(resp)
         data = resp.json()
         return ResultStatus(data["status"])
+
+    def cancel(self) -> None:
+        resp = self.client.request(
+            "PUT", f"{self.endpoint.route}/cancel", params={"task_id": self.id}
+        )
+        if resp.is_error:
+            resp.read()
+            raise map_exception(resp)
 
     def get(self) -> Any:
         resp = self.client.request(
@@ -41,10 +44,7 @@ class Task:
         )
         if resp.is_error:
             resp.read()
-            raise BentoMLException(
-                f"Error making request: {resp.status_code}: {resp.text}",
-                error_code=HTTPStatus(resp.status_code),
-            )
+            raise map_exception(resp)
         if (
             self.endpoint.output.get("type") == "file"
             and self.client.media_type == "application/json"
@@ -52,6 +52,16 @@ class Task:
             return self.client._parse_file_response(self.endpoint, resp)
         else:
             return self.client._parse_response(self.endpoint, resp)
+
+    def retry(self) -> Task:
+        resp = self.client.request(
+            "POST", f"{self.endpoint.route}/retry", params={"task_id": self.id}
+        )
+        if resp.is_error:
+            resp.read()
+            raise map_exception(resp)
+        data = resp.json()
+        return Task(data["task_id"], self.endpoint, self.client)
 
 
 @attrs.frozen
@@ -66,12 +76,17 @@ class AsyncTask:
         )
         if resp.is_error:
             await resp.aread()
-            raise BentoMLException(
-                f"Error making request: {resp.status_code}: {resp.text}",
-                error_code=HTTPStatus(resp.status_code),
-            )
+            raise map_exception(resp)
         data = resp.json()
         return ResultStatus(data["status"])
+
+    async def cancel(self) -> None:
+        resp = await self.client.request(
+            "PUT", f"{self.endpoint.route}/cancel", params={"task_id": self.id}
+        )
+        if resp.is_error:
+            await resp.aread()
+            raise map_exception(resp)
 
     async def get(self) -> Any:
         resp = await self.client.request(
@@ -79,10 +94,7 @@ class AsyncTask:
         )
         if resp.is_error:
             await resp.aread()
-            raise BentoMLException(
-                f"Error making request: {resp.status_code}: {resp.text}",
-                error_code=HTTPStatus(resp.status_code),
-            )
+            raise map_exception(resp)
         if (
             self.endpoint.output.get("type") == "file"
             and self.client.media_type == "application/json"
@@ -90,3 +102,13 @@ class AsyncTask:
             return await self.client._parse_file_response(self.endpoint, resp)
         else:
             return await self.client._parse_response(self.endpoint, resp)
+
+    async def retry(self) -> AsyncTask:
+        resp = await self.client.request(
+            "POST", f"{self.endpoint.route}/retry", params={"task_id": self.id}
+        )
+        if resp.is_error:
+            await resp.aread()
+            raise map_exception(resp)
+        data = resp.json()
+        return AsyncTask(data["task_id"], self.endpoint, self.client)

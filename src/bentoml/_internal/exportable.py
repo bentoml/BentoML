@@ -18,6 +18,8 @@ import fs.tempfs
 from fs import open_fs
 from fs.base import FS
 
+from .utils.uri import encode_path_for_uri
+
 T = t.TypeVar("T", bound="Exportable")
 
 
@@ -254,7 +256,7 @@ class Exportable(ABC):
                 subpath += "." + output_format
         elif isOSPath:
             try:
-                dirfs = fs.open_fs(path)
+                dirfs = fs.open_fs(encode_path_for_uri(path))
             except fs.errors.CreateFailed:
                 pass
             else:

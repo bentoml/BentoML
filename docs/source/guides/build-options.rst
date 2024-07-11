@@ -153,7 +153,7 @@ Python packages
 
 You specify the required Python packages for a given Bento using the ``python.packages`` field. BentoML allows you to specify the
 desired version and install a package from a custom PyPI source or from a GitHub repository. If a package lacks a specific version,
-BentoML will lock versions for all dependency packages when building a Bento.
+BentoML will lock the versions of all Python packages in the current environment when building a Bento.
 
 .. code-block:: yaml
 

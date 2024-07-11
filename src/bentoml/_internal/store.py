@@ -79,7 +79,9 @@ class Store(ABC, t.Generic[Item]):
         self._item_type = item_type
         if isinstance(base_path, os.PathLike):
             base_path = base_path.__fspath__()
-        self._fs = fs.open_fs(encode_path_for_uri(base_path))
+        if isinstance(base_path, str):
+            base_path = encode_path_for_uri(base_path)
+        self._fs = fs.open_fs(base_path)
 
     def list(self, tag: t.Optional[t.Union[Tag, str]] = None) -> t.List[Item]:
         if not tag:

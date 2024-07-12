@@ -18,3 +18,8 @@ RUN curl -LO https://astral.sh/uv/install.sh && \
     apk add --update {{ __options__system_packages | join(' ') }}
 {% endif -%}
 {% endblock %}
+
+{% block SETUP_BENTO_USER %}
+{{ super() }}
+RUN addgroup -g $BENTO_USER_GID -S $BENTO_USER && adduser -u $BENTO_USER_UID -G $BENTO_USER -S $BENTO_USER
+{% endblock %}

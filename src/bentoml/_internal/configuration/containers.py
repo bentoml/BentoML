@@ -203,7 +203,9 @@ class _BentoMLContainerClass:
     def env_store(bentoml_home: str = Provide[bentoml_home]) -> FS:
         import fs
 
-        return fs.open_fs(os.path.join(bentoml_home, "envs"))
+        from ..utils.uri import encode_path_for_uri
+
+        return fs.open_fs(encode_path_for_uri(os.path.join(bentoml_home, "envs")))
 
     @providers.SingletonFactory
     @staticmethod

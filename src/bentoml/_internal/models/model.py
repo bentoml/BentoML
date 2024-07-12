@@ -26,6 +26,8 @@ from fs.base import FS
 from simple_di import Provide
 from simple_di import inject
 
+from bentoml._internal.utils.uri import encode_path_for_uri
+
 from ...exceptions import BentoMLException
 from ...exceptions import NotFound
 from ..configuration import BENTOML_VERSION
@@ -209,7 +211,9 @@ class Model(StoreItem):
             raise BentoMLException(f"Failed to save {self!s}: {e}") from None
 
         with model_store.register(self.tag) as model_path:
-            out_fs = fs.open_fs(model_path, create=True, writeable=True)
+            out_fs = fs.open_fs(
+                encode_path_for_uri(model_path), create=True, writeable=True
+            )
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
             self.__fs = out_fs

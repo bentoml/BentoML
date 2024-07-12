@@ -36,6 +36,7 @@ from ..utils import copy_file_to_fs_folder
 from ..utils import download_and_zip_git_repo
 from ..utils import resolve_user_filepath
 from ..utils.dotenv import parse_dotenv
+from ..utils.uri import encode_path_for_uri
 
 if t.TYPE_CHECKING:
     from attr import Attribute
@@ -960,7 +961,7 @@ class BentoPathSpec:
         """
         yield (parent, exclude_spec) from .bentoignore file of a given path
         """
-        fs_ = fs.open_fs(path)
+        fs_ = fs.open_fs(encode_path_for_uri(path))
         for file in fs_.walk.files(filter=[".bentoignore"]):
             dir_path = fs.path.dirname(file)
             yield dir_path, PathSpec.from_lines("gitwildmatch", fs_.open(file))

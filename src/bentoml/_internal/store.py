@@ -17,6 +17,7 @@ from .exportable import Exportable
 from .tag import Tag
 from .types import PathType
 from .utils import calc_dir_size
+from .utils.uri import encode_path_for_uri
 
 T = t.TypeVar("T")
 
@@ -78,6 +79,8 @@ class Store(ABC, t.Generic[Item]):
         self._item_type = item_type
         if isinstance(base_path, os.PathLike):
             base_path = base_path.__fspath__()
+        if isinstance(base_path, str):
+            base_path = encode_path_for_uri(base_path)
         self._fs = fs.open_fs(base_path)
 
     def list(self, tag: t.Optional[t.Union[Tag, str]] = None) -> t.List[Item]:

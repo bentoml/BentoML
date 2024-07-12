@@ -463,7 +463,9 @@ class Bento(StoreItem):
             raise BentoMLException(f"Failed to save {self!s}: {e}") from None
 
         with bento_store.register(self.tag) as bento_path:
-            out_fs = fs.open_fs(bento_path, create=True, writeable=True)
+            out_fs = fs.open_fs(
+                encode_path_for_uri(bento_path), create=True, writeable=True
+            )
             if self._model_store is not None:
                 # Move models to the global model store, if any
                 for model in self._model_store.list():

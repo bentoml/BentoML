@@ -23,6 +23,7 @@ from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..models import ModelStore
 from ..tag import Tag
+from ..utils.uri import encode_path_for_uri
 from .service import on_load_bento
 
 if TYPE_CHECKING:
@@ -246,7 +247,7 @@ def load_bento_dir(
     Example usage:
         load_bento_dir("~/bentoml/bentos/iris_classifier/4tht2icroji6zput3suqi5nl2")
     """
-    bento_fs = fs.open_fs(path)
+    bento_fs = fs.open_fs(encode_path_for_uri(path))
     bento = Bento.from_fs(bento_fs)
     logger.debug(
         'Loading bento "%s" from directory: %s',

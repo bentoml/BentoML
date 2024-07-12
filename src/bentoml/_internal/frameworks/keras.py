@@ -251,6 +251,11 @@ def save_model(
         )
 
     options = KerasOptions(include_optimizer=include_optimizer)
+    kwargs = {}
+    if tf_signatures is not None:
+        kwargs["signatures"] = tf_signatures
+    if tf_save_options is not None:
+        kwargs["options"] = tf_save_options
 
     with bentoml.models._create(  # type: ignore
         name,
@@ -264,12 +269,7 @@ def save_model(
         metadata=metadata,
         signatures=signatures,
     ) as bento_model:
-        model.save(
-            bento_model.path,
-            signatures=tf_signatures,
-            options=tf_save_options,
-            include_optimizer=include_optimizer,
-        )
+        model.save(bento_model.path, include_optimizer=include_optimizer, **kwargs)
 
         return bento_model
 

@@ -32,9 +32,7 @@ def cloud_command():
 
 
 @cloud_command.command()
-@cog.optgroup.group(
-    "Login", help="login options"
-)
+@cog.optgroup.group("Login", help="login options")
 @cog.optgroup.option(
     "--endpoint",
     type=click.STRING,

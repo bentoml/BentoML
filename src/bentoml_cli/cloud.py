@@ -76,7 +76,11 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
             baseURL = f"{endpoint}/api_tokens"
             encodedCallback = urllib.parse.quote(callback_server.callback_url)
             authURL = f"{baseURL}?callback={encodedCallback}"
-            Confirm.ask(f"Press Enter to open [blue]{authURL}[/] in your browser...")
+            answer = Confirm.ask(
+                f"Press Enter to open [blue]{authURL}[/] in your browser..."
+            )
+            if not answer:
+                return
             if webbrowser.open_new_tab(authURL):
                 rich.print(f"✅ Opened [blue]{authURL}[/] in your web browser.")
             else:

@@ -33,7 +33,7 @@ def cloud_command():
 
 @cloud_command.command()
 @cog.optgroup.group(
-    "Login", help="Required login options", cls=cog.RequiredAllOptionGroup
+    "Login", help="login options"
 )
 @cog.optgroup.option(
     "--endpoint",
@@ -43,6 +43,7 @@ def cloud_command():
     envvar="BENTO_CLOUD_API_ENDPOINT",
     show_default=True,
     show_envvar=True,
+    required=False,
 )
 @cog.optgroup.option(
     "--api-token",
@@ -50,6 +51,7 @@ def cloud_command():
     help="BentoCloud or Yatai user API token",
     envvar="BENTO_CLOUD_API_KEY",
     show_envvar=True,
+    required=False,
 )
 @click.pass_obj
 def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)

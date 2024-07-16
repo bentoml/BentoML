@@ -123,4 +123,4 @@ class KubePodWSResponseSchema:
     __forbid_extra_keys__ = False
     message: str
     type: str
-    payload: t.List[KubePodSchema]
+    payload: t.Optional[t.List[KubePodSchema]]

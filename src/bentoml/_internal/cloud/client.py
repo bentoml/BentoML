@@ -742,7 +742,7 @@ class RestApiClientV2(BaseRestApiClient):
     ) -> KubePodSchema | None:
         pods = self.list_deployment_pods(name, cluster=cluster)
         if not pods:
-            raise NotFound(f"Deployment {name} pods is not found")
+            return None
         for pod in pods:
             if pod.labels.get("yatai.ai/is-bento-image-builder") == "true":
                 return pod
@@ -775,7 +775,7 @@ class RestApiClientV2(BaseRestApiClient):
             jsn = schema_from_object(ws.receive_json(), KubePodWSResponseSchema)
             if jsn.type == "error":
                 raise CloudRESTApiClientError(jsn.message)
-            return jsn.payload
+            return jsn.payload or []
 
     def tail_logs(
         self,

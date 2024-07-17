@@ -163,7 +163,7 @@ class Sqlite3Store(ResultStore[Request, Response]):
             row[4],
             row[5],
             await self.serializer.deserialize_request(row[1]),
-            await self.serializer.deserialize_request(row[1]),
+            await self.serializer.deserialize_response(row[3]),
             row[6],
         )
 

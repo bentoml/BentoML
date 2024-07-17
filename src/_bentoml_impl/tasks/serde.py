@@ -18,7 +18,7 @@ async def _consume_response(response: Response) -> bytes:
     # This will collect the response body into a buffer
     # and run until the background task is done
     buffer = io.BytesIO()
-    scope: dict[str, t.Any] = {}
+    scope: dict[str, t.Any] = {"type": "http"}
 
     def receive() -> t.Awaitable[Message]:
         # A fake receive that never returns

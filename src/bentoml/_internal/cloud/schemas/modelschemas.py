@@ -113,7 +113,7 @@ class ModelManifestSchema:
 @attr.define
 class DeploymentTargetCanaryRule:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     type: str
     weight: int
     header: str
@@ -124,7 +124,7 @@ class DeploymentTargetCanaryRule:
 @attr.define
 class ApiServerBentoDeploymentOverrides:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     monitorExporter: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
     extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
     extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
@@ -133,7 +133,7 @@ class ApiServerBentoDeploymentOverrides:
 @attr.define
 class ApiServerBentoFunctionOverrides:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     annotations: t.Optional[t.Dict[str, str]] = attr.field(default=None)
     monitorExporter: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
     extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
@@ -143,7 +143,7 @@ class ApiServerBentoFunctionOverrides:
 @attr.define
 class RunnerBentoFunctionOverrides:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     annotations: t.Optional[t.Dict[str, str]] = attr.field(default=None)
     extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
     extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
@@ -152,7 +152,7 @@ class RunnerBentoFunctionOverrides:
 @attr.define
 class RunnerBentoDeploymentOverrides:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
     extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
 
@@ -160,7 +160,7 @@ class RunnerBentoDeploymentOverrides:
 @attr.define
 class BentoRequestOverrides:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     imageBuildTimeout: int = attr.field(default=None)
     imageBuilderExtraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(
         default=None
@@ -193,7 +193,7 @@ class EnvItemSchema:
 @attr.define
 class HPAMetric:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     type: str
     value: t.Any  # resource.Quantity
 
@@ -201,7 +201,7 @@ class HPAMetric:
 @attr.define
 class HPAPolicy:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     metrics: t.Optional[t.List[HPAMetric]] = attr.field(default=None)
     scale_down_behavior: t.Optional[str] = attr.field(default=None)
     scale_up_behavior: t.Optional[str] = attr.field(default=None)
@@ -210,7 +210,7 @@ class HPAPolicy:
 @attr.define
 class DeploymentTargetHPAConf:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     min_replicas: t.Optional[int] = attr.field(default=None)
     max_replicas: t.Optional[int] = attr.field(default=None)
     policy: t.Optional[HPAPolicy] = attr.field(default=None)
@@ -219,7 +219,7 @@ class DeploymentTargetHPAConf:
 @attr.define
 class DeploymentTargetResourceItem:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     cpu: t.Optional[str] = attr.field(default=None)
     memory: t.Optional[str] = attr.field(default=None)
     gpu: t.Optional[str] = attr.field(default=None)
@@ -229,7 +229,7 @@ class DeploymentTargetResourceItem:
 @attr.define
 class DeploymentTargetResources:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     requests: t.Optional[DeploymentTargetResourceItem] = attr.field(default=None)
     limits: t.Optional[DeploymentTargetResourceItem] = attr.field(default=None)
 
@@ -237,7 +237,7 @@ class DeploymentTargetResources:
 @attr.define
 class RequestQueueConfig:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     enabled: t.Optional[bool] = attr.field(default=None)
     max_consume_concurrency: t.Optional[int] = attr.field(default=None)
 
@@ -245,7 +245,7 @@ class RequestQueueConfig:
 @attr.define
 class TrafficControlConfig:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     timeout: t.Optional[str] = attr.field(default=None)
     request_queue: t.Optional[RequestQueueConfig] = attr.field(default=None)
 
@@ -260,7 +260,7 @@ class DeploymentStrategy(Enum):
 @attr.define
 class DeploymentTargetRunnerConfig:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     resource_instance: t.Optional[str] = attr.field(default=None)
     resources: t.Optional[DeploymentTargetResources] = attr.field(default=None)
     hpa_conf: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
@@ -284,7 +284,7 @@ class DeploymentTargetRunnerConfig:
 @attr.define
 class DeploymentTargetConfig:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     resources: t.Optional[DeploymentTargetResources] = attr.field(
         default=None, converter=dict_options_converter(DeploymentTargetResources)
     )
@@ -320,7 +320,7 @@ class DeploymentTargetConfig:
 @attr.define
 class ExtraDeploymentOverrides:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     bento_function_overrides: t.Optional[ApiServerBentoFunctionOverrides] = attr.field(
         default=None
     )
@@ -332,7 +332,7 @@ class ExtraDeploymentOverrides:
 @attr.define
 class DeploymentServiceConfig:
     __omit_if_default__ = True
-    __forbid_extra_keys__ = True
+    __forbid_extra_keys__ = False
     instance_type: t.Optional[str] = attr.field(default=None)
     scaling: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
     envs: t.Optional[t.List[t.Optional[EnvItemSchema]]] = attr.field(default=None)

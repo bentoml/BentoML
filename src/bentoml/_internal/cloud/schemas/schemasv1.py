@@ -64,6 +64,7 @@ class ClusterSchema(ResourceSchema):
     description: str
     organization_name: str
     creator: UserSchema
+    is_first: t.Optional[bool] = None
 
 
 @attr.define
@@ -279,7 +280,7 @@ class ResourceInstanceSchema(ResourceSchema):
     config: ResourceInstanceConfigSchema
 
 
-@attr.define
+@attr.define(kw_only=True)
 class ClusterFullSchema(ClusterSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False

@@ -117,7 +117,7 @@ def raise_deployment_config_error(err: BentoMLException, action: str) -> t.NoRet
 @click.option(
     "--timeout",
     type=click.INT,
-    default=1800,
+    default=3600,
     help="Timeout for deployment to be ready in seconds",
 )
 @click.pass_obj
@@ -513,7 +513,7 @@ def apply(  # type: ignore
 @click.option(
     "--timeout",
     type=click.INT,
-    default=1800,
+    default=3600,
     help="Timeout for deployment to be ready in seconds",
 )
 @click.pass_obj

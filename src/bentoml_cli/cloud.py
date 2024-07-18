@@ -36,7 +36,7 @@ def cloud_command():
 @cog.optgroup.option(
     "--endpoint",
     type=click.STRING,
-    help="BentoCloud or Yatai endpoint",
+    help="BentoCloud endpoint",
     default="https://cloud.bentoml.com",
     envvar="BENTO_CLOUD_API_ENDPOINT",
     show_default=True,
@@ -46,14 +46,14 @@ def cloud_command():
 @cog.optgroup.option(
     "--api-token",
     type=click.STRING,
-    help="BentoCloud or Yatai user API token",
+    help="BentoCloud user API token",
     envvar="BENTO_CLOUD_API_KEY",
     show_envvar=True,
     required=False,
 )
 @click.pass_obj
 def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
-    """Login to BentoCloud or Yatai server."""
+    """Login to BentoCloud."""
     if not api_token:
         choice = inquirer.select(
             message="How would you like to authenticate BentoML CLI? [Use arrows to move]",

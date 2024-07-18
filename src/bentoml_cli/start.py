@@ -7,6 +7,7 @@ import sys
 from urllib.parse import urlparse
 
 import click
+import rich
 
 logger = logging.getLogger(__name__)
 
@@ -172,7 +173,7 @@ def build_start_command() -> click.Group:
                 from bentoml.start import start_http_server
 
                 for dep in depends or []:
-                    click.echo(f"Using remote: {dep}")
+                    rich.print(f"Using remote: {dep}")
                 start_http_server(
                     bento,
                     runner_map=runner_map_dict,
@@ -357,7 +358,7 @@ def build_start_command() -> click.Group:
         from bentoml.start import start_grpc_server
 
         runner_map = dict([s.split("=", maxsplit=2) for s in remote_runner or []])
-        click.echo(f"Using remote runners: {runner_map}")
+        rich.print(f"Using remote runners: {runner_map}")
         start_grpc_server(
             bento,
             runner_map=runner_map,

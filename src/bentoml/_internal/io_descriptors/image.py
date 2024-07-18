@@ -196,17 +196,6 @@ class Image(
                 f"Invalid Image mime_type '{mime_type}'; supported mime types are {', '.join(PIL.Image.MIME.values())} "
             )
 
-        for mtype in self._allowed_mimes:
-            if mtype not in MIME_EXT_MAPPING:  # pragma: no cover
-                raise InvalidArgument(
-                    f"Invalid Image MIME in allowed_mime_types: '{mtype}'; supported mime types are {', '.join(PIL.Image.MIME.values())} "
-                )
-
-            if mtype not in READABLE_MIMES:
-                raise InvalidArgument(
-                    f"Pillow does not support reading '{mtype}' files."
-                )
-
         self._pilmode: _Mode | None = pilmode
         self._format: str = MIME_EXT_MAPPING[self._mime_type]
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import inspect
 import io
 import logging
 import os
@@ -689,7 +690,7 @@ class ModelInfo:
 
 
 bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, ModelInfo),
+    lambda cls: inspect.isclass(cls) and issubclass(cls, ModelInfo),
     make_dict_structure_fn(
         ModelInfo,
         bentoml_cattr,
@@ -699,7 +700,7 @@ bentoml_cattr.register_structure_hook_func(
     ),
 )
 bentoml_cattr.register_unstructure_hook_func(
-    lambda cls: issubclass(cls, ModelInfo),
+    lambda cls: inspect.isclass(cls) and issubclass(cls, ModelInfo),
     # Ignore tag, tag is saved via the name and version field
     make_dict_unstructure_fn(
         ModelInfo,

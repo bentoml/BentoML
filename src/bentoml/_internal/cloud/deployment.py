@@ -9,6 +9,7 @@ from threading import Event
 from threading import Thread
 
 import attr
+import rich
 import yaml
 from deepmerge.merger import Merger
 from simple_di import Provide
@@ -62,6 +63,7 @@ class DeploymentConfigParameters:
     instance_type: str | None = None
     strategy: str | None = None
     envs: t.List[dict[str, t.Any]] | None = None
+    secrets: t.List[str] | None = (None,)
     extras: dict[str, t.Any] | None = None
     config_dict: dict[str, t.Any] | None = None
     config_file: str | t.TextIO | None = None
@@ -83,6 +85,7 @@ class DeploymentConfigParameters:
             or self.instance_type
             or self.strategy
             or self.envs
+            or self.secrets
             or self.extras
         )
 
@@ -107,6 +110,7 @@ class DeploymentConfigParameters:
                     ("cluster", self.cluster),
                     ("access_authorization", self.access_authorization),
                     ("envs", self.envs if self.envs else None),
+                    ("secrets", self.secrets),
                 ]
                 if v is not None
             }
@@ -157,12 +161,16 @@ class DeploymentConfigParameters:
         if bento_name:
             if isinstance(bento_name, str) and path.exists(bento_name):
                 # target is a path
+                if self.cli:
+                    rich.print(f"building bento from [green]{bento_name}[/] ...")
                 bento_info = get_bento_info(
                     project_path=bento_name,
                     context=self.context,
                     cli=self.cli,
                 )
             else:
+                if self.cli:
+                    rich.print(f"using bento [green]{bento_name}[/]...")
                 bento_info = get_bento_info(
                     bento=str(bento_name),
                     context=self.context,
@@ -510,17 +518,29 @@ class DeploymentInfo:
 
             def tail_image_builder_logs() -> None:
                 cloud_rest_client = get_rest_api_client(self._context)
+                started_at = time.time()
+                wait_pod_timeout = 60 * 10
                 pod: KubePodSchema | None = None
                 while True:
                     pod = cloud_rest_client.v2.get_deployment_image_builder_pod(
                         self.name, self.cluster
                     )
                     if pod is None:
+                        if time.time() - started_at > timeout:
+                            spinner.console.print(
+                                "🚨 [bold red]Time out waiting for image builder pod created[/bold red]"
+                            )
+                            return
                         if stop_tail_event.wait(check_interval):
                             return
                         continue
                     if pod.pod_status.status == "Running":
                         break
+                    if time.time() - started_at > wait_pod_timeout:
+                        spinner.console.print(
+                            "🚨 [bold red]Time out waiting for image builder pod running[/bold red]"
+                        )
+                        return
                     if stop_tail_event.wait(check_interval):
                         return
 
@@ -552,26 +572,37 @@ class DeploymentInfo:
                 while time.time() - start_time < timeout:
                     for _ in range(3):
                         try:
-                            status = self.get_status()
+                            new_status = self.get_status()
                             break
                         except TimeoutException:
                             spinner.update(
                                 "⚠️ Unable to get deployment status, retrying..."
                             )
-                    if status is None:
+                    else:
                         spinner.log(
-                            "🚨 [bold red]Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website.[/bold red]"
+                            "🚨 [bold red]Unable to contact the server, but the deployment is created. "
+                            "You can check the status on the bentocloud website.[/bold red]"
                         )
                         return
-                    spinner.update(
-                        f'🔄 Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
-                    )
-                    if status.status == DeploymentStatus.ImageBuilding.value:
-                        if tail_thread is None:
-                            tail_thread = Thread(
-                                target=tail_image_builder_logs, daemon=True
-                            )
-                            tail_thread.start()
+                    if (
+                        status is None or status.status != new_status.status
+                    ):  # on status change
+                        status = new_status
+                        spinner.update(
+                            f'🔄 Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
+                        )
+                        if status.status == DeploymentStatus.ImageBuilding.value:
+                            if tail_thread is None:
+                                tail_thread = Thread(
+                                    target=tail_image_builder_logs, daemon=True
+                                )
+                                tail_thread.start()
+                        elif (
+                            tail_thread is not None
+                        ):  # The status has changed from ImageBuilding to other
+                            stop_tail_event.set()
+                            tail_thread.join()
+                            spinner.start()
 
                     if status.status in (
                         DeploymentStatus.Running.value,

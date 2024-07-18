@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import json
 import logging
 import os
@@ -697,7 +698,7 @@ class BentoInfo:
 
 
 bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, BentoInfo),
+    lambda cls: inspect.isclass(cls) and issubclass(cls, BentoInfo),
     make_dict_structure_fn(
         BentoInfo,
         bentoml_cattr,

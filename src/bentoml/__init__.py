@@ -58,37 +58,30 @@ from .bentos import serve
 from .server import GrpcServer
 from .server import HTTPServer
 
-# Framework specific modules, model management and IO APIs are lazily loaded upon import.
 if TYPE_CHECKING:
-    from . import catboost
-    from . import detectron
-    from . import diffusers
+    # Framework specific modules
+    from _bentoml_impl.frameworks import catboost
+    from _bentoml_impl.frameworks import lightgbm
+    from _bentoml_impl.frameworks import mlflow
+    from _bentoml_impl.frameworks import sklearn
+    from _bentoml_impl.frameworks import xgboost
+
     from . import diffusers_simple
-    from . import easyocr
-    from . import fastai
-    from . import flax
-    from . import gluon
-    from . import h2o
-    from . import keras
-    from . import lightgbm
-    from . import mlflow
-    from . import onnx
-    from . import onnxmlir
-    from . import paddle
-    from . import picklable_model
-    from . import pycaret
-    from . import pytorch
-    from . import pytorch_lightning
     from . import ray
-    from . import sklearn
-    from . import spacy
-    from . import statsmodels
-    from . import tensorflow
-    from . import tensorflow_v1
-    from . import torchscript
-    from . import transformers
     from . import triton
-    from . import xgboost
+    from ._internal.frameworks import detectron
+    from ._internal.frameworks import diffusers
+    from ._internal.frameworks import easyocr
+    from ._internal.frameworks import fastai
+    from ._internal.frameworks import flax
+    from ._internal.frameworks import keras
+    from ._internal.frameworks import onnx
+    from ._internal.frameworks import picklable_model
+    from ._internal.frameworks import pytorch
+    from ._internal.frameworks import pytorch_lightning
+    from ._internal.frameworks import tensorflow
+    from ._internal.frameworks import torchscript
+    from ._internal.frameworks import transformers
 
     # isort: off
     from . import io
@@ -115,48 +108,72 @@ if TYPE_CHECKING:
     from _bentoml_sdk import on_shutdown
     from _bentoml_sdk import runner_service
     from _bentoml_sdk import service
+    from _bentoml_sdk import task
 else:
+    from _bentoml_impl.frameworks import FrameworkImporter
+
     from ._internal.utils import LazyLoader as _LazyLoader
     from ._internal.utils.pkg import pkg_version_info
 
+    FrameworkImporter.install()
+
     # ML Frameworks
-    catboost = _LazyLoader("bentoml.catboost", globals(), "bentoml.catboost")
-    detectron = _LazyLoader("bentoml.detectron", globals(), "bentoml.detectron")
-    diffusers = _LazyLoader("bentoml.diffusers", globals(), "bentoml.diffusers")
+    catboost = _LazyLoader(
+        "bentoml.catboost", globals(), "_bentoml_impl.frameworks.catboost"
+    )
+    sklearn = _LazyLoader(
+        "bentoml.sklearn", globals(), "_bentoml_impl.frameworks.sklearn"
+    )
+    xgboost = _LazyLoader(
+        "bentoml.xgboost", globals(), "_bentoml_impl.frameworks.xgboost"
+    )
+    lightgbm = _LazyLoader(
+        "bentoml.lightgbm", globals(), "_bentoml_impl.frameworks.lightgbm"
+    )
+    mlflow = _LazyLoader("bentoml.mlflow", globals(), "_bentoml_impl.frameworks.mlflow")
+    detectron = _LazyLoader(
+        "bentoml.detectron", globals(), "bentoml._internal.frameworks.detectron"
+    )
+    diffusers = _LazyLoader(
+        "bentoml.diffusers", globals(), "bentoml._internal.frameworks.diffusers"
+    )
     diffusers_simple = _LazyLoader(
         "bentoml.diffusers_simple", globals(), "bentoml.diffusers_simple"
     )
-    easyocr = _LazyLoader("bentoml.easyocr", globals(), "bentoml.easyocr")
-    flax = _LazyLoader("bentoml.flax", globals(), "bentoml.flax")
-    fastai = _LazyLoader("bentoml.fastai", globals(), "bentoml.fastai")
-    gluon = _LazyLoader("bentoml.gluon", globals(), "bentoml.gluon")
-    h2o = _LazyLoader("bentoml.h2o", globals(), "bentoml.h2o")
-    lightgbm = _LazyLoader("bentoml.lightgbm", globals(), "bentoml.lightgbm")
-    mlflow = _LazyLoader("bentoml.mlflow", globals(), "bentoml.mlflow")
-    onnx = _LazyLoader("bentoml.onnx", globals(), "bentoml.onnx")
-    onnxmlir = _LazyLoader("bentoml.onnxmlir", globals(), "bentoml.onnxmlir")
-    keras = _LazyLoader("bentoml.keras", globals(), "bentoml.keras")
-    paddle = _LazyLoader("bentoml.paddle", globals(), "bentoml.paddle")
-    pycaret = _LazyLoader("bentoml.pycaret", globals(), "bentoml.pycaret")
-    pytorch = _LazyLoader("bentoml.pytorch", globals(), "bentoml.pytorch")
+    easyocr = _LazyLoader(
+        "bentoml.easyocr", globals(), "bentoml._internal.frameworks.easyocr"
+    )
+    flax = _LazyLoader("bentoml.flax", globals(), "bentoml._internal.frameworks.flax")
+    fastai = _LazyLoader(
+        "bentoml.fastai", globals(), "bentoml._internal.frameworks.fastai"
+    )
+
+    onnx = _LazyLoader("bentoml.onnx", globals(), "bentoml._internal.frameworks.onnx")
+    keras = _LazyLoader(
+        "bentoml.keras", globals(), "bentoml._internal.frameworks.keras"
+    )
+    pytorch = _LazyLoader(
+        "bentoml.pytorch", globals(), "bentoml._internal.frameworks.pytorch"
+    )
     pytorch_lightning = _LazyLoader(
-        "bentoml.pytorch_lightning", globals(), "bentoml.pytorch_lightning"
+        "bentoml.pytorch_lightning",
+        globals(),
+        "bentoml._internal.frameworks.pytorch_lightning",
     )
-    sklearn = _LazyLoader("bentoml.sklearn", globals(), "bentoml.sklearn")
     picklable_model = _LazyLoader(
-        "bentoml.picklable_model", globals(), "bentoml.picklable_model"
+        "bentoml.picklable_model",
+        globals(),
+        "bentoml._internal.frameworks.picklable_model",
     )
-    spacy = _LazyLoader("bentoml.spacy", globals(), "bentoml.spacy")
-    statsmodels = _LazyLoader("bentoml.statsmodels", globals(), "bentoml.statsmodels")
-    tensorflow = _LazyLoader("bentoml.tensorflow", globals(), "bentoml.tensorflow")
-    tensorflow_v1 = _LazyLoader(
-        "bentoml.tensorflow_v1", globals(), "bentoml.tensorflow_v1"
+    tensorflow = _LazyLoader(
+        "bentoml.tensorflow", globals(), "bentoml._internal.frameworks.tensorflow"
     )
-    torchscript = _LazyLoader("bentoml.torchscript", globals(), "bentoml.torchscript")
+    torchscript = _LazyLoader(
+        "bentoml.torchscript", globals(), "bentoml._internal.frameworks.torchscript"
+    )
     transformers = _LazyLoader(
-        "bentoml.transformers", globals(), "bentoml.transformers"
+        "bentoml.transformers", globals(), "bentoml._internal.frameworks.transformers"
     )
-    xgboost = _LazyLoader("bentoml.xgboost", globals(), "bentoml.xgboost")
 
     # Integrations
     triton = _LazyLoader("bentoml.triton", globals(), "bentoml.triton")
@@ -174,12 +191,13 @@ else:
     cloud = _LazyLoader("bentoml.cloud", globals(), "bentoml.cloud")
     deployment = _LazyLoader("bentoml.deployment", globals(), "bentoml.deployment")
     validators = _LazyLoader("bentoml.validators", globals(), "bentoml.validators")
-    del _LazyLoader
+    del _LazyLoader, FrameworkImporter
 
     _NEW_SDK_ATTRS = [
         "service",
         "runner_service",
         "api",
+        "task",
         "depends",
         "on_shutdown",
         "on_deployment",
@@ -253,23 +271,15 @@ __all__ = [
     "easyocr",
     "flax",
     "fastai",
-    "gluon",
-    "h2o",
     "lightgbm",
     "mlflow",
     "onnx",
-    "onnxmlir",
-    "paddle",
     "picklable_model",
-    "pycaret",
     "pytorch",
     "pytorch_lightning",
     "keras",
     "sklearn",
-    "spacy",
-    "statsmodels",
     "tensorflow",
-    "tensorflow_v1",
     "torchscript",
     "transformers",
     "xgboost",
@@ -288,6 +298,7 @@ __all__ = [
     "service",
     "runner_service",
     "api",
+    "task",
     "on_shutdown",
     "on_deployment",
     "depends",

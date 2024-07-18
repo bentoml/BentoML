@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import attr
 import starlette.datastructures
+from starlette.background import BackgroundTasks
 
 from .utils.http import Cookie
 from .utils.temp import TempfilePool
@@ -125,16 +126,18 @@ class ServiceContext:
 
     @attr.define
     class ResponseContext:
-        metadata: Metadata
-        cookies: list[Cookie]
-        headers: Metadata
-        status_code: int
+        metadata: Metadata = attr.field(factory=starlette.datastructures.MutableHeaders)
+        cookies: list[Cookie] = attr.field(factory=list)
+        status_code: int = 200
+        background: BackgroundTasks = attr.field(factory=BackgroundTasks)
 
-        def __init__(self):
-            self.metadata = starlette.datastructures.MutableHeaders()  # type: ignore (coercing Starlette headers to Metadata)
-            self.headers = self.metadata  # type: ignore (coercing Starlette headers to Metadata)
-            self.cookies = []
-            self.status_code = 200
+        @property
+        def headers(self) -> Metadata:
+            return self.metadata
+
+        @headers.setter
+        def headers(self, headers: Metadata) -> None:
+            self.metadata = headers
 
         def set_cookie(
             self,

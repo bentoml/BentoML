@@ -11,6 +11,8 @@ import typing as t
 from gettext import gettext
 
 import click
+import rich
+import rich.pretty
 
 from bentoml._internal.utils.pkg import PackageNotFoundError
 from bentoml._internal.utils.pkg import get_pkg_version
@@ -163,7 +165,6 @@ def env_command(ctx: click.Context, output: t.Literal["md", "bash"]) -> None:  #
         info_dict["conda_packages"] = conda_packages
 
     # process info from `pip freeze`
-    pip_packages = run_cmd([sys.executable, "-m", "pip", "freeze"])
+    pip_packages = run_cmd([sys.executable, "-m", "uv", "pip", "freeze"])
     info_dict["pip_packages"] = pip_packages
-    click.echo(pretty_format(info_dict, output=output))
-    ctx.exit(0)
+    rich.print(pretty_format(info_dict, output=output))

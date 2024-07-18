@@ -7,6 +7,7 @@ import typing as t
 
 import click
 import click_option_group as cog
+import rich
 import yaml
 from rich.syntax import Syntax
 from rich.table import Table
@@ -217,7 +218,7 @@ def bento_management_commands() -> click.Group:
 
                 if delete_confirmed:
                     bento_store.delete(bento.tag)
-                    click.echo(f"{bento} deleted.")
+                    rich.print(f"{bento} deleted.")
 
         for target in delete_targets:
             delete_target(target)
@@ -255,7 +256,7 @@ def bento_management_commands() -> click.Group:
         """
         bento = bento_store.get(bento_tag)
         out_path = bento.export(out_path)
-        click.echo(f"{bento} exported to {out_path}.")
+        rich.print(f"{bento} exported to {out_path}.")
 
     @bentos.command(name="import")
     @click.argument("bento_path", type=click.STRING)
@@ -272,7 +273,7 @@ def bento_management_commands() -> click.Group:
             bentoml import s3://mybucket/bentos/my_bento.bento
         """
         bento = import_bento(bento_path)
-        click.echo(f"{bento} imported.")
+        rich.print(f"{bento} imported.")
 
     @bentos.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -432,11 +433,11 @@ def bento_management_commands() -> click.Group:
         # NOTE: Don't remove the return statement here, since we will need this
         # for usage stats collection if users are opt-in.
         if output == "tag":
-            click.echo(f"__tag__:{bento.tag}")
+            rich.print(f"__tag__:{bento.tag}")
         else:
             if not get_quiet_mode():
-                click.echo(BENTOML_FIGLET)
-                click.secho(f"Successfully built {bento}.", fg="green")
+                rich.print(BENTOML_FIGLET)
+                rich.print(f"[green]Successfully built {bento}.")
                 next_steps = [
                     f"\n\n* Deploy to BentoCloud:\n    $ bentoml deploy {bento.tag} -n ${{DEPLOYMENT_NAME}}",
                     "\n\n* Update an existing deployment on BentoCloud:\n"
@@ -454,13 +455,10 @@ def bento_management_commands() -> click.Group:
                     )
 
                 if next_steps:
-                    click.secho(
-                        "\nNext steps:" + "".join(next_steps),
-                        fg="blue",
-                    )
+                    rich.print(f"\n[blue]Next steps: {''.join(next_steps)}[/]")
         if push:
             if not get_quiet_mode():
-                click.secho(f"\nPushing {bento} to BentoCloud...", fg="magenta")
+                rich.print(f"\n[magenta]Pushing {bento} to BentoCloud...[/]")
             _cloud_client.push_bento(
                 bento,
                 force=force,

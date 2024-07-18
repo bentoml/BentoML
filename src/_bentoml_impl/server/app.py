@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
+import logging
 import math
 import typing as t
 from http import HTTPStatus
@@ -13,6 +14,7 @@ import anyio.to_thread
 from simple_di import Provide
 from simple_di import inject
 from starlette.middleware import Middleware
+from starlette.responses import JSONResponse
 from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 
@@ -27,6 +29,9 @@ from bentoml._internal.utils.metrics import exponential_buckets
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import ServiceUnavailable
 
+from ..tasks import ResultStatus
+from ..tasks import Sqlite3Store
+
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
     from prometheus_client import Histogram
@@ -39,6 +44,8 @@ if t.TYPE_CHECKING:
     from bentoml._internal.types import LifecycleHook
 
 R = t.TypeVar("R")
+logger = logging.getLogger("bentoml.server")
+RESULT_STORE_ENV = "BENTOML_RESULT_STORE"
 
 
 class ContextMiddleware:
@@ -158,8 +165,6 @@ class ServiceAppFactory(BaseAppFactory):
         return FileResponse(Path(__file__).parent / filename)
 
     async def openapi_spec_view(self, req: Request) -> Response:
-        from starlette.responses import JSONResponse
-
         try:
             return JSONResponse(self.service.openapi_spec.asdict())
         except Exception:
@@ -266,9 +271,12 @@ class ServiceAppFactory(BaseAppFactory):
         middlewares.append(Middleware(ContextMiddleware, context=self.service.context))
         return middlewares
 
-    def create_instance(self) -> None:
+    async def create_instance(self) -> None:
         self._service_instance = self.service()
         set_current_service(self._service_instance)
+        store_path = BentoMLContainer.result_store_file.get()
+        self._result_store = Sqlite3Store(store_path)
+        await self._result_store.__aenter__()
 
     @inject
     def _add_response_headers(
@@ -278,6 +286,7 @@ class ServiceAppFactory(BaseAppFactory):
     ) -> None:
         from bentoml._internal.context import trace_context
 
+        resp.headers.update({"Server": f"BentoML Service/{self.service.name}"})
         if trace_context.request_id is not None:
             resp.headers["X-BentoML-Request-ID"] = format(
                 trace_context.request_id, logging_format["span_id"]
@@ -305,6 +314,7 @@ class ServiceAppFactory(BaseAppFactory):
         await cleanup()
         self._service_instance = None
         set_current_service(None)
+        await self._result_store.__aexit__(None, None, None)
 
     async def readyz(self, _: Request) -> Response:
         from starlette.exceptions import HTTPException
@@ -334,10 +344,115 @@ class ServiceAppFactory(BaseAppFactory):
         return [*super().on_shutdown, self.destroy_instance]
 
     async def schema_view(self, request: Request) -> Response:
-        from starlette.responses import JSONResponse
-
         schema = self.service.schema()
         return JSONResponse(schema)
+
+    async def get_status(self, request: Request) -> Response:
+        task_id = request.query_params.get("task_id")
+        if task_id is None:
+            resp = JSONResponse({"error": "task_id is required"}, status_code=400)
+            self._add_response_headers(resp)
+            return resp
+        try:
+            status = await self._result_store.get_status(task_id)
+        except KeyError:
+            resp = JSONResponse({"error": "task_id not found"}, status_code=404)
+        except Exception as e:
+            log_exception(request)
+            resp = JSONResponse({"error": str(e)}, status_code=500)
+        else:
+            resp = JSONResponse(status.to_json())
+        self._add_response_headers(resp)
+        return resp
+
+    async def get_result(self, request: Request) -> Response:
+        task_id = request.query_params.get("task_id")
+        if task_id is None:
+            resp = JSONResponse({"error": "task_id is required"}, status_code=400)
+            self._add_response_headers(resp)
+            return resp
+        try:
+            row = await self._result_store.get(task_id)
+        except KeyError:
+            resp = JSONResponse({"error": "task_id not found"}, status_code=404)
+        except RuntimeError:
+            resp = JSONResponse(
+                {"error": f"task {task_id} is not completed yet"}, status_code=400
+            )
+        except Exception as e:
+            log_exception(request)
+            resp = JSONResponse({"error": str(e)}, status_code=500)
+        else:
+            resp = row.result
+        self._add_response_headers(resp)
+        return resp
+
+    async def retry_task(self, request: Request) -> Response:
+        task_id = request.query_params.get("task_id")
+        if task_id is None:
+            resp = JSONResponse({"error": "task_id is required"}, status_code=400)
+            self._add_response_headers(resp)
+            return resp
+        try:
+            row = await self._result_store.get(task_id)
+        except KeyError:
+            resp = JSONResponse({"error": "task_id not found"}, status_code=404)
+        except RuntimeError:
+            resp = JSONResponse(
+                {"error": f"task {task_id} is not completed yet"}, status_code=400
+            )
+        else:
+            resp = await self.submit_task(row.name, row.input)
+        self._add_response_headers(resp)
+        return resp
+
+    async def cancel_task(self, request: Request) -> Response:
+        task_id = request.query_params.get("task_id")
+        if task_id is None:
+            resp = JSONResponse({"error": "task_id is required"}, status_code=400)
+            self._add_response_headers(resp)
+            return resp
+        await self._result_store.set_status(task_id, ResultStatus.CANCELLED)
+        resp = JSONResponse(
+            {"error": "task cancellation is not supported in local development server"},
+            status_code=400,
+        )
+        self._add_response_headers(resp)
+        return resp
+
+    async def _run_task(self, task_id: str, name: str, request: Request) -> None:
+        try:
+            resp = await self.api_endpoint_wrapper(name, request)
+            await self._result_store.set_result(
+                task_id,
+                resp,
+                ResultStatus.SUCCESS
+                if resp.status_code < 400
+                else ResultStatus.FAILURE,
+            )
+        except Exception:
+            logger.exception("Task(%s) %s failed", name, task_id)
+        else:
+            logger.info("Task(%s) %s is completed", name, task_id)
+
+    async def submit_task(self, name: str, request: Request) -> Response:
+        from starlette.background import BackgroundTask
+
+        try:
+            task_id = await self._result_store.new_entry(name, request)
+        except Exception as e:
+            log_exception(request)
+            resp = JSONResponse({"error": str(e)}, status_code=500)
+            self._add_response_headers(resp)
+            return resp
+        else:
+            logger.info("Task(%s) %s is submitted", name, task_id)
+            resp = JSONResponse(
+                {"task_id": task_id, "status": ResultStatus.IN_PROGRESS.value}
+            )
+            resp.background = BackgroundTask(self._run_task, task_id, name, request)
+            self._add_response_headers(resp)
+            return resp
 
     @property
     def routes(self) -> list[BaseRoute]:
@@ -351,6 +466,32 @@ class ServiceAppFactory(BaseAppFactory):
             if not route_path.startswith("/"):
                 route_path = "/" + route_path
             routes.append(Route(route_path, api_endpoint, methods=["POST"], name=name))
+            if method.is_task:
+                routes.append(
+                    Route(
+                        f"{route_path}/submit",
+                        functools.partial(self.submit_task, name),
+                        methods=["POST"],
+                        name=f"{name}_submit",
+                    )
+                )
+                routes.append(
+                    Route(
+                        f"{route_path}/status",
+                        self.get_status,
+                        methods=["GET"],
+                        name=f"{name}_status",
+                    )
+                )
+                routes.append(
+                    Route(f"{route_path}/get", self.get_result, methods=["GET"])
+                )
+                routes.append(
+                    Route(f"{route_path}/retry", self.retry_task, methods=["POST"])
+                )
+                routes.append(
+                    Route(f"{route_path}/cancel", self.cancel_task, methods=["PUT"])
+                )
         return routes
 
     async def _to_thread(
@@ -415,7 +556,6 @@ class ServiceAppFactory(BaseAppFactory):
 
     async def api_endpoint_wrapper(self, name: str, request: Request) -> Response:
         from pydantic import ValidationError
-        from starlette.responses import JSONResponse
 
         try:
             resp = await self.api_endpoint(name, request)
@@ -449,11 +589,15 @@ class ServiceAppFactory(BaseAppFactory):
                 status_code=500,
             )
         self._add_response_headers(resp)
+        ctx = self.service.context
+        if resp.background is not None:
+            ctx.response.background.tasks.append(resp.background)
+        # clean the request resources after the response is consumed.
+        ctx.response.background.add_task(request.close)
+        resp.background = ctx.response.background
         return resp
 
     async def api_endpoint(self, name: str, request: Request) -> Response:
-        from starlette.background import BackgroundTask
-
         from _bentoml_sdk.io_models import ARGS
         from _bentoml_sdk.io_models import KWARGS
         from bentoml._internal.utils import get_original_func
@@ -514,12 +658,9 @@ class ServiceAppFactory(BaseAppFactory):
             response = output
         else:
             response = await method.output_spec.to_http_response(output, serde)
-        response.headers.update({"Server": f"BentoML Service/{self.service.name}"})
 
         if method.ctx_param is not None:
             response.status_code = ctx.response.status_code
             response.headers.update(ctx.response.metadata)
             set_cookies(response, ctx.response.cookies)
-        # clean the request resources after the response is consumed.
-        response.background = BackgroundTask(request.close)
         return response

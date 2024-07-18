@@ -5,7 +5,7 @@ XGBoost
 .. admonition:: About this page
 
    This is an API reference for XGBoost in BentoML. Please refer to the
-   :doc:`XGBoost guide </frameworks/xgboost>` for more information about how to use XGBoost
+   :doc:`XGBoost guide </reference/frameworks/xgboost>` for more information about how to use XGBoost
    in BentoML.
 
 
@@ -22,3 +22,5 @@ XGBoost
 .. autofunction:: bentoml.xgboost.load_model
 
 .. autofunction:: bentoml.xgboost.get
+
+.. autofunction:: bentoml.xgboost.get_service

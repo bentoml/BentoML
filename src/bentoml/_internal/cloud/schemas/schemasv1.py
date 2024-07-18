@@ -320,3 +320,50 @@ class DeploymentFullSchema(DeploymentSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
     urls: list[str]
+
+
+@attr.define
+class SecretItem:
+    key: str
+    sub_path: t.Optional[str] = attr.field(default=None)
+    value: t.Optional[str] = attr.field(default=None)
+
+
+@attr.define
+class SecretContentSchema:
+    type: str
+    items: t.List[SecretItem]
+    path: t.Optional[str] = attr.field(default=None)
+
+
+@attr.define
+class SecretSchema(ResourceSchema):
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    description: str
+    creator: UserSchema
+    content: SecretContentSchema
+
+
+@attr.define
+class SecretListSchema(BaseListSchema):
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    items: t.List[SecretSchema]
+
+
+@attr.define
+class CreateSecretSchema:
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    name: str
+    description: str
+    content: SecretContentSchema
+
+
+@attr.define
+class UpdateSecretSchema:
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    description: str
+    content: SecretContentSchema

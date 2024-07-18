@@ -1,7 +1,4 @@
 {% extends "base_debian.j2" %}
-{% block SETUP_BENTO_ENVARS %}
-{{ super() }}
-{% endblock %}
 {% block SETUP_BENTO_ENTRYPOINT %}
 RUN rm -rf /var/lib/{apt,cache,log}
 {{ super() }}

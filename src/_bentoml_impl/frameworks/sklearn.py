@@ -5,23 +5,24 @@ import typing as t
 from types import ModuleType
 from typing import TYPE_CHECKING
 
+from typing_extensions import deprecated
+
 import bentoml
 from bentoml import Tag
+from bentoml._internal.types import LazyType
+from bentoml._internal.utils.pkg import get_pkg_version
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
 from bentoml.models import Model
 from bentoml.models import ModelContext
-
-from ..types import LazyType
-from ..utils.pkg import get_pkg_version
+from bentoml.models import get as get
 
 if TYPE_CHECKING:
     from sklearn.base import BaseEstimator
     from sklearn.pipeline import Pipeline
 
+    from bentoml._internal.models.model import ModelSignaturesType
     from bentoml.types import ModelSignature
-
-    from ..models.model import ModelSignaturesType
 
     SklearnModel: t.TypeAlias = BaseEstimator | Pipeline
 
@@ -42,16 +43,7 @@ MODULE_NAME = "bentoml.sklearn"
 MODEL_FILENAME = "saved_model.pkl"
 API_VERSION = "v1"
 
-logger = logging.getLogger(__name__)
-
-
-def get(tag_like: str | Tag) -> Model:
-    model = bentoml.models.get(tag_like)
-    if model.info.module not in (MODULE_NAME, __name__):
-        raise NotFound(
-            f"Model {model.tag} was saved with module {model.info.module}, not loading with {MODULE_NAME}."
-        )
-    return model
+logger = logging.getLogger(MODULE_NAME)
 
 
 def load_model(bento_model: str | Tag | Model) -> SklearnModel:
@@ -73,7 +65,7 @@ def load_model(bento_model: str | Tag | Model) -> SklearnModel:
         sklearn = bentoml.sklearn.load_model('my_model:latest')
     """  # noqa
     if not isinstance(bento_model, Model):
-        bento_model = get(bento_model)
+        bento_model = bentoml.models.get(bento_model)
 
     if bento_model.info.module not in (MODULE_NAME, __name__):
         raise NotFound(
@@ -167,6 +159,7 @@ def save_model(
         return bento_model
 
 
+@deprecated("`get_runnable` is a legacy API, use `get_service` instead.")
 def get_runnable(bento_model: Model):
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.

@@ -10,7 +10,11 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloa
 {% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache(__lib_apt__) }} {{ common.mount_cache(__cache_apt__) }} {% endcall -%} set -eux && \
     apt-get update -y && \
     apt-get install -q -y --no-install-recommends --allow-remove-essential \
-        ca-certificates gnupg2 bash build-essential {% if __options__system_packages is not none %}{{ __options__system_packages | join(' ') }}{% endif -%}
+        ca-certificates gnupg2 bash build-essential curl {% if __options__system_packages is not none %}{{ __options__system_packages | join(' ') }}{% endif %}
+
+ENV UV_SYSTEM_PYTHON=1
+RUN curl -LO https://astral.sh/uv/install.sh && \
+    sh install.sh && rm install.sh && mv $HOME/.cargo/bin/uv /usr/local/bin/
 {% endblock %}
 
 {% block SETUP_BENTO_USER %}

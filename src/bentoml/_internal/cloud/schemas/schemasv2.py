@@ -46,6 +46,7 @@ class DeploymentConfigSchema:
     __forbid_extra_keys__ = False
     access_authorization: bool = attr.field(default=False)
     envs: t.Optional[t.List[EnvItemSchema]] = attr.field(default=None)
+    secrets: t.Optional[t.List[str]] = attr.field(default=None)
     services: t.Dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
 
 
@@ -122,4 +123,4 @@ class KubePodWSResponseSchema:
     __forbid_extra_keys__ = False
     message: str
     type: str
-    payload: t.List[KubePodSchema]
+    payload: t.Optional[t.List[KubePodSchema]]

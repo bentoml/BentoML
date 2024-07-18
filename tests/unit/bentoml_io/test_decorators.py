@@ -4,6 +4,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pytest
+from starlette.testclient import TestClient
 from typing_extensions import Annotated
 
 import bentoml
@@ -12,9 +13,7 @@ from bentoml.validators import DType
 from bentoml.validators import Shape
 
 
-@pytest.mark.asyncio
-async def test_mount_asgi_app():
-    import httpx
+def test_mount_asgi_app():
     from fastapi import FastAPI
 
     app = FastAPI()
@@ -26,17 +25,13 @@ async def test_mount_asgi_app():
         def hello(self):
             return {"message": "Hello, world!"}
 
-    async with httpx.AsyncClient(
-        app=TestService.to_asgi(init=True), base_url="http://testserver"
-    ) as client:
-        response = await client.get("/test/hello")
+    with TestClient(app=TestService.to_asgi()) as client:
+        response = client.get("/test/hello")
         assert response.status_code == 200
         assert response.json()["message"] == "Hello, world!"
 
 
-@pytest.mark.asyncio
-async def test_mount_asgi_app_later():
-    import httpx
+def test_mount_asgi_app_later():
     from fastapi import FastAPI
 
     app = FastAPI()
@@ -48,10 +43,8 @@ async def test_mount_asgi_app_later():
         def hello(self):
             return {"message": "Hello, world!"}
 
-    async with httpx.AsyncClient(
-        app=TestService.to_asgi(init=True), base_url="http://testserver"
-    ) as client:
-        response = await client.get("/test/hello")
+    with TestClient(app=TestService.to_asgi()) as client:
+        response = client.get("/test/hello")
         assert response.status_code == 200
         assert response.json()["message"] == "Hello, world!"
 

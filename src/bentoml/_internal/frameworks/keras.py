@@ -43,7 +43,7 @@ API_VERSION = "v1"
 
 
 @attr.define
-class KerasOptions(PartialKwargsModelOptions):
+class ModelOptions(PartialKwargsModelOptions):
     """Options for the Keras model."""
 
     include_optimizer: bool = False
@@ -250,7 +250,7 @@ def save_model(
             name,
         )
 
-    options = KerasOptions(include_optimizer=include_optimizer)
+    options = ModelOptions(include_optimizer=include_optimizer)
     kwargs = {}
     if tf_signatures is not None:
         kwargs["signatures"] = tf_signatures

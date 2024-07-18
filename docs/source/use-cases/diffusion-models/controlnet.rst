@@ -209,7 +209,7 @@ First, specify a configuration YAML file (``bentofile.yaml``) to define the buil
         system_packages:
           - ffmpeg
 
-:ref:`Create an API token with Developer Operations Access to log in to BentoCloud <bentocloud/how-tos/manage-access-token:create an api token>`, then run the following command to deploy the project.
+:ref:`Log in to BentoCloud <bentocloud/how-tos/manage-access-token:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
 
 .. code-block:: bash
 

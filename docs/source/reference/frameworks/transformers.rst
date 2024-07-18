@@ -5,7 +5,7 @@ Transformers
 .. admonition:: About this page
 
    This is an API reference for 🤗 Transformers in BentoML. Please refer to
-   :doc:`Transformers guide </frameworks/transformers>` for more information about how to use
+   :doc:`Transformers guide </reference/frameworks/transformers>` for more information about how to use
    Hugging Face Transformers in BentoML.
 
 .. currentmodule:: bentoml.transformers

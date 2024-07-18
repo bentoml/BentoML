@@ -5,6 +5,7 @@ import typing as t
 from http import HTTPStatus
 
 import click
+import rich
 import yaml
 from rich.syntax import Syntax
 from rich.table import Table
@@ -88,6 +89,12 @@ def raise_deployment_config_error(err: BentoMLException, action: str) -> t.NoRet
     multiple=True,
 )
 @click.option(
+    "--secret",
+    type=click.STRING,
+    help="List of secret names pass by --secret name1, --secret name2, ...",
+    multiple=True,
+)
+@click.option(
     "-f",
     "--config-file",
     type=click.File(),
@@ -110,7 +117,7 @@ def raise_deployment_config_error(err: BentoMLException, action: str) -> t.NoRet
 @click.option(
     "--timeout",
     type=click.INT,
-    default=1800,
+    default=3600,
     help="Timeout for deployment to be ready in seconds",
 )
 @click.pass_obj
@@ -125,6 +132,7 @@ def deploy_command(
     instance_type: str | None,
     strategy: str | None,
     env: tuple[str] | None,
+    secret: tuple[str] | None,
     config_file: str | t.TextIO | None,
     config_dict: str | None,
     wait: bool,
@@ -146,6 +154,7 @@ def deploy_command(
         instance_type=instance_type,
         strategy=strategy,
         env=env,
+        secret=secret,
         config_file=config_file,
         config_dict=config_dict,
         wait=wait,
@@ -299,7 +308,7 @@ def update(  # type: ignore
         context=shared_options.cloud_context,
     )
 
-    click.echo(f"Deployment '{deployment_info.name}' updated successfully.")
+    rich.print(f"Deployment [green]'{deployment_info.name}'[/] updated successfully.")
 
 
 @deployment_command.command()
@@ -422,7 +431,7 @@ def apply(  # type: ignore
         context=shared_options.cloud_context,
     )
 
-    click.echo(f"Deployment '{deployment_info.name}' applied successfully.")
+    rich.print(f"Deployment [green]'{deployment_info.name}'[/] applied successfully.")
 
 
 @deployment_command.command()
@@ -476,6 +485,12 @@ def apply(  # type: ignore
     multiple=True,
 )
 @click.option(
+    "--secret",
+    type=click.STRING,
+    help="List of secret names pass by --secret name1, --secret name2, ...",
+    multiple=True,
+)
+@click.option(
     "-f",
     "--config-file",
     type=click.File(),
@@ -498,7 +513,7 @@ def apply(  # type: ignore
 @click.option(
     "--timeout",
     type=click.INT,
-    default=1800,
+    default=3600,
     help="Timeout for deployment to be ready in seconds",
 )
 @click.pass_obj
@@ -513,6 +528,7 @@ def create(
     instance_type: str | None,
     strategy: str | None,
     env: tuple[str] | None,
+    secret: tuple[str] | None,
     config_file: str | t.TextIO | None,
     config_dict: str | None,
     wait: bool,
@@ -534,6 +550,7 @@ def create(
         instance_type=instance_type,
         strategy=strategy,
         env=env,
+        secret=secret,
         config_file=config_file,
         config_dict=config_dict,
         wait=wait,
@@ -581,7 +598,7 @@ def terminate(  # type: ignore
 ) -> None:
     """Terminate a deployment on BentoCloud."""
     Deployment.terminate(name, context=shared_options.cloud_context, cluster=cluster)
-    click.echo(f"Deployment '{name}' terminated successfully.")
+    rich.print(f"Deployment [green]'{name}'[/] terminated successfully.")
 
 
 @deployment_command.command()
@@ -599,7 +616,7 @@ def delete(  # type: ignore
 ) -> None:
     """Delete a deployment on BentoCloud."""
     Deployment.delete(name, context=shared_options.cloud_context, cluster=cluster)
-    click.echo(f"Deployment '{name}' deleted successfully.")
+    rich.print(f"Deployment [green]'{name}'[/] deleted successfully.")
 
 
 @deployment_command.command(name="list")
@@ -707,6 +724,7 @@ def create_deployment(
     instance_type: str | None,
     strategy: str | None,
     env: tuple[str] | None,
+    secret: tuple[str] | None,
     config_file: str | t.TextIO | None,
     config_dict: str | None,
     wait: bool,
@@ -730,6 +748,7 @@ def create_deployment(
             if env is not None
             else None
         ),
+        secrets=secret,
         config_file=config_file,
         config_dict=cfg_dict,
         cli=True,

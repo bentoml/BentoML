@@ -10,6 +10,7 @@ import typing as t
 from functools import partial
 
 import click
+import rich
 from click_option_group import optgroup
 
 from bentoml import container
@@ -551,14 +552,10 @@ def containerize_command(  # type: ignore
             elif shutil.which("nerdctl") is not None:
                 container_runtime = "nerdctl"
             else:
-                click.echo(
-                    click.style(
-                        "To load image built with 'buildctl' requires one of "
-                        "docker, podman, nerdctl (None are found in PATH). "
-                        "Make sure they are visible to PATH and try again.",
-                        fg="yellow",
-                    ),
-                    color=True,
+                rich.print(
+                    "[yellow]To load image built with 'buildctl' requires one of "
+                    "docker, podman, nerdctl (None are found in PATH). "
+                    "Make sure they are visible to PATH and try again.[/]",
                 )
                 sys.exit(0)
             if "output" not in _memoized:
@@ -566,32 +563,24 @@ def containerize_command(  # type: ignore
                 type_prefix = "type=oci,name="
                 if container_runtime == "docker":
                     type_prefix = "type=docker,name=docker.io/"
-                click.echo(
-                    click.style(
-                        "Autoconfig is now deprecated and will be removed "
-                        "in the next future release. We recommend setting "
-                        "output to a tarfile should you wish to load the "
-                        "image locally. For example:",
-                        fg="yellow",
-                    ),
-                    color=True,
+                rich.print(
+                    "[yellow]Autoconfig is now deprecated and will be removed "
+                    "in the next future release. We recommend setting "
+                    "output to a tarfile should you wish to load the "
+                    "image locally. For example:[/]",
                 )
-                click.echo(
-                    click.style(
-                        f"    bentoml containerize {bento_tag} --backend buildctl --opt output={type_prefix}{tags[0]},dest={tmp_path}/{tags[0].replace(':', '_')}.tar\n"
-                        f"    {container_runtime} load -i {tmp_path}/{tags[0].replace(':', '_')}.tar",
-                        fg="yellow",
-                    ),
-                    color=True,
+                rich.print(
+                    f"[yellow]    bentoml containerize {bento_tag} --backend buildctl --opt output={type_prefix}{tags[0]},dest={tmp_path}/{tags[0].replace(':', '_')}.tar\n"
+                    f"    {container_runtime} load -i {tmp_path}/{tags[0].replace(':', '_')}.tar[/]",
                 )
                 o = subprocess.check_output([container_runtime, "load"], input=result)
                 if get_debug_mode():
-                    click.echo(o.decode("utf-8").strip())
+                    rich.print(o.decode("utf-8").strip())
                 sys.exit(0)
             return result
 
-        click.echo(
-            f'Successfully built Bento container for "{bento_tag}" with tag(s) "{",".join(tags)}"',
+        rich.print(
+            f'Successfully built Bento container for [green]"{bento_tag}"[/] with tag(s) "{",".join(tags)}"',
         )
         instructions = (
             "To run your newly built Bento container, run:\n"
@@ -604,8 +593,8 @@ def containerize_command(  # type: ignore
         ):
             instructions += (
                 "To serve with gRPC instead, run:\n"
-                + f"    {container_runtime} run --rm -p 3000:3000 -p 3001:3001 {tags[0]} serve-grpc\n"
+                + f"    {container_runtime} run --rm -p 3000:3000 -p 3001:3001 {tags[0]} serve-grpc"
             )
-        click.echo(instructions, nl=False)
-        raise SystemExit(0)
+        rich.print(instructions)
+        sys.exit(0)
     raise SystemExit(1)

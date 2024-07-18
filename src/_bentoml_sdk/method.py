@@ -57,6 +57,7 @@ class APIMethod(t.Generic[P, R]):
     is_stream: bool = attrs.field(init=False)
     doc: str | None = attrs.field(init=False)
     ctx_param: str | None = attrs.field(init=False)
+    is_task: bool = False
 
     @doc.default
     def default_doc(self) -> str | None:
@@ -150,6 +151,7 @@ class APIMethod(t.Generic[P, R]):
                 "batchable": self.batchable,
                 "input": _flatten_model_schema(self.input_spec),
                 "output": output,
+                "is_task": self.is_task,
             }
         )
 

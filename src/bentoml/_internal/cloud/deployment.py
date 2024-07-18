@@ -560,26 +560,37 @@ class DeploymentInfo:
                 while time.time() - start_time < timeout:
                     for _ in range(3):
                         try:
-                            status = self.get_status()
+                            new_status = self.get_status()
                             break
                         except TimeoutException:
                             spinner.update(
                                 "⚠️ Unable to get deployment status, retrying..."
                             )
-                    if status is None:
+                    else:
                         spinner.log(
-                            "🚨 [bold red]Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website.[/bold red]"
+                            "🚨 [bold red]Unable to contact the server, but the deployment is created. "
+                            "You can check the status on the bentocloud website.[/bold red]"
                         )
                         return
-                    spinner.update(
-                        f'🔄 Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
-                    )
-                    if status.status == DeploymentStatus.ImageBuilding.value:
-                        if tail_thread is None:
-                            tail_thread = Thread(
-                                target=tail_image_builder_logs, daemon=True
-                            )
-                            tail_thread.start()
+                    if (
+                        status is None or status.status != new_status.status
+                    ):  # on status change
+                        status = new_status
+                        spinner.update(
+                            f'🔄 Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
+                        )
+                        if status.status == DeploymentStatus.ImageBuilding.value:
+                            if tail_thread is None:
+                                tail_thread = Thread(
+                                    target=tail_image_builder_logs, daemon=True
+                                )
+                                tail_thread.start()
+                        elif (
+                            tail_thread is not None
+                        ):  # The status has changed from ImageBuilding to other
+                            stop_tail_event.set()
+                            tail_thread.join()
+                            spinner.start()
 
                     if status.status in (
                         DeploymentStatus.Running.value,

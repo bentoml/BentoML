@@ -76,18 +76,19 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
             baseURL = f"{endpoint}/api_tokens"
             encodedCallback = urllib.parse.quote(callback_server.callback_url)
             authURL = f"{baseURL}?callback={encodedCallback}"
-            answer = Confirm.ask(
+            if Confirm.ask(
                 f"Press Enter to open [blue]{authURL}[/] in your browser..."
-            )
-            if not answer:
-                return
-            if webbrowser.open_new_tab(authURL):
-                rich.print(f"✅ Opened [blue]{authURL}[/] in your web browser.")
+            ):
+                if webbrowser.open_new_tab(authURL):
+                    rich.print(f"✅ Opened [blue]{authURL}[/] in your web browser.")
+                else:
+                    rich.print(
+                        f"🚨 Failed to open browser. Try create a new API token at {baseURL} or Open [blue]{authURL}[/] yourself"
+                    )
             else:
-                rich.print(
-                    f"🚨 Failed to open browser. Try create a new API token at {baseURL}"
-                )
+                rich.print(f"🫱  Open [blue]{authURL}[/] yourself...")
             try:
+                rich.print("🔒 Waiting for authentication...")
                 code = callback_server.wait_indefinitely_for_code()
                 if code is None:
                     raise ValueError(

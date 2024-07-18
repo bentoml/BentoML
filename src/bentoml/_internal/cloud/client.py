@@ -693,7 +693,7 @@ class RestApiClientV2(BaseRestApiClient):
     ) -> KubePodSchema | None:
         pods = self.list_deployment_pods(name, cluster=cluster)
         if not pods:
-            raise NotFound(f"Deployment {name} pods is not found")
+            return None
         for pod in pods:
             if pod.labels.get("yatai.ai/is-bento-image-builder") == "true":
                 return pod

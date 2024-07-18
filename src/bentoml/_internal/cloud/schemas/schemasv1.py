@@ -64,6 +64,7 @@ class ClusterSchema(ResourceSchema):
     description: str
     organization_name: str
     creator: UserSchema
+    is_first: t.Optional[bool]
 
 
 @attr.define

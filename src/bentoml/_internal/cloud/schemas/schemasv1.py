@@ -280,7 +280,7 @@ class ResourceInstanceSchema(ResourceSchema):
     config: ResourceInstanceConfigSchema
 
 
-@attr.define
+@attr.define(kw_only=True)
 class ClusterFullSchema(ClusterSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = True

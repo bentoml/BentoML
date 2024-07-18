@@ -518,17 +518,29 @@ class DeploymentInfo:
 
             def tail_image_builder_logs() -> None:
                 cloud_rest_client = get_rest_api_client(self._context)
+                started_at = time.time()
+                wait_pod_timeout = 60 * 10
                 pod: KubePodSchema | None = None
                 while True:
                     pod = cloud_rest_client.v2.get_deployment_image_builder_pod(
                         self.name, self.cluster
                     )
                     if pod is None:
+                        if time.time() - started_at > timeout:
+                            console.print(
+                                "🚨 [bold red]Time out waiting for image builder pod created[/bold red]"
+                            )
+                            return
                         if stop_tail_event.wait(check_interval):
                             return
                         continue
                     if pod.pod_status.status == "Running":
                         break
+                    if time.time() - started_at > wait_pod_timeout:
+                        console.print(
+                            "🚨 [bold red]Time out waiting for image builder pod running[/bold red]"
+                        )
+                        return
                     if stop_tail_event.wait(check_interval):
                         return
 

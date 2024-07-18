@@ -527,7 +527,7 @@ class DeploymentInfo:
                     )
                     if pod is None:
                         if time.time() - started_at > timeout:
-                            console.print(
+                            spinner.console.print(
                                 "🚨 [bold red]Time out waiting for image builder pod created[/bold red]"
                             )
                             return
@@ -537,7 +537,7 @@ class DeploymentInfo:
                     if pod.pod_status.status == "Running":
                         break
                     if time.time() - started_at > wait_pod_timeout:
-                        console.print(
+                        spinner.console.print(
                             "🚨 [bold red]Time out waiting for image builder pod running[/bold red]"
                         )
                         return

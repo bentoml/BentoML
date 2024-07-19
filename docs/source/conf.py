@@ -116,12 +116,12 @@ copybutton_selector = "div:not(.no-copybutton) > div.highlight > pre"
 html_theme = "furo"
 html_theme_options = {
     "light_css_variables": {
-        "color-brand-primary": "#44a4c6 ",
-        "color-brand-content": "#44a4c6 ",
+        "color-brand-primary": "#4dad8c ",
+        "color-brand-content": "#4dad8c ",
     },
     "dark_css_variables": {
-        "color-brand-primary": "#c9378a ",
-        "color-brand-content": "#c9378a ",
+        "color-brand-primary": "#4dad8c ",
+        "color-brand-content": "#4dad8c ",
     },
     "source_repository": "https://github.com/bentoml/bentoml/",
     "source_branch": "main",

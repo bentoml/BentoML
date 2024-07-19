@@ -140,10 +140,10 @@ html_theme_options = {
             "class": "fab fa-linkedin",
         },
         {
-            "name": "Twitter",
+            "name": "X",
             "url": "https://twitter.com/bentomlai",
             "html": "&nbsp;&nbsp;",
-            "class": "fab fa-twitter",
+            "class": "fab fa-x-twitter",
         },
         {
             "name": "Slack",
@@ -160,7 +160,7 @@ html_title = "BentoML"
 html_static_path = ["_static"]
 html_css_files = [
     "css/custom.css",
-    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css",
 ]
 html_js_files = ["js/custom.js"]
 html_show_sphinx = False

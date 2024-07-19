@@ -1,6 +1,6 @@
-=====================
-Large language models
-=====================
+===
+LLM
+===
 
 This section provides example projects for large language models.
 

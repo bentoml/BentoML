@@ -140,7 +140,7 @@ BentoML's lifecycle hooks provide a way to insert custom logic at specific stage
 You use decorators to set lifecycle hooks. For details, see :doc:`/guides/lifecycle-hooks`.
 
 Synchronous and asynchronous APIs
-----------------------------------
+---------------------------------
 
 APIs in a BentoML Service can be defined as either synchronous functions or asynchronous coroutines in Python.
 
@@ -258,6 +258,30 @@ However, directly calling synchronous blocking functions within an asynchronous 
     ``bentoml.depends()`` is commonly used for interservice communication as it allows you to directly call the API methods of a BentoML Service within another Service as if they were local class functions. For more information, see :doc:`/guides/distributed-services`.
 
 In this example, the ``.to_async`` property converts synchronous methods (``txt2img`` and ``synthesize`` of ``SDXLTurboService`` and ``XTTSService`` respectively) into their asynchronous versions, enabling the ``generate_card`` method to perform multiple asynchronous operations concurrently with ``asyncio.gather``.
+
+.. _bentoml-tasks:
+
+Tasks
+-----
+
+Tasks in BentoML allow you to execute long-running operations in the background, managed via a task queue style API. These background tasks are ideal for scenarios like batch processing and image or video generation where you don't need the results immediately or synchronously.
+
+To define a task endpoint, use the ``@bentoml.task`` decorator in the Service constructor. Here's an example:
+
+.. code-block:: python
+
+    import bentoml
+    import numpy as np
+
+    @bentoml.service
+    class MyService:
+        @bentoml.task
+        def long_running_task(self, input: np.ndarray) -> np.ndarray:
+            # Simulated long-running process
+            # Placeholder for actual processing logic
+            return result
+
+BentoML automatically exposes several endpoints for clients to manage the task, such as task submission, status retrieval, and cancellation. For more information, see :ref:`call-a-task-endpoint`.
 
 Convert legacy Runners to a Service
 -----------------------------------

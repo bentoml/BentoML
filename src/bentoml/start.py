@@ -38,7 +38,7 @@ def start_runner_server(
     """
     from .serve import ensure_prometheus_dir
 
-    prometheus_dir = ensure_prometheus_dir()
+    env = {"PROMETHEUS_MULTIPROC_DIR": ensure_prometheus_dir()}
 
     from . import load
     from ._internal.utils import reserve_free_port
@@ -93,12 +93,11 @@ def start_runner_server(
                                 "$(circus.wid)",
                                 "--worker-env-map",
                                 json.dumps(runner.scheduled_worker_env_map),
-                                "--prometheus-dir",
-                                prometheus_dir,
                                 *timeout_args,
                             ],
                             working_dir=working_dir,
                             numprocesses=runner.scheduled_worker_count,
+                            env=env,
                         )
                     )
                     break
@@ -118,6 +117,7 @@ def start_runner_server(
                             use_sockets=False,
                             working_dir=working_dir,
                             numprocesses=1,
+                            env=env,
                         )
                     )
                     break
@@ -164,7 +164,7 @@ def start_http_server(
 ) -> None:
     from .serve import ensure_prometheus_dir
 
-    prometheus_dir = ensure_prometheus_dir()
+    env = {"PROMETHEUS_MULTIPROC_DIR": ensure_prometheus_dir()}
 
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
@@ -226,14 +226,13 @@ def start_http_server(
                 f"{backlog}",
                 "--worker-id",
                 "$(CIRCUS.WID)",
-                "--prometheus-dir",
-                prometheus_dir,
                 *ssl_args,
                 *timeouts_args,
                 *timeout_args,
             ],
             working_dir=working_dir,
             numprocesses=api_workers,
+            env=env,
         )
     )
     if BentoMLContainer.api_server_config.metrics.enabled.get():
@@ -282,7 +281,7 @@ def start_grpc_server(
 ) -> None:
     from .serve import ensure_prometheus_dir
 
-    prometheus_dir = ensure_prometheus_dir()
+    env = {"PROMETHEUS_MULTIPROC_DIR": ensure_prometheus_dir()}
 
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
@@ -330,8 +329,6 @@ def start_grpc_server(
             json.dumps(runner_map),
             "--working-dir",
             working_dir,
-            "--prometheus-dir",
-            prometheus_dir,
             "--worker-id",
             "$(CIRCUS.WID)",
             *ssl_args,
@@ -357,6 +354,7 @@ def start_grpc_server(
                 use_sockets=False,
                 working_dir=working_dir,
                 numprocesses=api_workers,
+                env=env,
             )
         )
 
@@ -379,14 +377,13 @@ def start_grpc_server(
                     SCRIPT_GRPC_PROMETHEUS_SERVER,
                     "--fd",
                     f"$(circus.sockets.{PROMETHEUS_SERVER_NAME})",
-                    "--prometheus-dir",
-                    prometheus_dir,
                     "--backlog",
                     f"{backlog}",
                 ],
                 working_dir=working_dir,
                 numprocesses=1,
                 singleton=True,
+                env=env,
             )
         )
 

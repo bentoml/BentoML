@@ -89,7 +89,6 @@ def ensure_prometheus_dir(
             directory,
             alternative,
         )
-        BentoMLContainer.prometheus_multiproc_dir.set(alternative)
         return alternative
     except Exception as e:  # pylint: disable=broad-except
         raise RuntimeError(
@@ -322,7 +321,7 @@ def serve_http_production(
     timeout_keep_alive: int | None = None,
     timeout_graceful_shutdown: int | None = None,
 ) -> None:
-    prometheus_dir = ensure_prometheus_dir()
+    env = {"PROMETHEUS_MULTIPROC_DIR": ensure_prometheus_dir()}
 
     import ipaddress
     from socket import AF_INET
@@ -370,8 +369,6 @@ def serve_http_production(
                     "$(CIRCUS.WID)",
                     "--worker-env-map",
                     json.dumps(runner.scheduled_worker_env_map),
-                    "--prometheus-dir",
-                    prometheus_dir,
                     *timeout_args,
                 ]
                 if runner.embedded or development_mode:
@@ -390,6 +387,7 @@ def serve_http_production(
                         args=runner_args,
                         working_dir=working_dir,
                         numprocesses=runner.scheduled_worker_count,
+                        env=env,
                     )
                 )
             else:
@@ -410,6 +408,7 @@ def serve_http_production(
                         use_sockets=False,
                         working_dir=working_dir,
                         numprocesses=1,
+                        env=env,
                     )
                 )
         # reserve one more to avoid conflicts
@@ -467,8 +466,6 @@ def serve_http_production(
         f"{backlog}",
         "--worker-id",
         "$(CIRCUS.WID)",
-        "--prometheus-dir",
-        prometheus_dir,
         *ssl_args,
         *timeouts_args,
         *timeout_args,
@@ -490,6 +487,7 @@ def serve_http_production(
             working_dir=working_dir,
             numprocesses=api_workers,
             close_child_stdin=close_child_stdin,
+            env=env,
         )
     )
 
@@ -563,7 +561,7 @@ def serve_grpc_production(
     reload: bool = False,
     development_mode: bool = False,
 ) -> None:
-    prometheus_dir = ensure_prometheus_dir()
+    env = {"PROMETHEUS_MULTIPROC_DIR": ensure_prometheus_dir()}
 
     from . import load
     from ._internal.service import Service
@@ -640,6 +638,7 @@ def serve_grpc_production(
                         ],
                         working_dir=working_dir,
                         numprocesses=runner.scheduled_worker_count,
+                        env=env,
                     )
                 )
             else:
@@ -660,6 +659,7 @@ def serve_grpc_production(
                         use_sockets=False,
                         working_dir=working_dir,
                         numprocesses=1,
+                        env=env,
                     )
                 )
         # reserve one more to avoid conflicts
@@ -695,8 +695,6 @@ def serve_grpc_production(
             json.dumps(runner_bind_map),
             "--working-dir",
             working_dir,
-            "--prometheus-dir",
-            prometheus_dir,
             "--worker-id",
             "$(CIRCUS.WID)",
             *ssl_args,
@@ -727,6 +725,7 @@ def serve_grpc_production(
                 working_dir=working_dir,
                 numprocesses=api_workers,
                 close_child_stdin=close_child_stdin,
+                env=env,
             )
         )
 
@@ -749,8 +748,6 @@ def serve_grpc_production(
                     SCRIPT_GRPC_PROMETHEUS_SERVER,
                     "--fd",
                     f"$(circus.sockets.{PROMETHEUS_SERVER_NAME})",
-                    "--prometheus-dir",
-                    prometheus_dir,
                     "--backlog",
                     f"{backlog}",
                 ],

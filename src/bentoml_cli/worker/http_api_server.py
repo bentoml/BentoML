@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import socket
 import typing as t
 
@@ -29,11 +28,6 @@ import click
     "--working-dir",
     type=click.Path(exists=True),
     help="Working directory for the API server",
-)
-@click.option(
-    "--prometheus-dir",
-    type=click.Path(exists=True),
-    help="Required by prometheus to pass the metrics in multi-process mode",
 )
 @click.option(
     "--worker-id",
@@ -116,7 +110,6 @@ def main(
     backlog: int,
     working_dir: str | None,
     worker_id: int,
-    prometheus_dir: str | None,
     ssl_certfile: str | None,
     ssl_keyfile: str | None,
     ssl_keyfile_password: str | None,
@@ -151,11 +144,6 @@ def main(
         BentoMLContainer.worker_index.set(worker_id)
 
     BentoMLContainer.development_mode.set(development_mode)
-    if prometheus_dir is not None:
-        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-    os.environ["PROMETHEUS_MULTIPROC_DIR"] = (
-        BentoMLContainer.prometheus_multiproc_dir.get()
-    )
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
     if timeout is not None:

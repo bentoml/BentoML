@@ -15,3 +15,7 @@ This page provides API reference for accessing BentoCloud and managing Deploymen
 .. click:: bentoml_cli.deployment:deployment_command
    :prog: bentoml deployment
    :nested: full
+
+.. click:: bentoml_cli.secret:secret_command
+   :prog: bentoml secret
+   :nested: full

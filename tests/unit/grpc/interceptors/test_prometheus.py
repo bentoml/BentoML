@@ -50,7 +50,7 @@ def init_prometheus_dir():
         yield
     finally:
         os.environ.pop("PROMETHEUS_MULTIPROC_DIR")
-        shutil.rmtree(prom_dir)
+        shutil.rmtree(prom_dir, ignore_errors=True)
 
 
 @pytest.mark.asyncio

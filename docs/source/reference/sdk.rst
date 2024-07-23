@@ -9,10 +9,14 @@ Service decorator
 
 .. autofunction:: bentoml.runner_service
 
+.. autofunction:: bentoml.mount_asgi_app
+
 Service API
 -----------
 
 .. autofunction:: bentoml.api
+
+.. autofunction:: bentoml.task
 
 bentoml.depends
 ---------------

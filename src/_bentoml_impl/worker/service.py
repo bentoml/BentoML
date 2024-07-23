@@ -153,6 +153,12 @@ def main(
     from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
 
+    if prometheus_dir is not None:
+        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = (
+        BentoMLContainer.prometheus_multiproc_dir.get()
+    )
+
     configure_server_logging()
     if runner_map:
         BentoMLContainer.remote_runner_mapping.set(
@@ -172,11 +178,6 @@ def main(
 
     BentoMLContainer.development_mode.set(development_mode)
 
-    if prometheus_dir is not None:
-        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-    os.environ["PROMETHEUS_MULTIPROC_DIR"] = (
-        BentoMLContainer.prometheus_multiproc_dir.get()
-    )
     server_context.service_name = service.name
     if service.bento is None:
         server_context.bento_name = service.name

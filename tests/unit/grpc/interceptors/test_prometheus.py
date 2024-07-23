@@ -34,10 +34,12 @@ else:
     grpc, aio = import_grpc()
 
 
+interceptor = PrometheusServerInterceptor()
+
+
 @pytest.fixture(scope="module", autouse=True)
 def init_prometheus_dir():
     prom_dir = tempfile.mkdtemp("prometheus-multiproc")
-    interceptor = PrometheusServerInterceptor()
     try:
         os.environ["PROMETHEUS_MULTIPROC_DIR"] = prom_dir
         if "prometheus_client" in sys.modules:

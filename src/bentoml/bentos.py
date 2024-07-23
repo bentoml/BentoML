@@ -5,11 +5,6 @@ User facing python APIs for managing local bentos and build new bentos.
 from __future__ import annotations
 
 import logging
-import os
-import re
-import subprocess
-import sys
-import tempfile
 import typing as t
 
 from simple_di import Provide
@@ -308,7 +303,6 @@ def build(
                :class:`bentoml._internal.bento.build_config.CondaOptions`
         version: Override the default auto generated version str
         build_ctx: Build context directory, when used as
-        _bento_store: save Bento created to this BentoStore
 
     Returns:
         Bento: a Bento instance representing the materialized Bento saved in BentoStore
@@ -362,49 +356,9 @@ def build(
         models=models or [],
     )
 
-    build_args = [sys.executable, "-m", "bentoml", "build"]
-
-    if build_ctx is None:
-        build_ctx = "."
-    build_args.append(build_ctx)
-
-    if version is not None:
-        build_args.extend(["--version", version])
-    build_args.extend(["--output", "tag"])
-
-    copied = os.environ.copy()
-    copied.setdefault("BENTOML_HOME", BentoMLContainer.bentoml_home.get())
-
-    with tempfile.NamedTemporaryFile(
-        "w", encoding="utf-8", prefix="bentoml-build-", suffix=".yaml"
-    ) as f:
-        build_config.to_yaml(f)
-        bentofile_path = os.path.join(os.path.dirname(f.name), f.name)
-        build_args.extend(["--bentofile", bentofile_path])
-        try:
-            return get(
-                _parse_tag_from_outputs(
-                    subprocess.check_output(build_args, env=copied)
-                ),
-                _bento_store=_bento_store,
-            )
-        except subprocess.CalledProcessError as e:
-            raise BentoMLException(
-                f"Failed to build BentoService bundle (Lookup for traceback):\n{e}"
-            ) from e
-
-
-def _parse_tag_from_outputs(output: bytes) -> str:
-    matched = re.search(
-        r"^__tag__:([^:\n]+:[^:\n]+)$",
-        output.decode("utf-8").strip(),
-        flags=re.MULTILINE,
-    )
-    if matched is None:
-        raise BentoMLException(
-            f"Failed to find tag from output: {output}\nNote: Output from 'bentoml build' might not be correct. Please open an issue on GitHub."
-        )
-    return matched.group(1).strip()
+    return Bento.create(
+        build_config=build_config, version=version, build_ctx=build_ctx
+    ).save(_bento_store)
 
 
 @inject
@@ -412,6 +366,7 @@ def build_bentofile(
     bentofile: str = "bentofile.yaml",
     *,
     version: str | None = None,
+    labels: dict[str, str] | None = None,
     build_ctx: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
@@ -425,32 +380,26 @@ def build_bentofile(
         bentofile: The file path to build config yaml file
         version: Override the default auto generated version str
         build_ctx: Build context directory, when used as
-        _bento_store: save Bento created to this BentoStore
+
+    Returns:
+        Bento: a Bento instance representing the materialized Bento saved in BentoStore
     """
     try:
         bentofile = resolve_user_filepath(bentofile, build_ctx)
     except FileNotFoundError:
         raise InvalidArgument(f'bentofile "{bentofile}" not found')
 
-    build_args = [sys.executable, "-m", "bentoml", "build"]
-    if build_ctx is None:
-        build_ctx = "."
-    build_args.append(build_ctx)
-    if version is not None:
-        build_args.extend(["--version", version])
-    build_args.extend(["--bentofile", bentofile, "--output", "tag"])
+    with open(bentofile, "r", encoding="utf-8") as f:
+        build_config = BentoBuildConfig.from_yaml(f)
 
-    copied = os.environ.copy()
-    copied.setdefault("BENTOML_HOME", BentoMLContainer.bentoml_home.get())
-    try:
-        return get(
-            _parse_tag_from_outputs(subprocess.check_output(build_args, env=copied)),
-            _bento_store=_bento_store,
-        )
-    except subprocess.CalledProcessError as e:
-        raise BentoMLException(
-            f"Failed to build BentoService bundle (Lookup for traceback):\n{e}"
-        ) from e
+    if labels:
+        if not build_config.labels:
+            build_config.labels = labels
+        build_config.labels.update(labels)
+
+    return Bento.create(
+        build_config=build_config, version=version, build_ctx=build_ctx
+    ).save(_bento_store)
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:

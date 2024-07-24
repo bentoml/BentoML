@@ -2,7 +2,8 @@
 BentoCloud BYOC Setup Guide for Azure
 =====================================
 
-As part of our commitment to ensuring a smooth and efficient onboarding process, we have prepared this setup guide to help your DevOps team integrate BentoCloud into your Azure account.
+
+This document provides step-by-step instructions for configuring the necessary Azure service principal and roles for deploying BentoCloud in your Azure account. By following these steps, you will assign the required roles to a service principal within BentoML's Azure account. This service principal will be used for creating and managing the Azure resources required to operate BentoCloud on your Azure account.
 
 Setup
 -----
@@ -27,14 +28,9 @@ Setup
 
 The permission set in the script allows for the creation and management of all required resources, including Azure Kubernetes Service, Blob Storage, and Redis Cache, for the setup and maintenance of BentoCloud cluster on Azure. The scope of the grant is strictly limited to the resource group ``bentocloud-<region>`` and does not grant permissions to any other resources.
 
-Post setup
-----------
+.. note::
 
-Upon completion of the setup script, a file named ``bcAdminSP.json`` will be created, containing the credentials and subscription ID to manage Azure resources under the specified subscription. Please send the file and the Azure region to the BentoML team.
-
-.. important::
-
-    For security reasons, it's crucial to transfer this file through a secure channel. Please reach out to your BentoML contact for this step.
+   The service principal ID ``d0e2f715-76af-469a-96b9-7d9d9a62b741`` used in the script is the BentoCloud Azure account's service principal.
 
 Getting help and troubleshooting
 --------------------------------

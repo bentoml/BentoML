@@ -64,13 +64,11 @@ def bento_management_commands() -> click.Group:
     import bentoml
     from bentoml import Tag
     from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
-    from bentoml._internal.bento.bento import Bento
-    from bentoml._internal.bento.build_config import BentoBuildConfig
     from bentoml._internal.configuration import get_quiet_mode
     from bentoml._internal.configuration.containers import BentoMLContainer
     from bentoml._internal.utils import human_readable_size
-    from bentoml._internal.utils import resolve_user_filepath
     from bentoml._internal.utils import rich_console as console
+    from bentoml.bentos import build_bentofile
     from bentoml.bentos import import_bento
     from bentoml_cli.utils import BentoMLCommandGroup
 
@@ -389,14 +387,13 @@ def bento_management_commands() -> click.Group:
         ctx: click.Context,
         build_ctx: str,
         bentofile: str,
-        version: str,
+        version: str | None,
         labels: tuple[str, ...],
         output: t.Literal["tag", "default"],
         push: bool,
         force: bool,
         threads: int,
         containerize: bool,
-        _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ):
         """Build a new Bento from current directory."""
@@ -407,25 +404,14 @@ def bento_management_commands() -> click.Group:
             set_quiet_mode()
             configure_logging()
 
-        try:
-            bentofile = resolve_user_filepath(bentofile, build_ctx)
-        except FileNotFoundError:
-            raise click.ClickException(f'bentofile "{bentofile}" not found')
-
-        with open(bentofile, "r", encoding="utf-8") as f:
-            build_config = BentoBuildConfig.from_yaml(f)
-
+        labels_dict: dict[str, t.Any] = {}
         for label in labels:
             key, label_value = label.split("=", 1)
-            if build_config.labels is None:
-                build_config.labels = {}
-            build_config.labels[key] = label_value
+            labels_dict[key] = label_value
 
-        bento = Bento.create(
-            build_config=build_config,
-            version=version,
-            build_ctx=build_ctx,
-        ).save(_bento_store)
+        bento = build_bentofile(
+            bentofile, version=version, labels=labels_dict or None, build_ctx=build_ctx
+        )
 
         containerize_cmd = f"bentoml containerize {bento.tag}"
         push_cmd = f"bentoml push {bento.tag}"

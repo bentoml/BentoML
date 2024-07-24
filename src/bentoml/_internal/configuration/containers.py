@@ -328,12 +328,10 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def metrics_client(
-        multiproc_dir: str = Provide[prometheus_multiproc_dir],
-    ) -> PrometheusClient:
+    def metrics_client() -> PrometheusClient:
         from ..server.metrics.prometheus import PrometheusClient
 
-        return PrometheusClient(multiproc_dir=multiproc_dir)
+        return PrometheusClient()
 
     tracing = config.tracing
 

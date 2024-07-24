@@ -44,11 +44,6 @@ import click
     type=click.INT,
     help="Specify the timeout (seconds) for runner",
 )
-@click.option(
-    "--prometheus-dir",
-    type=click.Path(exists=True),
-    help="Required by prometheus to pass the metrics in multi-process mode",
-)
 def main(
     bento_identifier: str,
     runner_name: str,
@@ -58,7 +53,6 @@ def main(
     worker_id: int,
     timeout: int | None,
     worker_env_map: str | None,
-    prometheus_dir: str | None,
 ) -> None:
     """
     Start a runner server.
@@ -104,11 +98,6 @@ def main(
 
     from bentoml._internal.configuration.containers import BentoMLContainer
 
-    if prometheus_dir is not None:
-        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-    os.environ["PROMETHEUS_MULTIPROC_DIR"] = (
-        BentoMLContainer.prometheus_multiproc_dir.get()
-    )
     if no_access_log:
         access_log_config = BentoMLContainer.runners_config.logging.access
         access_log_config.enabled.set(False)

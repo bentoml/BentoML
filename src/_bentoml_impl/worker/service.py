@@ -26,11 +26,6 @@ import click
     "--backlog", type=click.INT, default=2048, help="Backlog size for the socket"
 )
 @click.option(
-    "--prometheus-dir",
-    type=click.Path(exists=True),
-    help="Required by prometheus to pass the metrics in multi-process mode",
-)
-@click.option(
     "--worker-env", type=click.STRING, default=None, help="Environment variables"
 )
 @click.option(
@@ -115,7 +110,6 @@ def main(
     backlog: int,
     worker_env: str | None,
     worker_id: int | None,
-    prometheus_dir: str | None,
     ssl_certfile: str | None,
     ssl_keyfile: str | None,
     ssl_keyfile_password: str | None,
@@ -152,12 +146,6 @@ def main(
     from bentoml._internal.container import BentoMLContainer
     from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
-
-    if prometheus_dir is not None:
-        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-    os.environ["PROMETHEUS_MULTIPROC_DIR"] = (
-        BentoMLContainer.prometheus_multiproc_dir.get()
-    )
 
     configure_server_logging()
     if runner_map:

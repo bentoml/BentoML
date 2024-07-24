@@ -15,12 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class PrometheusClient:
-    def __init__(
-        self,
-        *,
-        multiproc: bool = True,
-        multiproc_dir: str | None = None,
-    ):
+    def __init__(self, *, multiproc: bool = True):
         """
         PrometheusClient is BentoML's own prometheus client that extends the official Python client.
 
@@ -35,11 +30,7 @@ class PrometheusClient:
 
         For API documentation, refer to https://docs.bentoml.com/en/latest/reference/metrics.html.
         """
-        if multiproc:
-            assert multiproc_dir is not None, "multiproc_dir must be provided"
-
         self.multiproc = multiproc
-        self.multiproc_dir: str | None = multiproc_dir
         self._registry = None
         self._imported = False
         self._pid: int | None = None

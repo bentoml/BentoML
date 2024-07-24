@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -35,12 +34,7 @@ class GenerateLatestMiddleware:
 @click.command()
 @click.option("--fd", type=click.INT, required=True)
 @click.option("--backlog", type=click.INT, default=2048)
-@click.option(
-    "--prometheus-dir",
-    type=click.Path(exists=True),
-    help="Required by prometheus to pass the metrics in multi-process mode",
-)
-def main(fd: int, backlog: int, prometheus_dir: str | None):
+def main(fd: int, backlog: int):
     """
     Start a standalone Prometheus server to use with gRPC.
     \b
@@ -67,11 +61,6 @@ def main(fd: int, backlog: int, prometheus_dir: str | None):
 
     BentoMLContainer.development_mode.set(False)
     metrics_client = BentoMLContainer.metrics_client.get()
-    if prometheus_dir is not None:
-        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-    os.environ["PROMETHEUS_MULTIPROC_DIR"] = (
-        BentoMLContainer.prometheus_multiproc_dir.get()
-    )
     # create a ASGI app that wraps around the default HTTP prometheus server.
     prom_app = Starlette(
         debug=get_debug_mode(), middleware=[Middleware(GenerateLatestMiddleware)]

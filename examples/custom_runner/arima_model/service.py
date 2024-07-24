@@ -37,10 +37,10 @@ class ARIMAForecastRunnable(bentoml.Runnable):
         return y_pred
 
 
-arima_model = bentoml.Runner(ARIMAForecastRunnable)
+arima_forecast_runner = bentoml.Runner(ARIMAForecastRunnable)
 
-svc = bentoml.Service("arima_model_forecast", runners=[arima_model])
+svc = bentoml.Service("arima_model_forecast", runners=[arima_forecast_runner])
 
 @svc.api(input=NumpyNdarray(dtype="float"), output=JSON())
 def predict(input_data: np.ndarray) -> typing.List[float]:
-    return arima_model.forecast.run(input_data)
+    return arima_forecast_runner.forecast.run(input_data)

@@ -32,6 +32,7 @@ def main():
             yhat = output[0]
             predictions.append(yhat)
             obs = test[t]
+            # update history with test data
             history.append(obs)
         
         y_test = test

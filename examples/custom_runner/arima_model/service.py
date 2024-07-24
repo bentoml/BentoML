@@ -5,6 +5,8 @@ from bentoml.io import JSON
 from bentoml.io import NumpyNdarray
 from statsmodels.tsa.arima.model import ARIMA
 
+arima_model = bentoml.picklable_model.get("arima_forecast_model:latest")
+
 # Custom runner for ARIMA model
 class ARIMAForecastRunnable(bentoml.Runnable):
     SUPPORTED_RESOURCES = ("cpu",)

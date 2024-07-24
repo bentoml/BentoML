@@ -47,7 +47,7 @@ def main():
                         "arima_forecast_model",
                         model,
                         custom_objects= {"historical_data": history,},
-                                        signatures={"predict": {"batchable": True}},
+                        signatures={"predict": {"batchable": True}},
                 )
 
         print(f"Model saved: {saved_model}")

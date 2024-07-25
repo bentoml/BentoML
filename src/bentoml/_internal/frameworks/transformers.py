@@ -18,7 +18,7 @@ from ...exceptions import MissingDependencyException
 from ...exceptions import NotFound
 from ..models.model import Model
 from ..models.model import ModelContext
-from ..models.model import ModelOptions
+from ..models.model import ModelOptions as BaseModelOptions
 from ..models.model import ModelSignature
 from ..tag import Tag
 from ..types import LazyType
@@ -170,7 +170,7 @@ def _autoclass_converter(
 
 
 @attr.define
-class TransformersOptions(ModelOptions):
+class ModelOptions(BaseModelOptions):
     """Options for the Transformers model."""
 
     task: str = attr.field(factory=str, validator=attr.validators.instance_of(str))
@@ -240,7 +240,7 @@ class TransformersOptions(ModelOptions):
         return task_impl
 
     @classmethod
-    def from_task(cls, task: str, definition: TaskDefinition) -> TransformersOptions:
+    def from_task(cls, task: str, definition: TaskDefinition) -> ModelOptions:
         return cls(
             task=task,
             tf=definition.get("tf", None),  # type: ignore (handle by cattrs converter)
@@ -319,7 +319,7 @@ def register_pipeline(
     default: DefaultMapping | None = None,
     type: str | None = None,
 ):
-    task_impl = TransformersOptions.process_task_mapping(impl, pt, tf, default, type)
+    task_impl = ModelOptions.process_task_mapping(impl, pt, tf, default, type)
 
     if HAS_PIPELINE_REGISTRY:
         from transformers.pipelines import PIPELINE_REGISTRY
@@ -399,7 +399,7 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
-    options = t.cast(TransformersOptions, bento_model.info.options)
+    options = t.cast(ModelOptions, bento_model.info.options)
     api_version = bento_model.info.api_version
     task = options.task
     pipeline: transformers.Pipeline | None = None
@@ -898,7 +898,7 @@ def import_model(
         api_version=API_VERSION,
         signatures=signatures,
         labels=labels,
-        options=TransformersOptions(),
+        options=ModelOptions(),
         custom_objects=custom_objects,
         external_modules=external_modules,
         metadata=metadata,
@@ -1107,7 +1107,7 @@ def save_model(
             api_version=API_VERSION,
             labels=labels,
             context=context,
-            options=TransformersOptions.from_task(*options_args),
+            options=ModelOptions.from_task(*options_args),
             signatures=signatures,
             custom_objects=custom_objects,
             external_modules=external_modules,
@@ -1150,7 +1150,7 @@ def save_model(
             api_version=API_VERSION,
             labels=labels,
             context=context,
-            options=TransformersOptions(),
+            options=ModelOptions(),
             signatures=signatures,
             custom_objects=custom_objects,
             external_modules=external_modules,

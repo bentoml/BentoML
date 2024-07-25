@@ -3,9 +3,6 @@ import typing
 import bentoml
 from bentoml.io import JSON
 from bentoml.io import NumpyNdarray
-from statsmodels.tsa.arima.model import ARIMA
-
-arima_model = bentoml.picklable_model.get("arima_forecast_model:latest")
 
 # Custom runner for ARIMA model
 class ARIMAForecastRunnable(bentoml.Runnable):
@@ -14,35 +11,23 @@ class ARIMAForecastRunnable(bentoml.Runnable):
 
     def __init__(self):
         super().__init__()
+        self.model = bentoml.picklable_model.get("arima_forecast_model:latest")
     
     @bentoml.Runnable.method(batchable=False)
-    def forecast(self, test_data):
-        predictions = []
-        arima_model = bentoml.picklable_model.get("arima_forecast_model:latest")
-        history_data = arima_model.custom_objects["historical_data"]
-
-        # Define the ARIMA tuning parameters
-        model = ARIMA(history_data, order=(5, 1, 0))
-        model_fit = model.fit()
-        output = model_fit.forecast()
-        y_pred = output[0]
-        predictions.append(y_pred)
-        obs = test_data
-        # Update history with single test value
-        history_data.append(obs)
-        # Save model with BentoML
-        bentoml.picklable_model.save_model('arima_forecast_model',
-                                            model,
-                                            custom_objects= {"historical_data": history_data},
-                                            signatures={"predict": {"batchable": True}},
-        )
+    def forecast(self, values):
+        # Load trained arima model from bentoml
+        arima_model = self.model.load_model()
+        model_fit = arima_model.fit()
+        y_pred = model_fit.forecast(int(values))
         return y_pred
 
 
 arima_forecast_runner = bentoml.Runner(ARIMAForecastRunnable)
 
-svc = bentoml.Service("arima_model_forecast", runners=[arima_forecast_runner],  models=[arima_model])
+svc = bentoml.Service("arima_model_forecast", runners=[arima_forecast_runner])
 
-@svc.api(input=NumpyNdarray(dtype="float"), output=JSON())
-def predict(input_data: np.ndarray) -> typing.List[float]:
-    return arima_forecast_runner.forecast.run(input_data)
+@svc.api(input=NumpyNdarray(dtype="int"), output=JSON())
+def predict_forecast(input_data: np.ndarray):
+    print(input_data)
+    return arima_forecast_runner.forecast.run(input_data[0])
+

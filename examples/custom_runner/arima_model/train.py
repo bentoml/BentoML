@@ -46,7 +46,6 @@ def main():
         saved_model = bentoml.picklable_model.save_model(
                         "arima_forecast_model",
                         model,
-                        custom_objects= {"historical_data": history,},
                         signatures={"predict": {"batchable": True}},
                 )
 

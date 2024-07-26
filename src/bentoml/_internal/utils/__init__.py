@@ -289,10 +289,25 @@ def download_and_zip_git_repo(
         git_command = ["git", "clone", "--filter=blob:none", "--quiet", url, dest_dir]
         env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
         try:
-            subprocess.check_call(git_command, env=env)
+            subprocess.check_call(
+                git_command,
+                env=env,
+                stderr=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+            )
             if ref:
-                subprocess.check_call(["git", "fetch", "-q", url, ref], cwd=dest_dir)
-                subprocess.check_call(["git", "checkout", "FETCH_HEAD"], cwd=dest_dir)
+                subprocess.check_call(
+                    ["git", "fetch", "-q", url, ref],
+                    cwd=dest_dir,
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                )
+                subprocess.check_call(
+                    ["git", "checkout", "FETCH_HEAD"],
+                    cwd=dest_dir,
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                )
         except subprocess.CalledProcessError as e:
             raise BentoMLException(
                 f"Failed to clone git repository {url}: {e.stderr}"

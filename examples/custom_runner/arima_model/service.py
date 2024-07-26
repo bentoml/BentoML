@@ -23,7 +23,6 @@ class ARIMAForecastRunnable(bentoml.Runnable):
         predictions = model_fit.forecast(int(values_to_forecast))
         return predictions
 
-
 arima_forecast_runner = bentoml.Runner(ARIMAForecastRunnable)
 
 svc = bentoml.Service("arima_model_forecast", runners=[arima_forecast_runner], models=[arima_model])

@@ -1,7 +1,7 @@
 # Serving ARIMA model with BentoML 
 
-This project demonstrates how to use a continuous learning ARIMA model 
-for a time-series data and use it as a prediction service in BentoML.
+This project shows how to apply a continuous learning ARIMA model
+for time-series data in BentoML to forecasts future values.
 
 ## Requirements
 
@@ -27,15 +27,22 @@ bentoml serve service.py:svc
 
 ## Test the endpoint
 
-Open in browser http://0.0.0.0:3000 to submit input images via the web UI.
+Open in browser http://0.0.0.0:3000 to predict forecast.
 
 ```bash
-curl -X 'POST' 'http://0.0.0.0:3000/predict' -H 'accept: application/json' -H 'Content-Type: application/json' -d '[20]'
+curl -X 'POST' 'http://0.0.0.0:3000/predict' -H 'accept: application/json' -H 'Content-Type: application/json' -d '[5]'
 ```
 
 Sample result:
 ```
-14.584079431935686
+[
+  21.32297249948254,
+  39.103166807895505,
+  51.62030696797619,
+  57.742863144656305,
+  57.316390331155915
+]
+
 ```
 
 ## Build Bento

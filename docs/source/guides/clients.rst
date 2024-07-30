@@ -138,44 +138,7 @@ Alternatively, use the ``server_ready_timeout`` parameter to specify the maximum
 Call a task endpoint
 --------------------
 
-You can create clients to interact with Services defined with :ref:`task <bentoml-tasks>` endpoints by submitting inputs and then asynchronously checking for results at a later time. This model is particularly useful for “fire-and-forget" operations where the client does not need to actively wait for the task to complete. Both synchronous (``SyncHTTPClient``) and asynchronous (``AsyncHTTPClient``) clients can be used to call a task endpoint.
-
-To submit a task:
-
-.. code-block:: python
-
-    import bentoml
-    import numpy as np
-
-    input_data = np.array([...])  # Some numpy array
-
-    client = bentoml.SyncHTTPClient('http://localhost:3000')
-    # The arguments are the same as the Service method, just call with `.submit()`
-    task = client.long_running_task.submit(input=input_data)
-    print("Task submitted, ID:", task.id)
-
-Check the task status and retrieve the result at a later time:
-
-.. code-block:: python
-
-    status = task.get_status()
-    if status.value == 'success':
-        print("The task runs successfully. The result is", task.get())
-    elif status.value == 'failure':
-        print("The task run failed.")
-    else:
-        print("The task is still running.")
-
-Use ``retry()`` if a task fails or you need to rerun the task with the same parameters:
-
-.. code-block:: python
-
-    status = task.get_status()
-    if status.value == 'failure':
-        print("Task failed, retrying...")
-        new_task = task.retry()
-        new_status = new_task.get_status()
-        print("New task status:", new_status.value)
+You can create clients to interact with Services defined with :ref:`task <bentoml-tasks>` endpoints by submitting inputs and then asynchronously checking for results at a later time. This is particularly useful for scenarios where the client does not need to actively wait for the task to complete. For more information, see :doc:`/guides/tasks`.
 
 Input and output
 ----------------

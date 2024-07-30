@@ -27,7 +27,7 @@ bentoml serve service.py:svc
 
 ## Test the endpoint
 
-Open in browser http://0.0.0.0:3000 to predict forecast.
+Open in browser http://0.0.0.0:3000 to predict forecast of 5 future values.
 
 ```bash
 curl -X 'POST' 'http://0.0.0.0:3000/predict' -H 'accept: application/json' -H 'Content-Type: application/json' -d '[5]'

@@ -289,22 +289,22 @@ Next, create a ``service.py`` file (already available in the `repo cloned <https
                 system_prompt: Optional[str] = SYSTEM_PROMPT,
                 max_tokens: Annotated[int, Ge(128), Le(MAX_TOKENS)] = MAX_TOKENS,
             ) -> AsyncGenerator[str, None]:
-            
+
                 # Format the prompt using the template
                 if system_prompt is None:
                     system_prompt = SYSTEM_PROMPT
-                    
+
                 # Format the prompt using the predefined template
                 prompt = PROMPT_TEMPLATE.format(user_prompt=prompt, system_prompt=system_prompt)
-                        
+
                 # Get or create a gRPC client
                 grpc_client_instance = self.start_grpc_stream()
-                
+
                 # Define an asynchronous generator that constructs and yields inference requests
                 async def input_generator():
                     yield self.create_request(
                         prompt,
-                        streaming=True, 
+                        streaming=True,
                         request_id=random.randint(1, 9999999),
                         output_len=max_tokens,
                     )

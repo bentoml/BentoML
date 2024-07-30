@@ -213,6 +213,7 @@ class Bento(StoreItem):
             )
         else:
             # for >= 1.2
+            svc.inject_config()
             bento_name = (
                 build_config.name
                 if build_config.name is not None

@@ -2,7 +2,7 @@
 Tasks
 =====
 
-Many model inferences are best handled as long-running operations. Tasks in BentoML allow you to execute these long-running workloads in the background and retrieve the results at a later time. 
+Many model inferences are best handled as long-running operations. Tasks in BentoML allow you to execute these long-running workloads in the background and retrieve the results at a later time.
 
 This document explains how to define and call a task endpoint.
 
@@ -34,7 +34,7 @@ You define a task endpoint using the ``@bentoml.task`` decorator in the Service 
 
     @bentoml.service
     class ImageGenerationService:
-            
+
         @bentoml.task
         def long_running_image_generation(self, prompt: str) -> Image:
             # Process the prompt in a long-running process

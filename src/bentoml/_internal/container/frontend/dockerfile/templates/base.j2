@@ -39,6 +39,7 @@ ENV NVIDIA_VISIBLE_DEVICES=
 ARG BENTO_USER={{ bento__user }}
 ARG BENTO_USER_UID={{ bento__uid_gid }}
 ARG BENTO_USER_GID={{ bento__uid_gid }}
+RUN groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID -g $BENTO_USER_GID -o -r $BENTO_USER
 {% endblock %}
 {% block SETUP_BENTO_ENVARS %}
 {% if __options__env is not none %}

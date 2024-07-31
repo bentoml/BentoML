@@ -16,8 +16,3 @@ ENV UV_SYSTEM_PYTHON=1
 RUN curl -LO https://astral.sh/uv/install.sh && \
     sh install.sh && rm install.sh && mv $HOME/.cargo/bin/uv /usr/local/bin/
 {% endblock %}
-
-{% block SETUP_BENTO_USER %}
-{{ super() }}
-RUN groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID -g $BENTO_USER_GID -o -r $BENTO_USER
-{% endblock %}

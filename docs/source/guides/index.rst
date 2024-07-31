@@ -51,6 +51,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Use the BentoML local Model Store to manage your models in a unified way.
 
+    .. grid-item-card:: :doc:`/guides/tasks`
+        :link: /guides/tasks
+        :link-type: doc
+
+        Create BentoML tasks to handle long-running workloads and asynchronously get the results.
+
     .. grid-item-card:: :doc:`/guides/gpu-inference`
         :link: /guides/gpu-inference
         :link-type: doc
@@ -127,6 +133,7 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     workers
     build-options
     model-store
+    tasks
     gpu-inference
     model-composition
     distributed-services

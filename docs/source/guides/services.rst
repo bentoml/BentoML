@@ -266,22 +266,7 @@ Tasks
 
 Tasks in BentoML allow you to execute long-running operations in the background, managed via a task queue style API. These background tasks are ideal for scenarios like batch processing and image or video generation where you don't need the results immediately or synchronously.
 
-To define a task endpoint, use the ``@bentoml.task`` decorator in the Service constructor. Here's an example:
-
-.. code-block:: python
-
-    import bentoml
-    import numpy as np
-
-    @bentoml.service
-    class MyService:
-        @bentoml.task
-        def long_running_task(self, input: np.ndarray) -> np.ndarray:
-            # Simulated long-running process
-            # Placeholder for actual processing logic
-            return result
-
-BentoML automatically exposes several endpoints for clients to manage the task, such as task submission, status retrieval, and cancellation. For more information, see :ref:`call-a-task-endpoint`.
+To define a task endpoint, use the ``@bentoml.task`` decorator in the Service constructor. For more information, see :doc:`/guides/tasks`.
 
 Convert legacy Runners to a Service
 -----------------------------------

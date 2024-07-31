@@ -1,4 +1,4 @@
-# Serving ARIMA model with BentoML 
+# Serving ARIMA model with BentoML
 
 This project shows how to apply a continuous learning ARIMA model
 for time-series data in BentoML to forecasts future values.

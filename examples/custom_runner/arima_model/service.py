@@ -1,10 +1,11 @@
 import numpy as np
-import typing
+
 import bentoml
 from bentoml.io import JSON
 from bentoml.io import NumpyNdarray
 
 arima_model = bentoml.picklable_model.get("arima_forecast_model:latest")
+
 
 # Custom runner for ARIMA model
 class ARIMAForecastRunnable(bentoml.Runnable):
@@ -14,7 +15,7 @@ class ARIMAForecastRunnable(bentoml.Runnable):
     def __init__(self):
         super().__init__()
         self.model = arima_model
-    
+
     @bentoml.Runnable.method(batchable=False)
     def forecast(self, values_to_forecast):
         # Load trained arima model from bentoml
@@ -23,11 +24,14 @@ class ARIMAForecastRunnable(bentoml.Runnable):
         predictions = model_fit.forecast(int(values_to_forecast))
         return predictions
 
+
 arima_forecast_runner = bentoml.Runner(ARIMAForecastRunnable)
 
-svc = bentoml.Service("arima_model_forecast", runners=[arima_forecast_runner], models=[arima_model])
+svc = bentoml.Service(
+    "arima_model_forecast", runners=[arima_forecast_runner], models=[arima_model]
+)
+
 
 @svc.api(input=NumpyNdarray(dtype="int"), output=JSON())
 def predict_forecast(input_data: np.ndarray):
     return arima_forecast_runner.forecast.run(input_data[0])
-

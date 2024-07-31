@@ -1,0 +1,1 @@
+# Serving ARF model from river with BentoML 

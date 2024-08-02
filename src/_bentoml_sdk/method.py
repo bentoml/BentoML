@@ -52,7 +52,7 @@ class APIMethod(t.Generic[P, R]):
     batch_dim: tuple[int, int] = attrs.field(
         default=(0, 0), converter=lambda x: (x, x) if not isinstance(x, tuple) else x
     )
-    max_batch_size: int = attrs.field(default=1, validator=attrs.validators.gt(1))
+    max_batch_size: int = attrs.field(default=100, validator=attrs.validators.gt(1))
     max_latency_ms: int = 60000
     is_stream: bool = attrs.field(init=False)
     doc: str | None = attrs.field(init=False)

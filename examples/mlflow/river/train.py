@@ -1,7 +1,7 @@
 import numpy as np
 import mlflow
 import bentoml
-from river import ensemble
+from river import forest
 from river import evaluate
 from river import metrics
 from river import preprocessing
@@ -14,7 +14,7 @@ import mlflow.pyfunc
 
 class ARFModel(mlflow.pyfunc.PythonModel):
     def __init__(self):
-        self.arf_model = ensemble.AdaptiveRandomForestRegressor(seed=42)
+        self.arf_model = forest.ARFRegressor(seed=42)
 
     def learn_one(self,input_data,target):
         return self.arf_model.learn_one(input_data,target)

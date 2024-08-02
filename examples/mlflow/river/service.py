@@ -1,4 +1,3 @@
-import numpy as np
 import bentoml
 from typing import Any
 from bentoml.io import JSON

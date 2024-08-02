@@ -4,6 +4,5 @@ include:
 python:
   packages:
     - scikit-learn
-    - numpy
     - river
     - mlflow

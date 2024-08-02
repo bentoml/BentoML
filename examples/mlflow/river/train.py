@@ -1,11 +1,15 @@
-import numpy as np
+"""
+Trains a model from River online machine learning library in Python. (https://riverml.xyz/latest/)
+Incorporate this model into mflow utilising custom Python function models in mlflow. (https://mlflow.org/docs/latest/traditional-ml/creating-custom-pyfunc/index.html)
+Finally import the trained river model in Bentoml model store from mlfow.
+
+This work has received funding from the European Union's HORIZON research 
+and innovation programme under grant agreement No. 101070177.
+"""
+
 import mlflow
 import bentoml
 from river import forest
-from river import evaluate
-from river import metrics
-from river import preprocessing
-from river import stream
 from river import datasets
 from sklearn.metrics import mean_squared_error
 
@@ -68,7 +72,7 @@ def main():
         mlflow.log_metric("mse", mse)
         # logging trained model 
         model_info = mlflow.pyfunc.log_model(artifact_path="model", python_model=trained_arf_model)
-        # import loagged model in Bentoml model store
+        # import logged model in Bentoml model store
         bento_model = bentoml.mlflow.import_model('river_arf_model', model_info.model_uri)
         print(f"Model imported to BentoML: {bento_model}")
     mlflow.end_run()

@@ -3,8 +3,8 @@ Trains a model from River online machine learning library in Python. (https://ri
 Incorporate this model into mflow utilising custom Python function models in mlflow. (https://mlflow.org/docs/latest/traditional-ml/creating-custom-pyfunc/index.html)
 Finally import the trained river model in Bentoml model store from mlfow.
 
-This work has received funding from the European Union's HORIZON research 
-and innovation programme under grant agreement No. 101070177.
+This open-source contribution originates from CeADAR Ireland and is the result of research funded 
+by the European Union's HORIZON program under grant agreement No. 101070177.
 """
 
 import mlflow

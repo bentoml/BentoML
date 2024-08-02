@@ -20,6 +20,8 @@ RUN curl -LO https://astral.sh/uv/install.sh && \
 {% endblock %}
 
 {% block SETUP_BENTO_USER %}
-{{ super() }}
+ARG BENTO_USER={{ bento__user }}
+ARG BENTO_USER_UID={{ bento__uid_gid }}
+ARG BENTO_USER_GID={{ bento__uid_gid }}
 RUN addgroup -g $BENTO_USER_GID -S $BENTO_USER && adduser -u $BENTO_USER_UID -G $BENTO_USER -S $BENTO_USER
 {% endblock %}

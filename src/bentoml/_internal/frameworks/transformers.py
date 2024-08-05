@@ -1074,7 +1074,7 @@ def save_model(
             assert "impl" in task_definition, "'task_definition' requires 'impl' key."
 
             impl = task_definition["impl"]
-            if type(pipeline_) != impl:
+            if isinstance(pipeline_, impl):
                 raise BentoMLException(
                     f"Argument 'pipeline' is not an instance of {impl}. It is an instance of {type(pipeline_)}."
                 )

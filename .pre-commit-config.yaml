@@ -8,7 +8,7 @@ ci:
 exclude: '(.*\.(css|js|svg))|(.*/(snippets|grpc|proto)/.*)$'
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.5.0'
+    rev: 'v0.5.6'
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --show-fixes]
@@ -22,11 +22,11 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.16.1
+    rev: 2.17.3
     hooks:
       - id: pdm-lock-check
   - repo: https://github.com/bufbuild/buf
-    rev: v1.34.0
+    rev: v1.35.1
     hooks:
       - id: buf-format
         args: [--config=src/bentoml/grpc/buf.yaml, src/bentoml/grpc]

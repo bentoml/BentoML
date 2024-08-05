@@ -1,10 +1,102 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import typing as t
 
 import click
+
+logger = logging.getLogger("bentoml.worker.service")
+
+
+def patch_safetensor():
+    import os
+    import subprocess
+
+    import safetensors.torch
+
+    logger.info("Patching safetensors.torch.safe_open to preheat model loading in parallel")
+
+    # Save the original safe_open class
+    OriginalSafeOpen = safetensors.torch.safe_open
+
+    # Define a new class to wrap around the original safe_open class
+    class PatchedSafeOpen:
+        def __init__(self, filename, framework, device="cpu"):
+            # Call the read_ahead method before the usual safe_open
+            self.read_ahead(filename)
+
+            # Initialize the original safe_open
+            self._original_safe_open = OriginalSafeOpen(filename, framework, device)
+
+        def __enter__(self):
+            return self._original_safe_open.__enter__()
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return self._original_safe_open.__exit__(exc_type, exc_value, traceback)
+
+        @staticmethod
+        def read_ahead(
+            file_path,
+            num_processes=None,
+            size_threshold=100 * 1024 * 1024,
+            block_size=1024 * 1024,
+        ):
+            """
+            Read a file in parallel using multiple processes.
+
+            Args:
+                file_path: Path to the file to read
+                num_processes: Number of processes to use for reading the file. If None, the number of processes is set to the number of CPUs.
+                size_threshold: If the file size is smaller than this threshold, only one process is used to read the file.
+                block_size: Block size to use for reading the file
+            """
+            if num_processes is None:
+                num_processes = os.cpu_count() or 8
+
+            file_size = os.path.getsize(file_path)
+            if file_size <= size_threshold:
+                num_processes = 1
+
+            chunk_size = file_size // num_processes
+            processes = []
+
+            for i in range(1, num_processes):
+                start_byte = i * chunk_size
+                end_byte = (
+                    start_byte + chunk_size if i < num_processes - 1 else file_size
+                )
+                logger.info(
+                    f"Reading bytes {start_byte} to {end_byte} from {file_path}"
+                )
+                process = subprocess.Popen(
+                    [
+                        "dd",
+                        f"if={file_path}",
+                        f"of=/dev/null",
+                        f"bs={block_size}",
+                        f"skip={start_byte // block_size}",
+                        f"count={(end_byte - start_byte) // block_size}",
+                        "status=none",
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                processes.append(process)
+
+        def __getattr__(self, name):
+            return getattr(self._original_safe_open, name)
+
+    # Patch the original safetensors.torch module directly
+    safetensors.torch.safe_open = PatchedSafeOpen
+
+
+def get_model_preheat():
+    """Get the model preheat flag from the environment variable BENTOML_MODEL_PREHEAT.
+    """
+    env_var = os.getenv("BENTOML_MODEL_PREHEAT", "0")
+    return env_var not in ("0", "false", "False", "")
 
 
 @click.command()
@@ -102,6 +194,12 @@ import click
     type=click.INT,
     help="Specify the timeout for API server",
 )
+@click.option(
+    "--model-preheat",
+    is_flag=True,
+    default=lambda: get_model_preheat(),
+    help="Preheat model loading in parallel using multiple processes. Can be set via the environment variable BENTOML_MODEL_PREHEAT.",
+)
 def main(
     bento_identifier: str,
     service_name: str,
@@ -121,6 +219,7 @@ def main(
     timeout_graceful_shutdown: int | None,
     development_mode: bool,
     timeout: int,
+    model_preheat: bool,
 ):
     """
     Start a HTTP server worker for given service.
@@ -209,6 +308,9 @@ def main(
         **uvicorn_extra_options,
     )
     socket = socket.socket(fileno=fd)
+    if model_preheat:
+        patch_safetensor()
+
     uvicorn.Server(config).run(sockets=[socket])
 
 

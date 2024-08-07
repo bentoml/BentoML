@@ -41,6 +41,7 @@ class ResourceSchema(TypedDict, total=False):
             '100m'  -> 100 millicores
             '2'     -> 2 cores
     """
+
     cpu: str | Posint | Posfloat
     """
     memory: str | Posint | Posfloat

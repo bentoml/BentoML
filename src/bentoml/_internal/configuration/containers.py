@@ -475,16 +475,20 @@ class _BentoMLContainerClass:
         from ..utils.metrics import INF
         from ..utils.metrics import exponential_buckets
 
-        if "buckets" in duration:
+        if None not in (
+            duration.get("min"),
+            duration.get("max"),
+            duration.get("factor"),
+        ):
+            return exponential_buckets(
+                duration["min"], duration["factor"], duration["max"]
+            )
+        elif "buckets" in duration:
             return tuple(duration["buckets"]) + (INF,)
         else:
-            if len(set(duration) - {"min", "max", "factor"}) == 0:
-                return exponential_buckets(
-                    duration["min"], duration["factor"], duration["max"]
-                )
             raise BentoMLConfigException(
-                f"Keys 'min', 'max', and 'factor' are required for 'duration' configuration, '{duration!r}'."
-            ) from None
+                "Either `buckets` or `min`, `max`, and `factor` must be set in `api_server.metrics.duration`"
+            )
 
     @providers.SingletonFactory
     @staticmethod

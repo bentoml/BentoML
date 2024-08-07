@@ -28,11 +28,37 @@ class TrafficSchema(TypedDict, total=False):
 
 
 class ResourceSchema(TypedDict, total=False):
-    cpu: str
-    memory: str
+    """
+    cpu: str | Posint | Posfloat
+        CPU resource requirement.
+        If int or float: Value is interpreted as number of cores.
+        If str: You can include unit (e.g., '100m', '0.5').
+        Default unit (for int/float): cores
+    Examples:
+        cpu:
+            1       -> 1 core
+            0.5     -> 0.5 cores
+            '100m'  -> 100 millicores
+            '2'     -> 2 cores
+    """
+
+    cpu: str | Posint | Posfloat
+    """
+    memory: str | Posint | Posfloat
+        Memory resource requirement.
+        If int or float: Value is interpreted as number of Gibibytes (Gi).
+        If str: You can include unit (e.g., '512Mi', '2Gi', '1').
+        Default unit (for int/float): Gi (Gibibytes)
+    memory:
+        1       -> 1Gi (1 Gibibyte)
+        1.5     -> 1.5Gi (1.5 Gibibytes)
+        '512Mi' -> 512 Mebibytes
+        '2Gi'   -> 2 Gibibytes
+    """
+    memory: str | Posint | Posfloat
     gpu: Posfloat
     """
-    gpu type defined here is only a anotation, it will use as an recommendation choice of instance type when deploying this service to bentocloud
+    gpu type defined here is only a annotation, it will use as an recommendation choice of instance type when deploying this service to bentocloud
     gpu_type follows the naming convention of AWS EC2 GPU instances, GCP GPU instances etc.
     """
     gpu_type: Literal[

@@ -72,8 +72,8 @@ _SERVICE_CONFIG = {
     # in configuration for a specific runner, it will override the global configuration.
     s.Optional("resources"): s.Or(
         {
-            s.Optional("cpu"): str,
-            s.Optional("memory"): str,
+            s.Optional("cpu"): s.Or(str, int, float),
+            s.Optional("memory"): s.Or(str, int, float),
             s.Optional("gpu"): s.And(Real, ensure_larger_than_zero),
             s.Optional("gpu_type"): str,
             s.Optional("tpu_type"): str,

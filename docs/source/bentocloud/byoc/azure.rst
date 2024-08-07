@@ -28,11 +28,7 @@ Setup
 
    The permission set in the script allows for the creation and management of all required resources, including Azure Kubernetes Service, Blob Storage, and Redis Cache, for the setup and maintenance of BentoCloud cluster on Azure. The scope of the grant is strictly limited to the resource group ``bentocloud-<region>`` and does not grant permissions to any other resources.
 
-   .. note::
-
-      The service principal ID ``d0e2f715-76af-469a-96b9-7d9d9a62b741`` used in the script is the BentoCloud Azure account's service principal.
-
-5. Share the ``account_info.json`` file created by the script with the BentoML team. The file contains non-sensitive information about your Azure account and region needed for the BentoCloud installation.
+5. Share the ``bcAdminSP.json`` file created by the script with the BentoML team through a secure channel.
 
 Getting help and troubleshooting
 --------------------------------

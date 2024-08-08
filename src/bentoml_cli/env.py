@@ -161,7 +161,7 @@ def env_command(ctx: click.Context, output: t.Literal["md", "bash"]) -> None:  #
             conda_version = run_cmd([conda_like, "--version"])[0].split(" ")[-1]
 
         info_dict[conda_like] = conda_version
-        info_dict["in_conda_env"] = str(True)
+        info_dict["in_conda_env"] = "True"
         info_dict["conda_packages"] = conda_packages
 
     # process info from `pip freeze`

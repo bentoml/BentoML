@@ -42,9 +42,9 @@ class ResourceSchema(TypedDict, total=False):
             '2'     -> 2 cores
     """
 
-    cpu: str | Posint | Posfloat
+    cpu: Union[str, Posint, Posfloat]
     """
-    memory: str | Posint | Posfloat
+    memory: Union[str, Posint, Posfloat]
         Memory resource requirement.
         If int or float: Value is interpreted as number of Gibibytes (Gi).
         If str: You can include unit (e.g., '512Mi', '2Gi', '1').
@@ -55,7 +55,7 @@ class ResourceSchema(TypedDict, total=False):
         '512Mi' -> 512 Mebibytes
         '2Gi'   -> 2 Gibibytes
     """
-    memory: str | Posint | Posfloat
+    memory: Union[str, Posint, Posfloat]
     gpu: Posfloat
     """
     gpu type defined here is only a annotation, it will use as an recommendation choice of instance type when deploying this service to bentocloud

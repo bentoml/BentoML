@@ -33,8 +33,6 @@ if t.TYPE_CHECKING:
     from bentoml._internal.cloud import BentoCloudClient
     from bentoml._internal.models import ModelStore
 
-    from .utils import SharedOptions
-
 
 def parse_delete_targets_argument_callback(
     ctx: Context,
@@ -302,7 +300,7 @@ def pull(
     if model_tag is not None:
         if ctx.get_parameter_source("bentofile") != ParameterSource.DEFAULT:
             rich.print("-f bentofile is ignored when model_tag is provided")
-        cloud_client.pull_model(model_tag, force=force, context=ctx.obj.cloud_context)
+        cloud_client.pull_model(model_tag, force=force)
         return
 
     try:
@@ -321,7 +319,6 @@ def pull(
         cloud_client.pull_model(
             model_spec.tag,
             force=force,
-            context=t.cast("SharedOptions", ctx.obj).cloud_context,
             query=model_spec.filter,
         )
 
@@ -341,10 +338,8 @@ def pull(
     default=10,
     help="Number of threads to use for upload",
 )
-@click.pass_obj
 @inject
 def push(
-    shared_options: SharedOptions,
     model_tag: str,
     force: bool,
     threads: int,
@@ -359,5 +354,4 @@ def push(
         model_obj,
         force=force,
         threads=threads,
-        context=shared_options.cloud_context,
     )

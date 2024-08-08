@@ -8,7 +8,6 @@ import re
 import time
 import typing as t
 
-import attr
 import click
 import click_option_group as cog
 from click import ClickException
@@ -188,17 +187,6 @@ def opt_callback(ctx: Context, param: Parameter, value: ClickParamType):
     return value
 
 
-@attr.define
-class SharedOptions:
-    """This is the click.Context object that will be used in BentoML CLI."""
-
-    cloud_context: str | None = attr.field(default=None)
-    do_not_track: bool = attr.field(default=False)
-
-    def with_options(self, **attrs: t.Any) -> t.Any:
-        return attr.evolve(self, **attrs)
-
-
 def setup_verbosity(ctx: Context, param: Parameter, value: int) -> int:
     from bentoml._internal.configuration import set_verbosity
     from bentoml._internal.log import configure_logging
@@ -209,16 +197,18 @@ def setup_verbosity(ctx: Context, param: Parameter, value: int) -> int:
 
 
 def setup_track(ctx: Context, param: Parameter, value: bool) -> bool:
+    from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
+
     if value:
-        obj = ctx.ensure_object(SharedOptions)
-        obj.do_not_track = True
+        os.environ[BENTOML_DO_NOT_TRACK] = "True"
     return value
 
 
 def setup_cloud_client(ctx: Context, param: Parameter, value: str | None) -> str | None:
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
     if value:
-        obj = ctx.ensure_object(SharedOptions)
-        obj.cloud_context = value
+        BentoMLContainer.cloud_context.set(value)
     return value
 
 
@@ -305,19 +295,16 @@ class BentoMLCommandGroup(click.Group):
     def bentoml_track_usage(
         func: F[P], cmd_group: click.Group, name: str | None
     ) -> F[P]:
-        from bentoml._internal.utils.analytics import BENTOML_DO_NOT_TRACK
         from bentoml._internal.utils.analytics import CliEvent
         from bentoml._internal.utils.analytics import cli_events_map
         from bentoml._internal.utils.analytics import track
+        from bentoml._internal.utils.analytics import usage_stats
 
         command_name = name or func.__name__
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
-            ctx = click.get_current_context()
-            options = ctx.ensure_object(SharedOptions)
-            if options.do_not_track:
-                os.environ[BENTOML_DO_NOT_TRACK] = str(True)
+            if usage_stats.do_not_track():
                 return func(*args, **kwargs)
 
             start_time = time.time_ns()

@@ -27,7 +27,6 @@ from ..utils import calc_dir_size
 from .base import FILE_CHUNK_SIZE
 from .base import CallbackIOWrapper
 from .base import CloudClient
-from .config import get_rest_api_client
 from .schemas.modelschemas import BentoApiSchema
 from .schemas.modelschemas import BentoRunnerResourceSchema
 from .schemas.modelschemas import BentoRunnerSchema
@@ -54,26 +53,25 @@ if t.TYPE_CHECKING:
 
     from rich.progress import TaskID
 
+    from .client import RestApiClient
     from .schemas.schemasv1 import BentoWithRepositoryListSchema
     from .schemas.schemasv1 import ModelWithRepositoryListSchema
 
 
 class BentoCloudClient(CloudClient):
+    @inject
     def push_bento(
         self,
         bento: Bento,
         *,
         force: bool = False,
         threads: int = 10,
-        context: str | None = None,
     ):
         with self.spinner:
             upload_task_id = self.spinner.transmission_progress.add_task(
                 f'Pushing Bento "{bento.tag}"', start=False, visible=False
             )
-            self._do_push_bento(
-                bento, upload_task_id, force=force, threads=threads, context=context
-            )
+            self._do_push_bento(bento, upload_task_id, force=force, threads=threads)
             self.spinner.log(f'✅ Pushed Bento "{bento.tag}"')
 
     @inject
@@ -84,10 +82,9 @@ class BentoCloudClient(CloudClient):
         *,
         force: bool = False,
         threads: int = 10,
-        context: str | None = None,
+        rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ):
-        yatai_rest_client = get_rest_api_client(context)
         name = bento.tag.name
         version = bento.tag.version
         if version is None:
@@ -109,26 +106,25 @@ class BentoCloudClient(CloudClient):
                     model_upload_task_id,
                     force=force,
                     threads=threads,
-                    context=context,
                 )
 
             futures: t.Iterator[None] = executor.map(push_model, models)
             list(futures)
         with self.spinner.spin(text=f'Fetching Bento repository "{name}"'):
-            bento_repository = yatai_rest_client.v1.get_bento_repository(
+            bento_repository = rest_client.v1.get_bento_repository(
                 bento_repository_name=name
             )
         if not bento_repository:
             with self.spinner.spin(
                 text=f'Bento repository "{name}" not found, creating now..'
             ):
-                bento_repository = yatai_rest_client.v1.create_bento_repository(
+                bento_repository = rest_client.v1.create_bento_repository(
                     req=CreateBentoRepositorySchema(name=name, description="")
                 )
         with self.spinner.spin(
             text=f'Try fetching Bento "{bento.tag}" from remote Bento store..'
         ):
-            remote_bento = yatai_rest_client.v1.get_bento(
+            remote_bento = rest_client.v1.get_bento(
                 bento_repository_name=name, version=version
             )
         if (
@@ -179,7 +175,7 @@ class BentoCloudClient(CloudClient):
             with self.spinner.spin(
                 text=f'Registering Bento "{bento.tag}" with remote Bento store..'
             ):
-                remote_bento = yatai_rest_client.v1.create_bento(
+                remote_bento = rest_client.v1.create_bento(
                     bento_repository_name=bento_repository.name,
                     req=CreateBentoSchema(
                         description="",
@@ -191,7 +187,7 @@ class BentoCloudClient(CloudClient):
                 )
         else:
             with self.spinner.spin(text=f'Updating Bento "{bento.tag}"..'):
-                remote_bento = yatai_rest_client.v1.update_bento(
+                remote_bento = rest_client.v1.update_bento(
                     bento_repository_name=bento_repository.name,
                     version=version,
                     req=UpdateBentoSchema(
@@ -209,7 +205,7 @@ class BentoCloudClient(CloudClient):
             with self.spinner.spin(
                 text=f'Getting a presigned upload url for bento "{bento.tag}" ..'
             ):
-                remote_bento = yatai_rest_client.v1.presign_bento_upload_url(
+                remote_bento = rest_client.v1.presign_bento_upload_url(
                     bento_repository_name=bento_repository.name, version=version
                 )
                 if remote_bento.presigned_upload_url:
@@ -239,7 +235,7 @@ class BentoCloudClient(CloudClient):
             tar_io.seek(0, 0)
 
             with self.spinner.spin(text=f'Start uploading bento "{bento.tag}"..'):
-                yatai_rest_client.v1.start_upload_bento(
+                rest_client.v1.start_upload_bento(
                     bento_repository_name=bento_repository.name, version=version
                 )
 
@@ -254,7 +250,7 @@ class BentoCloudClient(CloudClient):
 
             if transmission_strategy == "proxy":
                 try:
-                    yatai_rest_client.v1.upload_bento(
+                    rest_client.v1.upload_bento(
                         bento_repository_name=bento_repository.name,
                         version=version,
                         data=tar_io,
@@ -282,11 +278,9 @@ class BentoCloudClient(CloudClient):
                     with self.spinner.spin(
                         text=f'Start multipart uploading Bento "{bento.tag}"...'
                     ):
-                        remote_bento = (
-                            yatai_rest_client.v1.start_bento_multipart_upload(
-                                bento_repository_name=bento_repository.name,
-                                version=version,
-                            )
+                        remote_bento = rest_client.v1.start_bento_multipart_upload(
+                            bento_repository_name=bento_repository.name,
+                            version=version,
                         )
                         if not remote_bento.upload_id:
                             raise BentoMLException(
@@ -304,7 +298,7 @@ class BentoCloudClient(CloudClient):
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of Bento "{bento.tag}"...'
                         ):
                             remote_bento = (
-                                yatai_rest_client.v1.presign_bento_multipart_upload_url(
+                                rest_client.v1.presign_bento_multipart_upload_url(
                                     bento_repository_name=bento_repository.name,
                                     version=version,
                                     req=PreSignMultipartUploadUrlSchema(
@@ -374,15 +368,13 @@ class BentoCloudClient(CloudClient):
                     with self.spinner.spin(
                         text=f'Completing multipart upload of Bento "{bento.tag}"...'
                     ):
-                        remote_bento = (
-                            yatai_rest_client.v1.complete_bento_multipart_upload(
-                                bento_repository_name=bento_repository.name,
-                                version=version,
-                                req=CompleteMultipartUploadSchema(
-                                    upload_id=upload_id,
-                                    parts=parts,
-                                ),
-                            )
+                        remote_bento = rest_client.v1.complete_bento_multipart_upload(
+                            bento_repository_name=bento_repository.name,
+                            version=version,
+                            req=CompleteMultipartUploadSchema(
+                                upload_id=upload_id,
+                                parts=parts,
+                            ),
                         )
 
             except Exception as e:  # pylint: disable=broad-except
@@ -395,7 +387,7 @@ class BentoCloudClient(CloudClient):
             with self.spinner.spin(
                 text="Submitting upload status to remote Bento store"
             ):
-                yatai_rest_client.v1.finish_upload_bento(
+                rest_client.v1.finish_upload_bento(
                     bento_repository_name=bento_repository.name,
                     version=version,
                     req=finish_req,
@@ -413,7 +405,6 @@ class BentoCloudClient(CloudClient):
         tag: str | Tag,
         *,
         force: bool = False,
-        context: str | None = None,
         bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> Bento:
         with self.spinner:
@@ -425,7 +416,6 @@ class BentoCloudClient(CloudClient):
                 download_task_id,
                 force=force,
                 bento_store=bento_store,
-                context=context,
             )
 
     @inject
@@ -436,7 +426,7 @@ class BentoCloudClient(CloudClient):
         *,
         force: bool = False,
         bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-        context: str | None = None,
+        rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
         global_model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Bento:
         try:
@@ -455,10 +445,8 @@ class BentoCloudClient(CloudClient):
         if version is None:
             raise BentoMLException(f'Bento "{_tag}" version can not be None')
 
-        yatai_rest_client = get_rest_api_client(context)
-
         with self.spinner.spin(text=f'Fetching bento "{_tag}"'):
-            remote_bento = yatai_rest_client.v1.get_bento(
+            remote_bento = rest_client.v1.get_bento(
                 bento_repository_name=name, version=version
             )
         if not remote_bento:
@@ -485,7 +473,6 @@ class BentoCloudClient(CloudClient):
                         model_download_task_id,
                         force=force,
                         model_store=model_store,
-                        context=context,
                     )
 
                 futures = executor.map(pull_model, remote_bento.manifest.models)
@@ -501,7 +488,7 @@ class BentoCloudClient(CloudClient):
                 with self.spinner.spin(
                     text=f'Getting a presigned download url for bento "{_tag}"'
                 ):
-                    remote_bento = yatai_rest_client.v1.presign_bento_download_url(
+                    remote_bento = rest_client.v1.presign_bento_download_url(
                         name, version
                     )
                     if remote_bento.presigned_download_url:
@@ -509,7 +496,7 @@ class BentoCloudClient(CloudClient):
                         transmission_strategy = "presigned_url"
 
             if transmission_strategy == "proxy":
-                response_ctx = yatai_rest_client.v1.download_bento(
+                response_ctx = rest_client.v1.download_bento(
                     bento_repository_name=name,
                     version=version,
                 )
@@ -518,7 +505,7 @@ class BentoCloudClient(CloudClient):
                     with self.spinner.spin(
                         text=f'Getting a presigned download url for bento "{_tag}"'
                     ):
-                        remote_bento = yatai_rest_client.v1.presign_bento_download_url(
+                        remote_bento = rest_client.v1.presign_bento_download_url(
                             name, version
                         )
                         presigned_download_url = remote_bento.presigned_download_url
@@ -584,16 +571,14 @@ class BentoCloudClient(CloudClient):
         *,
         force: bool = False,
         threads: int = 10,
-        context: str | None = None,
     ):
         with self.spinner:
             upload_task_id = self.spinner.transmission_progress.add_task(
                 f'Pushing model "{model.tag}"', start=False, visible=False
             )
-            self._do_push_model(
-                model, upload_task_id, force=force, threads=threads, context=context
-            )
+            self._do_push_model(model, upload_task_id, force=force, threads=threads)
 
+    @inject
     def _do_push_model(
         self,
         model: Model,
@@ -601,29 +586,28 @@ class BentoCloudClient(CloudClient):
         *,
         force: bool = False,
         threads: int = 10,
-        context: str | None = None,
+        rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ):
-        yatai_rest_client = get_rest_api_client(context)
         name = model.tag.name
         version = model.tag.version
         if version is None:
             raise BentoMLException(f'Model "{model.tag}" version cannot be None')
         info = model.info
         with self.spinner.spin(text=f'Fetching model repository "{name}"'):
-            model_repository = yatai_rest_client.v1.get_model_repository(
+            model_repository = rest_client.v1.get_model_repository(
                 model_repository_name=name
             )
         if not model_repository:
             with self.spinner.spin(
                 text=f'Model repository "{name}" not found, creating now..'
             ):
-                model_repository = yatai_rest_client.v1.create_model_repository(
+                model_repository = rest_client.v1.create_model_repository(
                     req=CreateModelRepositorySchema(name=name, description="")
                 )
         with self.spinner.spin(
             text=f'Try fetching model "{model.tag}" from remote model store..'
         ):
-            remote_model = yatai_rest_client.v1.get_model(
+            remote_model = rest_client.v1.get_model(
                 model_repository_name=name, version=version
             )
         if (
@@ -643,7 +627,7 @@ class BentoCloudClient(CloudClient):
             with self.spinner.spin(
                 text=f'Registering model "{model.tag}" with remote model store..'
             ):
-                remote_model = yatai_rest_client.v1.create_model(
+                remote_model = rest_client.v1.create_model(
                     model_repository_name=model_repository.name,
                     req=CreateModelSchema(
                         description="",
@@ -671,7 +655,7 @@ class BentoCloudClient(CloudClient):
             with self.spinner.spin(
                 text=f'Getting a presigned upload url for Model "{model.tag}" ..'
             ):
-                remote_model = yatai_rest_client.v1.presign_model_upload_url(
+                remote_model = rest_client.v1.presign_model_upload_url(
                     model_repository_name=model_repository.name, version=version
                 )
                 if remote_model.presigned_upload_url:
@@ -692,7 +676,7 @@ class BentoCloudClient(CloudClient):
                     tar.add(model.path, arcname="./")
             tar_io.seek(0, 0)
             with self.spinner.spin(text=f'Start uploading model "{model.tag}"..'):
-                yatai_rest_client.v1.start_upload_model(
+                rest_client.v1.start_upload_model(
                     model_repository_name=model_repository.name, version=version
                 )
             file_size = tar_io.getbuffer().nbytes
@@ -706,7 +690,7 @@ class BentoCloudClient(CloudClient):
 
             if transmission_strategy == "proxy":
                 try:
-                    yatai_rest_client.v1.upload_model(
+                    rest_client.v1.upload_model(
                         model_repository_name=model_repository.name,
                         version=version,
                         data=tar_io,
@@ -734,11 +718,9 @@ class BentoCloudClient(CloudClient):
                     with self.spinner.spin(
                         text=f'Start multipart uploading Model "{model.tag}"...'
                     ):
-                        remote_model = (
-                            yatai_rest_client.v1.start_model_multipart_upload(
-                                model_repository_name=model_repository.name,
-                                version=version,
-                            )
+                        remote_model = rest_client.v1.start_model_multipart_upload(
+                            model_repository_name=model_repository.name,
+                            version=version,
                         )
                         if not remote_model.upload_id:
                             raise BentoMLException(
@@ -756,7 +738,7 @@ class BentoCloudClient(CloudClient):
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of model "{model.tag}"...'
                         ):
                             remote_model = (
-                                yatai_rest_client.v1.presign_model_multipart_upload_url(
+                                rest_client.v1.presign_model_multipart_upload_url(
                                     model_repository_name=model_repository.name,
                                     version=version,
                                     req=PreSignMultipartUploadUrlSchema(
@@ -827,15 +809,13 @@ class BentoCloudClient(CloudClient):
                     with self.spinner.spin(
                         text=f'Completing multipart upload of model "{model.tag}"...'
                     ):
-                        remote_model = (
-                            yatai_rest_client.v1.complete_model_multipart_upload(
-                                model_repository_name=model_repository.name,
-                                version=version,
-                                req=CompleteMultipartUploadSchema(
-                                    upload_id=upload_id,
-                                    parts=parts,
-                                ),
-                            )
+                        remote_model = rest_client.v1.complete_model_multipart_upload(
+                            model_repository_name=model_repository.name,
+                            version=version,
+                            req=CompleteMultipartUploadSchema(
+                                upload_id=upload_id,
+                                parts=parts,
+                            ),
                         )
 
             except Exception as e:  # pylint: disable=broad-except
@@ -848,7 +828,7 @@ class BentoCloudClient(CloudClient):
             with self.spinner.spin(
                 text="Submitting upload status to remote model store"
             ):
-                yatai_rest_client.v1.finish_upload_model(
+                rest_client.v1.finish_upload_model(
                     model_repository_name=model_repository.name,
                     version=version,
                     req=finish_req,
@@ -867,7 +847,6 @@ class BentoCloudClient(CloudClient):
         tag: str | Tag,
         *,
         force: bool = False,
-        context: str | None = None,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
         query: str | None = None,
     ) -> Model:
@@ -880,7 +859,6 @@ class BentoCloudClient(CloudClient):
                 download_task_id,
                 force=force,
                 model_store=model_store,
-                context=context,
                 query=query,
             )
 
@@ -892,7 +870,7 @@ class BentoCloudClient(CloudClient):
         *,
         force: bool = False,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
-        context: str | None = None,
+        rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
         query: str | None = None,
     ) -> Model:
         _tag = Tag.from_taglike(tag)
@@ -909,11 +887,10 @@ class BentoCloudClient(CloudClient):
                     return model
                 else:
                     model_store.delete(tag)
-        yatai_rest_client = get_rest_api_client(context)
         name = _tag.name
         version = _tag.version
         if version in (None, "latest"):
-            latest_model = yatai_rest_client.v1.get_latest_model(name, query=query)
+            latest_model = rest_client.v1.get_latest_model(name, query=query)
             if latest_model is None:
                 raise BentoMLException(
                     f'Model "{_tag}" not found on remote model store, you may need to specify a version'
@@ -941,9 +918,7 @@ class BentoCloudClient(CloudClient):
         with self.spinner.spin(
             text=f'Getting a presigned download url for model "{_tag}"..'
         ):
-            remote_model = yatai_rest_client.v1.presign_model_download_url(
-                name, version
-            )
+            remote_model = rest_client.v1.presign_model_download_url(name, version)
 
         if not remote_model:
             raise BentoMLException(f'Model "{_tag}" not found on remote model store')
@@ -958,15 +933,13 @@ class BentoCloudClient(CloudClient):
             with self.spinner.spin(
                 text=f'Getting a presigned download url for model "{_tag}"'
             ):
-                remote_model = yatai_rest_client.v1.presign_model_download_url(
-                    name, version
-                )
+                remote_model = rest_client.v1.presign_model_download_url(name, version)
                 if remote_model.presigned_download_url:
                     presigned_download_url = remote_model.presigned_download_url
                     transmission_strategy = "presigned_url"
 
         if transmission_strategy == "proxy":
-            response_ctx = yatai_rest_client.v1.download_model(
+            response_ctx = rest_client.v1.download_model(
                 model_repository_name=name, version=version
             )
         else:
@@ -974,7 +947,7 @@ class BentoCloudClient(CloudClient):
                 with self.spinner.spin(
                     text=f'Getting a presigned download url for model "{_tag}"'
                 ):
-                    remote_model = yatai_rest_client.v1.presign_model_download_url(
+                    remote_model = rest_client.v1.presign_model_download_url(
                         name, version
                     )
                     presigned_download_url = remote_model.presigned_download_url
@@ -1020,9 +993,11 @@ class BentoCloudClient(CloudClient):
                     self.spinner.log(f'[bold green]Successfully pulled model "{_tag}"')
                     return model
 
-    def list_bentos(self, context: str | None = None) -> BentoWithRepositoryListSchema:
-        yatai_rest_client = get_rest_api_client(context)
-        res = yatai_rest_client.v1.get_bentos_list()
+    @inject
+    def list_bentos(
+        self, rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client]
+    ) -> BentoWithRepositoryListSchema:
+        res = rest_client.v1.get_bentos_list()
         if res is None:
             raise BentoMLException("List bentos request failed")
 
@@ -1032,29 +1007,28 @@ class BentoCloudClient(CloudClient):
         ]
         return res
 
+    @inject
     def get_bento(
         self,
         name: str,
         version: str | None,
-        context: str | None = None,
+        rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> BentoSchema:
         if version is None or version == "latest":
-            res = get_rest_api_client(context).v1.list_bentos(
-                bento_repository_name=name
-            )
+            res = rest_client.v1.list_bentos(bento_repository_name=name)
             if res is None:
                 raise BentoMLException("List bento request failed")
             return res.items[0]
-        res = get_rest_api_client(context).v1.get_bento(
-            bento_repository_name=name, version=version
-        )
+        res = rest_client.v1.get_bento(bento_repository_name=name, version=version)
         if res is None:
             raise NotFound(f'Bento "{name}:{version}" not found')
         return res
 
-    def list_models(self, context: str | None = None) -> ModelWithRepositoryListSchema:
-        yatai_rest_client = get_rest_api_client(context)
-        res = yatai_rest_client.v1.get_models_list()
+    @inject
+    def list_models(
+        self, rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client]
+    ) -> ModelWithRepositoryListSchema:
+        res = rest_client.v1.get_models_list()
         if res is None:
             raise BentoMLException("List models request failed")
 

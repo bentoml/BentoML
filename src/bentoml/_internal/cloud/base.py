@@ -166,7 +166,6 @@ class CloudClient(ABC):
         *,
         force: bool = False,
         threads: int = 10,
-        context: str | None = None,
     ):
         pass
 
@@ -177,7 +176,6 @@ class CloudClient(ABC):
         *,
         force: bool = False,
         threads: int = 10,
-        context: str | None = None,
     ):
         pass
 
@@ -187,7 +185,6 @@ class CloudClient(ABC):
         tag: str | Tag,
         *,
         force: bool = False,
-        context: str | None = None,
         model_store: ModelStore,
     ) -> Model:
         pass
@@ -198,7 +195,6 @@ class CloudClient(ABC):
         tag: str | Tag,
         *,
         force: bool = False,
-        context: str | None = None,
         bento_store: BentoStore,
     ) -> Bento:
         pass

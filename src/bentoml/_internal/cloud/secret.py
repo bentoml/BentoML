@@ -4,14 +4,19 @@ import typing as t
 
 import attr
 import yaml
+from simple_di import Provide
+from simple_di import inject
 
+from ..configuration.containers import BentoMLContainer
 from ..utils import bentoml_cattr
-from .config import get_rest_api_client
 from .schemas.schemasv1 import CreateSecretSchema
 from .schemas.schemasv1 import SecretContentSchema
 from .schemas.schemasv1 import SecretItem
 from .schemas.schemasv1 import SecretSchema
 from .schemas.schemasv1 import UpdateSecretSchema
+
+if t.TYPE_CHECKING:
+    from .client import RestApiClient
 
 
 @attr.define
@@ -45,24 +50,25 @@ class SecretInfo(SecretSchema):
 @attr.define
 class Secret:
     @classmethod
+    @inject
     def list(
         cls,
-        context: str | None = None,
         search: str | None = None,
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> t.List[SecretInfo]:
-        cloud_rest_client = get_rest_api_client(context)
         secrets = cloud_rest_client.v1.list_secrets(search=search)
         return [SecretInfo.from_secret_schema(secret) for secret in secrets.items]
 
     @classmethod
+    @inject
     def create(
         cls,
-        context: str | None = None,
         name: str | None = None,
         description: str | None = None,
         type: str | None = None,
         path: str | None = None,
         key_vals: t.List[t.Tuple[str, str]] = [],
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> SecretInfo:
         secret_schema = CreateSecretSchema(
             name=name,
@@ -75,30 +81,30 @@ class Secret:
                 ],
             ),
         )
-        cloud_rest_client = get_rest_api_client(context)
         secret = cloud_rest_client.v1.create_secret(secret_schema)
         return SecretInfo.from_secret_schema(secret)
 
     @classmethod
+    @inject
     def delete(
         cls,
-        context: str | None = None,
         name: str | None = None,
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ):
         if name is None:
             raise ValueError("name is required")
-        cloud_rest_client = get_rest_api_client(context)
         cloud_rest_client.v1.delete_secret(name)
 
     @classmethod
+    @inject
     def update(
         cls,
-        context: str | None = None,
         name: str | None = None,
         description: str | None = None,
         type: str | None = None,
         path: str | None = None,
         key_vals: t.List[t.Tuple[str, str]] = [],
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> SecretInfo:
         secret_schema = UpdateSecretSchema(
             description=description,
@@ -110,6 +116,5 @@ class Secret:
                 ],
             ),
         )
-        cloud_rest_client = get_rest_api_client(context)
         secret = cloud_rest_client.v1.update_secret(name, secret_schema)
         return SecretInfo.from_secret_schema(secret)

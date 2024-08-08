@@ -34,6 +34,7 @@ if TYPE_CHECKING:
 
     from .. import external_typing as ext
     from ..bento import BentoStore
+    from ..cloud.client import RestApiClient
     from ..models import ModelStore
     from ..server.metrics.prometheus import PrometheusClient
     from ..utils.analytics import ServeInfo
@@ -505,6 +506,15 @@ class _BentoMLContainerClass:
     @property
     def new_index(self) -> bool:
         return "new_index" in self.enabled_features.get()
+
+    cloud_context = providers.Static[t.Optional[str]](None)
+
+    @providers.Factory
+    @staticmethod
+    def rest_api_client(context: str | None = Provide[cloud_context]) -> RestApiClient:
+        from ..cloud.config import get_rest_api_client
+
+        return get_rest_api_client(context)
 
 
 BentoMLContainer = _BentoMLContainerClass()

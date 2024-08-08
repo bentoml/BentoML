@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import sys
-import typing as t
 import urllib.parse
 import webbrowser
 
@@ -15,15 +14,13 @@ from rich.prompt import Confirm
 from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.cloud.config import CloudClientConfig
 from bentoml._internal.cloud.config import CloudClientContext
+from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.utils import bentoml_cattr
 from bentoml._internal.utils import reserve_free_port
 from bentoml.exceptions import CLIException
 from bentoml.exceptions import CloudRESTApiClientError
 from bentoml_cli.auth_server import AuthCallbackHttpServer
 from bentoml_cli.utils import BentoMLCommandGroup
-
-if t.TYPE_CHECKING:
-    from .utils import SharedOptions
 
 
 @click.group(name="cloud", cls=BentoMLCommandGroup)
@@ -51,8 +48,7 @@ def cloud_command():
     show_envvar=True,
     required=False,
 )
-@click.pass_obj
-def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
+def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
     """Login to BentoCloud."""
     if not api_token:
         choice = inquirer.select(
@@ -115,11 +111,10 @@ def login(shared_options: SharedOptions, endpoint: str, api_token: str) -> None:
             raise CLIException("current organization is not found")
 
         current_context_name = CloudClientConfig.get_config().current_context_name
+        cloud_context = BentoMLContainer.cloud_context.get()
 
         ctx = CloudClientContext(
-            name=shared_options.cloud_context
-            if shared_options.cloud_context is not None
-            else current_context_name,
+            name=cloud_context if cloud_context is not None else current_context_name,
             endpoint=endpoint,
             api_token=api_token,
             email=user.email,

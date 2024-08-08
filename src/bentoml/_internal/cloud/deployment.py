@@ -18,8 +18,10 @@ from simple_di import inject
 if t.TYPE_CHECKING:
     from _bentoml_impl.client import AsyncHTTPClient
     from _bentoml_impl.client import SyncHTTPClient
-    from bentoml._internal.bento.bento import BentoStore
-    from bentoml._internal.cloud.bentocloud import BentoCloudClient
+
+    from ..bento.bento import BentoStore
+    from .bentocloud import BentoCloudClient
+    from .client import RestApiClient
 
 from ...exceptions import BentoMLException
 from ...exceptions import NotFound
@@ -29,7 +31,6 @@ from ..tag import Tag
 from ..utils import bentoml_cattr
 from ..utils import resolve_user_filepath
 from .base import Spinner
-from .config import get_rest_api_client
 from .schemas.modelschemas import DeploymentStatus
 from .schemas.modelschemas import DeploymentTargetHPAConf
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
@@ -54,7 +55,6 @@ config_merger = Merger(
 class DeploymentConfigParameters:
     name: str | None = None
     path_context: str | None = None
-    context: str | None = None
     bento: Tag | str | None = None
     cluster: str | None = None
     access_authorization: bool | None = None
@@ -163,19 +163,11 @@ class DeploymentConfigParameters:
                 # target is a path
                 if self.cli:
                     rich.print(f"building bento from [green]{bento_name}[/] ...")
-                bento_info = get_bento_info(
-                    project_path=bento_name,
-                    context=self.context,
-                    cli=self.cli,
-                )
+                bento_info = get_bento_info(project_path=bento_name, cli=self.cli)
             else:
                 if self.cli:
                     rich.print(f"using bento [green]{bento_name}[/]...")
-                bento_info = get_bento_info(
-                    bento=str(bento_name),
-                    context=self.context,
-                    cli=self.cli,
-                )
+                bento_info = get_bento_info(bento=str(bento_name), cli=self.cli)
             self.cfg_dict["bento"] = bento_info.tag
             if self.service_name is None:
                 self.service_name = bento_info.entry_service
@@ -208,10 +200,7 @@ class DeploymentConfigParameters:
                     raise BentoMLException("Bento is required")
                 bento = self.cfg_dict.get("bento")
 
-            info = get_bento_info(
-                bento=bento,
-                context=self.context,
-            )
+            info = get_bento_info(bento=bento)
             if info.entry_service == "":
                 # for compatibility
                 self.service_name = "apiserver"
@@ -293,7 +282,6 @@ def get_bento_info(
     project_path: str | None = None,
     bento: str | Tag | None = None,
     cli: bool = False,
-    context: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> BentoInfo:
@@ -314,7 +302,7 @@ def get_bento_info(
                 build_ctx=project_path, _bento_store=_bento_store
             )
 
-        _cloud_client.push_bento(bento=bento_obj, context=context)
+        _cloud_client.push_bento(bento=bento_obj)
         return bento_obj.info
     elif bento:
         bento = Tag.from_taglike(bento)
@@ -326,14 +314,14 @@ def get_bento_info(
         # try to get from bentocloud
         try:
             bento_schema = _cloud_client.get_bento(
-                context=context, name=bento.name, version=bento.version
+                name=bento.name, version=bento.version
             )
         except NotFound:
             bento_schema = None
 
         if bento_obj is not None:
             # push to bentocloud
-            _cloud_client.push_bento(bento=bento_obj, context=context)
+            _cloud_client.push_bento(bento=bento_obj)
             return bento_obj.info
         if bento_schema is not None:
             assert bento_schema.manifest is not None
@@ -389,7 +377,6 @@ class DeploymentInfo:
     created_at: str
     created_by: str
     cluster: str
-    _context: t.Optional[str] = attr.field(alias="_context", repr=False)
     _schema: DeploymentSchema = attr.field(alias="_schema", repr=False)
     _urls: t.Optional[list[str]] = attr.field(alias="_urls", default=None, repr=False)
 
@@ -414,7 +401,7 @@ class DeploymentInfo:
         return yaml.dump(self.to_dict(), sort_keys=False)
 
     def _refetch(self) -> None:
-        res = Deployment.get(self.name, self.cluster, self._context)
+        res = Deployment.get(self.name, self.cluster)
         self._schema = res._schema
         self._urls = res._urls
 
@@ -504,11 +491,13 @@ class DeploymentInfo:
             raise BentoMLException("Deployment url is not ready")
         return AsyncHTTPClient(self._urls[0], token=token)
 
+    @inject
     def wait_until_ready(
         self,
         timeout: int = 3600,
         check_interval: int = 10,
         spinner: Spinner | None = None,
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> None:
         from httpx import TimeoutException
 
@@ -517,7 +506,6 @@ class DeploymentInfo:
             stop_tail_event = Event()
 
             def tail_image_builder_logs() -> None:
-                cloud_rest_client = get_rest_api_client(self._context)
                 started_at = time.time()
                 wait_pod_timeout = 60 * 10
                 pod: KubePodSchema | None = None
@@ -738,10 +726,12 @@ class Deployment:
         )
 
     @staticmethod
+    @inject
     def _generate_deployment_info_(
-        context: str | None, res: DeploymentSchema, urls: list[str] | None = None
+        res: DeploymentSchema,
+        urls: list[str] | None = None,
+        client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> DeploymentInfo:
-        client = get_rest_api_client(context)
         admin_console = f"{client.v1.endpoint}/deployments/{res.name}"
         if res.cluster.is_first is False:
             admin_console = f"{client.v1.endpoint}/deployments/{res.name}?cluster={res.cluster.name}&namespace={res.kube_namespace}"
@@ -752,18 +742,17 @@ class Deployment:
             created_by=res.creator.name,
             cluster=res.cluster.name,
             _schema=res,
-            _context=context,
             _urls=urls,
         )
 
     @classmethod
+    @inject
     def list(
         cls,
-        context: str | None = None,
         cluster: str | None = None,
         search: str | None = None,
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> list[DeploymentInfo]:
-        cloud_rest_client = get_rest_api_client(context)
         if cluster is None:
             res_count = cloud_rest_client.v2.list_deployment(all=True, search=search)
             if res_count.total == 0:
@@ -778,13 +767,14 @@ class Deployment:
             res = cloud_rest_client.v2.list_deployment(
                 cluster, search=search, count=res_count.total
             )
-        return [cls._generate_deployment_info_(context, schema) for schema in res.items]
+        return [cls._generate_deployment_info_(schema) for schema in res.items]
 
     @classmethod
+    @inject
     def create(
         cls,
         deployment_config_params: DeploymentConfigParameters,
-        context: str | None = None,
+        rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> DeploymentInfo:
         cluster = deployment_config_params.get_cluster()
         if (
@@ -797,27 +787,26 @@ class Deployment:
         config_struct = bentoml_cattr.structure(config_params, CreateDeploymentSchemaV2)
         cls._fix_and_validate_schema(config_struct)
 
-        cloud_rest_client = get_rest_api_client(context)
-        res = cloud_rest_client.v2.create_deployment(
+        res = rest_client.v2.create_deployment(
             create_schema=config_struct, cluster=cluster
         )
 
         logger.debug("Deployment Schema: %s", config_struct)
 
-        return cls._generate_deployment_info_(context, res, res.urls)
+        return cls._generate_deployment_info_(res, res.urls)
 
     @classmethod
+    @inject
     def update(
         cls,
         deployment_config_params: DeploymentConfigParameters,
-        context: str | None = None,
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> DeploymentInfo:
         name = deployment_config_params.get_name()
         if name is None:
             raise ValueError("name is required")
         cluster = deployment_config_params.get_cluster()
 
-        cloud_rest_client = get_rest_api_client(context)
         deployment_schema = cloud_rest_client.v2.get_deployment(name, cluster)
         orig_dict = cls._convert_schema_to_update_schema(deployment_schema)
 
@@ -836,25 +825,24 @@ class Deployment:
             update_schema=config_struct,
         )
         logger.debug("Deployment Schema: %s", config_struct)
-        return cls._generate_deployment_info_(context, res, res.urls)
+        return cls._generate_deployment_info_(res, res.urls)
 
     @classmethod
+    @inject
     def apply(
         cls,
         deployment_config_params: DeploymentConfigParameters,
-        context: str | None = None,
+        rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> DeploymentInfo:
-        cloud_rest_client = get_rest_api_client(context)
         name = deployment_config_params.get_name()
         if name is not None:
             try:
-                deployment_schema = cloud_rest_client.v2.get_deployment(
+                deployment_schema = rest_client.v2.get_deployment(
                     name, deployment_config_params.get_cluster(pop=False)
                 )
             except NotFound:
                 return cls.create(
                     deployment_config_params=deployment_config_params,
-                    context=context,
                 )
             # directly update the deployment with the schema, do not merge with the existing schema
             if deployment_config_params.get_name() != deployment_schema.name:
@@ -873,58 +861,55 @@ class Deployment:
             )
             cls._fix_and_validate_schema(config_struct)
 
-            res = cloud_rest_client.v2.update_deployment(
+            res = rest_client.v2.update_deployment(
                 name=name,
                 update_schema=config_struct,
                 cluster=deployment_schema.cluster.name,
             )
             logger.debug("Deployment Schema: %s", config_struct)
-            return cls._generate_deployment_info_(context, res, res.urls)
+            return cls._generate_deployment_info_(res, res.urls)
 
-        return cls.create(
-            deployment_config_params=deployment_config_params,
-            context=context,
-        )
+        return cls.create(deployment_config_params=deployment_config_params)
 
     @classmethod
+    @inject
     def get(
         cls,
         name: str,
         cluster: str | None = None,
-        context: str | None = None,
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> DeploymentInfo:
-        cloud_rest_client = get_rest_api_client(context)
         res = cloud_rest_client.v2.get_deployment(name, cluster)
-        return cls._generate_deployment_info_(context, res, res.urls)
+        return cls._generate_deployment_info_(res, res.urls)
 
     @classmethod
+    @inject
     def terminate(
         cls,
         name: str,
         cluster: str | None = None,
-        context: str | None = None,
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> DeploymentInfo:
-        cloud_rest_client = get_rest_api_client(context)
         res = cloud_rest_client.v2.terminate_deployment(name, cluster)
-        return cls._generate_deployment_info_(context, res, res.urls)
+        return cls._generate_deployment_info_(res, res.urls)
 
     @classmethod
+    @inject
     def delete(
         cls,
         name: str,
         cluster: str | None = None,
-        context: str | None = None,
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> None:
-        cloud_rest_client = get_rest_api_client(context)
         cloud_rest_client.v2.delete_deployment(name, cluster)
 
     @classmethod
+    @inject
     def list_instance_types(
         cls,
         cluster: str | None = None,
-        context: str | None = None,
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> list[InstanceTypeInfo]:
-        cloud_rest_client = get_rest_api_client(context)
         res = cloud_rest_client.v2.list_instance_types(cluster)
         return [
             InstanceTypeInfo(

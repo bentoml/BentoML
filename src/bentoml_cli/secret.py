@@ -21,8 +21,6 @@ if t.TYPE_CHECKING:
     from click import Context
     from click import Parameter
 
-    from .utils import SharedOptions
-
 
 @click.group(name="secret", cls=BentoMLCommandGroup)
 def secret_command():
@@ -33,7 +31,6 @@ def secret_command():
 @click.option(
     "--search", type=click.STRING, default=None, help="Search for list request."
 )
-@click.pass_obj
 @click.option(
     "-o",
     "--output",
@@ -42,12 +39,11 @@ def secret_command():
     default="table",
 )
 def list(
-    shared_options: SharedOptions,
     search: str | None,
     output: t.Literal["json", "yaml", "table"],
 ):
     """List all secrets on BentoCloud."""
-    secrets = Secret.list(context=shared_options.cloud_context, search=search)
+    secrets = Secret.list(search=search)
     if output == "table":
         table = Table(box=None, expand=True)
         table.add_column("Secret", overflow="fold")
@@ -154,7 +150,6 @@ def map_choice_to_type(ctx: Context, params: Parameter, value: t.Any):
 
 
 @secret_command.command(name="create")
-@click.pass_obj
 @click.argument(
     "name",
     nargs=1,
@@ -204,7 +199,6 @@ def map_choice_to_type(ctx: Context, params: Parameter, value: t.Any):
     multiple=True,
 )
 def create(
-    shared_options: SharedOptions,
     name: str,
     description: str | None,
     type: t.Literal["env", "mountfile"],
@@ -231,7 +225,6 @@ def create(
         if type == "mountfile" and not path:
             path = "$BENTOML_HOME"
         secret = Secret.create(
-            context=shared_options.cloud_context,
             name=name,
             description=description,
             type=type,
@@ -244,24 +237,22 @@ def create(
 
 
 @secret_command.command(name="delete")
-@click.pass_obj
 @click.argument(
     "name",
     nargs=1,
     type=click.STRING,
     required=True,
 )
-def delete(shared_options: SharedOptions, name: str):
+def delete(name: str):
     """Delete a secret on BentoCloud."""
     try:
-        Secret.delete(context=shared_options.cloud_context, name=name)
+        Secret.delete(name=name)
         rich.print(f"Secret [green]{name}[/] deleted successfully")
     except Exception as e:
         raise_secret_error(e, "delete")
 
 
 @secret_command.command(name="apply")
-@click.pass_obj
 @click.argument(
     "name",
     nargs=1,
@@ -311,7 +302,6 @@ def delete(shared_options: SharedOptions, name: str):
     multiple=True,
 )
 def apply(
-    shared_options: SharedOptions,
     name: str,
     description: str | None,
     type: t.Literal["env", "mountfile"],
@@ -338,7 +328,6 @@ def apply(
         if type == "mountfile" and not path:
             path = "$BENTOML_HOME"
         secret = Secret.update(
-            context=shared_options.cloud_context,
             name=name,
             description=description,
             type=type,

@@ -49,20 +49,20 @@ USAGE_REQUEST_TIMEOUT_SECONDS = 1
 
 @lru_cache(maxsize=None)
 def _bentoml_serve_from_server_api() -> bool:
-    return os.environ.get(BENTOML_SERVE_FROM_SERVER_API, str(False)).lower() == "true"
+    return os.environ.get(BENTOML_SERVE_FROM_SERVER_API, "False").lower() == "true"
 
 
 @lru_cache(maxsize=1)
 def do_not_track() -> bool:  # pragma: no cover
     # Returns True if and only if the environment variable is defined and has value True.
     # The function is cached for better performance.
-    return os.environ.get(BENTOML_DO_NOT_TRACK, str(False)).lower() == "true"
+    return os.environ.get(BENTOML_DO_NOT_TRACK, "False").lower() == "true"
 
 
 @lru_cache(maxsize=1)
 def _usage_event_debugging() -> bool:
     # For BentoML developers only - debug and print event payload if turned on
-    return os.environ.get("__BENTOML_DEBUG_USAGE", str(False)).lower() == "true"
+    return os.environ.get("__BENTOML_DEBUG_USAGE", "False").lower() == "true"
 
 
 def silent(func: t.Callable[P, T]) -> t.Callable[P, T]:  # pragma: no cover

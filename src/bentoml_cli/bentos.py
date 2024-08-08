@@ -25,7 +25,6 @@ if t.TYPE_CHECKING:
     from bentoml._internal.cloud import BentoCloudClient
     from bentoml._internal.container import DefaultBuilder
 
-    from .utils import SharedOptions
 
 BENTOML_FIGLET = """
 ██████╗ ███████╗███╗   ██╗████████╗ ██████╗ ███╗   ███╗██╗
@@ -282,18 +281,14 @@ def bento_management_commands() -> click.Group:
         default=False,
         help="Force pull from remote Bento store to local and overwrite even if it already exists in local",
     )
-    @click.pass_obj
     @inject
     def pull(
-        shared_options: SharedOptions,
         bento_tag: str,
         force: bool,
         cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ) -> None:  # type: ignore (not accessed)
         """Pull Bento from a remote Bento store server."""
-        cloud_client.pull_bento(
-            bento_tag, force=force, context=shared_options.cloud_context
-        )
+        cloud_client.pull_bento(bento_tag, force=force)
 
     @bentos.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -310,10 +305,8 @@ def bento_management_commands() -> click.Group:
         default=10,
         help="Number of threads to use for upload",
     )
-    @click.pass_obj
     @inject
     def push(
-        shared_options: SharedOptions,
         bento_tag: str,
         force: bool,
         threads: int,
@@ -324,12 +317,7 @@ def bento_management_commands() -> click.Group:
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")
-        cloud_client.push_bento(
-            bento_obj,
-            force=force,
-            threads=threads,
-            context=shared_options.cloud_context,
-        )
+        cloud_client.push_bento(bento_obj, force=force, threads=threads)
 
     @bentos.command()
     @click.argument("build_ctx", type=click.Path(), default=".")
@@ -445,12 +433,7 @@ def bento_management_commands() -> click.Group:
         if push:
             if not get_quiet_mode():
                 rich.print(f"\n[magenta]Pushing {bento} to BentoCloud...[/]")
-            _cloud_client.push_bento(
-                bento,
-                force=force,
-                threads=threads,
-                context=t.cast("SharedOptions", ctx.obj).cloud_context,
-            )
+            _cloud_client.push_bento(bento, force=force, threads=threads)
         elif containerize:
             backend: DefaultBuilder = t.cast(
                 "DefaultBuilder", os.getenv("BENTOML_CONTAINERIZE_BACKEND", "docker")

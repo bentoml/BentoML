@@ -72,10 +72,9 @@ Now you can run inference from your browser at http://localhost:3000 or with a P
 ```python
 import bentoml
 
-with bentoml.SyncHTTPClient('http://localhost:3000') as client:
-    text_to_summarize: str = input("Enter text to summarize: ")
-    summarized_text: str = client.summarize([text_to_summarize])[0]
-    print(f"Summarized text: {summarized_text}")
+with bentoml.SyncHTTPClient('http://localhost:3000') as client:     
+    summarized_text: str = client.summarize([bentoml.__doc__])[0]
+    print(f"Result: {summarized_text}")
 ```
 
 ### Deploying your first Bento

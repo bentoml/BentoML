@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 from datetime import datetime
-from unittest.mock import patch
 
 import attr
 import pytest
@@ -42,9 +41,6 @@ from bentoml._internal.cloud.schemas.schemasv2 import (
 from bentoml._internal.cloud.schemas.schemasv2 import (
     UpdateDeploymentSchema as UpdateDeploymentSchemaV2,
 )
-
-if t.TYPE_CHECKING:
-    from unittest.mock import MagicMock
 
 
 @attr.define
@@ -162,6 +158,8 @@ def dummy_generate_deployment_schema(
 
 @pytest.fixture(name="rest_client", scope="function")
 def fixture_rest_client() -> RestApiClient:
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
     def dummy_create_deployment(
         create_schema: CreateDeploymentSchemaV2, cluster: str | None = None
     ):
@@ -256,13 +254,14 @@ def fixture_rest_client() -> RestApiClient:
             )
         ],
     )  # type: ignore
+    try:
+        BentoMLContainer.rest_api_client.set(client)
+        yield client
+    finally:
+        BentoMLContainer.rest_api_client.reset()
 
-    return client
 
-
-@patch("bentoml._internal.cloud.deployment.get_rest_api_client")
-def test_create_deployment(mock_get_client: MagicMock, rest_client: RestApiClient):
-    mock_get_client.return_value = rest_client
+def test_create_deployment(rest_client: RestApiClient):
     deployment = Deployment.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -282,11 +281,7 @@ def test_create_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
         )
 
 
-@patch("bentoml._internal.cloud.deployment.get_rest_api_client")
-def test_create_deployment_custom_standalone(
-    mock_get_client: MagicMock, rest_client: RestApiClient
-):
-    mock_get_client.return_value = rest_client
+def test_create_deployment_custom_standalone(rest_client: RestApiClient):
     deployment = Deployment.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -318,11 +313,7 @@ def test_create_deployment_custom_standalone(
         assert service.deployment_strategy == "RollingUpdate"
 
 
-@patch("bentoml._internal.cloud.deployment.get_rest_api_client")
-def test_create_deployment_scailing_only_min(
-    mock_get_client: MagicMock, rest_client: RestApiClient
-):
-    mock_get_client.return_value = rest_client
+def test_create_deployment_scailing_only_min(rest_client: RestApiClient):
     deployment = Deployment.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -347,11 +338,7 @@ def test_create_deployment_scailing_only_min(
         )
 
 
-@patch("bentoml._internal.cloud.deployment.get_rest_api_client")
-def test_create_deployment_scailing_only_max(
-    mock_get_client: MagicMock, rest_client: RestApiClient
-):
-    mock_get_client.return_value = rest_client
+def test_create_deployment_scailing_only_max(rest_client: RestApiClient):
     deployment = Deployment.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -376,11 +363,7 @@ def test_create_deployment_scailing_only_max(
         )
 
 
-@patch("bentoml._internal.cloud.deployment.get_rest_api_client")
-def test_create_deployment_config_dict(
-    mock_get_client: MagicMock, rest_client: RestApiClient
-):
-    mock_get_client.return_value = rest_client
+def test_create_deployment_config_dict(rest_client: RestApiClient):
     deployment = Deployment.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -419,9 +402,7 @@ def test_create_deployment_config_dict(
     }
 
 
-@patch("bentoml._internal.cloud.deployment.get_rest_api_client")
-def test_update_deployment(mock_get_client: MagicMock, rest_client: RestApiClient):
-    mock_get_client.return_value = rest_client
+def test_update_deployment(rest_client: RestApiClient):
     deployment = Deployment.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -452,11 +433,7 @@ def test_update_deployment(mock_get_client: MagicMock, rest_client: RestApiClien
         assert service.deployment_strategy == "Recreate"
 
 
-@patch("bentoml._internal.cloud.deployment.get_rest_api_client")
-def test_update_deployment_scaling_only_min(
-    mock_get_client: MagicMock, rest_client: RestApiClient
-):
-    mock_get_client.return_value = rest_client
+def test_update_deployment_scaling_only_min(rest_client: RestApiClient):
     deployment = Deployment.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -483,11 +460,7 @@ def test_update_deployment_scaling_only_min(
         assert service.deployment_strategy == "RollingUpdate"
 
 
-@patch("bentoml._internal.cloud.deployment.get_rest_api_client")
-def test_update_deployment_scaling_only_max(
-    mock_get_client: MagicMock, rest_client: RestApiClient
-):
-    mock_get_client.return_value = rest_client
+def test_update_deployment_scaling_only_max(rest_client: RestApiClient):
     deployment = Deployment.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -514,11 +487,7 @@ def test_update_deployment_scaling_only_max(
         assert service.deployment_strategy == "RollingUpdate"
 
 
-@patch("bentoml._internal.cloud.deployment.get_rest_api_client")
-def test_update_deployment_scaling_too_big_min(
-    mock_get_client: MagicMock, rest_client: RestApiClient
-):
-    mock_get_client.return_value = rest_client
+def test_update_deployment_scaling_too_big_min(rest_client: RestApiClient):
     try:
         Deployment.update(
             deployment_config_params=DeploymentConfigParameters(
@@ -538,11 +507,7 @@ def test_update_deployment_scaling_too_big_min(
         )
 
 
-@patch("bentoml._internal.cloud.deployment.get_rest_api_client")
-def test_update_deployment_distributed(
-    mock_get_client: MagicMock, rest_client: RestApiClient
-):
-    mock_get_client.return_value = rest_client
+def test_update_deployment_distributed(rest_client: RestApiClient):
     deployment = Deployment.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={

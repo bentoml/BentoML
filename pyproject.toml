@@ -1,9 +1,9 @@
 [project]
 name = "bentoml"
-description = "BentoML: Build Production-Grade AI Applications"
+description = "BentoML: The easiest way to serve AI apps and models"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
-keywords = ["MLOps", "AI", "BentoML", "Model Serving", "Model Deployment"]
+keywords = ["BentoML", "Compound AI Systems", "MLOps", "LLMOps", "Model Serving", "Model Inference", "Model Deployment"]
 license = { text = "Apache-2.0" }
 authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]
 classifiers = [
@@ -80,7 +80,7 @@ GitHub = "https://github.com/bentoml/bentoml"
 Twitter = "https://twitter.com/bentomlai"
 Tracker = "https://github.com/bentoml/BentoML/issues"
 Slack = "https://l.bentoml.com/join-slack"
-Blog = "https://modelserving.com"
+Blog = "https://bentoml.com/blog"
 [project.scripts]
 bentoml = "bentoml_cli.cli:cli"
 [project.optional-dependencies]

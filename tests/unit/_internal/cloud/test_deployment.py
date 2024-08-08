@@ -156,8 +156,8 @@ def dummy_generate_deployment_schema(
     )
 
 
-@pytest.fixture(name="rest_client", scope="function")
-def fixture_rest_client() -> RestApiClient:
+@pytest.fixture(autouse=True)
+def mock_rest_client() -> t.Generator[RestApiClient, None, None]:
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     def dummy_create_deployment(
@@ -261,7 +261,7 @@ def fixture_rest_client() -> RestApiClient:
         BentoMLContainer.rest_api_client.reset()
 
 
-def test_create_deployment(rest_client: RestApiClient):
+def test_create_deployment():
     deployment = Deployment.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -281,7 +281,7 @@ def test_create_deployment(rest_client: RestApiClient):
         )
 
 
-def test_create_deployment_custom_standalone(rest_client: RestApiClient):
+def test_create_deployment_custom_standalone():
     deployment = Deployment.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -313,7 +313,7 @@ def test_create_deployment_custom_standalone(rest_client: RestApiClient):
         assert service.deployment_strategy == "RollingUpdate"
 
 
-def test_create_deployment_scailing_only_min(rest_client: RestApiClient):
+def test_create_deployment_scailing_only_min():
     deployment = Deployment.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -338,7 +338,7 @@ def test_create_deployment_scailing_only_min(rest_client: RestApiClient):
         )
 
 
-def test_create_deployment_scailing_only_max(rest_client: RestApiClient):
+def test_create_deployment_scailing_only_max():
     deployment = Deployment.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -363,7 +363,7 @@ def test_create_deployment_scailing_only_max(rest_client: RestApiClient):
         )
 
 
-def test_create_deployment_config_dict(rest_client: RestApiClient):
+def test_create_deployment_config_dict():
     deployment = Deployment.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -402,7 +402,7 @@ def test_create_deployment_config_dict(rest_client: RestApiClient):
     }
 
 
-def test_update_deployment(rest_client: RestApiClient):
+def test_update_deployment():
     deployment = Deployment.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -433,7 +433,7 @@ def test_update_deployment(rest_client: RestApiClient):
         assert service.deployment_strategy == "Recreate"
 
 
-def test_update_deployment_scaling_only_min(rest_client: RestApiClient):
+def test_update_deployment_scaling_only_min():
     deployment = Deployment.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -460,7 +460,7 @@ def test_update_deployment_scaling_only_min(rest_client: RestApiClient):
         assert service.deployment_strategy == "RollingUpdate"
 
 
-def test_update_deployment_scaling_only_max(rest_client: RestApiClient):
+def test_update_deployment_scaling_only_max():
     deployment = Deployment.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
@@ -487,7 +487,7 @@ def test_update_deployment_scaling_only_max(rest_client: RestApiClient):
         assert service.deployment_strategy == "RollingUpdate"
 
 
-def test_update_deployment_scaling_too_big_min(rest_client: RestApiClient):
+def test_update_deployment_scaling_too_big_min():
     try:
         Deployment.update(
             deployment_config_params=DeploymentConfigParameters(
@@ -507,7 +507,7 @@ def test_update_deployment_scaling_too_big_min(rest_client: RestApiClient):
         )
 
 
-def test_update_deployment_distributed(rest_client: RestApiClient):
+def test_update_deployment_distributed():
     deployment = Deployment.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={

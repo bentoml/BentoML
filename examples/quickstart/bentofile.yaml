@@ -1,8 +1,12 @@
 service: "service:Summarization"
 labels:
-  owner: bentoml-team
-  project: gallery
+  project: quickstart
+  stage: dev
 include:
-  - "*.py"
+  - "service.py"
 python:
-  requirements_txt: requirements.txt
+  packages:
+  - torch
+  - transformers
+docker:
+  python_version: 3.11

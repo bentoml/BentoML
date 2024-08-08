@@ -17,12 +17,12 @@
 
 ## What is BentoML?
 
-BentoML is an open-source model serving framework, simplifying how AI/ML models gets into production:
+BentoML is a Python library for building online serving systems optimized for AI apps and model inference.
 
 - **🍱 Easily build APIs for Any AI/ML Model.** Turn any model inference script into a REST API server with just a few lines of code and standard Python type hints.
 - **🐳 Docker Containers made simple.** No more dependency hell! Manage your environments, dependencies and model versions with a simple config file. BentoML automatically generates Docker images, ensures reproducibility, and simplifies how you deploy to different environments.
 - **🧭 Maximize CPU/GPU utilization.** Build high performance inference APIs leveraging built-in serving optimization features like dynamic batching, model parallelism, multi-stage pipeline and multi-model inference-graph orchestration.
-- **👩‍💻 Build Custom AI Applications.** Easily implement your own API specifications, asynchronous inference tasks; customize pre/post-processing, model inference and model composition logic, all using Python code. Supports any ML framework, modality, and inference runtime.
+- **👩‍💻 Fully customizable.** Easily implement your own APIs or task queues, with custom business logic, model inference and multi-model composition. Supports any ML framework, modality, and inference runtime.
 - **🚀 Ready for Production.** Develop, run and debug locally. Seamlessly deploy to production with Docker containers or [BentoCloud](https://www.bentoml.com/).
 
 
@@ -33,7 +33,6 @@ Install BentoML:
 ```
 # Requires Python≥3.8
 pip install -U bentoml
-pip install torch transformers  # additional dependencies for demo purpose
 ```
 
 Define APIs in a `service.py` file.
@@ -42,16 +41,20 @@ Define APIs in a `service.py` file.
 from __future__ import annotations
 
 import bentoml
-from typing import List
 
-@bentoml.service
+@bentoml.service(
+    resources={"cpu": "4"}
+)
 class Summarization:
     def __init__(self) -> None:
+        import torch
         from transformers import pipeline
-        self.pipeline = pipeline('summarization')
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.pipeline = pipeline('summarization', device=device)
 
     @bentoml.api(batchable=True)
-    def summarize(self, texts: List[str]) -> List[str]:
+    def summarize(self, texts: list[str]) -> list[str]:
         results = self.pipeline(texts)
         return [item['summary_text'] for item in results]
 ```
@@ -59,6 +62,8 @@ class Summarization:
 Run the service code locally (serving at http://localhost:3000 by default):
 
 ```bash
+pip install torch transformers  # additional dependencies for local run
+
 bentoml serve service.py:Summarization
 ```
 
@@ -68,9 +73,8 @@ Now you can run inference from your browser at http://localhost:3000 or with a P
 import bentoml
 
 with bentoml.SyncHTTPClient('http://localhost:3000') as client:
-    text_to_summarize: str = input("Enter text to summarize: ")
-    summarized_text: str = client.summarize([text_to_summarize])[0]
-    print(f"Summarized text: {summarized_text}")
+    summarized_text: str = client.summarize([bentoml.__doc__])[0]
+    print(f"Result: {summarized_text}")
 ```
 
 ### Deploying your first Bento
@@ -82,10 +86,11 @@ service: "service:Summarization" # Entry service import path
 include:
   - "*.py" # Include all .py files in current directory
 python:
-  lock_packages: false # option to lock versions found in current environment
   packages: # Python dependencies to include
   - torch
   - transformers
+docker:
+  python_version: 3.11
 ```
 
 Then, choose one of the following ways for deployment:
@@ -118,11 +123,13 @@ docker run --rm -p 3000:3000 summarization:latest
 
 <summary>☁️ BentoCloud</summary>
 
-BentoCloud is the AI inference platform for fast moving AI teams. It lets you easily deploy your BentoML code in a fast-scaling infrastructure. [Sign up for BentoCloud](https://cloud.bentoml.com/signup) for personal access; for enterprise use cases, [contact our team](https://www.bentoml.com/contact).
+[BentoCloud](www.bentoml.com) provides compute infrastructure for rapid and reliable GenAI adoption. It helps speed up your BentoML development process leveraging cloud compute resources, and simplify how you deploy, scale and operate BentoML in production.
+
+[Sign up for BentoCloud](https://cloud.bentoml.com/signup) for personal access; for enterprise use cases, [contact our team](https://www.bentoml.com/contact).
 
 ```bash
-# After signup, follow login instructions upon API token creation:
-bentoml cloud login --api-token <your-api-token>
+# After signup, run the following command to create an API token:
+bentoml cloud login
 
 # Deploy from current directory:
 bentoml deploy .

@@ -41,7 +41,6 @@ Define APIs in a `service.py` file.
 from __future__ import annotations
 
 import bentoml
-from typing import List
 
 @bentoml.service(
     resources={"cpu": "4"}
@@ -55,7 +54,7 @@ class Summarization:
         self.pipeline = pipeline('summarization', device=device)
 
     @bentoml.api(batchable=True)
-    def summarize(self, texts: List[str]) -> List[str]:
+    def summarize(self, texts: list[str]) -> list[str]:
         results = self.pipeline(texts)
         return [item['summary_text'] for item in results]
 ```

@@ -1,6 +1,6 @@
-===
-LLM
-===
+====
+LLMs
+====
 
 This section provides example projects for large language models.
 
@@ -15,9 +15,16 @@ This section provides example projects for large language models.
 
         Deploy an LLM application with vLLM and BentoML.
 
+    .. grid-item-card:: :doc:`/use-cases/large-language-models/tensorrt-llm`
+        :link: /use-cases/large-language-models/vllm
+        :link-type: doc
+
+        Deploy an LLM application with TensorRT-LLM and BentoML.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
     :hidden:
 
     vllm
+    tensorrt-llm

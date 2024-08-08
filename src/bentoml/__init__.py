@@ -2,16 +2,16 @@
 BentoML
 =======
 
-BentoML is the unified ML Model Serving framework. Data Scientists and ML Engineers use
-BentoML to:
+BentoML is a Python library for building online serving systems optimized for AI apps 
+and model inference. It supports serving any model format/runtime and custom Python 
+code, offering the key primitives for serving optimizations, task queues, batching, 
+multi-model chains, distributed orchestration, and multi-GPU serving.
 
-* Accelerate and standardize the process of taking ML models to production across teams
-* Build reliable, scalable, and high performance model serving systems
-* Provide a flexible MLOps platform that grows with your Data Science needs
-
-To learn more, visit BentoML documentation at: http://docs.bentoml.com
-To get involved with the development, find us on GitHub: https://github.com/bentoml
-And join us in the BentoML slack community: https://l.bentoml.com/join-slack
+Docs: http://docs.bentoml.com
+Source Code: https://github.com/bentoml/BentoML
+Developer Community: https://l.bentoml.com/join-slack
+Twitter/X: https://x.com/bentomlai
+Blog: https://www.bentoml.com/blog
 """
 
 from typing import TYPE_CHECKING

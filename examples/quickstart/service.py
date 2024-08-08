@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import bentoml
 
+
 @bentoml.service(resources={"cpu": "4"})
 class Summarization:
     def __init__(self) -> None:

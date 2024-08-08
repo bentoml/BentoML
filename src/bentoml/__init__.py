@@ -2,9 +2,9 @@
 BentoML
 =======
 
-BentoML is a Python library for building online serving systems optimized for AI apps 
-and model inference. It supports serving any model format/runtime and custom Python 
-code, offering the key primitives for serving optimizations, task queues, batching, 
+BentoML is a Python library for building online serving systems optimized for AI apps
+and model inference. It supports serving any model format/runtime and custom Python
+code, offering the key primitives for serving optimizations, task queues, batching,
 multi-model chains, distributed orchestration, and multi-GPU serving.
 
 Docs: http://docs.bentoml.com

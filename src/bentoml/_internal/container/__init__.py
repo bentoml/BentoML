@@ -142,6 +142,8 @@ def construct_containerfile(
     features: t.Sequence[str] | None = None,
     add_header: bool = False,
 ) -> t.Generator[tuple[str, str], None, None]:
+    from _bentoml_sdk.models import BentoModel
+
     from ..bento.bento import BentoInfo
     from ..bento.build_config import DockerOptions
     from ..models import ModelStore
@@ -161,8 +163,11 @@ def construct_containerfile(
         model_store = BentoMLContainer.model_store.get()
         bento_model_store = ModelStore(temp_fs.makedir("models", recreate=True))
         for model in options.all_models:
+            if model.registry != "bentoml":
+                continue
+            bento_model = BentoModel(model.tag)
             copy_model(
-                model.tag,
+                bento_model.resolve().tag,
                 src_model_store=model_store,
                 target_model_store=bento_model_store,
             )

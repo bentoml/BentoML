@@ -19,12 +19,14 @@ from bentoml import Runner
 from bentoml._internal.bento.bento import Bento
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
-from bentoml._internal.models import Model
+from bentoml._internal.models import Model as StoredModel
 from bentoml._internal.utils import dict_filter_none
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
 
 from ..method import APIMethod
+from ..models import BentoModel
+from ..models import Model
 from .config import ServiceConfig as Config
 
 logger = logging.getLogger("bentoml.io")
@@ -63,7 +65,7 @@ class Service(t.Generic[T]):
     inner: type[T]
 
     bento: t.Optional[Bento] = attrs.field(init=False, default=None)
-    models: list[Model] = attrs.field(factory=list)
+    models: list[Model[t.Any]] = attrs.field(factory=list)
     apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict)
     dependencies: dict[str, Dependency[t.Any]] = attrs.field(factory=dict, init=False)
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
@@ -87,8 +89,14 @@ class Service(t.Generic[T]):
             value = getattr(self.inner, field)
             if isinstance(value, Dependency):
                 self.dependencies[field] = t.cast(Dependency[t.Any], value)
+            elif isinstance(value, StoredModel):
+                logger.warning(
+                    "`bentoml.models.get()` as the class attribute is not recommended because it requires the model"
+                    f" to exist at import time. Use `{value._name} = BentoModel({str(value.tag)!r})` instead."
+                )
+                self.models.append(BentoModel(value.tag))
             elif isinstance(value, Model):
-                self.models.append(value)
+                self.models.append(t.cast(Model[t.Any], value))
             elif isinstance(value, APIMethod):
                 if value.is_task:
                     has_task = True
@@ -438,7 +446,12 @@ def runner_service(runner: Runner, **kwargs: Unpack[Config]) -> Service[t.Any]:
             math.ceil(resource_config["cpus"]) * runner.workers_per_resource
         )
     config.update(kwargs)
-    return Service(config=config, inner=RunnerHandle, models=runner.models, apis=apis)
+    return Service(
+        config=config,
+        inner=RunnerHandle,
+        models=[BentoModel(m.tag) for m in runner.models],
+        apis=apis,
+    )
 
 
 class _AsyncWrapper:

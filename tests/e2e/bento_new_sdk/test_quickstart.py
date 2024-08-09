@@ -52,7 +52,7 @@ async def test_async_serve_and_prediction(examples: Path) -> None:
 
 def test_local_prediction(examples: Path) -> None:
     service = bentoml.load(str(examples / "quickstart"))()
-    result = service.summarize(EXAMPLE_INPUT)
+    result = service.summarize([EXAMPLE_INPUT])[0]
     assert "Whiskers" in result
 
 

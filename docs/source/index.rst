@@ -6,7 +6,7 @@ Unified Model Serving Framework
 
 ----
 
-`BentoML <https://github.com/bentoml/BentoML>`_ is an open-source model serving library for **building performant and scalable AI applications with Python**. It comes with everything you need for **serving optimization, model packaging, and production deployment**.
+`BentoML <https://github.com/bentoml/BentoML>`_ is a Python library for building online serving systems optimized for AI applications and model inference.
 
 Featured use cases
 ------------------

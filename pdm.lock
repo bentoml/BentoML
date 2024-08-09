@@ -2,17 +2,23 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "all", "testing", "io", "grpc-channelz", "tracing-otlp", "monitor-otlp", "io-image", "aws", "docs", "tracing-zipkin", "grpc-reflection", "grpc", "tracing", "tooling", "tracing-jaeger", "io-pandas", "triton"]
-strategy = ["cross_platform", "inherit_metadata"]
-lock_version = "4.4.2"
+groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin", "triton"]
+strategy = ["inherit_metadata"]
+lock_version = "4.5.0"
 content_hash = "sha256:3f05bc29709523e2c1dc5af4bbb264085a66213b08b7c8bf892f68adea363d0a"
+
+[[metadata.targets]]
+requires_python = ">=3.8,<3.12"
+
+[[metadata.targets]]
+requires_python = ">=3.12"
 
 [[package]]
 name = "aiohttp"
 version = "3.9.5"
 requires_python = ">=3.8"
 summary = "Async http client/server framework (asyncio)"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
+groups = ["default", "docs", "triton"]
 dependencies = [
     "aiosignal>=1.1.2",
     "async-timeout<5.0,>=4.0; python_version < \"3.11\"",
@@ -105,9 +111,10 @@ name = "aiohttp-cors"
 version = "0.7.0"
 summary = "CORS support for aiohttp"
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
     "aiohttp>=1.1",
+    "typing; python_version < \"3.5\"",
 ]
 files = [
     {file = "aiohttp-cors-0.7.0.tar.gz", hash = "sha256:4d39c6d7100fd9764ed1caf8cebf0eb01bf5e3f24e2e073fda6234bc48b19f5d"},
@@ -119,7 +126,7 @@ name = "aiosignal"
 version = "1.3.1"
 requires_python = ">=3.7"
 summary = "aiosignal: a list of registered asynchronous callbacks"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
+groups = ["default", "docs", "triton"]
 dependencies = [
     "frozenlist>=1.1.0",
 ]
@@ -133,7 +140,7 @@ name = "aiosqlite"
 version = "0.20.0"
 requires_python = ">=3.8"
 summary = "asyncio bridge to the standard sqlite3 module"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "typing-extensions>=4.0",
 ]
@@ -158,7 +165,7 @@ name = "annotated-types"
 version = "0.6.0"
 requires_python = ">=3.8"
 summary = "Reusable constraint types to use with typing.Annotated"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "typing-extensions>=4.0.0; python_version < \"3.9\"",
 ]
@@ -172,7 +179,7 @@ name = "anyio"
 version = "4.0.0"
 requires_python = ">=3.8"
 summary = "High level compatibility layer for multiple asynchronous event loop implementations"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "exceptiongroup>=1.0.2; python_version < \"3.11\"",
     "idna>=2.8",
@@ -187,7 +194,7 @@ files = [
 name = "appdirs"
 version = "1.4.4"
 summary = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
-groups = ["all", "aws", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default", "all", "aws"]
 files = [
     {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},
     {file = "appdirs-1.4.4.tar.gz", hash = "sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41"},
@@ -209,7 +216,7 @@ name = "asgiref"
 version = "3.7.2"
 requires_python = ">=3.7"
 summary = "ASGI specs, helper code, and adapters"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "typing-extensions>=4; python_version < \"3.11\"",
 ]
@@ -223,8 +230,11 @@ name = "async-timeout"
 version = "4.0.3"
 requires_python = ">=3.7"
 summary = "Timeout context manager for asyncio programs"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
-marker = "python_version < \"3.11\""
+groups = ["default", "docs", "triton"]
+marker = "python_version < \"3.11\" and python_version >= \"3.8\""
+dependencies = [
+    "typing-extensions>=3.6.5; python_version < \"3.8\"",
+]
 files = [
     {file = "async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f"},
     {file = "async_timeout-4.0.3-py3-none-any.whl", hash = "sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028"},
@@ -235,7 +245,10 @@ name = "attrs"
 version = "23.2.0"
 requires_python = ">=3.7"
 summary = "Classes Without Boilerplate"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
+groups = ["default", "docs", "triton"]
+dependencies = [
+    "importlib-metadata; python_version < \"3.8\"",
+]
 files = [
     {file = "attrs-23.2.0-py3-none-any.whl", hash = "sha256:99b87a485a5820b23b879f04c2305b44b951b502fd64be915879d77a7e8fc6f1"},
     {file = "attrs-23.2.0.tar.gz", hash = "sha256:935dc3b529c262f6cf76e50877d35a4bd3c1de194fd41f47a2b7ae8f19971f30"},
@@ -261,7 +274,6 @@ version = "2.2.1"
 requires_python = ">=3.7,<4.0"
 summary = "Function decoration for backoff and retry"
 groups = ["all", "monitor-otlp", "tracing", "tracing-otlp"]
-marker = "python_version >= \"3.7\""
 files = [
     {file = "backoff-2.2.1-py3-none-any.whl", hash = "sha256:63579f9a0628e06278f7e47b7d7d5b6ce20dc65c5e96a6f3ca99a6adca0396e8"},
     {file = "backoff-2.2.1.tar.gz", hash = "sha256:03f829f5bb1923180821643f8753b0502c3b682293992485b0eef2807afa5cba"},
@@ -390,7 +402,7 @@ version = "5.3.1"
 requires_python = ">=3.7"
 summary = "Extensible memoizing collections and decorators"
 groups = ["docs"]
-marker = "python_version >= \"3.6\" and python_version < \"3.12\""
+marker = "python_version >= \"3.8\" and python_version < \"3.12\""
 files = [
     {file = "cachetools-5.3.1-py3-none-any.whl", hash = "sha256:95ef631eeaea14ba2e36f06437f36463aac3a096799e876ee55e5cdccb102590"},
     {file = "cachetools-5.3.1.tar.gz", hash = "sha256:dce83f2d9b4e1f732a8cd44af8e8fab2dbe46201467fc98b3ef8f269092bf62b"},
@@ -401,7 +413,7 @@ name = "cattrs"
 version = "23.1.2"
 requires_python = ">=3.7"
 summary = "Composable complex class support for attrs and dataclasses."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "attrs>=20",
     "exceptiongroup; python_version < \"3.11\"",
@@ -417,7 +429,7 @@ name = "certifi"
 version = "2024.6.2"
 requires_python = ">=3.6"
 summary = "Python package for providing Mozilla's CA Bundle."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "testing", "tracing", "tracing-otlp", "tracing-zipkin", "triton"]
+groups = ["default", "all", "docs", "monitor-otlp", "testing", "tracing", "tracing-otlp", "tracing-zipkin", "triton"]
 files = [
     {file = "certifi-2024.6.2-py3-none-any.whl", hash = "sha256:ddc6c8ce995e6987e7faf5e3f1b02b302836a0e5d98ece18392cb1a36c72ad56"},
     {file = "certifi-2024.6.2.tar.gz", hash = "sha256:3cd43f1c6fa7dedc5899d69d3ad0398fd018ad1a17fba83ddaf78aa46c747516"},
@@ -428,7 +440,7 @@ name = "cffi"
 version = "1.16.0"
 requires_python = ">=3.8"
 summary = "Foreign Function Interface for Python calling C code."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
+groups = ["default", "triton"]
 marker = "platform_python_implementation == \"CPython\" and sys_platform == \"win32\" or implementation_name == \"pypy\""
 dependencies = [
     "pycparser",
@@ -590,7 +602,7 @@ name = "circus"
 version = "0.18.0"
 requires_python = ">=3.7"
 summary = "Circus is a program that will let you run and watch multiple processes and sockets."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "psutil",
     "pyzmq>=17.0",
@@ -606,9 +618,10 @@ name = "click"
 version = "8.1.7"
 requires_python = ">=3.7"
 summary = "Composable command line interface toolkit"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "colorama; platform_system == \"Windows\"",
+    "importlib-metadata; python_version < \"3.8\"",
 ]
 files = [
     {file = "click-8.1.7-py3-none-any.whl", hash = "sha256:ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28"},
@@ -620,7 +633,7 @@ name = "click-option-group"
 version = "0.5.6"
 requires_python = ">=3.6,<4"
 summary = "Option groups missing in Click"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "Click<9,>=7.0",
 ]
@@ -634,7 +647,7 @@ name = "cloudpickle"
 version = "3.0.0"
 requires_python = ">=3.8"
 summary = "Pickler class to extend the standard pickle.Pickler functionality"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 files = [
     {file = "cloudpickle-3.0.0-py3-none-any.whl", hash = "sha256:246ee7d0c295602a036e86369c77fecda4ab17b506496730f2f576d9016fd9c7"},
     {file = "cloudpickle-3.0.0.tar.gz", hash = "sha256:996d9a482c6fb4f33c1a35335cf8afd065d2a56e973270364840712d9131a882"},
@@ -645,7 +658,7 @@ name = "colorama"
 version = "0.4.6"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 summary = "Cross-platform colored terminal text."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tooling", "tracing"]
+groups = ["default", "docs", "testing", "tooling"]
 files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
@@ -656,7 +669,7 @@ name = "colorful"
 version = "0.5.5"
 summary = "Terminal string styling done right, in Python."
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
     "colorama; platform_system == \"Windows\"",
 ]
@@ -870,7 +883,7 @@ files = [
 name = "deepmerge"
 version = "1.1.1"
 summary = "a toolset to deeply merge python dictionaries."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 files = [
     {file = "deepmerge-1.1.1-py3-none-any.whl", hash = "sha256:7219dad9763f15be9dcd4bcb53e00f48e4eed6f5ed8f15824223eb934bb35977"},
     {file = "deepmerge-1.1.1.tar.gz", hash = "sha256:53a489dc9449636e480a784359ae2aab3191748c920649551c8e378622f0eca4"},
@@ -881,7 +894,7 @@ name = "deprecated"
 version = "1.2.14"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 summary = "Python @deprecated decorator to deprecate old python classes, functions or methods."
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "all", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "wrapt<2,>=1.10",
 ]
@@ -942,8 +955,8 @@ name = "exceptiongroup"
 version = "1.1.3"
 requires_python = ">=3.7"
 summary = "Backport of PEP 654 (exception groups)"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
-marker = "python_version < \"3.11\""
+groups = ["default", "docs", "testing"]
+marker = "python_version < \"3.11\" and python_version >= \"3.8\""
 files = [
     {file = "exceptiongroup-1.1.3-py3-none-any.whl", hash = "sha256:343280667a4585d195ca1cf9cef84a4e178c4b6cf2274caef9859782b567d5e3"},
     {file = "exceptiongroup-1.1.3.tar.gz", hash = "sha256:097acd85d473d75af5bb98e41b61ff7fe35efe6675e4f9370ec6ec5126d160e9"},
@@ -1014,7 +1027,7 @@ name = "frozenlist"
 version = "1.4.1"
 requires_python = ">=3.8"
 summary = "A list-like structure which implements collections.abc.MutableSequence"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
+groups = ["default", "docs", "triton"]
 files = [
     {file = "frozenlist-1.4.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:f9aa1878d1083b276b0196f2dfbe00c9b7e752475ed3b682025ff20c1c1f51ac"},
     {file = "frozenlist-1.4.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:29acab3f66f0f24674b7dc4736477bcd4bc3ad4b896f5f45379a67bce8b96868"},
@@ -1099,11 +1112,14 @@ files = [
 name = "fs"
 version = "2.4.16"
 summary = "Python's filesystem abstraction layer"
-groups = ["all", "aws", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default", "all", "aws"]
 dependencies = [
     "appdirs~=1.4.3",
+    "backports-os~=0.1; python_version < \"3.0\"",
+    "enum34~=1.1.6; python_version < \"3.4\"",
     "setuptools",
     "six~=1.10",
+    "typing~=3.6; python_version < \"3.6\"",
 ]
 files = [
     {file = "fs-2.4.16-py2.py3-none-any.whl", hash = "sha256:660064febbccda264ae0b6bace80a8d1be9e089e0a5eb2427b7d517f9a91545c"},
@@ -1280,7 +1296,7 @@ version = "2.12.0"
 requires_python = ">=3.7"
 summary = "Google API client core library"
 groups = ["docs"]
-marker = "python_version >= \"3.6\" and python_version < \"3.12\""
+marker = "python_version >= \"3.8\" and python_version < \"3.12\""
 dependencies = [
     "google-auth<3.0.dev0,>=2.14.1",
     "googleapis-common-protos<2.0.dev0,>=1.56.2",
@@ -1298,7 +1314,7 @@ version = "2.23.3"
 requires_python = ">=3.7"
 summary = "Google Authentication Library"
 groups = ["docs"]
-marker = "python_version >= \"3.6\" and python_version < \"3.12\""
+marker = "python_version >= \"3.8\" and python_version < \"3.12\""
 dependencies = [
     "cachetools<6.0,>=2.0.0",
     "pyasn1-modules>=0.2.1",
@@ -1490,7 +1506,10 @@ name = "h11"
 version = "0.14.0"
 requires_python = ">=3.7"
 summary = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
+dependencies = [
+    "typing-extensions; python_version < \"3.8\"",
+]
 files = [
     {file = "h11-0.14.0-py3-none-any.whl", hash = "sha256:e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761"},
     {file = "h11-0.14.0.tar.gz", hash = "sha256:8f19fbbe99e72420ff35c00b27a34cb9937e902a8b810e2c88300c6f0a3b699d"},
@@ -1501,7 +1520,7 @@ name = "httpcore"
 version = "1.0.5"
 requires_python = ">=3.8"
 summary = "A minimal low-level HTTP client."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "certifi",
     "h11<0.15,>=0.13",
@@ -1561,7 +1580,7 @@ name = "httpx"
 version = "0.27.0"
 requires_python = ">=3.8"
 summary = "The next generation HTTP client."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "anyio",
     "certifi",
@@ -1579,7 +1598,7 @@ name = "httpx-ws"
 version = "0.6.0"
 requires_python = ">=3.8"
 summary = "WebSockets support for HTTPX"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "anyio>=4",
     "httpcore>=1.0.4",
@@ -1607,7 +1626,7 @@ name = "idna"
 version = "3.7"
 requires_python = ">=3.5"
 summary = "Internationalized Domain Names in Applications (IDNA)"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "testing", "tracing", "tracing-otlp", "tracing-zipkin", "triton"]
+groups = ["default", "all", "docs", "monitor-otlp", "testing", "tracing", "tracing-otlp", "tracing-zipkin", "triton"]
 files = [
     {file = "idna-3.7-py3-none-any.whl", hash = "sha256:82fee1fc78add43492d3a1898bfa6d8a904cc97d8427f683ed8e798d07761aa0"},
     {file = "idna-3.7.tar.gz", hash = "sha256:028ff3aadf0609c1fd278d8ea3089299412a7a8b9bd005dd08b9f8285bcb5cfc"},
@@ -1629,8 +1648,9 @@ name = "importlib-metadata"
 version = "6.8.0"
 requires_python = ">=3.8"
 summary = "Read metadata from Python packages"
-groups = ["all", "default", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "all", "docs", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
+    "typing-extensions>=3.6.4; python_version < \"3.8\"",
     "zipp>=0.5",
 ]
 files = [
@@ -1644,7 +1664,7 @@ version = "6.4.0"
 requires_python = ">=3.8"
 summary = "Read resources from Python packages"
 groups = ["docs"]
-marker = "python_version < \"3.9\""
+marker = "python_version < \"3.9\" and python_version >= \"3.8\""
 dependencies = [
     "zipp>=3.1.0; python_version < \"3.10\"",
 ]
@@ -1658,7 +1678,7 @@ name = "inflection"
 version = "0.5.1"
 requires_python = ">=3.5"
 summary = "A port of Ruby on Rails inflector to Python"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 files = [
     {file = "inflection-0.5.1-py2.py3-none-any.whl", hash = "sha256:f38b2b640938a4f35ade69ac3d053042959b62a0f1076a5bbaa1b9526605a8a2"},
     {file = "inflection-0.5.1.tar.gz", hash = "sha256:1a29730d366e996aaacffb2f1f1cb9593dc38e2ddd30c91250c6dde09ea9b417"},
@@ -1680,7 +1700,7 @@ name = "inquirerpy"
 version = "0.3.4"
 requires_python = ">=3.7,<4.0"
 summary = "Python port of Inquirer.js (A collection of common interactive command-line user interfaces)"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "pfzy<0.4.0,>=0.3.1",
     "prompt-toolkit<4.0.0,>=3.0.1",
@@ -1695,7 +1715,7 @@ name = "jinja2"
 version = "3.1.4"
 requires_python = ">=3.7"
 summary = "A very fast and expressive template engine."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "MarkupSafe>=2.0",
 ]
@@ -1732,7 +1752,7 @@ version = "4.22.0"
 requires_python = ">=3.8"
 summary = "An implementation of JSON Schema validation for Python"
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
     "attrs>=22.2.0",
     "importlib-resources>=1.4.0; python_version < \"3.9\"",
@@ -1752,7 +1772,7 @@ version = "2023.12.1"
 requires_python = ">=3.8"
 summary = "The JSON Schema meta-schemas and vocabularies, exposed as a Registry"
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
     "importlib-resources>=1.4.0; python_version < \"3.9\"",
     "referencing>=0.31.0",
@@ -1768,7 +1788,7 @@ version = "2.0.3"
 requires_python = ">=3.7"
 summary = "Links recognition library with FULL unicode support."
 groups = ["docs"]
-marker = "sys_platform != \"win32\" and python_version < \"3.12\""
+marker = "sys_platform != \"win32\" and python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
     "uc-micro-py",
 ]
@@ -1785,6 +1805,7 @@ groups = ["docs"]
 dependencies = [
     "six",
     "tornado; python_version > \"2.7\"",
+    "tornado<6; python_version == \"2.7\"",
 ]
 files = [
     {file = "livereload-2.6.3-py2.py3-none-any.whl", hash = "sha256:ad4ac6f53b2d62bb6ce1a5e6e96f1f00976a32348afedcb4b6d68df2a1d346e4"},
@@ -1926,7 +1947,7 @@ name = "markdown-it-py"
 version = "3.0.0"
 requires_python = ">=3.8"
 summary = "Python port of markdown-it. Markdown parsing, done right!"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "mdurl~=0.1",
 ]
@@ -1942,7 +1963,7 @@ extras = ["linkify", "plugins"]
 requires_python = ">=3.8"
 summary = "Python port of markdown-it. Markdown parsing, done right!"
 groups = ["docs"]
-marker = "sys_platform != \"win32\" and python_version < \"3.12\""
+marker = "sys_platform != \"win32\" and python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
     "linkify-it-py<3,>=1",
     "markdown-it-py==3.0.0",
@@ -1958,7 +1979,7 @@ name = "markupsafe"
 version = "2.1.3"
 requires_python = ">=3.7"
 summary = "Safely add untrusted strings to HTML/XML markup."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 files = [
     {file = "MarkupSafe-2.1.3-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:cd0f502fe016460680cd20aaa5a76d241d6f35a1c3350c474bac1273803893fa"},
     {file = "MarkupSafe-2.1.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e09031c87a1e51556fdcb46e5bd4f59dfb743061cf93c4d6831bf894f125eb57"},
@@ -2032,7 +2053,7 @@ name = "mdurl"
 version = "0.1.2"
 requires_python = ">=3.7"
 summary = "Markdown URL utilities"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
     {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
@@ -2044,11 +2065,12 @@ version = "1.13.1"
 requires_python = ">=3.7.0"
 summary = "A memory profiler for Python applications"
 groups = ["docs"]
-marker = "sys_platform != \"win32\" and python_version < \"3.12\""
+marker = "sys_platform != \"win32\" and python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
     "jinja2>=2.9",
     "rich>=11.2.0",
     "textual>=0.41.0",
+    "typing-extensions; python_version < \"3.8.0\"",
 ]
 files = [
     {file = "memray-1.13.1-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:5aa567b5f7a3f67b40194dcaa3ef06557ebf088e67f7ee41e7154b9747dbbd8d"},
@@ -2092,7 +2114,7 @@ version = "1.0.8"
 requires_python = ">=3.8"
 summary = "MessagePack serializer"
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 files = [
     {file = "msgpack-1.0.8-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:505fe3d03856ac7d215dbe005414bc28505d26f0c128906037e66d98c4e95868"},
     {file = "msgpack-1.0.8-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e6b7842518a63a9f17107eb176320960ec095a8ee3b4420b5f688e24bf50c53c"},
@@ -2157,7 +2179,7 @@ name = "multidict"
 version = "6.0.5"
 requires_python = ">=3.7"
 summary = "multidict implementation"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
+groups = ["default", "docs", "triton"]
 files = [
     {file = "multidict-6.0.5-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:228b644ae063c10e7f324ab1ab6b548bdf6f8b47f3ec234fef1093bc2735e5f9"},
     {file = "multidict-6.0.5-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:896ebdcf62683551312c30e20614305f53125750803b614e9e6ce74a96232604"},
@@ -2280,8 +2302,10 @@ groups = ["tooling"]
 dependencies = [
     "argcomplete<4.0,>=1.9.4",
     "colorlog<7.0.0,>=2.6.1",
+    "importlib-metadata; python_version < \"3.8\"",
     "packaging>=20.9",
     "tomli>=1; python_version < \"3.11\"",
+    "typing-extensions>=3.7.4; python_version < \"3.8\"",
     "virtualenv>=20.14.1",
 ]
 files = [
@@ -2294,7 +2318,7 @@ name = "numpy"
 version = "1.24.4"
 requires_python = ">=3.8"
 summary = "Fundamental package for array computing in Python"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "io-pandas", "testing", "tooling", "tracing", "triton"]
+groups = ["default", "all", "io", "io-pandas", "testing", "tooling", "triton"]
 files = [
     {file = "numpy-1.24.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:c0bfb52d2169d58c1cdb8cc1f16989101639b34c7d3ce60ed70b19c63eba0b64"},
     {file = "numpy-1.24.4-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:ed094d4f0c177b1b8e7aa9cba7d6ceed51c0e569a5318ac0ca9a090680a6a1b1"},
@@ -2330,7 +2354,7 @@ files = [
 name = "nvidia-ml-py"
 version = "11.525.150"
 summary = "Python Bindings for the NVIDIA Management Library"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 files = [
     {file = "nvidia-ml-py-11.525.150.tar.gz", hash = "sha256:50af55b99ea167781102345a7de29bac94a57c8f38de6757ef9f945dd137c90a"},
     {file = "nvidia_ml_py-11.525.150-py3-none-any.whl", hash = "sha256:a7c410f4a63a78119d8e9d969dbd22d3b86d8d39aa9316be56c2e6ba9271a5c3"},
@@ -2341,8 +2365,9 @@ name = "opencensus"
 version = "0.11.3"
 summary = "A stats collection and distributed tracing framework"
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
+    "google-api-core<2.0.0,>=1.0.0; python_version < \"3.6\"",
     "google-api-core<3.0.0,>=1.0.0; python_version >= \"3.6\"",
     "opencensus-context>=0.1.3",
 ]
@@ -2356,7 +2381,10 @@ name = "opencensus-context"
 version = "0.1.3"
 summary = "OpenCensus Runtime Context"
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
+dependencies = [
+    "contextvars; python_version >= \"3.6\" and python_version < \"3.7\"",
+]
 files = [
     {file = "opencensus-context-0.1.3.tar.gz", hash = "sha256:a03108c3c10d8c80bb5ddf5c8a1f033161fa61972a9917f9b9b3a18517f0088c"},
     {file = "opencensus_context-0.1.3-py2.py3-none-any.whl", hash = "sha256:073bb0590007af276853009fac7e4bab1d523c3f03baf4cb4511ca38967c6039"},
@@ -2367,7 +2395,7 @@ name = "opentelemetry-api"
 version = "1.20.0"
 requires_python = ">=3.7"
 summary = "OpenTelemetry Python API"
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "all", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "deprecated>=1.2.6",
     "importlib-metadata<7.0,>=6.0",
@@ -2447,6 +2475,7 @@ requires_python = ">=3.7"
 summary = "OpenTelemetry Protobuf encoding"
 groups = ["all", "monitor-otlp", "tracing", "tracing-otlp"]
 dependencies = [
+    "backoff<2.0.0,>=1.10.0; python_version < \"3.7\"",
     "backoff<3.0.0,>=1.10.0; python_version >= \"3.7\"",
     "opentelemetry-proto==1.20.0",
 ]
@@ -2462,6 +2491,7 @@ requires_python = ">=3.7"
 summary = "OpenTelemetry Collector Protobuf over gRPC Exporter"
 groups = ["all", "monitor-otlp", "tracing", "tracing-otlp"]
 dependencies = [
+    "backoff<2.0.0,>=1.10.0; python_version < \"3.7\"",
     "backoff<3.0.0,>=1.10.0; python_version >= \"3.7\"",
     "deprecated>=1.2.6",
     "googleapis-common-protos~=1.52",
@@ -2483,6 +2513,7 @@ requires_python = ">=3.7"
 summary = "OpenTelemetry Collector Protobuf over HTTP Exporter"
 groups = ["all", "monitor-otlp", "tracing", "tracing-otlp"]
 dependencies = [
+    "backoff<2.0.0,>=1.10.0; python_version < \"3.7\"",
     "backoff<3.0.0,>=1.10.0; python_version >= \"3.7\"",
     "deprecated>=1.2.6",
     "googleapis-common-protos~=1.52",
@@ -2551,7 +2582,7 @@ name = "opentelemetry-instrumentation"
 version = "0.41b0"
 requires_python = ">=3.7"
 summary = "Instrumentation Tools & Auto Instrumentation for OpenTelemetry Python"
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default", "all", "grpc", "grpc-channelz", "grpc-reflection"]
 dependencies = [
     "opentelemetry-api~=1.4",
     "setuptools>=16.0",
@@ -2567,7 +2598,7 @@ name = "opentelemetry-instrumentation-aiohttp-client"
 version = "0.41b0"
 requires_python = ">=3.7"
 summary = "OpenTelemetry aiohttp client instrumentation"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "opentelemetry-api~=1.12",
     "opentelemetry-instrumentation==0.41b0",
@@ -2585,7 +2616,7 @@ name = "opentelemetry-instrumentation-asgi"
 version = "0.41b0"
 requires_python = ">=3.7"
 summary = "ASGI instrumentation for OpenTelemetry"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "asgiref~=3.0",
     "opentelemetry-api~=1.12",
@@ -2635,7 +2666,7 @@ name = "opentelemetry-sdk"
 version = "1.20.0"
 requires_python = ">=3.7"
 summary = "OpenTelemetry Python SDK"
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "all", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "opentelemetry-api==1.20.0",
     "opentelemetry-semantic-conventions==0.41b0",
@@ -2651,7 +2682,7 @@ name = "opentelemetry-semantic-conventions"
 version = "0.41b0"
 requires_python = ">=3.7"
 summary = "OpenTelemetry Semantic Conventions"
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "all", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "opentelemetry_semantic_conventions-0.41b0-py3-none-any.whl", hash = "sha256:45404391ed9e50998183a4925ad1b497c01c143f06500c3b9c3d0013492bb0f2"},
     {file = "opentelemetry_semantic_conventions-0.41b0.tar.gz", hash = "sha256:0ce5b040b8a3fc816ea5879a743b3d6fe5db61f6485e4def94c6ee4d402e1eb7"},
@@ -2662,7 +2693,7 @@ name = "opentelemetry-util-http"
 version = "0.41b0"
 requires_python = ">=3.7"
 summary = "Web util for OpenTelemetry"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 files = [
     {file = "opentelemetry_util_http-0.41b0-py3-none-any.whl", hash = "sha256:6a167fd1e0e8b0f629530d971165b5d82ed0be2154b7f29498499c3a517edee5"},
     {file = "opentelemetry_util_http-0.41b0.tar.gz", hash = "sha256:16d5bd04a380dc1079e766562d1e1626cbb47720f197f67010c45f090fffdfb3"},
@@ -2728,7 +2759,7 @@ name = "packaging"
 version = "24.1"
 requires_python = ">=3.8"
 summary = "Core utilities for Python packages"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tooling", "tracing", "triton"]
+groups = ["default", "docs", "testing", "tooling", "triton"]
 files = [
     {file = "packaging-24.1-py3-none-any.whl", hash = "sha256:5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124"},
     {file = "packaging-24.1.tar.gz", hash = "sha256:026ed72c8ed3fcce5bf8950572258698927fd1dbda10a5e981cdf0ac37f4f002"},
@@ -2796,7 +2827,7 @@ name = "pathspec"
 version = "0.12.1"
 requires_python = ">=3.8"
 summary = "Utility library for gitignore style pattern matching of file paths."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "testing"]
 files = [
     {file = "pathspec-0.12.1-py3-none-any.whl", hash = "sha256:a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08"},
     {file = "pathspec-0.12.1.tar.gz", hash = "sha256:a482d51503a1ab33b1c67a6c3813a26953dbdc71c31dacaef9a838c4e29f5712"},
@@ -2807,7 +2838,7 @@ name = "pfzy"
 version = "0.3.4"
 requires_python = ">=3.7,<4.0"
 summary = "Python port of the fzy fuzzy string matching algorithm"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 files = [
     {file = "pfzy-0.3.4-py3-none-any.whl", hash = "sha256:5f50d5b2b3207fa72e7ec0ef08372ef652685470974a107d0d4999fc5a903a96"},
     {file = "pfzy-0.3.4.tar.gz", hash = "sha256:717ea765dd10b63618e7298b2d98efd819e0b30cd5905c9707223dceeb94b3f1"},
@@ -2885,7 +2916,7 @@ name = "pip-requirements-parser"
 version = "32.0.1"
 requires_python = ">=3.6.0"
 summary = "pip requirements parser - a mostly correct pip requirements parsing library because it uses pip's own code."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "packaging",
     "pyparsing",
@@ -2901,7 +2932,7 @@ version = "1.3.10"
 requires_python = ">=3.6"
 summary = "Resolve a name to an object."
 groups = ["docs"]
-marker = "python_version < \"3.9\""
+marker = "python_version < \"3.9\" and python_version >= \"3.8\""
 files = [
     {file = "pkgutil_resolve_name-1.3.10-py3-none-any.whl", hash = "sha256:ca27cc078d25c5ad71a9de0a7a330146c4e014c2462d9af19c6b828280649c5e"},
     {file = "pkgutil_resolve_name-1.3.10.tar.gz", hash = "sha256:357d6c9e6a755653cfd78893817c0853af365dd51ec97f3d358a819373bbd174"},
@@ -2952,7 +2983,7 @@ name = "prometheus-client"
 version = "0.20.0"
 requires_python = ">=3.8"
 summary = "Python client for the Prometheus monitoring system."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default", "docs"]
 files = [
     {file = "prometheus_client-0.20.0-py3-none-any.whl", hash = "sha256:cde524a85bce83ca359cc837f28b8c0db5cac7aa653a588fd7e84ba061c329e7"},
     {file = "prometheus_client-0.20.0.tar.gz", hash = "sha256:287629d00b147a32dcb2be0b9df905da599b2d82f80377083ec8463309a4bb89"},
@@ -2963,7 +2994,7 @@ name = "prompt-toolkit"
 version = "3.0.47"
 requires_python = ">=3.7.0"
 summary = "Library for building powerful interactive command lines in Python"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "wcwidth",
 ]
@@ -3002,7 +3033,7 @@ name = "psutil"
 version = "6.0.0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
 summary = "Cross-platform lib for process and system monitoring in Python."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "testing"]
 files = [
     {file = "psutil-6.0.0-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:c588a7e9b1173b6e866756dde596fd4cad94f9399daf99ad8c3258b3cb2b47a0"},
     {file = "psutil-6.0.0-cp36-abi3-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6ed2440ada7ef7d0d608f20ad89a04ec47d2d3ab7190896cd62ca5fc4fe08bf0"},
@@ -3019,7 +3050,7 @@ name = "py-spy"
 version = "0.3.14"
 summary = "Sampling profiler for Python programs "
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 files = [
     {file = "py_spy-0.3.14-py2.py3-none-macosx_10_7_x86_64.whl", hash = "sha256:5b342cc5feb8d160d57a7ff308de153f6be68dcf506ad02b4d67065f2bae7f45"},
     {file = "py_spy-0.3.14-py2.py3-none-macosx_10_9_x86_64.macosx_11_0_arm64.macosx_10_9_universal2.whl", hash = "sha256:fe7efe6c91f723442259d428bf1f9ddb9c1679828866b353d539345ca40d9dd2"},
@@ -3094,7 +3125,7 @@ version = "0.5.0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
 summary = "Pure-Python implementation of ASN.1 types and DER/BER/CER codecs (X.208)"
 groups = ["docs"]
-marker = "python_version >= \"3.6\" and python_version < \"3.12\""
+marker = "python_version >= \"3.8\" and python_version < \"3.12\""
 files = [
     {file = "pyasn1-0.5.0-py2.py3-none-any.whl", hash = "sha256:87a2121042a1ac9358cabcaf1d07680ff97ee6404333bacca15f76aa8ad01a57"},
     {file = "pyasn1-0.5.0.tar.gz", hash = "sha256:97b7290ca68e62a832558ec3976f15cbf911bf5d7c7039d8b861c2a0ece69fde"},
@@ -3106,7 +3137,7 @@ version = "0.3.0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
 summary = "A collection of ASN.1-based protocols modules"
 groups = ["docs"]
-marker = "python_version >= \"3.6\" and python_version < \"3.12\""
+marker = "python_version >= \"3.8\" and python_version < \"3.12\""
 dependencies = [
     "pyasn1<0.6.0,>=0.4.6",
 ]
@@ -3120,7 +3151,7 @@ name = "pycparser"
 version = "2.21"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 summary = "C parser in Python"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
+groups = ["default", "triton"]
 marker = "platform_python_implementation == \"CPython\" and sys_platform == \"win32\" or implementation_name == \"pypy\""
 files = [
     {file = "pycparser-2.21-py2.py3-none-any.whl", hash = "sha256:8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9"},
@@ -3132,7 +3163,7 @@ name = "pydantic"
 version = "2.7.4"
 requires_python = ">=3.8"
 summary = "Data validation using Python type hints"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "annotated-types>=0.4.0",
     "pydantic-core==2.18.4",
@@ -3148,7 +3179,7 @@ name = "pydantic-core"
 version = "2.18.4"
 requires_python = ">=3.8"
 summary = "Core functionality for Pydantic validation and serialization"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "typing-extensions!=4.7.0,>=4.6.0",
 ]
@@ -3252,7 +3283,7 @@ name = "pygments"
 version = "2.16.1"
 requires_python = ">=3.7"
 summary = "Pygments is a syntax highlighting package written in Python."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 files = [
     {file = "Pygments-2.16.1-py3-none-any.whl", hash = "sha256:13fc09fa63bc8d8671a6d247e1eb303c4b343eaee81d861f3404db2935653692"},
     {file = "Pygments-2.16.1.tar.gz", hash = "sha256:1daff0494820c69bc8941e407aa20f577374ee88364ee10a98fdbe0aece96e29"},
@@ -3263,7 +3294,7 @@ name = "pyparsing"
 version = "3.1.1"
 requires_python = ">=3.6.8"
 summary = "pyparsing module - Classes and methods to define and execute parsing grammars"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 files = [
     {file = "pyparsing-3.1.1-py3-none-any.whl", hash = "sha256:32c7c0b711493c72ff18a981d24f28aaf9c1fb7ed5e9667c9e84e3db623bdbfb"},
     {file = "pyparsing-3.1.1.tar.gz", hash = "sha256:ede28a1a32462f5a9705e07aea48001a08f7cf81a021585011deba701581a0db"},
@@ -3291,6 +3322,7 @@ groups = ["testing"]
 dependencies = [
     "colorama; sys_platform == \"win32\"",
     "exceptiongroup>=1.0.0rc8; python_version < \"3.11\"",
+    "importlib-metadata>=0.12; python_version < \"3.8\"",
     "iniconfig",
     "packaging",
     "pluggy<2.0,>=0.12",
@@ -3309,6 +3341,7 @@ summary = "Pytest support for asyncio"
 groups = ["testing"]
 dependencies = [
     "pytest>=7.0.0",
+    "typing-extensions>=3.7.2; python_version < \"3.8\"",
 ]
 files = [
     {file = "pytest-asyncio-0.21.1.tar.gz", hash = "sha256:40a7eae6dded22c7b604986855ea48400ab15b069ae38116e8c01238e9eeb64d"},
@@ -3366,7 +3399,7 @@ name = "python-dateutil"
 version = "2.9.0.post0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 summary = "Extensions to the standard Python datetime module"
-groups = ["all", "aws", "default", "grpc-channelz", "grpc-reflection", "io", "io-pandas", "testing", "tracing"]
+groups = ["default", "all", "aws", "io", "io-pandas", "testing"]
 dependencies = [
     "six>=1.5",
 ]
@@ -3391,7 +3424,7 @@ name = "python-json-logger"
 version = "2.0.7"
 requires_python = ">=3.6"
 summary = "A python library adding a json log formatter"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 files = [
     {file = "python-json-logger-2.0.7.tar.gz", hash = "sha256:23e7ec02d34237c5aa1e29a070193a4ea87583bb4e7f8fd06d3de8264c4b2e1c"},
     {file = "python_json_logger-2.0.7-py3-none-any.whl", hash = "sha256:f380b826a991ebbe3de4d897aeec42760035ac760345e57b812938dc8b35e2bd"},
@@ -3402,7 +3435,7 @@ name = "python-multipart"
 version = "0.0.9"
 requires_python = ">=3.8"
 summary = "A streaming multipart parser for Python"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 files = [
     {file = "python_multipart-0.0.9-py3-none-any.whl", hash = "sha256:97ca7b8ea7b05f977dc3849c3ba99d51689822fab725c3703af7c866a0c2b215"},
     {file = "python_multipart-0.0.9.tar.gz", hash = "sha256:03f54688c663f1b7977105f021043b0793151e4cb1c1a9d4a11fc13d622c4026"},
@@ -3488,7 +3521,7 @@ name = "pyyaml"
 version = "6.0.1"
 requires_python = ">=3.6"
 summary = "YAML parser and emitter for Python"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tooling", "tracing"]
+groups = ["default", "docs", "testing", "tooling"]
 files = [
     {file = "PyYAML-6.0.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d858aa552c999bc8a8d57426ed01e40bef403cd8ccdd0fc5f6f04a00414cac2a"},
     {file = "PyYAML-6.0.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:fd66fc5d0da6d9815ba2cebeb4205f95818ff4b79c3ebe268e75d961704af52f"},
@@ -3536,7 +3569,7 @@ name = "pyzmq"
 version = "25.1.1"
 requires_python = ">=3.6"
 summary = "Python bindings for 0MQ"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "cffi; implementation_name == \"pypy\"",
 ]
@@ -3624,7 +3657,7 @@ version = "2.30.0"
 requires_python = ">=3.8"
 summary = "Ray provides a simple, universal API for building distributed applications."
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
     "aiosignal",
     "click>=7.0",
@@ -3662,7 +3695,7 @@ extras = ["serve"]
 requires_python = ">=3.8"
 summary = "Ray provides a simple, universal API for building distributed applications."
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
     "aiohttp-cors",
     "aiohttp>=3.7",
@@ -3707,7 +3740,7 @@ version = "0.35.1"
 requires_python = ">=3.8"
 summary = "JSON Referencing + Python"
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
     "attrs>=22.2.0",
     "rpds-py>=0.7.0",
@@ -3739,7 +3772,7 @@ name = "rich"
 version = "13.7.1"
 requires_python = ">=3.7.0"
 summary = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "markdown-it-py>=2.2.0",
     "pygments<3.0.0,>=2.13.0",
@@ -3756,7 +3789,7 @@ version = "0.18.1"
 requires_python = ">=3.8"
 summary = "Python bindings to Rust's persistent data structures (rpds)"
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 files = [
     {file = "rpds_py-0.18.1-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:d31dea506d718693b6b2cffc0648a8929bdc51c70a311b2770f09611caa10d53"},
     {file = "rpds_py-0.18.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:732672fbc449bab754e0b15356c077cc31566df874964d4801ab14f71951ea80"},
@@ -3865,7 +3898,7 @@ version = "4.9"
 requires_python = ">=3.6,<4"
 summary = "Pure-Python RSA implementation"
 groups = ["docs"]
-marker = "python_version >= \"3.6\" and python_version < \"3.12\""
+marker = "python_version >= \"3.8\" and python_version < \"3.12\""
 dependencies = [
     "pyasn1>=0.1.3",
 ]
@@ -3892,7 +3925,10 @@ files = [
 name = "schema"
 version = "0.7.7"
 summary = "Simple data validation library"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
+dependencies = [
+    "contextlib2>=0.5.5; python_version < \"3.3\"",
+]
 files = [
     {file = "schema-0.7.7-py2.py3-none-any.whl", hash = "sha256:5d976a5b50f36e74e2157b47097b60002bd4d42e65425fcc9c9befadb4255dde"},
     {file = "schema-0.7.7.tar.gz", hash = "sha256:7da553abd2958a19dc2547c388cde53398b39196175a9be59ea1caf5ab0a1807"},
@@ -3977,7 +4013,7 @@ name = "setuptools"
 version = "68.2.2"
 requires_python = ">=3.8"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
-groups = ["all", "aws", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "tooling", "tracing", "triton"]
+groups = ["default", "all", "aws", "grpc", "grpc-channelz", "grpc-reflection", "tooling", "triton"]
 files = [
     {file = "setuptools-68.2.2-py3-none-any.whl", hash = "sha256:b454a35605876da60632df1a60f736524eb73cc47bbc9f3f1ef1b644de74fd2a"},
     {file = "setuptools-68.2.2.tar.gz", hash = "sha256:4ac1475276d2f1c48684874089fefcd83bd7162ddaafb81fac866ba0db282a87"},
@@ -4016,7 +4052,11 @@ name = "simple-di"
 version = "0.1.5"
 requires_python = ">=3.6.1"
 summary = "simple dependency injection library"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
+dependencies = [
+    "dataclasses; python_version < \"3.7.0\"",
+    "types-dataclasses; python_version < \"3.7.0\"",
+]
 files = [
     {file = "simple_di-0.1.5-py3-none-any.whl", hash = "sha256:e3fb6242f18f389a3c2d571dd51ade47c74cdbc4550590894664ad59bfb2a345"},
     {file = "simple_di-0.1.5.tar.gz", hash = "sha256:192b999dee4cd4fb11a5d861165caad02d8f0617c0f806fc5b09f905f1a03ca0"},
@@ -4027,7 +4067,7 @@ name = "six"
 version = "1.16.0"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 summary = "Python 2 and 3 compatibility utilities"
-groups = ["all", "aws", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "io-pandas", "testing", "tracing", "tracing-jaeger", "triton"]
+groups = ["default", "all", "aws", "docs", "io", "io-pandas", "testing", "tracing", "tracing-jaeger", "triton"]
 files = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
@@ -4039,7 +4079,7 @@ version = "6.4.0"
 requires_python = ">=3.6,<4.0"
 summary = "Utils for streaming large files (S3, HDFS, GCS, Azure Blob Storage, gzip, bz2...)"
 groups = ["docs"]
-marker = "python_version < \"3.12\""
+marker = "python_version < \"3.12\" and python_version >= \"3.8\""
 files = [
     {file = "smart_open-6.4.0-py3-none-any.whl", hash = "sha256:8d3ef7e6997e8e42dd55c74166ed21e6ac70664caa32dd940b26d54a8f6b4142"},
     {file = "smart_open-6.4.0.tar.gz", hash = "sha256:be3c92c246fbe80ebce8fbacb180494a481a77fcdcb7c1aadb2ea5b9c2bee8b9"},
@@ -4050,7 +4090,7 @@ name = "sniffio"
 version = "1.3.0"
 requires_python = ">=3.7"
 summary = "Sniff out which async library your code is running under"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 files = [
     {file = "sniffio-1.3.0-py3-none-any.whl", hash = "sha256:eecefdce1e5bbfb7ad2eeaabf7c1eeb404d7757c379bd1f7e5cce9d8bf425384"},
     {file = "sniffio-1.3.0.tar.gz", hash = "sha256:e60305c5e5d314f5389259b7f22aaa33d8f7dee49763119234af3755c55b9101"},
@@ -4321,6 +4361,7 @@ groups = ["docs"]
 dependencies = [
     "PyEnchant>=3.1.1",
     "Sphinx>=3.0.0",
+    "importlib-metadata>=1.7.0; python_version < \"3.8\"",
 ]
 files = [
     {file = "sphinxcontrib-spelling-8.0.0.tar.gz", hash = "sha256:199d0a16902ad80c387c2966dc9eb10f565b1fb15ccce17210402db7c2443e5c"},
@@ -4346,7 +4387,7 @@ name = "starlette"
 version = "0.37.2"
 requires_python = ">=3.8"
 summary = "The little ASGI library that shines."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "anyio<5,>=3.4.0",
     "typing-extensions>=3.10.0; python_version < \"3.10\"",
@@ -4362,7 +4403,7 @@ version = "0.70.0"
 requires_python = "<4.0,>=3.8"
 summary = "Modern Text User Interface framework"
 groups = ["docs"]
-marker = "sys_platform != \"win32\" and python_version < \"3.12\""
+marker = "sys_platform != \"win32\" and python_version < \"3.12\" and python_version >= \"3.8\""
 dependencies = [
     "markdown-it-py[linkify,plugins]>=2.1.0",
     "rich>=13.3.3",
@@ -4401,8 +4442,8 @@ name = "tomli"
 version = "2.0.1"
 requires_python = ">=3.7"
 summary = "A lil' TOML parser"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "testing", "tooling", "tracing"]
-marker = "python_version < \"3.11\""
+groups = ["default", "testing", "tooling"]
+marker = "python_version < \"3.11\" and python_version >= \"3.8\""
 files = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
     {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
@@ -4413,7 +4454,7 @@ name = "tomli-w"
 version = "1.0.0"
 requires_python = ">=3.7"
 summary = "A lil' TOML writer"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 files = [
     {file = "tomli_w-1.0.0-py3-none-any.whl", hash = "sha256:9f2a07e8be30a0729e533ec968016807069991ae2fd921a78d42f429ae5f4463"},
     {file = "tomli_w-1.0.0.tar.gz", hash = "sha256:f463434305e0336248cac9c2dc8076b707d8a12d019dd349f5c1e382dd1ae1b9"},
@@ -4424,7 +4465,7 @@ name = "tornado"
 version = "6.3.3"
 requires_python = ">= 3.8"
 summary = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default", "docs"]
 files = [
     {file = "tornado-6.3.3-cp38-abi3-macosx_10_9_universal2.whl", hash = "sha256:502fba735c84450974fec147340016ad928d29f1e91f49be168c0a4c18181e1d"},
     {file = "tornado-6.3.3-cp38-abi3-macosx_10_9_x86_64.whl", hash = "sha256:805d507b1f588320c26f7f097108eb4023bbaa984d63176d1652e184ba24270a"},
@@ -4510,7 +4551,7 @@ name = "typing-extensions"
 version = "4.9.0"
 requires_python = ">=3.8"
 summary = "Backported and Experimental Type Hints for Python 3.8+"
-groups = ["all", "default", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "all", "docs", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "typing_extensions-4.9.0-py3-none-any.whl", hash = "sha256:af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd"},
     {file = "typing_extensions-4.9.0.tar.gz", hash = "sha256:23478f88c37f27d76ac8aee6c905017a143b0b1b886c3c9f66bc2fd94f9f5783"},
@@ -4533,7 +4574,7 @@ version = "1.0.3"
 requires_python = ">=3.7"
 summary = "Micro subset of unicode data files for linkify-it-py projects."
 groups = ["docs"]
-marker = "sys_platform != \"win32\" and python_version < \"3.12\""
+marker = "sys_platform != \"win32\" and python_version < \"3.12\" and python_version >= \"3.8\""
 files = [
     {file = "uc-micro-py-1.0.3.tar.gz", hash = "sha256:d321b92cff673ec58027c04015fcaa8bb1e005478643ff4a500882eaab88c48a"},
     {file = "uc_micro_py-1.0.3-py3-none-any.whl", hash = "sha256:db1dffff340817673d7b466ec86114a9dc0e9d4d9b5ba229d9d60e5c12600cd5"},
@@ -4642,7 +4683,7 @@ name = "uv"
 version = "0.2.13"
 requires_python = ">=3.8"
 summary = "An extremely fast Python package installer and resolver, written in Rust."
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 files = [
     {file = "uv-0.2.13-py3-none-linux_armv6l.whl", hash = "sha256:418a971fb00b2cdcdc036343af9c6a6c27c82e9b0f59a53f364f23f4d6935ba9"},
     {file = "uv-0.2.13-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:d4186b42bf4a72ae286b8e57d55ea3153aaaa9015c93472103c99d882dbf783c"},
@@ -4669,7 +4710,7 @@ name = "uvicorn"
 version = "0.30.1"
 requires_python = ">=3.8"
 summary = "The lightning-fast ASGI server."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "click>=7.0",
     "h11>=0.8",
@@ -4752,6 +4793,7 @@ groups = ["docs", "tooling"]
 dependencies = [
     "distlib<1,>=0.3.7",
     "filelock<4,>=3.12.2",
+    "importlib-metadata>=6.6; python_version < \"3.8\"",
     "platformdirs<5,>=3.9.1",
 ]
 files = [
@@ -4764,7 +4806,7 @@ name = "watchfiles"
 version = "0.22.0"
 requires_python = ">=3.8"
 summary = "Simple, modern and high performance file watching and code reload in python."
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "testing", "tracing"]
+groups = ["default", "docs", "testing"]
 dependencies = [
     "anyio>=3.0.0",
 ]
@@ -4850,7 +4892,10 @@ files = [
 name = "wcwidth"
 version = "0.2.8"
 summary = "Measures the displayed width of unicode strings in a terminal"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
+dependencies = [
+    "backports-functools-lru-cache>=1.2.1; python_version < \"3.2\"",
+]
 files = [
     {file = "wcwidth-0.2.8-py2.py3-none-any.whl", hash = "sha256:77f719e01648ed600dfa5402c347481c0992263b81a027344f3e1ba25493a704"},
     {file = "wcwidth-0.2.8.tar.gz", hash = "sha256:8705c569999ffbb4f6a87c6d1b80f324bd6db952f5eb0b95bc07517f4c1813d4"},
@@ -4942,7 +4987,7 @@ name = "wrapt"
 version = "1.15.0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 summary = "Module for decorators, wrappers and monkey patching."
-groups = ["all", "default", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "all", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "wrapt-1.15.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:21f6d9a0d5b3a207cdf7acf8e58d7d13d463e639f0c7e01d82cdb671e6cb7923"},
     {file = "wrapt-1.15.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:ce42618f67741d4697684e501ef02f29e758a123aa2d669e2d964ff734ee00ee"},
@@ -4993,7 +5038,7 @@ name = "wsproto"
 version = "1.2.0"
 requires_python = ">=3.7.0"
 summary = "WebSockets state-machine based protocol implementation"
-groups = ["all", "default", "grpc-channelz", "grpc-reflection", "io", "tracing"]
+groups = ["default"]
 dependencies = [
     "h11<1,>=0.9.0",
 ]
@@ -5022,10 +5067,11 @@ name = "yarl"
 version = "1.9.2"
 requires_python = ">=3.7"
 summary = "Yet another URL library"
-groups = ["all", "default", "docs", "grpc-channelz", "grpc-reflection", "io", "tracing", "triton"]
+groups = ["default", "docs", "triton"]
 dependencies = [
     "idna>=2.0",
     "multidict>=4.0",
+    "typing-extensions>=3.7.4; python_version < \"3.8\"",
 ]
 files = [
     {file = "yarl-1.9.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:8c2ad583743d16ddbdf6bb14b5cd76bf43b0d0006e918809d5d4ddf7bde8dd82"},
@@ -5096,7 +5142,7 @@ name = "zipp"
 version = "3.19.2"
 requires_python = ">=3.8"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
-groups = ["all", "default", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "all", "docs", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "zipp-3.19.2-py3-none-any.whl", hash = "sha256:f091755f667055f2d02b32c53771a7a6c8b47e1fdbc4b72a8b9072b3eef8015c"},
     {file = "zipp-3.19.2.tar.gz", hash = "sha256:bf1dcf6450f873a13e952a29504887c89e6de7506209e5b1bcc3460135d4de19"},

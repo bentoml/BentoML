@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import math
 import tarfile
-import tempfile
 import typing as t
 import warnings
 from concurrent.futures import ThreadPoolExecutor
@@ -21,7 +20,6 @@ from ..bento import BentoStore
 from ..configuration.containers import BentoMLContainer
 from ..models import Model
 from ..models import ModelStore
-from ..models import copy_model
 from ..tag import Tag
 from ..utils import calc_dir_size
 from .base import FILE_CHUNK_SIZE
@@ -86,20 +84,20 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
-        model_store: ModelStore = Provide[BentoMLContainer.model_store],
         bentoml_tmp_dir: str = Provide[BentoMLContainer.tmp_bento_store_dir],
     ):
+        from _bentoml_sdk.models import BentoModel
+
         name = bento.tag.name
         version = bento.tag.version
         if version is None:
             raise BentoMLException(f"Bento {bento.tag} version cannot be None")
         info = bento.info
-        model_tags = [m.tag for m in info.all_models]
-        local_model_store = bento._model_store  # type: ignore  # using internal BentoML API
-        if local_model_store is not None and len(local_model_store.list()) > 0:
-            model_store = local_model_store
-        models = (model_store.get(name) for name in model_tags)
-        with ThreadPoolExecutor(max_workers=max(len(model_tags), 1)) as executor:
+        bento_models = [
+            BentoModel(m.tag) for m in info.all_models if m.registry == "bentoml"
+        ]
+        models_to_push = [m.stored for m in bento_models if m.stored is not None]
+        with ThreadPoolExecutor(max_workers=max(len(models_to_push), 1)) as executor:
 
             def push_model(model: Model) -> None:
                 model_upload_task_id = self.spinner.transmission_progress.add_task(
@@ -112,8 +110,7 @@ class BentoCloudClient(CloudClient):
                     threads=threads,
                 )
 
-            futures: t.Iterator[None] = executor.map(push_model, models)
-            list(futures)
+            executor.map(push_model, models_to_push)
         with self.spinner.spin(text=f'Fetching Bento repository "{name}"'):
             bento_repository = rest_client.v1.get_bento_repository(
                 bento_repository_name=name
@@ -436,7 +433,6 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
         rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
-        global_model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Bento:
         try:
             bento = bento_store.get(tag)
@@ -461,129 +457,78 @@ class BentoCloudClient(CloudClient):
         if not remote_bento:
             raise BentoMLException(f'Bento "{_tag}" not found on remote Bento store')
 
-        models_to_pull: list[str] = []
-        assert remote_bento.manifest is not None
-        for model in remote_bento.manifest.models:
-            try:
-                global_model_store.get(model)
-            except NotFound:
-                models_to_pull.append(model)
-            else:
-                self.spinner.log(
-                    f'[bold blue]Model "{model}" exists in local model store'
-                )
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Download models to a temporary directory
-            model_store = ModelStore(temp_dir)
-            assert remote_bento.manifest is not None
-            with ThreadPoolExecutor(
-                max_workers=max(len(models_to_pull), 1)
-            ) as executor:
+        # Download bento files from remote Bento store
+        transmission_strategy: TransmissionStrategy = "proxy"
+        presigned_download_url: str | None = None
 
-                def pull_model(model_tag: Tag):
-                    model_download_task_id = (
-                        self.spinner.transmission_progress.add_task(
-                            f'Pulling model "{model_tag}"',
-                            start=False,
-                            visible=False,
-                        )
-                    )
-                    self._do_pull_model(
-                        model_tag,
-                        model_download_task_id,
-                        force=force,
-                        model_store=model_store,
-                    )
+        if remote_bento.transmission_strategy is not None:
+            transmission_strategy = remote_bento.transmission_strategy
+        else:
+            with self.spinner.spin(
+                text=f'Getting a presigned download url for bento "{_tag}"'
+            ):
+                remote_bento = rest_client.v1.presign_bento_download_url(name, version)
+                if remote_bento.presigned_download_url:
+                    presigned_download_url = remote_bento.presigned_download_url
+                    transmission_strategy = "presigned_url"
 
-                futures = executor.map(pull_model, models_to_pull)
-                list(futures)
-
-            # Download bento files from remote Bento store
-            transmission_strategy: TransmissionStrategy = "proxy"
-            presigned_download_url: str | None = None
-
-            if remote_bento.transmission_strategy is not None:
-                transmission_strategy = remote_bento.transmission_strategy
-            else:
+        if transmission_strategy == "proxy":
+            response_ctx = rest_client.v1.download_bento(
+                bento_repository_name=name,
+                version=version,
+            )
+        else:
+            if presigned_download_url is None:
                 with self.spinner.spin(
                     text=f'Getting a presigned download url for bento "{_tag}"'
                 ):
                     remote_bento = rest_client.v1.presign_bento_download_url(
                         name, version
                     )
-                    if remote_bento.presigned_download_url:
-                        presigned_download_url = remote_bento.presigned_download_url
-                        transmission_strategy = "presigned_url"
+                    presigned_download_url = remote_bento.presigned_download_url
 
-            if transmission_strategy == "proxy":
-                response_ctx = rest_client.v1.download_bento(
-                    bento_repository_name=name,
-                    version=version,
-                )
-            else:
-                if presigned_download_url is None:
-                    with self.spinner.spin(
-                        text=f'Getting a presigned download url for bento "{_tag}"'
-                    ):
-                        remote_bento = rest_client.v1.presign_bento_download_url(
-                            name, version
-                        )
-                        presigned_download_url = remote_bento.presigned_download_url
+            response_ctx = httpx.stream("GET", presigned_download_url)
 
-                response_ctx = httpx.stream("GET", presigned_download_url)
-
-            with NamedTemporaryFile() as tar_file:
-                with response_ctx as response:
-                    if response.status_code != 200:
-                        raise BentoMLException(
-                            f'Failed to download bento "{_tag}": {response.text}'
-                        )
-                    total_size_in_bytes = int(response.headers.get("content-length", 0))
-                    block_size = 1024  # 1 Kibibyte
-                    self.spinner.transmission_progress.update(
-                        download_task_id,
-                        completed=0,
-                        total=total_size_in_bytes,
-                        visible=True,
+        with NamedTemporaryFile() as tar_file:
+            with response_ctx as response:
+                if response.status_code != 200:
+                    raise BentoMLException(
+                        f'Failed to download bento "{_tag}": {response.text}'
                     )
-                    self.spinner.transmission_progress.start_task(download_task_id)
-                    for data in response.iter_bytes(block_size):
-                        self.spinner.transmission_progress.update(
-                            download_task_id, advance=len(data)
-                        )
-                        tar_file.write(data)
-
-                self.spinner.log(
-                    f'[bold green]Finished downloading all bento "{_tag}" files'
+                total_size_in_bytes = int(response.headers.get("content-length", 0))
+                block_size = 1024  # 1 Kibibyte
+                self.spinner.transmission_progress.update(
+                    download_task_id,
+                    completed=0,
+                    total=total_size_in_bytes,
+                    visible=True,
                 )
-                tar_file.seek(0, 0)
-                tar = tarfile.open(fileobj=tar_file, mode="r")
-                with self.spinner.spin(text=f'Extracting bento "{_tag}" tar file'):
-                    with fs.open_fs("temp://") as temp_fs:
-                        for member in tar.getmembers():
-                            f = tar.extractfile(member)
-                            if f is None:
-                                continue
-                            p = Path(member.name)
-                            if p.parent != Path("."):
-                                temp_fs.makedirs(p.parent.as_posix(), recreate=True)
-                            temp_fs.writebytes(member.name, f.read())
-                        bento = Bento.from_fs(temp_fs)
-                        assert remote_bento.manifest is not None
-                        for model_tag in models_to_pull:
-                            with self.spinner.spin(
-                                text=f'Copying model "{model_tag}" to model store'
-                            ):
-                                copy_model(
-                                    model_tag,
-                                    src_model_store=model_store,
-                                    target_model_store=global_model_store,
-                                )
-                        bento = bento.save(bento_store)
-                        self.spinner.log(
-                            f'[bold green]Successfully pulled bento "{_tag}"'
-                        )
-                        return bento
+                self.spinner.transmission_progress.start_task(download_task_id)
+                for data in response.iter_bytes(block_size):
+                    self.spinner.transmission_progress.update(
+                        download_task_id, advance=len(data)
+                    )
+                    tar_file.write(data)
+
+            self.spinner.log(
+                f'[bold green]Finished downloading all bento "{_tag}" files'
+            )
+            tar_file.seek(0, 0)
+            tar = tarfile.open(fileobj=tar_file, mode="r")
+            with self.spinner.spin(text=f'Extracting bento "{_tag}" tar file'):
+                with fs.open_fs("temp://") as temp_fs:
+                    for member in tar.getmembers():
+                        f = tar.extractfile(member)
+                        if f is None:
+                            continue
+                        p = Path(member.name)
+                        if p.parent != Path("."):
+                            temp_fs.makedirs(p.parent.as_posix(), recreate=True)
+                        temp_fs.writebytes(member.name, f.read())
+                    bento = Bento.from_fs(temp_fs)
+                    bento = bento.save(bento_store)
+                    self.spinner.log(f'[bold green]Successfully pulled bento "{_tag}"')
+                    return bento
 
     def push_model(
         self,

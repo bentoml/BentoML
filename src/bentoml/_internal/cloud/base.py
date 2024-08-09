@@ -20,9 +20,7 @@ from rich.progress import TimeRemainingColumn
 from rich.progress import TransferSpeedColumn
 
 from ..bento import Bento
-from ..bento import BentoStore
 from ..models import Model
-from ..models import ModelStore
 from ..tag import Tag
 
 if t.TYPE_CHECKING:
@@ -210,7 +208,6 @@ class CloudClient(ABC):
         tag: str | Tag,
         *,
         force: bool = False,
-        model_store: ModelStore,
     ) -> Model:
         pass
 
@@ -220,6 +217,5 @@ class CloudClient(ABC):
         tag: str | Tag,
         *,
         force: bool = False,
-        bento_store: BentoStore,
     ) -> Bento:
         pass

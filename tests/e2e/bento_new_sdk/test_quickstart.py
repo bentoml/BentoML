@@ -40,11 +40,11 @@ async def test_async_serve_and_prediction(examples: Path) -> None:
 
     try:
         with bentoml.SyncHTTPClient(f"http://127.0.0.1:{port}") as client:
-            result = client.summarize(EXAMPLE_INPUT)
+            result = client.summarize([EXAMPLE_INPUT])[0]
         assert "Whiskers" in result
 
         async with bentoml.AsyncHTTPClient(f"http://127.0.0.1:{port}") as client:
-            result = await client.summarize(EXAMPLE_INPUT)
+            result = (await client.summarize([EXAMPLE_INPUT]))[0]
         assert "Whiskers" in result
     finally:
         server.terminate()
@@ -76,7 +76,7 @@ def test_build_and_prediction(examples: Path) -> None:
 
     try:
         with bentoml.SyncHTTPClient(f"http://127.0.0.1:{port}") as client:
-            result = client.summarize(EXAMPLE_INPUT)
+            result = client.summarize([EXAMPLE_INPUT])[0]
         assert "Whiskers" in result
     finally:
         server.terminate()

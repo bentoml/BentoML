@@ -164,9 +164,11 @@ def _track_serve_init(
                 )
             )
         else:
-            from bentoml import Model
+            from _bentoml_sdk.models import Model
 
-            def _get_models(svc: NewService[t.Any], seen: set[str]) -> t.Set[Model]:
+            def _get_models(
+                svc: NewService[t.Any], seen: set[str]
+            ) -> t.Set[Model[t.Any]]:
                 if svc.name in seen:
                     return set()
                 seen.add(svc.name)

@@ -21,6 +21,12 @@ This section explains observability in BentoML.
 
         Learn how to configure logging in BentoML.
 
+    .. grid-item-card:: :doc:`/guides/observability/metrics`
+        :link: /guides/observability/tracing
+        :link-type: doc
+
+        Learn how to configure metrics in BentoML.
+
     .. grid-item-card:: :doc:`/guides/observability/tracing`
         :link: /guides/observability/tracing
         :link-type: doc
@@ -34,4 +40,5 @@ This section explains observability in BentoML.
 
     monitoring-and-data-collection
     logging
+    metrics
     tracing

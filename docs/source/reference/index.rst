@@ -11,7 +11,6 @@ This section contains detailed API specifications. Use them to dig deeper into B
   sdk
   cli
   client
-  metrics
   frameworks/index
   batch
   exceptions

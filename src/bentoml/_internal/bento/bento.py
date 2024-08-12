@@ -541,6 +541,7 @@ class BentoModelInfo:
     )
     alias: t.Optional[str] = attr.field(default=None, eq=False)
     registry: str = attr.field(default="bentoml", eq=False)
+    endpoint: t.Optional[str] = attr.field(default=None, eq=False)
 
     @classmethod
     def from_bento_model(
@@ -703,6 +704,7 @@ bentoml_cattr.register_unstructure_hook(
         bentoml_cattr,
         alias=override(omit_if_default=True),
         registry=override(omit_if_default=True),
+        endpoint=override(omit_if_default=True),
     ),
 )
 bentoml_cattr.register_unstructure_hook(

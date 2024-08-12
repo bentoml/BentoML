@@ -111,15 +111,15 @@ You can customize the `duration bucket size <https://prometheus.io/docs/practice
   - ``min``: The lower bound of the smallest bucket in the histogram.
   - ``max``: The upper bound of the largest bucket in the histogram.
   - ``factor``: Determines the exponential growth rate of the bucket sizes. Each subsequent bucket boundary is calculated by multiplying the previous boundary by the factor.
-  
+
   .. code-block:: python
 
         @bentoml.service(metrics={
             "enabled": True,
             "namespace": "bentoml_service",
             "duration": {
-                "min": 0.1, 
-                "max": 10, 
+                "min": 0.1,
+                "max": 10,
                 "factor": 1.2
             }
         })
@@ -156,9 +156,9 @@ To define custom metrics, use the metric classes from the ``prometheus_client`` 
 - ``name``: A unique string identifier for the metric.
 - ``documentation``: A description of what the metric measures.
 - ``labelnames``: A list of strings defining the labels to apply to the metric. Labels add dimensions to the metric, which are useful for querying and aggregation purposes. When you record a metric, you specify the labels in the format ``<metric_object>.labels(<label_name>='<label_value>').<metric_function>``. Once you define a label for a metric, all instances of that metric must include that label with some value.
-    
+
   The value of a label can also be dynamic, meaning it can change based on the context of the tracked metric. For example, you can use a label to log the version of model serving predictions, and this version label can change as you update the model.
-    
+
 - ``buckets``: A Histogram-specific parameter which defines the boundaries for Histogram buckets, useful for categorizing measurement ranges. The list should end with ``float('inf')`` to capture all values that exceed the highest defined boundary. See the Prometheus documentation on `Histogram <https://prometheus.io/docs/practices/histograms/>`_ for more details.
 
 .. tab-set::
@@ -367,7 +367,7 @@ You can integrate Prometheus to scrape and visualize both default and custom met
 
 1. `Install Prometheus <https://prometheus.io/docs/prometheus/latest/installation/>`_.
 2. Create `a Prometheus configuration file <https://prometheus.io/docs/prometheus/latest/configuration/configuration/>`_ to define scrape jobs. Here is an example that scrapes metrics every 5 seconds from a BentoML Service.
-    
+
    .. code-block:: yaml
       :caption: `prometheus.yml`
 
@@ -382,14 +382,14 @@ You can integrate Prometheus to scrape and visualize both default and custom met
             - targets: ["0.0.0.0:3000"] # The address where the BentoML Service is running
 
 3. Make sure you have a BentoML Service running, then start Prometheus in a different terminal session using the configuration file you created:
-    
+
    .. code-block:: bash
 
         ./prometheus --config.file=/path/to/the/file/prometheus.yml
 
 4. Once Prometheus is running, access its web UI by visiting ``http://localhost:9090`` in your web browser. This interface allows you to query and visualize metrics collected from your BentoML Service.
 5. Use `PromQL expressions <https://prometheus.io/docs/prometheus/latest/querying/basics/>`_ to query and visualize metrics. For example, to get the 99th percentile of request durations to the ``/encode`` endpoint over the last minute, use:
-    
+
    .. code-block:: bash
 
         histogram_quantile(0.99, rate(bentoml_service_request_duration_seconds_bucket{endpoint="/encode"}[1m]))
@@ -403,31 +403,31 @@ Grafana is an analytics platform that allows you to create dynamic and informati
 
 1. `Install Grafana <https://grafana.com/docs/grafana/latest/setup-grafana/installation/>`_.
 2. By default, Grafana runs on port ``3000``, which conflicts with BentoML's default port. To avoid this, change Grafana's default port. For example:
-    
+
    .. code-block:: bash
 
         sudo nano /etc/grafana/grafana.ini
 
    Find the ``[http]`` section and change ``http_port`` to a free port like ``4000``:
-    
+
    .. code-block:: bash
 
         ;http_port = 3000  # Change it to a port of your choice and uncomment the line by removing the semicolon
         http_port = 4000
 
 3. Save the file and restart Grafana to apply the change:
-    
+
    .. code-block:: bash
 
         sudo systemctl restart grafana-server
 
 4. Access the Grafana web UI at ``http://localhost:4000/`` (use your own port). Log in with the default credentials (``admin``/``admin``).
 5. In the Grafana search box at the top, enter ``Data sources`` and add Prometheus as an available option. In **Connection**, set the URL to the address of your running Prometheus instance, such as ``http://localhost:9090``. Save the configuration and test the connection to ensure Grafana can retrieve data from Prometheus.
-    
+
    .. image:: ../../_static/img/guides/observability/metrics/grafana-bentoml-1.png
 
 6. With Prometheus configured as a data source, you can create a new dashboard. Start by adding a panel and selecting a metric to visualize, such as ``bentoml_service_request_duration_seconds_bucket``. Grafana offers a wide array of visualization options, from simple line graphs to more complex representations like heatmaps or gauges.
-    
+
    .. image:: ../../_static/img/guides/observability/metrics/grafana-bentoml-2.png
 
    For detailed instructions on dashboard creation and customization, read the `Grafana documentation <https://grafana.com/docs/grafana/latest/dashboards/>`_.

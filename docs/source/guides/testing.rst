@@ -199,7 +199,7 @@ An example:
 
 This test does the following:
 
-- Create an `Starlette Test client <https://www.starlette.io/testclient/>`_, which interacts with the ASGI application converted from the ``Summarization`` Service through ``to_asgi()``. ``base_url="http://testserver"`` configures the client to send requests to a test server.
+- Create an `Starlette Test client <https://www.starlette.io/testclient/>`_, which interacts with the ASGI application converted from the ``Summarization`` Service through ``to_asgi()``.
 - Send a ``POST`` request to the ``/summarize`` endpoint. It simulates a client sending input data to the ``Summarization`` Service for processing.
 - Make assertions to ensure the Service is functioning correctly.
 

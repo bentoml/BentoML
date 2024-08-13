@@ -635,7 +635,8 @@ class PythonOptions:
                     "--allow-unsafe",
                     "--no-header",
                     f"--output-file={pip_compile_out}",
-                    "--resolver=backtracking",
+                    "--emit-index-url",
+                    "--emit-find-links",
                     "--no-annotate",
                 ]
             )

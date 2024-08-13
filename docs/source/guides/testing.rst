@@ -172,35 +172,34 @@ HTTP behavior tests
 
 To test the HTTP behavior of a BentoML Service, you can simulate HTTP requests and assert the responses match expected outcomes.
 
-You can use the ``httpx`` library to create a test client. This allows you to send HTTP requests directly to your BentoML Service, which can be converted to an :doc:`ASGI application </guides/asgi>` via the ``to_asgi()`` method. The ``init`` parameter of ``to_asgi()``, when set to ``true``, initializes the middleware, routing, and other necessary configurations, preparing the application for handling requests.
+You can use the ``starlette.testclient`` module to create a test client. This allows you to send HTTP requests directly to your BentoML Service, which can be converted to an :doc:`ASGI application </guides/asgi>` via the ``to_asgi()`` method. The test client exposes the same interface as any other ``httpx`` session.
 
 An example:
 
 .. code-block:: python
     :caption: `test_http.py`
 
-    import httpx
+    from starlette.testclient import TestClient
     from service import Summarization, EXAMPLE_INPUT # Imported from the Summarization service.py file
     import pytest
 
-    @pytest.mark.asyncio
-    async def test_request():
-        # Initialize the ASGI transport with the Summarization Service
-        transport=httpx.ASGITransport(app=Summarization.to_asgi(init=True))
+    def test_request():
+        # Initialize the ASGI app with the Summarization Service
+        app = Summarization.to_asgi()
+        # Create a test client to interact with the ASGI app
+        test_client = TestClient(app=app)
 
-        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as test_client:
-            response = await test_client.post("/summarize", json={"text": EXAMPLE_INPUT})
-            # Retrieve the text from the response for validation
-            summarized_text = response.text
-            # Assert that the HTTP response status code is 200, indicating success
-            assert response.status_code == 200
-            # Assert that the summarized text is not empty
-            assert summarized_text, "The summary should not be empty"
+        response = test_client.post("/summarize", json={"text": EXAMPLE_INPUT})
+        # Retrieve the text from the response for validation
+        summarized_text = response.text
+        # Assert that the HTTP response status code is 200, indicating success
+        assert response.status_code == 200
+        # Assert that the summarized text is not empty
+        assert summarized_text, "The summary should not be empty"
 
 This test does the following:
 
-- Define a test function with ``@pytest.mark.asyncio``, which allows the test to perform asynchronous operations.
-- Create an `asynchronous HTTP client <https://www.python-httpx.org/async/>`_, which interacts with the ASGI application converted from the ``Summarization`` Service through ``to_asgi(init=True)``. ``base_url="http://testserver"`` configures the client to send requests to a test server.
+- Create an `Starlette Test client <https://www.starlette.io/testclient/>`_, which interacts with the ASGI application converted from the ``Summarization`` Service through ``to_asgi()``.
 - Send a ``POST`` request to the ``/summarize`` endpoint. It simulates a client sending input data to the ``Summarization`` Service for processing.
 - Make assertions to ensure the Service is functioning correctly.
 
@@ -210,10 +209,6 @@ Run the HTTP behavior test:
 
     pytest test_http.py -v
 
-.. note::
-
-    You need a plugin like ``pytest-asyncio`` to run async tests. You can install it by running ``pip install pytest-asyncio``.
-
 Expected output:
 
 .. code-block:: bash
@@ -222,7 +217,7 @@ Expected output:
     platform linux -- Python 3.11.7, pytest-8.0.2, pluggy-1.4.0 -- /home/demo/Documents/summarization/summarization/bin/python
     cachedir: .pytest_cache
     rootdir: /home/demo/Documents/summarization
-    plugins: anyio-4.3.0, asyncio-0.23.5.post1
+    plugins: anyio-4.3.0
     asyncio: mode=Mode.STRICT
     collected 1 item
 

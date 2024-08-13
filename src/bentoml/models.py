@@ -373,6 +373,9 @@ def create(
         res.exit_cloudpickle_context(imported_modules)
 
 
+__new_sdk_members__ = ["BentoModel", "HuggingFaceModel"]
+
+
 __all__ = [
     "list",
     "get",
@@ -385,3 +388,15 @@ __all__ = [
     "ModelOptions",
     "create",
 ]
+
+
+def __dir__() -> t.List[str]:
+    return __all__ + __new_sdk_members__
+
+
+def __getattr__(name: str) -> t.Any:
+    if name in __new_sdk_members__:
+        import _bentoml_sdk.models
+
+        return getattr(_bentoml_sdk.models, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

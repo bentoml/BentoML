@@ -117,6 +117,12 @@ def build_start_command() -> click.Group:
         default=None,
         help="Maximum number of seconds to wait for graceful shutdown. After this timeout, the server will start terminating requests.",
     )
+    @click.option(
+        "--reload",
+        is_flag=True,
+        help="Reload Service when code changes detected",
+        default=False,
+    )
     @add_experimental_docstring
     def start_http_server(  # type: ignore (unused warning)
         bento: str,
@@ -139,6 +145,7 @@ def build_start_command() -> click.Group:
         ssl_ciphers: str | None,
         timeout_keep_alive: int | None,
         timeout_graceful_shutdown: int | None,
+        reload: bool = False,
     ) -> None:
         """
         Start a HTTP API server standalone. This will be used inside Yatai.
@@ -168,6 +175,8 @@ def build_start_command() -> click.Group:
 
         svc = load(bento, working_dir=working_dir)
         if isinstance(svc, Service):
+            if reload:
+                logger.warning("--reload does not work with legacy style services")
             # for <1.2 bentos
             if not service_name or service_name == svc.name:
                 from bentoml.start import start_http_server
@@ -234,6 +243,7 @@ def build_start_command() -> click.Group:
                 timeout_graceful_shutdown=timeout_graceful_shutdown,
                 dependency_map=runner_map_dict,
                 service_name=service_name,
+                reload=reload,
             )
 
     @cli.command(hidden=True)

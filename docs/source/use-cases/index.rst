@@ -45,11 +45,6 @@ This section provides a variety of example projects for you to learn how BentoML
 
         Deploy custom models with BentoML.
 
-    .. grid-item-card:: :doc:`/use-cases/custom-models/index`
-        :link: /use-cases/custom-models/index
-        :link-type: doc
-
-        Deploy custom models with BentoML.
 
 .. toctree::
     :maxdepth: 1

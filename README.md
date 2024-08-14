@@ -11,7 +11,7 @@
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202-green.svg)](https://github.com/bentoml/BentoML?tab=Apache-2.0-1-ov-file)
 [![Releases](https://img.shields.io/github/v/release/bentoml/bentoml.svg)](https://github.com/bentoml/bentoml/releases)
-[![CI](https://github.com/bentoml/bentoml/workflows/CI/badge.svg?branch=main)](https://github.com/bentoml/BentoML/actions/workflows/ci.yml?query=branch%3Amain)
+[![CI](https://github.com/bentoml/bentoml/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bentoml/BentoML/actions/workflows/ci.yml?query=branch%3Amain)
 [![Twitter](https://badgen.net/badge/icon/@bentomlai/1DA1F2?icon=twitter&label=Follow)](https://twitter.com/bentomlai)
 [![Community](https://badgen.net/badge/Join/Community/cyan?icon=slack)](https://l.bentoml.com/join-slack)
 

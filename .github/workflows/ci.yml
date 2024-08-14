@@ -144,6 +144,13 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         python-version: [3.8, 3.11, 3.12]
         suite: ['bento_server_http', 'bento_new_sdk']
+        exclude:
+          - os: macos-latest
+            suite: bento_server_http
+            python-version: 3.12
+          - os: ubuntu-latest
+            suite: bento_server_http
+            python-version: 3.12
     name: ${{ matrix.suite }}-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90

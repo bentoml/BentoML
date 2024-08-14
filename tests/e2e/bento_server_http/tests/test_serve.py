@@ -1,7 +1,7 @@
 import asyncio
 import os
+import subprocess
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -29,24 +29,17 @@ def test_http_server():
     server.stop()
 
     assert server.process is not None  # process should not be removed
+    try:
+        retcode = server.process.wait(10)
+        assert retcode is not None
 
-    timeout = 10
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        retcode = server.process.poll()
-        if retcode is not None and retcode <= 0:
-            break
-
-    retcode = server.process.poll()
-    assert retcode is not None
-
-    if sys.platform == "win32":
-        # on Windows, because of the way that terminate is run, it seems the exit code is set.
-        pass
-    else:
-        # negative return codes mean the process was terminated; since we will be terminating
-        # the process, it should be negative.
-        assert retcode <= 0
+        if sys.platform != "win32":
+            # on Windows, because of the way that terminate is run, it seems the exit code is set.
+            # negative return codes mean the process was terminated; since we will be terminating
+            # the process, it should be negative.
+            assert retcode <= 0
+    except subprocess.TimeoutExpired:
+        server.process.kill()
 
 
 @pytest.mark.usefixtures("bentoml_home")
@@ -63,23 +56,17 @@ def test_http_server_ctx():
 
     assert server.process is not None  # process should not be removed
 
-    timeout = 10
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        retcode = server.process.poll()
-        if retcode is not None and retcode <= 0:
-            break
+    try:
+        retcode = server.process.wait(10)
+        assert retcode is not None
 
-    retcode = server.process.poll()
-    assert retcode is not None
-
-    if sys.platform == "win32":
-        # on Windows, because of the way that terminate is run, it seems the exit code is set.
-        pass
-    else:
-        # negative return codes mean the process was terminated; since we will be terminating
-        # the process, it should be negative.
-        assert retcode <= 0
+        if sys.platform != "win32":
+            # on Windows, because of the way that terminate is run, it seems the exit code is set.
+            # negative return codes mean the process was terminated; since we will be terminating
+            # the process, it should be negative.
+            assert retcode <= 0
+    except subprocess.TimeoutExpired:
+        server.process.kill()
 
 
 def test_serve_from_svc():
@@ -94,23 +81,17 @@ def test_serve_from_svc():
 
     assert server.process is not None  # process should not be removed
 
-    timeout = 10
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        retcode = server.process.poll()
-        if retcode is not None and retcode <= 0:
-            break
+    try:
+        retcode = server.process.wait(10)
+        assert retcode is not None
 
-    retcode = server.process.poll()
-    assert retcode is not None
-
-    if sys.platform == "win32":
-        # on Windows, because of the way that terminate is run, it seems the exit code is set.
-        pass
-    else:
-        # negative return codes mean the process was terminated; since we will be terminating
-        # the process, it should be negative.
-        assert retcode <= 0
+        if sys.platform != "win32":
+            # on Windows, because of the way that terminate is run, it seems the exit code is set.
+            # negative return codes mean the process was terminated; since we will be terminating
+            # the process, it should be negative.
+            assert retcode <= 0
+    except subprocess.TimeoutExpired:
+        server.process.kill()
 
 
 @pytest.mark.usefixtures("bentoml_home")

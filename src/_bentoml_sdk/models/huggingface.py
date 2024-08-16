@@ -18,8 +18,20 @@ CONFIG_FILE = "config.json"
 
 @attrs.frozen
 class HuggingFaceModel(Model[str]):
-    repo_id: str
-    rev: str = "main"
+    """A model reference to a Hugging Face model.
+
+    Args:
+        model_id (Tag): The model tag. E.g. "google-bert/bert-base-uncased".
+            You can specify a rev or commit hash by appending it to the model name separated by a colon:
+                google-bert/bert-base-uncased:main
+                google-bert/bert-base-uncased:86b5e0934494bd15c9632b12f734a8a67f723594
+        endpoint (str, optional): The Hugging Face endpoint to use. Defaults to https://huggingface.co.
+
+    Returns:
+        str: The downloaded model path.
+    """
+
+    model_id: Tag = attrs.field(converter=Tag.from_taglike)
     endpoint: str | None = attrs.field(factory=lambda: os.getenv("HF_ENDPOINT"))
 
     @property
@@ -28,7 +40,10 @@ class HuggingFaceModel(Model[str]):
         from huggingface_hub import hf_hub_url
 
         url = hf_hub_url(
-            self.repo_id, CONFIG_FILE, revision=self.rev, endpoint=self.endpoint
+            self.model_id.name,
+            CONFIG_FILE,
+            revision=self.model_id.version,
+            endpoint=self.endpoint,
         )
         metadata = get_hf_file_metadata(url)
         return metadata.commit_hash
@@ -40,8 +55,8 @@ class HuggingFaceModel(Model[str]):
             base_path = base_path.getsyspath("/")
 
         snapshot_path = snapshot_download(
-            self.repo_id,
-            revision=self.rev,
+            self.model_id.name,
+            revision=self.model_id.version,
             endpoint=self.endpoint,
             cache_dir=os.getenv("BENTOML_HF_CACHE_DIR"),
         )
@@ -56,7 +71,7 @@ class HuggingFaceModel(Model[str]):
         return snapshot_path
 
     def to_info(self, alias: str | None = None) -> BentoModelInfo:
-        tag = Tag(self.repo_id, self.revision)
+        tag = Tag(self.model_id.name, self.revision)
         return BentoModelInfo(
             tag, registry="huggingface", alias=alias, endpoint=self.endpoint
         )

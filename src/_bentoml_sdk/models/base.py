@@ -57,6 +57,15 @@ class Model(abc.ABC, t.Generic[T]):
 
 @attrs.frozen
 class BentoModel(Model[StoredModel]):
+    """A model reference to a BentoML model.
+
+    Args:
+        tag (Tag): The model tag.
+
+    Returns:
+        Model: The bento model object.
+    """
+
     tag: Tag = attrs.field(converter=Tag.from_taglike)
 
     @property

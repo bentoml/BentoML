@@ -26,6 +26,7 @@ from bentoml.exceptions import BentoMLException
 
 from ..method import APIMethod
 from ..models import BentoModel
+from ..models import HuggingFaceModel
 from ..models import Model
 from .config import ServiceConfig as Config
 
@@ -359,6 +360,15 @@ class Service(t.Generic[T]):
             reload=reload,
             threaded=threaded,
         )
+
+    def on_load_bento(self, bento: Bento) -> None:
+        service_info = next(svc for svc in bento.info.services if svc.name == self.name)
+        for model, info in zip(self.models, service_info.models):
+            # Replace the model version with the one in the Bento
+            if not isinstance(model, HuggingFaceModel):
+                continue
+            model.model_id.version = info.tag.version
+        self.bento = bento
 
 
 @t.overload

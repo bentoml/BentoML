@@ -166,7 +166,7 @@ def construct_containerfile(
                 model_ref = BentoModel(model.tag)
                 model_ref.resolve(bento_model_dir)
             else:
-                model_ref = HuggingFaceModel(model.tag.name, model.tag.version)
+                model_ref = HuggingFaceModel(model.tag)
                 model_ref.resolve(hf_model_dir)
 
         # NOTE: dockerfile_template is already included in the

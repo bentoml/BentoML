@@ -4,6 +4,7 @@ import abc
 import typing as t
 
 import attrs
+from fs.base import FS
 from simple_di import Provide
 from simple_di import inject
 
@@ -13,7 +14,9 @@ from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.models import Model as StoredModel
 from bentoml._internal.models import ModelStore
+from bentoml._internal.models.model import copy_model
 from bentoml._internal.tag import Tag
+from bentoml._internal.types import PathType
 from bentoml.exceptions import NotFound
 
 if t.TYPE_CHECKING:
@@ -35,7 +38,7 @@ class Model(abc.ABC, t.Generic[T]):
         """Return the model info object."""
 
     @abc.abstractmethod
-    def resolve(self) -> T:
+    def resolve(self, base_path: t.Union[PathType, FS, None] = None) -> T:
         """Get the actual object of the model."""
 
     @t.overload
@@ -103,9 +106,21 @@ class BentoModel(Model[StoredModel]):
     @inject
     def resolve(
         self,
+        base_path: t.Union[PathType, FS, None] = None,
+        global_model_store: ModelStore = Provide[BentoMLContainer.model_store],
         cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ) -> StoredModel:
         stored = self.stored
+        if base_path is not None:
+            model_store = ModelStore(base_path)
+        else:
+            model_store = global_model_store
         if stored is not None:
+            if base_path is not None:
+                copy_model(
+                    stored.tag,
+                    src_model_store=global_model_store,
+                    target_model_store=model_store,
+                )
             return stored
-        return cloud_client.pull_model(self.tag)
+        return cloud_client.pull_model(self.tag, model_store=model_store)

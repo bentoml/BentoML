@@ -269,7 +269,7 @@ def save_model(
         metadata=metadata,
         signatures=signatures,
     ) as bento_model:
-        model.save(bento_model.path, include_optimizer=include_optimizer, **kwargs)
+        model.save(bento_model.path, zipped=False, include_optimizer=include_optimizer, **kwargs)
 
         return bento_model
 

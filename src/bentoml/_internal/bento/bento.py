@@ -384,16 +384,10 @@ class Bento(StoreItem):
 
         # copy the models to fs
         models_dir = self._fs.makedir("models", recreate=True)
-        model_store = ModelStore(models_dir)
-        global_model_store = BentoMLContainer.model_store.get()
         for model in self.info.all_models:
             if model.registry != "bentoml":
                 continue
-            copy_model(
-                BentoModel(model.tag).resolve().tag,
-                src_model_store=global_model_store,
-                target_model_store=model_store,
-            )
+            BentoModel(model.tag).resolve(models_dir)
         try:
             return super().export(
                 path,

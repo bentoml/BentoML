@@ -50,7 +50,9 @@ class Model(abc.ABC, t.Generic[T]):
     def __get__(self, instance: t.Any, owner: type) -> T | t.Self:
         if instance is None:
             return self
-        return self.resolve()
+        if getattr(self, "__resolved", None) is None:
+            self.__resolved = self.resolve()
+        return self.__resolved
 
 
 @attrs.frozen

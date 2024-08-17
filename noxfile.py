@@ -27,7 +27,7 @@ FRAMEWORK_DEPENDENCIES = {
         "jaxlib; platform_system!='Windows'",
         "chex; platform_system!='Windows'",
     ],
-    "keras": ["keras"],
+    "keras": ["keras>=3.4"],
     "lightgbm": ["lightgbm"],
     "onnx": ["onnx", "onnxruntime", "skl2onnx"],
     "picklable_model": [],

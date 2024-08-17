@@ -269,7 +269,15 @@ def save_model(
         metadata=metadata,
         signatures=signatures,
     ) as bento_model:
-        model.save(bento_model.path, include_optimizer=include_optimizer, **kwargs)
+        if keras.__version__ >= "3.4.0":
+            model.save(
+                bento_model.path,
+                zipped=False,
+                include_optimizer=include_optimizer,
+                **kwargs,
+            )
+        else:
+            model.save(bento_model.path, include_optimizer=include_optimizer, **kwargs)
 
         return bento_model
 

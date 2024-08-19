@@ -347,8 +347,10 @@ def push(
     cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):  # type: ignore (not accessed)
     """Push Model to a remote model store."""
-    model_obj = model_store.get(model_tag)
-    if not model_obj:
+    from _bentoml_sdk.models import BentoModel
+
+    model_obj = BentoModel(model_tag)
+    if model_obj.stored is None:
         raise click.ClickException(f"Model {model_tag} not found in local store")
     cloud_client.push_model(
         model_obj,

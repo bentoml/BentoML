@@ -11,15 +11,19 @@ from simple_di import inject
 from bentoml._internal.bento.bento import BentoModelInfo
 from bentoml._internal.cloud import BentoCloudClient
 from bentoml._internal.cloud.client import RestApiClient
+from bentoml._internal.cloud.schemas.modelschemas import LabelItemSchema
+from bentoml._internal.cloud.schemas.modelschemas import ModelManifestSchema
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.models import Model as StoredModel
 from bentoml._internal.models import ModelStore
 from bentoml._internal.models.model import copy_model
 from bentoml._internal.tag import Tag
 from bentoml._internal.types import PathType
+from bentoml._internal.utils import calc_dir_size
 from bentoml.exceptions import NotFound
 
 if t.TYPE_CHECKING:
+    from bentoml._internal.cloud.schemas.schemasv1 import CreateModelSchema
     from bentoml._internal.cloud.schemas.schemasv1 import ModelSchema
 
 T = t.TypeVar("T")
@@ -27,6 +31,8 @@ T = t.TypeVar("T")
 
 class Model(abc.ABC, t.Generic[T]):
     """A model reference to a artifact in various registries."""
+
+    tag: Tag
 
     @property
     @abc.abstractmethod
@@ -36,6 +42,10 @@ class Model(abc.ABC, t.Generic[T]):
     @abc.abstractmethod
     def to_info(self, alias: str | None = None) -> BentoModelInfo:
         """Return the model info object."""
+
+    @abc.abstractmethod
+    def to_create_schema(self) -> CreateModelSchema:
+        """Return the create model schema object."""
 
     @abc.abstractmethod
     def resolve(self, base_path: t.Union[PathType, FS, None] = None) -> T:
@@ -71,7 +81,7 @@ class BentoModel(Model[StoredModel]):
     @property
     def revision(self) -> str:
         if (stored := self.stored) is not None:
-            return stored.tag.version
+            return stored.tag.version or "latest"
         model = self._get_remote_model()
         if model is None:
             raise NotFound(f"Model {self.tag} not found either locally or remotely.")
@@ -132,4 +142,31 @@ class BentoModel(Model[StoredModel]):
                     target_model_store=model_store,
                 )
             return stored
-        return cloud_client.pull_model(self.tag, model_store=model_store)
+        model = cloud_client.pull_model(self.tag, model_store=model_store)
+        assert model is not None, "non-bentoml model"
+        return model
+
+    def to_create_schema(self) -> CreateModelSchema:
+        """Return the create model schema object."""
+        stored = self.stored
+        if stored is None:
+            raise ValueError("Not allowed to create a model without local store")
+        info = stored.info
+        labels = [
+            LabelItemSchema(key=key, value=value) for key, value in info.labels.items()
+        ]
+        return CreateModelSchema(
+            description="",
+            version=stored.tag.version or "",
+            build_at=info.creation_time,
+            labels=labels,
+            manifest=ModelManifestSchema(
+                module=info.module,
+                metadata=info.metadata,
+                context=info.context.to_dict(),
+                options=info.options.to_dict(),
+                api_version=info.api_version,
+                bentoml_version=info.context.bentoml_version,
+                size_bytes=calc_dir_size(stored.path),
+            ),
+        )

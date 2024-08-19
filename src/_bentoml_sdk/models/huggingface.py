@@ -8,6 +8,9 @@ import attrs
 from fs.base import FS
 
 from bentoml._internal.bento.bento import BentoModelInfo
+from bentoml._internal.cloud.schemas.modelschemas import ModelManifestSchema
+from bentoml._internal.cloud.schemas.schemasv1 import CreateModelSchema
+from bentoml._internal.models.model import ModelContext
 from bentoml._internal.tag import Tag
 from bentoml._internal.types import PathType
 
@@ -31,7 +34,7 @@ class HuggingFaceModel(Model[str]):
         str: The downloaded model path.
     """
 
-    model_id: Tag = attrs.field(converter=Tag.from_taglike)
+    tag: Tag = attrs.field(converter=Tag.from_taglike, alias="model_id")
     endpoint: str | None = attrs.field(factory=lambda: os.getenv("HF_ENDPOINT"))
 
     @property
@@ -40,9 +43,9 @@ class HuggingFaceModel(Model[str]):
         from huggingface_hub import hf_hub_url
 
         url = hf_hub_url(
-            self.model_id.name,
+            self.tag.name,
             CONFIG_FILE,
-            revision=self.model_id.version,
+            revision=self.tag.version,
             endpoint=self.endpoint,
         )
         metadata = get_hf_file_metadata(url)
@@ -55,8 +58,8 @@ class HuggingFaceModel(Model[str]):
             base_path = base_path.getsyspath("/")
 
         snapshot_path = snapshot_download(
-            self.model_id.name,
-            revision=self.model_id.version,
+            self.tag.name,
+            revision=self.tag.version,
             endpoint=self.endpoint,
             cache_dir=os.getenv("BENTOML_HF_CACHE_DIR"),
         )
@@ -71,7 +74,26 @@ class HuggingFaceModel(Model[str]):
         return snapshot_path
 
     def to_info(self, alias: str | None = None) -> BentoModelInfo:
-        tag = Tag(self.model_id.name, self.revision)
+        tag = Tag(self.tag.name, self.revision)
         return BentoModelInfo(
             tag, registry="huggingface", alias=alias, endpoint=self.endpoint
+        )
+
+    def to_create_schema(self) -> CreateModelSchema:
+        context = ModelContext(framework_name="huggingface", framework_versions={})
+        metadata = {"registry": "huggingface"}
+        if self.endpoint is not None:
+            metadata["endpoint"] = self.endpoint
+        return CreateModelSchema(
+            description="",
+            version=self.revision,
+            manifest=ModelManifestSchema(
+                module="",
+                metadata=metadata,
+                api_version="v1",
+                bentoml_version="",
+                size_bytes=0,
+                context=context.to_dict(),
+                options={},
+            ),
         )

@@ -160,7 +160,7 @@ def construct_containerfile(
 
         # copy models from model store
         bento_model_dir = temp_fs.makedir("models", recreate=True)
-        hf_model_dir = temp_fs.makedir("hf_models", recreate=True)
+        hf_model_dir = temp_fs.makedir("hf-models", recreate=True)
         for model in options.all_models:
             if model.registry == "bentoml":
                 model_ref = BentoModel(model.tag)

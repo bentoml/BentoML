@@ -79,20 +79,27 @@ class HuggingFaceModel(Model[str]):
             tag, registry="huggingface", alias=alias, endpoint=self.endpoint
         )
 
+    def _get_model_size(self, repo_id: str, revision: str) -> int:
+        from huggingface_hub import model_info
+
+        info = model_info(repo_id, revision=revision, files_metadata=True)
+        return sum((file.size or 0) for file in (info.siblings or []))
+
     def to_create_schema(self) -> CreateModelSchema:
         context = ModelContext(framework_name="huggingface", framework_versions={})
-        metadata = {"registry": "huggingface"}
-        if self.endpoint is not None:
-            metadata["endpoint"] = self.endpoint
+        endpoint = self.endpoint or "https://huggingface.co"
+        revision = self.revision
+        url = f"{endpoint}/{self.tag.name}/tree/{revision}"
+        metadata = {"registry": "huggingface", "endpoint": endpoint, "url": url}
         return CreateModelSchema(
             description="",
-            version=self.revision,
+            version=revision,
             manifest=ModelManifestSchema(
                 module="",
                 metadata=metadata,
                 api_version="v1",
-                bentoml_version="",
-                size_bytes=0,
+                bentoml_version=context.bentoml_version,
+                size_bytes=self._get_model_size(self.tag.name, revision),
                 context=context.to_dict(),
                 options={},
             ),

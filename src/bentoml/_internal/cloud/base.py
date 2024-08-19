@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import typing as t
-from abc import ABC
-from abc import abstractmethod
 from contextlib import contextmanager
 
 import attrs
@@ -18,10 +16,6 @@ from rich.progress import TextColumn
 from rich.progress import TimeElapsedColumn
 from rich.progress import TimeRemainingColumn
 from rich.progress import TransferSpeedColumn
-
-from ..bento import Bento
-from ..models import Model
-from ..tag import Tag
 
 if t.TYPE_CHECKING:
     from rich.console import Console
@@ -177,45 +171,7 @@ class Spinner:
         self.stop()
 
 
-class CloudClient(ABC):
+class CloudClient:
     # Moved atrributes to __init__ because otherwise it will keep all the log when running SDK.
     def __init__(self):
         self.spinner = Spinner()
-
-    @abstractmethod
-    def push_model(
-        self,
-        model: Model,
-        *,
-        force: bool = False,
-        threads: int = 10,
-    ):
-        pass
-
-    @abstractmethod
-    def push_bento(
-        self,
-        bento: Bento,
-        *,
-        force: bool = False,
-        threads: int = 10,
-    ):
-        pass
-
-    @abstractmethod
-    def pull_model(
-        self,
-        tag: str | Tag,
-        *,
-        force: bool = False,
-    ) -> Model:
-        pass
-
-    @abstractmethod
-    def pull_bento(
-        self,
-        tag: str | Tag,
-        *,
-        force: bool = False,
-    ) -> Bento:
-        pass

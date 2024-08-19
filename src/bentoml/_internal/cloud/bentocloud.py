@@ -18,10 +18,9 @@ from ...exceptions import NotFound
 from ..bento import Bento
 from ..bento import BentoStore
 from ..configuration.containers import BentoMLContainer
-from ..models import Model
+from ..models import Model as StoredModel
 from ..models import ModelStore
 from ..tag import Tag
-from ..utils import calc_dir_size
 from .base import FILE_CHUNK_SIZE
 from .base import CallbackIOWrapper
 from .base import CloudClient
@@ -37,11 +36,9 @@ from .schemas.schemasv1 import CompletePartSchema
 from .schemas.schemasv1 import CreateBentoRepositorySchema
 from .schemas.schemasv1 import CreateBentoSchema
 from .schemas.schemasv1 import CreateModelRepositorySchema
-from .schemas.schemasv1 import CreateModelSchema
 from .schemas.schemasv1 import FinishUploadBentoSchema
 from .schemas.schemasv1 import FinishUploadModelSchema
 from .schemas.schemasv1 import LabelItemSchema
-from .schemas.schemasv1 import ModelManifestSchema
 from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
 from .schemas.schemasv1 import TransmissionStrategy
 from .schemas.schemasv1 import UpdateBentoSchema
@@ -50,6 +47,8 @@ if t.TYPE_CHECKING:
     from concurrent.futures import Future
 
     from rich.progress import TaskID
+
+    from _bentoml_sdk.models import Model
 
     from .client import RestApiClient
     from .schemas.schemasv1 import BentoWithRepositoryListSchema
@@ -87,19 +86,24 @@ class BentoCloudClient(CloudClient):
         bentoml_tmp_dir: str = Provide[BentoMLContainer.tmp_bento_store_dir],
     ):
         from _bentoml_sdk.models import BentoModel
+        from _bentoml_sdk.models import HuggingFaceModel
 
         name = bento.tag.name
         version = bento.tag.version
         if version is None:
             raise BentoMLException(f"Bento {bento.tag} version cannot be None")
         info = bento.info
-        bento_models = [
-            BentoModel(m.tag) for m in info.all_models if m.registry == "bentoml"
-        ]
-        models_to_push = [m.stored for m in bento_models if m.stored is not None]
+        models_to_push: list[Model[t.Any]] = []
+        for model in info.all_models:
+            if model.registry == "huggingface":
+                models_to_push.append(HuggingFaceModel(model.tag, model.endpoint))
+            else:
+                model = BentoModel(model.tag)
+                if model.stored is not None:
+                    models_to_push.append(model)
         with ThreadPoolExecutor(max_workers=max(len(models_to_push), 1)) as executor:
 
-            def push_model(model: Model) -> None:
+            def push_model(model: BentoModel) -> None:
                 model_upload_task_id = self.spinner.transmission_progress.add_task(
                     f'Pushing model "{model.tag}"', start=False, visible=False
                 )
@@ -532,7 +536,7 @@ class BentoCloudClient(CloudClient):
 
     def push_model(
         self,
-        model: Model,
+        model: Model[t.Any],
         *,
         force: bool = False,
         threads: int = 10,
@@ -546,7 +550,7 @@ class BentoCloudClient(CloudClient):
     @inject
     def _do_push_model(
         self,
-        model: Model,
+        model: Model[t.Any],
         upload_task_id: TaskID,
         *,
         force: bool = False,
@@ -554,11 +558,13 @@ class BentoCloudClient(CloudClient):
         rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
         bentoml_tmp_dir: str = Provide[BentoMLContainer.tmp_bento_store_dir],
     ):
+        from _bentoml_sdk.models import BentoModel
+
         name = model.tag.name
         version = model.tag.version
         if version is None:
             raise BentoMLException(f'Model "{model.tag}" version cannot be None')
-        info = model.info
+
         with self.spinner.spin(text=f'Fetching model repository "{name}"'):
             model_repository = rest_client.v1.get_model_repository(
                 model_repository_name=name
@@ -586,32 +592,17 @@ class BentoCloudClient(CloudClient):
             )
             return
         if not remote_model:
-            labels: list[LabelItemSchema] = [
-                LabelItemSchema(key=key, value=value)
-                for key, value in info.labels.items()
-            ]
             with self.spinner.spin(
                 text=f'Registering model "{model.tag}" with remote model store..'
             ):
                 remote_model = rest_client.v1.create_model(
                     model_repository_name=model_repository.name,
-                    req=CreateModelSchema(
-                        description="",
-                        version=version,
-                        build_at=info.creation_time,
-                        manifest=ModelManifestSchema(
-                            module=info.module,
-                            metadata=info.metadata,
-                            context=info.context.to_dict(),
-                            options=info.options.to_dict(),
-                            api_version=info.api_version,
-                            bentoml_version=info.context.bentoml_version,
-                            size_bytes=calc_dir_size(model.path),
-                        ),
-                        labels=labels,
-                    ),
+                    req=model.to_create_schema(),
                 )
-
+        if not isinstance(model, BentoModel):
+            self.spinner.log(f"[bold blue]Skip uploading non-bentoml model {model.tag}")
+            return
+        assert model.stored is not None
         transmission_strategy: TransmissionStrategy = "proxy"
         presigned_upload_url: str | None = None
 
@@ -638,7 +629,7 @@ class BentoCloudClient(CloudClient):
                 text=f'Creating tar archive for model "{model.tag}"..'
             ):
                 with tarfile.open(fileobj=tar_io, mode="w:") as tar:
-                    tar.add(model.path, arcname="./")
+                    tar.add(model.stored.path, arcname="./")
             with self.spinner.spin(text=f'Start uploading model "{model.tag}"..'):
                 rest_client.v1.start_upload_model(
                     model_repository_name=model_repository.name, version=version
@@ -666,8 +657,7 @@ class BentoCloudClient(CloudClient):
                 self.spinner.log(f'[bold green]Successfully pushed model "{model.tag}"')
                 return
             finish_req = FinishUploadModelSchema(
-                status=ModelUploadStatus.SUCCESS.value,
-                reason="",
+                status=ModelUploadStatus.SUCCESS.value, reason=""
             )
             try:
                 if presigned_upload_url is not None:
@@ -822,7 +812,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
         query: str | None = None,
-    ) -> Model:
+    ) -> StoredModel | None:
         with self.spinner:
             download_task_id = self.spinner.transmission_progress.add_task(
                 f'Pulling model "{tag}"', start=False, visible=False
@@ -845,7 +835,7 @@ class BentoCloudClient(CloudClient):
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
         rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
         query: str | None = None,
-    ) -> Model:
+    ) -> StoredModel | None:
         _tag = Tag.from_taglike(tag)
         try:
             model = model_store.get(_tag)
@@ -895,7 +885,9 @@ class BentoCloudClient(CloudClient):
 
         if not remote_model:
             raise BentoMLException(f'Model "{_tag}" not found on remote model store')
-
+        if remote_model.manifest.metadata.get("registry") == "huggingface":
+            self.spinner.log(f"[bold blue]No content to download for model {_tag}")
+            return
         # Download model files from remote model store
         transmission_strategy: TransmissionStrategy = "proxy"
         presigned_download_url: str | None = None

@@ -16,7 +16,9 @@ def patch_safetensor():
 
     import safetensors.torch
 
-    logger.info("Patching safetensors.torch.safe_open to preheat model loading in parallel")
+    logger.info(
+        "Patching safetensors.torch.safe_open to preheat model loading in parallel"
+    )
 
     # Save the original safe_open class
     OriginalSafeOpen = safetensors.torch.safe_open
@@ -74,7 +76,7 @@ def patch_safetensor():
                     [
                         "dd",
                         f"if={file_path}",
-                        f"of=/dev/null",
+                        "of=/dev/null",
                         f"bs={block_size}",
                         f"skip={start_byte // block_size}",
                         f"count={(end_byte - start_byte) // block_size}",
@@ -93,8 +95,7 @@ def patch_safetensor():
 
 
 def get_model_preheat():
-    """Get the model preheat flag from the environment variable BENTOML_MODEL_PREHEAT.
-    """
+    """Get the model preheat flag from the environment variable BENTOML_MODEL_PREHEAT."""
     env_var = os.getenv("BENTOML_MODEL_PREHEAT", "0")
     return env_var not in ("0", "false", "False", "")
 

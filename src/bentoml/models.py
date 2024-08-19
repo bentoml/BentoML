@@ -224,7 +224,7 @@ def pull(
     *,
     force: bool = False,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
-) -> Model:
+) -> Model | None:
     return _cloud_client.pull_model(tag, force=force)
 
 

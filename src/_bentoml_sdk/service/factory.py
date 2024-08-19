@@ -367,7 +367,7 @@ class Service(t.Generic[T]):
             # Replace the model version with the one in the Bento
             if not isinstance(model, HuggingFaceModel):
                 continue
-            model.model_id.version = info.tag.version
+            model.tag.version = info.tag.version
         self.bento = bento
 
 

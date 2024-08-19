@@ -288,20 +288,9 @@ def get_bento_info(
     if project_path:
         from bentoml.bentos import build_bentofile
 
+        bento_obj = build_bentofile(build_ctx=project_path, _bento_store=_bento_store)
         if cli:
-            with Spinner() as spinner:
-                with spinner.spin(
-                    text=f"🍱 Building bento from project: {project_path}"
-                ):
-                    bento_obj = build_bentofile(
-                        build_ctx=project_path, _bento_store=_bento_store
-                    )
-                    spinner.log(f'🍱 Built bento "{bento_obj.info.tag}"')
-        else:
-            bento_obj = build_bentofile(
-                build_ctx=project_path, _bento_store=_bento_store
-            )
-
+            rich.print(f"🍱 Built bento [green]{bento_obj.info.tag}[/]")
         _cloud_client.push_bento(bento=bento_obj)
         return bento_obj.info
     elif bento:
@@ -326,10 +315,9 @@ def get_bento_info(
         if bento_schema is not None:
             assert bento_schema.manifest is not None
             if cli:
-                with _cloud_client.spinner as spinner:
-                    spinner.log(
-                        f"[bold blue]Using bento {bento.name}:{bento.version} from bentocloud to deploy"
-                    )
+                rich.print(
+                    f"[bold blue]Using bento [green]{bento.name}:{bento.version}[/] from bentocloud to deploy"
+                )
             return BentoInfo(
                 tag=Tag(name=bento.name, version=bento.version),
                 entry_service=bento_schema.manifest.entry_service,

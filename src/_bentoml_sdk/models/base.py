@@ -13,6 +13,7 @@ from bentoml._internal.cloud import BentoCloudClient
 from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.cloud.schemas.modelschemas import LabelItemSchema
 from bentoml._internal.cloud.schemas.modelschemas import ModelManifestSchema
+from bentoml._internal.cloud.schemas.schemasv1 import CreateModelSchema
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.models import Model as StoredModel
 from bentoml._internal.models import ModelStore
@@ -23,7 +24,6 @@ from bentoml._internal.utils import calc_dir_size
 from bentoml.exceptions import NotFound
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.cloud.schemas.schemasv1 import CreateModelSchema
     from bentoml._internal.cloud.schemas.schemasv1 import ModelSchema
 
 T = t.TypeVar("T")

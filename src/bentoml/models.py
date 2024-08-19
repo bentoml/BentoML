@@ -212,8 +212,10 @@ def push(
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
-    model_obj = _model_store.get(tag)
-    if not model_obj:
+    from _bentoml_sdk.models import BentoModel
+
+    model_obj = BentoModel(tag)
+    if model_obj.stored is None:
         raise BentoMLException(f"Model {tag} not found in local store")
     _cloud_client.push_model(model_obj, force=force)
 

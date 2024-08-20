@@ -19,6 +19,9 @@ from ._internal.utils.analytics import track
 from .exceptions import BentoMLException
 
 if TYPE_CHECKING:
+    from _bentoml_sdk.models import BentoModel
+    from _bentoml_sdk.models import HuggingFaceModel
+
     from ._internal.cloud import BentoCloudClient
     from ._internal.models import ModelStore
     from ._internal.models.model import ModelSignaturesType
@@ -389,6 +392,8 @@ __all__ = [
     "ModelContext",
     "ModelOptions",
     "create",
+    "BentoModel",
+    "HuggingFaceModel",
 ]
 
 

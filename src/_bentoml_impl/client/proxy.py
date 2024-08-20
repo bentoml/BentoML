@@ -56,11 +56,11 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
         super().__init__()
 
     @property
-    def to_async(self) -> t.Any:
+    def to_async(self) -> AsyncHTTPClient:
         return self._async
 
     @property
-    def to_sync(self) -> t.Any:
+    def to_sync(self) -> SyncHTTPClient:
         return self._sync
 
     @property

@@ -176,7 +176,8 @@ def import_service(
             svc = root_service
         else:
             svc = root_service.find_dependent(depend_path)
-        svc.on_load_bento(bento)
+        if bento is not None:
+            svc.on_load_bento(bento)
         return svc
 
     except (ImportError, AttributeError, KeyError, AssertionError) as e:

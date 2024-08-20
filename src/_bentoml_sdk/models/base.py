@@ -60,9 +60,9 @@ class Model(abc.ABC, t.Generic[T]):
     def __get__(self, instance: t.Any, owner: type) -> T | t.Self:
         if instance is None:
             return self
-        if getattr(self, "__resolved", None) is None:
-            self.__resolved = self.resolve()
-        return self.__resolved
+        if getattr(self, "_Model__resolved", None) is None:
+            object.__setattr__(self, "_Model__resolved", self.resolve())
+        return self.__resolved  # type: ignore[attr-defined]
 
 
 @attrs.frozen

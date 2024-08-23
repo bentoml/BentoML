@@ -251,9 +251,7 @@ class IOMixin:
                 ins: IODescriptor = t.cast(IODescriptor, cls(obj))
             else:
                 ins = t.cast(IODescriptor, obj)
-            if isinstance(serde, JSONSerde) and isinstance(
-                rendered := ins.model_dump(), (str, bytes)
-            ):
+            if isinstance(rendered := ins.model_dump(), (str, bytes)):
                 return Response(content=rendered, media_type=cls.mime_type())
             else:
                 payload = serde.serialize_model(ins)

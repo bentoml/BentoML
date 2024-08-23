@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import math
 import tarfile
 import tempfile
-import threading
 import typing as t
 import warnings
 from concurrent.futures import ThreadPoolExecutor
@@ -84,6 +84,7 @@ class BentoCloudClient(CloudClient):
         threads: int = 10,
         rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
+        bentoml_tmp_dir: str = Provide[BentoMLContainer.tmp_bento_store_dir],
     ):
         name = bento.tag.name
         version = bento.tag.version
@@ -213,10 +214,11 @@ class BentoCloudClient(CloudClient):
                     presigned_upload_url = remote_bento.presigned_upload_url
 
         def io_cb(x: int):
-            with io_mutex:
-                self.spinner.transmission_progress.update(upload_task_id, advance=x)
+            self.spinner.transmission_progress.update(upload_task_id, advance=x)
 
-        with CallbackIOWrapper(read_cb=io_cb) as tar_io:
+        with NamedTemporaryFile(
+            prefix="bentoml-bento-", suffix=".tar", dir=bentoml_tmp_dir
+        ) as tar_io:
             with self.spinner.spin(
                 text=f'Creating tar archive for bento "{bento.tag}"..'
             ):
@@ -232,28 +234,25 @@ class BentoCloudClient(CloudClient):
                         return tar_info
 
                     tar.add(bento.path, arcname="./", filter=filter_)
-            tar_io.seek(0, 0)
 
             with self.spinner.spin(text=f'Start uploading bento "{bento.tag}"..'):
                 rest_client.v1.start_upload_bento(
                     bento_repository_name=bento_repository.name, version=version
                 )
-
-            file_size = tar_io.getbuffer().nbytes
+            file_size = tar_io.tell()
+            io_with_cb = CallbackIOWrapper(tar_io, read_cb=io_cb)
 
             self.spinner.transmission_progress.update(
                 upload_task_id, completed=0, total=file_size, visible=True
             )
             self.spinner.transmission_progress.start_task(upload_task_id)
 
-            io_mutex = threading.Lock()
-
             if transmission_strategy == "proxy":
                 try:
                     rest_client.v1.upload_bento(
                         bento_repository_name=bento_repository.name,
                         version=version,
-                        data=tar_io,
+                        data=io_with_cb,
                     )
                 except Exception as e:  # pylint: disable=broad-except
                     self.spinner.log(f'[bold red]Failed to upload bento "{bento.tag}"')
@@ -261,13 +260,12 @@ class BentoCloudClient(CloudClient):
                 self.spinner.log(f'[bold green]Successfully pushed bento "{bento.tag}"')
                 return
             finish_req = FinishUploadBentoSchema(
-                status=BentoUploadStatus.SUCCESS.value,
-                reason="",
+                status=BentoUploadStatus.SUCCESS.value, reason=""
             )
             try:
                 if presigned_upload_url is not None:
                     resp = httpx.put(
-                        presigned_upload_url, content=tar_io, timeout=36000
+                        presigned_upload_url, content=io_with_cb, timeout=36000
                     )
                     if resp.status_code != 200:
                         finish_req = FinishUploadBentoSchema(
@@ -289,7 +287,8 @@ class BentoCloudClient(CloudClient):
 
                         upload_id: str = remote_bento.upload_id
 
-                    chunks_count = file_size // FILE_CHUNK_SIZE + 1
+                    chunks_count = math.ceil(file_size / FILE_CHUNK_SIZE)
+                    tar_io.file.close()
 
                     def chunk_upload(
                         upload_id: str, chunk_number: int
@@ -307,32 +306,32 @@ class BentoCloudClient(CloudClient):
                                     ),
                                 )
                             )
-                        with self.spinner.spin(
-                            text=f'({chunk_number}/{chunks_count}) Uploading chunk of Bento "{bento.tag}"...'
+                        with (
+                            self.spinner.spin(
+                                text=f'({chunk_number}/{chunks_count}) Uploading chunk of Bento "{bento.tag}"...'
+                            ),
+                            open(tar_io.name, "rb") as f,
                         ):
-                            chunk = (
-                                tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE : chunk_number
-                                    * FILE_CHUNK_SIZE
-                                ]
+                            chunk_io = CallbackIOWrapper(
+                                f,
+                                read_cb=io_cb,
+                                start=(chunk_number - 1) * FILE_CHUNK_SIZE,
+                                end=chunk_number * FILE_CHUNK_SIZE
                                 if chunk_number < chunks_count
-                                else tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE :
-                                ]
+                                else None,
                             )
 
-                            with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
-                                resp = httpx.put(
-                                    remote_bento.presigned_upload_url,
-                                    content=chunk_io,
-                                    timeout=36000,
+                            resp = httpx.put(
+                                remote_bento.presigned_upload_url,
+                                content=chunk_io,
+                                timeout=36000,
+                            )
+                            if resp.status_code != 200:
+                                return FinishUploadBentoSchema(
+                                    status=BentoUploadStatus.FAILED.value,
+                                    reason=resp.text,
                                 )
-                                if resp.status_code != 200:
-                                    return FinishUploadBentoSchema(
-                                        status=BentoUploadStatus.FAILED.value,
-                                        reason=resp.text,
-                                    )
-                                return resp.headers["ETag"], chunk_number
+                            return resp.headers["ETag"], chunk_number
 
                     futures_: list[
                         Future[FinishUploadBentoSchema | tuple[str, int]]
@@ -588,6 +587,7 @@ class BentoCloudClient(CloudClient):
         force: bool = False,
         threads: int = 10,
         rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
+        bentoml_tmp_dir: str = Provide[BentoMLContainer.tmp_bento_store_dir],
     ):
         name = model.tag.name
         version = model.tag.version
@@ -663,24 +663,22 @@ class BentoCloudClient(CloudClient):
                     transmission_strategy = "presigned_url"
                     presigned_upload_url = remote_model.presigned_upload_url
 
-        io_mutex = threading.Lock()
-
         def io_cb(x: int):
-            with io_mutex:
-                self.spinner.transmission_progress.update(upload_task_id, advance=x)
+            self.spinner.transmission_progress.update(upload_task_id, advance=x)
 
-        with CallbackIOWrapper(read_cb=io_cb) as tar_io:
+        with NamedTemporaryFile(
+            prefix="bentoml-model-", suffix=".tar", dir=bentoml_tmp_dir
+        ) as tar_io:
             with self.spinner.spin(
                 text=f'Creating tar archive for model "{model.tag}"..'
             ):
                 with tarfile.open(fileobj=tar_io, mode="w:") as tar:
                     tar.add(model.path, arcname="./")
-            tar_io.seek(0, 0)
             with self.spinner.spin(text=f'Start uploading model "{model.tag}"..'):
                 rest_client.v1.start_upload_model(
                     model_repository_name=model_repository.name, version=version
                 )
-            file_size = tar_io.getbuffer().nbytes
+            file_size = tar_io.tell()
             self.spinner.transmission_progress.update(
                 upload_task_id,
                 description=f'Uploading model "{model.tag}"',
@@ -688,13 +686,14 @@ class BentoCloudClient(CloudClient):
                 visible=True,
             )
             self.spinner.transmission_progress.start_task(upload_task_id)
+            io_with_cb = CallbackIOWrapper(tar_io, read_cb=io_cb)
 
             if transmission_strategy == "proxy":
                 try:
                     rest_client.v1.upload_model(
                         model_repository_name=model_repository.name,
                         version=version,
-                        data=tar_io,
+                        data=io_with_cb,
                     )
                 except Exception as e:  # pylint: disable=broad-except
                     self.spinner.log(f'[bold red]Failed to upload model "{model.tag}"')
@@ -708,7 +707,7 @@ class BentoCloudClient(CloudClient):
             try:
                 if presigned_upload_url is not None:
                     resp = httpx.put(
-                        presigned_upload_url, content=tar_io, timeout=36000
+                        presigned_upload_url, content=io_with_cb, timeout=36000
                     )
                     if resp.status_code != 200:
                         finish_req = FinishUploadModelSchema(
@@ -730,7 +729,8 @@ class BentoCloudClient(CloudClient):
 
                         upload_id: str = remote_model.upload_id
 
-                    chunks_count = file_size // FILE_CHUNK_SIZE + 1
+                    chunks_count = math.ceil(file_size / FILE_CHUNK_SIZE)
+                    tar_io.file.close()
 
                     def chunk_upload(
                         upload_id: str, chunk_number: int
@@ -749,32 +749,32 @@ class BentoCloudClient(CloudClient):
                                 )
                             )
 
-                        with self.spinner.spin(
-                            text=f'({chunk_number}/{chunks_count}) Uploading chunk of model "{model.tag}"...'
+                        with (
+                            self.spinner.spin(
+                                text=f'({chunk_number}/{chunks_count}) Uploading chunk of model "{model.tag}"...'
+                            ),
+                            open(tar_io.name, "rb") as f,
                         ):
-                            chunk = (
-                                tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE : chunk_number
-                                    * FILE_CHUNK_SIZE
-                                ]
+                            chunk_io = CallbackIOWrapper(
+                                f,
+                                read_cb=io_cb,
+                                start=(chunk_number - 1) * FILE_CHUNK_SIZE,
+                                end=chunk_number * FILE_CHUNK_SIZE
                                 if chunk_number < chunks_count
-                                else tar_io.getbuffer()[
-                                    (chunk_number - 1) * FILE_CHUNK_SIZE :
-                                ]
+                                else None,
                             )
 
-                            with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
-                                resp = httpx.put(
-                                    remote_model.presigned_upload_url,
-                                    content=chunk_io,
-                                    timeout=36000,
+                            resp = httpx.put(
+                                remote_model.presigned_upload_url,
+                                content=chunk_io,
+                                timeout=36000,
+                            )
+                            if resp.status_code != 200:
+                                return FinishUploadModelSchema(
+                                    status=ModelUploadStatus.FAILED.value,
+                                    reason=resp.text,
                                 )
-                                if resp.status_code != 200:
-                                    return FinishUploadModelSchema(
-                                        status=ModelUploadStatus.FAILED.value,
-                                        reason=resp.text,
-                                    )
-                                return resp.headers["ETag"], chunk_number
+                            return resp.headers["ETag"], chunk_number
 
                     futures_: list[
                         Future[FinishUploadModelSchema | tuple[str, int]]

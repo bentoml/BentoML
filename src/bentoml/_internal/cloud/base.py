@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import io
 import typing as t
 from abc import ABC
 from abc import abstractmethod
 from contextlib import contextmanager
 
+import attrs
 from rich.console import Group
 from rich.live import Live
 from rich.panel import Panel
@@ -33,26 +33,40 @@ if t.TYPE_CHECKING:
 FILE_CHUNK_SIZE = 100 * 1024 * 1024  # 100Mb
 
 
-class CallbackIOWrapper(io.BytesIO):
-    read_cb: t.Callable[[int], None] | None
-    write_cb: t.Callable[[int], None] | None
+@attrs.define
+class CallbackIOWrapper(t.IO[bytes]):
+    file: t.IO[bytes]
+    read_cb: t.Callable[[int], None] | None = None
+    write_cb: t.Callable[[int], None] | None = None
+    start: int | None = None
+    end: int | None = None
 
-    def __init__(
-        self,
-        buffer: t.Any = None,
-        *,
-        read_cb: t.Callable[[int], None] | None = None,
-        write_cb: t.Callable[[int], None] | None = None,
-    ):
-        self.read_cb = read_cb
-        self.write_cb = write_cb
-        super().__init__(buffer)
+    def __attrs_post_init__(self) -> None:
+        self.file.seek(self.start or 0, 0)
 
-    def read(self, size: int | None = None) -> bytes:
-        if size is not None:
-            res = super().read(size)
+    def seek(self, offset: int, whence: int = 0) -> int:
+        if whence == 2 and self.end is not None:
+            length = self.file.seek(self.end, 0)
         else:
-            res = super().read()
+            length = self.file.seek(offset, whence)
+        return length - (self.start or 0)
+
+    def tell(self) -> int:
+        return self.file.tell()
+
+    def fileno(self) -> int:
+        # Raise OSError to prevent access to the underlying file descriptor
+        raise OSError("fileno")
+
+    def __getattr__(self, name: str) -> t.Any:
+        return getattr(self.file, name)
+
+    def read(self, size: int = -1) -> bytes:
+        pos = self.tell()
+        if self.end is not None:
+            if size < 0 or size > self.end - pos:
+                size = self.end - pos
+        res = self.file.read(size)
         if self.read_cb is not None:
             self.read_cb(len(res))
         return res
@@ -63,6 +77,9 @@ class CallbackIOWrapper(io.BytesIO):
             if hasattr(data, "__len__"):
                 self.write_cb(len(data))
         return res
+
+    def __iter__(self) -> t.Iterator[bytes]:
+        return iter(self.file)
 
 
 class Spinner:
@@ -109,20 +126,23 @@ class Spinner:
     def spin(self, text: str) -> t.Generator[TaskID, None, None]:
         """Create a spinner as a context manager."""
         try:
-            task_id = self.update(text)
+            task_id = self.update(text, new=True)
             yield task_id
         finally:
             self._spinner_task_id = None
             self._spinner_progress.stop_task(task_id)
             self._spinner_progress.update(task_id, visible=False)
 
-    def update(self, text: str) -> TaskID:
+    def update(self, text: str, new: bool = False) -> TaskID:
         """Update the spin text."""
-        if self._spinner_task_id is None:
-            self._spinner_task_id = self._spinner_progress.add_task(text)
+        if self._spinner_task_id is None or new:
+            task_id = self._spinner_progress.add_task(text)
+            if self._spinner_task_id is None:
+                self._spinner_task_id = task_id
         else:
-            self._spinner_progress.update(self._spinner_task_id, description=text)
-        return self._spinner_task_id
+            task_id = self._spinner_task_id
+            self._spinner_progress.update(task_id, description=text)
+        return task_id
 
     def __rich_console__(
         self, console: "Console", options: "ConsoleOptions"

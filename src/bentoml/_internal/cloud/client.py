@@ -263,7 +263,7 @@ class RestApiClientV1(BaseRestApiClient):
         return schema_from_json(resp.text, BentoSchema)
 
     def upload_bento(
-        self, bento_repository_name: str, version: str, data: t.BinaryIO
+        self, bento_repository_name: str, version: str, data: t.IO[bytes]
     ) -> None:
         url = urljoin(
             self.endpoint,
@@ -416,7 +416,7 @@ class RestApiClientV1(BaseRestApiClient):
         return schema_from_json(resp.text, ModelSchema)
 
     def upload_model(
-        self, model_repository_name: str, version: str, data: t.BinaryIO
+        self, model_repository_name: str, version: str, data: t.IO[bytes]
     ) -> None:
         url = urljoin(
             self.endpoint,

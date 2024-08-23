@@ -306,32 +306,30 @@ class BentoCloudClient(CloudClient):
                                     ),
                                 )
                             )
-                        with (
-                            self.spinner.spin(
-                                text=f'({chunk_number}/{chunks_count}) Uploading chunk of Bento "{bento.tag}"...'
-                            ),
-                            open(tar_io.name, "rb") as f,
+                        with self.spinner.spin(
+                            text=f'({chunk_number}/{chunks_count}) Uploading chunk of Bento "{bento.tag}"...'
                         ):
-                            chunk_io = CallbackIOWrapper(
-                                f,
-                                read_cb=io_cb,
-                                start=(chunk_number - 1) * FILE_CHUNK_SIZE,
-                                end=chunk_number * FILE_CHUNK_SIZE
-                                if chunk_number < chunks_count
-                                else None,
-                            )
-
-                            resp = httpx.put(
-                                remote_bento.presigned_upload_url,
-                                content=chunk_io,
-                                timeout=36000,
-                            )
-                            if resp.status_code != 200:
-                                return FinishUploadBentoSchema(
-                                    status=BentoUploadStatus.FAILED.value,
-                                    reason=resp.text,
+                            with open(tar_io.name, "rb") as f:
+                                chunk_io = CallbackIOWrapper(
+                                    f,
+                                    read_cb=io_cb,
+                                    start=(chunk_number - 1) * FILE_CHUNK_SIZE,
+                                    end=chunk_number * FILE_CHUNK_SIZE
+                                    if chunk_number < chunks_count
+                                    else None,
                                 )
-                            return resp.headers["ETag"], chunk_number
+
+                                resp = httpx.put(
+                                    remote_bento.presigned_upload_url,
+                                    content=chunk_io,
+                                    timeout=36000,
+                                )
+                                if resp.status_code != 200:
+                                    return FinishUploadBentoSchema(
+                                        status=BentoUploadStatus.FAILED.value,
+                                        reason=resp.text,
+                                    )
+                                return resp.headers["ETag"], chunk_number
 
                     futures_: list[
                         Future[FinishUploadBentoSchema | tuple[str, int]]
@@ -749,32 +747,30 @@ class BentoCloudClient(CloudClient):
                                 )
                             )
 
-                        with (
-                            self.spinner.spin(
-                                text=f'({chunk_number}/{chunks_count}) Uploading chunk of model "{model.tag}"...'
-                            ),
-                            open(tar_io.name, "rb") as f,
+                        with self.spinner.spin(
+                            text=f'({chunk_number}/{chunks_count}) Uploading chunk of model "{model.tag}"...'
                         ):
-                            chunk_io = CallbackIOWrapper(
-                                f,
-                                read_cb=io_cb,
-                                start=(chunk_number - 1) * FILE_CHUNK_SIZE,
-                                end=chunk_number * FILE_CHUNK_SIZE
-                                if chunk_number < chunks_count
-                                else None,
-                            )
-
-                            resp = httpx.put(
-                                remote_model.presigned_upload_url,
-                                content=chunk_io,
-                                timeout=36000,
-                            )
-                            if resp.status_code != 200:
-                                return FinishUploadModelSchema(
-                                    status=ModelUploadStatus.FAILED.value,
-                                    reason=resp.text,
+                            with open(tar_io.name, "rb") as f:
+                                chunk_io = CallbackIOWrapper(
+                                    f,
+                                    read_cb=io_cb,
+                                    start=(chunk_number - 1) * FILE_CHUNK_SIZE,
+                                    end=chunk_number * FILE_CHUNK_SIZE
+                                    if chunk_number < chunks_count
+                                    else None,
                                 )
-                            return resp.headers["ETag"], chunk_number
+
+                                resp = httpx.put(
+                                    remote_model.presigned_upload_url,
+                                    content=chunk_io,
+                                    timeout=36000,
+                                )
+                                if resp.status_code != 200:
+                                    return FinishUploadModelSchema(
+                                        status=ModelUploadStatus.FAILED.value,
+                                        reason=resp.text,
+                                    )
+                                return resp.headers["ETag"], chunk_number
 
                     futures_: list[
                         Future[FinishUploadModelSchema | tuple[str, int]]

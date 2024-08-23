@@ -33,3 +33,4 @@ You can also try the following example projects.
 - [BentoChatTTS](https://github.com/bentoml/BentoChatTTS) - Deploy a text-to-speech model ChatTTS for dialogue scenarios like chatbots and virtual assistants.
 - [BentoMoirai](https://github.com/bentoml/BentoMoirai/) - Create a forecasting inference API for time-series data.
 - [BentoResnet](https://github.com/bentoml/BentoResnet) - Build an image classification inference API server with ResNet.
+- [BentoFunctionCalling](https://github.com/bentoml/BentoFunctionCalling/) - Build LLM function calling capabilities with BentoML.

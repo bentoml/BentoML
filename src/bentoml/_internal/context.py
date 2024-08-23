@@ -175,12 +175,10 @@ class _ServiceTraceContext:
     )
 
     @property
-    def trace_id(self) -> t.Optional[int]:
+    def trace_id(self) -> int:
         from opentelemetry import trace
 
         span = trace.get_current_span()
-        if span is None:
-            return None
         return span.get_span_context().trace_id
 
     @property
@@ -188,17 +186,13 @@ class _ServiceTraceContext:
         from opentelemetry import trace
 
         span = trace.get_current_span()
-        if span is None:
-            return 0
         return 1 if span.get_span_context().trace_flags.sampled else 0
 
     @property
-    def span_id(self) -> t.Optional[int]:
+    def span_id(self) -> int:
         from opentelemetry import trace
 
         span = trace.get_current_span()
-        if span is None:
-            return None
         return span.get_span_context().span_id
 
     @property

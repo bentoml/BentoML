@@ -396,6 +396,7 @@ class BentoCloudClient(CloudClient):
                 self.spinner.log(
                     f'[bold red]Failed pushing Bento "{bento.tag}": {finish_req.reason}'
                 )
+                raise BentoMLException(f'Failed to upload Bento "{bento.tag}"')
             else:
                 self.spinner.log(f'[bold green]Successfully pushed Bento "{bento.tag}"')
 
@@ -838,6 +839,7 @@ class BentoCloudClient(CloudClient):
                 self.spinner.log(
                     f'[bold red]Failed pushing model "{model.tag}" : {finish_req.reason}'
                 )
+                raise BentoMLException(f'Failed to upload model "{model.tag}"')
             else:
                 self.spinner.log(f'[bold green]Successfully pushed model "{model.tag}"')
 

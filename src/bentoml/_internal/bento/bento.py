@@ -16,6 +16,7 @@ import fs.mirror
 import fs.osfs
 import fs.walk
 import yaml
+from fs.tempfs import TempFS
 from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn
 from cattr.gen import override
@@ -227,7 +228,7 @@ class Bento(StoreItem):
             'Building BentoML service "%s" from build context "%s".', tag, build_ctx
         )
 
-        bento_fs = fs.open_fs(f"temp://bentoml_bento_{bento_name}")
+        bento_fs = TempFS(identifier=f"bentoml_bento_{bento_name}", temp_dir=BentoMLContainer.tmp_bento_store_dir.get())
         ctx_fs = fs.open_fs(encode_path_for_uri(build_ctx))
 
         models: t.Set[Model] = set()

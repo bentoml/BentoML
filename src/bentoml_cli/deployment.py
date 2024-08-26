@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
+import os
 import typing as t
+from functools import partial
 from http import HTTPStatus
 
 import click
@@ -10,13 +14,19 @@ import yaml
 from rich.syntax import Syntax
 from rich.table import Table
 
+from bentoml._internal.bento.build_config import BentoBuildConfig
 from bentoml._internal.cloud.base import Spinner
 from bentoml._internal.cloud.deployment import Deployment
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
+from bentoml._internal.cloud.deployment import DeploymentInfo
+from bentoml._internal.cloud.schemas.modelschemas import DeploymentStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
 from bentoml._internal.utils import rich_console as console
 from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import InvalidArgument
 from bentoml_cli.utils import BentoMLCommandGroup
+
+logger = logging.getLogger("bentoml.cli.deployment")
 
 if t.TYPE_CHECKING:
     TupleStrAny = tuple[str, ...]
@@ -118,6 +128,12 @@ def raise_deployment_config_error(err: BentoMLException, action: str) -> t.NoRet
     default=3600,
     help="Timeout for deployment to be ready in seconds",
 )
+@click.option(
+    "--dev",
+    is_flag=True,
+    help="Create a development deployment and watch for changes",
+    default=False,
+)
 def deploy_command(
     bento: str | None,
     name: str | None,
@@ -133,6 +149,7 @@ def deploy_command(
     config_dict: str | None,
     wait: bool,
     timeout: int,
+    dev: bool,
 ) -> None:
     """Create a deployment on BentoCloud.
 
@@ -154,6 +171,7 @@ def deploy_command(
         config_dict=config_dict,
         wait=wait,
         timeout=timeout,
+        dev=dev,
     )
 
 
@@ -692,6 +710,7 @@ def create_deployment(
     config_dict: str | None,
     wait: bool,
     timeout: int,
+    dev: bool = False,
 ) -> None:
     cfg_dict = None
     if config_dict is not None and config_dict != "":
@@ -710,15 +729,17 @@ def create_deployment(
             if env is not None
             else None
         ),
-        secrets=secret,
+        secrets=list(secret) if secret is not None else None,
         config_file=config_file,
         config_dict=cfg_dict,
         cli=True,
+        dev=dev,
     )
     try:
         config_params.verify()
     except BentoMLException as e:
         raise_deployment_config_error(e, "create")
+
     with Spinner() as spinner:
         spinner.update("Creating deployment on BentoCloud")
         deployment = Deployment.create(deployment_config_params=config_params)
@@ -730,4 +751,149 @@ def create_deployment(
             spinner.update(
                 "[bold blue]Waiting for deployment to be ready, you can use --no-wait to skip this process[/]",
             )
-            deployment.wait_until_ready(timeout=timeout, spinner=spinner)
+            retcode = deployment.wait_until_ready(
+                timeout=timeout,
+                spinner=spinner,
+                on_init=partial(_init_deployment_files, bento_dir=t.cast(str, bento))
+                if dev
+                else None,
+            )
+            if retcode != 0:
+                raise SystemExit(retcode)
+        elif dev:
+            raise InvalidArgument(
+                "Cannot use `--no-wait` flag when deploying using development mode"
+            )
+    if dev:
+        _watch_dev_deployment(deployment, t.cast(str, bento))
+
+
+REQUIREMENTS_TXT = "requirements.txt"
+
+
+def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
+    from bentoml._internal.configuration import BENTOML_VERSION
+    from bentoml._internal.configuration import clean_bentoml_version
+
+    filename = config.python.requirements_txt
+    content = b""
+    if filename and os.path.exists(fullpath := os.path.join(bento_dir, filename)):
+        with open(fullpath, "rb") as f:
+            content = f.read()
+    for package in config.python.packages or []:
+        content += f"{package}\n".encode()
+    bentoml_version = clean_bentoml_version(BENTOML_VERSION)
+    content += f"bentoml=={bentoml_version}\n".encode()
+    return content
+
+
+def _get_bento_build_config(bento_dir: str) -> BentoBuildConfig:
+    bentofile_path = os.path.join(bento_dir, "bentofile.yaml")
+    if not os.path.exists(bentofile_path):
+        return BentoBuildConfig(service="").with_defaults()
+    else:
+        # respect bentofile.yaml include and exclude
+        with open(bentofile_path, "r") as f:
+            return BentoBuildConfig.from_yaml(f).with_defaults()
+
+
+def _init_deployment_files(deployment: DeploymentInfo, bento_dir: str) -> None:
+    from bentoml._internal.bento.build_config import BentoPathSpec
+
+    build_config = _get_bento_build_config(bento_dir)
+    bento_spec = BentoPathSpec(build_config.include, build_config.exclude)
+    upload_files: list[tuple[str, bytes]] = []
+    requirements_content = _build_requirements_txt(bento_dir, build_config)
+    ignore_patterns = bento_spec.from_path(bento_dir)
+    for root, _, files in os.walk(bento_dir):
+        for fn in files:
+            full_path = os.path.join(root, fn)
+            rel_path = os.path.relpath(full_path, bento_dir)
+            if (
+                not bento_spec.includes(full_path, recurse_exclude_spec=ignore_patterns)
+                and rel_path != "bentofile.yaml"
+            ):
+                continue
+            if rel_path == REQUIREMENTS_TXT:
+                continue
+            rich.print(f" [green]Uploading[/] {rel_path}")
+            upload_files.append((rel_path, open(full_path, "rb").read()))
+    rich.print(f" [green]Uploading[/] {REQUIREMENTS_TXT}")
+    upload_files.append((REQUIREMENTS_TXT, requirements_content))
+    deployment.upload_files(upload_files)
+
+
+def _watch_dev_deployment(deployment: DeploymentInfo, bento_dir: str) -> None:
+    import watchfiles
+
+    from bentoml._internal.bento.build_config import BentoPathSpec
+
+    build_config = _get_bento_build_config(bento_dir)
+    bento_spec = BentoPathSpec(build_config.include, build_config.exclude)
+    ignore_patterns = bento_spec.from_path(bento_dir)
+    requirements_content = _build_requirements_txt(bento_dir, build_config)
+    requirements_hash = hashlib.md5(requirements_content).hexdigest()
+    _init_deployment_files(deployment, bento_dir)
+
+    default_filter = watchfiles.filters.DefaultFilter()
+
+    def watch_filter(change: watchfiles.Change, path: str) -> bool:
+        if not default_filter(change, path):
+            return False
+        if path == "bentofile.yaml":
+            return True
+        return bento_spec.includes(path, recurse_exclude_spec=ignore_patterns)
+
+    with Spinner() as spinner:
+        spinner.update(
+            f"Watching file changes in {bento_dir} for deployment {deployment.name}"
+        )
+        spinner.log(f"💻 View Dashboard: {deployment.admin_console}")
+
+        for changes in watchfiles.watch(bento_dir, watch_filter=watch_filter):
+            build_config = _get_bento_build_config(bento_dir)
+            upload_files: list[tuple[str, bytes]] = []
+            delete_files: list[str] = []
+
+            for change, path in changes:
+                rel_path = os.path.relpath(path, bento_dir)
+                if rel_path == REQUIREMENTS_TXT:
+                    continue
+                if change == watchfiles.Change.deleted:
+                    rich.print(f" [red]Deleting[/] {path}")
+                    delete_files.append(rel_path)
+                else:
+                    rich.print(f" [green]Uploading[/] {path}")
+                    upload_files.append((rel_path, open(path, "rb").read()))
+
+            requirements_content = _build_requirements_txt(bento_dir, build_config)
+            if (
+                new_hash := hashlib.md5(requirements_content).hexdigest()
+                != requirements_hash
+            ):
+                requirements_hash = new_hash
+                rich.print(f" [green]Uploading[/] {REQUIREMENTS_TXT}")
+                upload_files.append((REQUIREMENTS_TXT, requirements_content))
+            if upload_files:
+                deployment.upload_files(upload_files)
+            if delete_files:
+                deployment.delete_files(delete_files)
+            if (status := deployment.get_status().status) in [
+                DeploymentStatus.Failed.value,
+                DeploymentStatus.ImageBuildFailed.value,
+                DeploymentStatus.Terminated.value,
+                DeploymentStatus.Terminating.value,
+                DeploymentStatus.Unhealthy.value,
+            ]:
+                rich.print(
+                    f'🚨 [bold red]Deployment "{deployment.name}" is not ready. Current status: "{status}"[/]'
+                )
+                return
+
+
+if __name__ == "__main__":
+    import sys
+    # Testing code
+
+    deployment = Deployment.get(sys.argv[1])
+    _watch_dev_deployment(deployment, ".")

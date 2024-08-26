@@ -48,12 +48,14 @@ from .schemas.schemasv1 import UpdateDeploymentSchema
 from .schemas.schemasv1 import UpdateSecretSchema
 from .schemas.schemasv1 import UserSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
+from .schemas.schemasv2 import DeleteDeploymentFilesSchema
 from .schemas.schemasv2 import DeploymentFullSchema as DeploymentFullSchemaV2
 from .schemas.schemasv2 import DeploymentListSchema as DeploymentListSchemaV2
 from .schemas.schemasv2 import KubePodSchema
 from .schemas.schemasv2 import KubePodWSResponseSchema
 from .schemas.schemasv2 import LogWSResponseSchema
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
+from .schemas.schemasv2 import UploadDeploymentFilesSchema
 from .schemas.utils import schema_from_json
 from .schemas.utils import schema_from_object
 from .schemas.utils import schema_to_json
@@ -847,6 +849,24 @@ class RestApiClientV2(BaseRestApiClient):
             finally:
                 stop_event.set()
                 heartbeat_thread.join()
+
+    def upload_files(
+        self, name: str, files: UploadDeploymentFilesSchema, cluster: str | None = None
+    ) -> None:
+        url = urljoin(self.endpoint, f"/api/v2/deployments/{name}/files")
+        resp = self.session.post(
+            url, content=schema_to_json(files), params={"cluster": cluster}
+        )
+        self._check_resp(resp)
+
+    def delete_files(
+        self, name: str, paths: DeleteDeploymentFilesSchema, cluster: str | None = None
+    ) -> None:
+        url = urljoin(self.endpoint, f"/api/v2/deployments/{name}/files")
+        resp = self.session.request(
+            "DELETE", url, content=schema_to_json(paths), params={"cluster": cluster}
+        )
+        self._check_resp(resp)
 
 
 class RestApiClient:

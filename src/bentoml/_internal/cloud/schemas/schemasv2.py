@@ -61,7 +61,8 @@ class UpdateDeploymentSchema(DeploymentConfigSchema):
 class CreateDeploymentSchema(UpdateDeploymentSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    name: t.Optional[str] = attr.field(default=None)
+    name: t.Optional[str] = None
+    dev: bool = False
 
 
 @attr.define
@@ -124,3 +125,22 @@ class KubePodWSResponseSchema:
     message: str
     type: str
     payload: t.Optional[t.List[KubePodSchema]]
+
+
+@attr.define
+class UploadDeploymentFileSchema:
+    __forbid_extra_keys__ = False
+    path: str
+    b64_encoded_content: str
+
+
+@attr.define
+class UploadDeploymentFilesSchema:
+    __forbid_extra_keys__ = False
+    files: t.List[UploadDeploymentFileSchema]
+
+
+@attr.define
+class DeleteDeploymentFilesSchema:
+    __forbid_extra_keys__ = False
+    paths: t.List[str]

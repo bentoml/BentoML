@@ -24,6 +24,7 @@ if t.TYPE_CHECKING:
     from .client import RestApiClient
 
 from ...exceptions import BentoMLException
+from ...exceptions import InvalidArgument
 from ...exceptions import NotFound
 from ..bento.bento import BentoInfo
 from ..configuration.containers import BentoMLContainer
@@ -34,10 +35,12 @@ from .base import Spinner
 from .schemas.modelschemas import DeploymentStatus
 from .schemas.modelschemas import DeploymentTargetHPAConf
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
+from .schemas.schemasv2 import DeleteDeploymentFilesSchema
 from .schemas.schemasv2 import DeploymentSchema
 from .schemas.schemasv2 import DeploymentTargetSchema
 from .schemas.schemasv2 import KubePodSchema
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
+from .schemas.schemasv2 import UploadDeploymentFilesSchema
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +71,7 @@ class DeploymentConfigParameters:
     config_dict: dict[str, t.Any] | None = None
     config_file: str | t.TextIO | None = None
     cli: bool = False
+    dev: bool = False
     service_name: str | None = None
     cfg_dict: dict[str, t.Any] | None = None
     _param_config: dict[str, t.Any] | None = None
@@ -111,6 +115,7 @@ class DeploymentConfigParameters:
                     ("access_authorization", self.access_authorization),
                     ("envs", self.envs if self.envs else None),
                     ("secrets", self.secrets),
+                    ("dev", self.dev),
                 ]
                 if v is not None
             }
@@ -167,6 +172,10 @@ class DeploymentConfigParameters:
             else:
                 if self.cli:
                     rich.print(f"using bento [green]{bento_name}[/]...")
+                if self.dev:
+                    raise InvalidArgument(
+                        "A local bento directory is expected when deploying using development mode"
+                    )
                 bento_info = get_bento_info(bento=str(bento_name), cli=self.cli)
             self.cfg_dict["bento"] = bento_info.tag
             if self.service_name is None:
@@ -486,7 +495,8 @@ class DeploymentInfo:
         check_interval: int = 10,
         spinner: Spinner | None = None,
         cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
-    ) -> None:
+        on_init: t.Callable[[DeploymentInfo], None] | None = None,
+    ) -> int:
         from httpx import TimeoutException
 
         start_time = time.time()
@@ -559,7 +569,7 @@ class DeploymentInfo:
                             "🚨 [bold red]Unable to contact the server, but the deployment is created. "
                             "You can check the status on the bentocloud website.[/bold red]"
                         )
-                        return
+                        return 1
                     if (
                         status is None or status.status != new_status.status
                     ):  # on status change
@@ -579,6 +589,11 @@ class DeploymentInfo:
                             stop_tail_event.set()
                             tail_thread.join()
                             spinner.start()
+                            if (
+                                status.status == DeploymentStatus.Deploying.value
+                                and on_init is not None
+                            ):
+                                on_init(self)
 
                     if status.status in (
                         DeploymentStatus.Running.value,
@@ -588,7 +603,7 @@ class DeploymentInfo:
                         spinner.console.print(
                             f'✅ [bold green] Deployment "{self.name}" is ready:[/] {self.admin_console}'
                         )
-                        return
+                        return 0
                     if status.status in [
                         DeploymentStatus.Failed.value,
                         DeploymentStatus.ImageBuildFailed.value,
@@ -600,7 +615,7 @@ class DeploymentInfo:
                         spinner.console.print(
                             f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}"[/]'
                         )
-                        return
+                        return 1
 
                     time.sleep(check_interval)
 
@@ -608,7 +623,7 @@ class DeploymentInfo:
                 spinner.console.print(
                     f'🚨 [bold red]Time out waiting for Deployment "{self.name}" ready[/]'
                 )
-                return
+                return 1
             finally:
                 stop_tail_event.set()
                 if tail_thread is not None:
@@ -626,7 +641,7 @@ class DeploymentInfo:
                     logger.error(
                         f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website."
                     )
-                    return
+                    return 1
                 if status.status in (
                     DeploymentStatus.Running.value,
                     DeploymentStatus.ScaledToZero.value,
@@ -634,13 +649,48 @@ class DeploymentInfo:
                     logger.info(
                         f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Deployment '{self.name}' is ready."
                     )
-                    return
+                    return 0
                 logger.info(
                     f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Waiting for deployment '{self.name}' to be ready. Current status: '{status.status}'."
                 )
                 time.sleep(check_interval)
 
         logger.error(f"Timed out waiting for deployment '{self.name}' to be ready.")
+        return 1
+
+    @inject
+    def upload_files(
+        self,
+        files: t.Iterable[tuple[str, bytes]],
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
+    ) -> None:
+        data = {
+            "files": [
+                {
+                    "path": path,
+                    "b64_encoded_content": base64.b64encode(content).decode("utf-8"),
+                }
+                for path, content in files
+            ]
+        }
+        cloud_rest_client.v2.upload_files(
+            self.name,
+            bentoml_cattr.structure(data, UploadDeploymentFilesSchema),
+            cluster=self.cluster,
+        )
+
+    @inject
+    def delete_files(
+        self,
+        paths: t.Iterable[str],
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
+    ) -> None:
+        data = {"paths": paths}
+        cloud_rest_client.v2.delete_files(
+            self.name,
+            bentoml_cattr.structure(data, DeleteDeploymentFilesSchema),
+            cluster=self.cluster,
+        )
 
 
 @attr.define

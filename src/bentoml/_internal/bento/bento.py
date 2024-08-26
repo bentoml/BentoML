@@ -270,12 +270,7 @@ class Bento(StoreItem):
         for dir_path, _, files in ctx_fs.walk():
             for f in files:
                 path = fs.path.combine(dir_path, f.name).lstrip("/")
-                if specs.includes(
-                    path,
-                    recurse_exclude_spec=filter(
-                        lambda s: fs.path.isparent(s[0], dir_path), ignore_specs
-                    ),
-                ):
+                if specs.includes(path, recurse_exclude_spec=ignore_specs):
                     if ctx_fs.getsize(path) > 10 * 1024 * 1024:
                         logger.warn("File size is larger than 10MiB: %s", path)
                     target_fs.makedirs(dir_path, recreate=True)

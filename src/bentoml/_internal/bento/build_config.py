@@ -955,6 +955,7 @@ class BentoPathSpec:
             return not any(
                 ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
                 for ignore_parent, ignore_spec in recurse_exclude_spec
+                if fs.path.isparent(ignore_parent, path)
             )
         return to_include
 

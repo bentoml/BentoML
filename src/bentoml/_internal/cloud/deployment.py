@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import base64
+import contextlib
+import hashlib
 import logging
+import os
 import time
 import typing as t
+from functools import partial
 from os import path
 from threading import Event
 from threading import Thread
@@ -12,8 +16,11 @@ import attr
 import rich
 import yaml
 from deepmerge.merger import Merger
+from rich.console import Console
 from simple_di import Provide
 from simple_di import inject
+
+from ..bento.build_config import BentoBuildConfig
 
 if t.TYPE_CHECKING:
     from _bentoml_impl.client import AsyncHTTPClient
@@ -30,12 +37,14 @@ from ..bento.bento import BentoInfo
 from ..configuration.containers import BentoMLContainer
 from ..tag import Tag
 from ..utils import bentoml_cattr
+from ..utils import filter_control_codes
 from ..utils import resolve_user_filepath
 from .base import Spinner
 from .schemas.modelschemas import DeploymentStatus
 from .schemas.modelschemas import DeploymentTargetHPAConf
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeleteDeploymentFilesSchema
+from .schemas.schemasv2 import DeploymentFileListSchema
 from .schemas.schemasv2 import DeploymentSchema
 from .schemas.schemasv2 import DeploymentTargetSchema
 from .schemas.schemasv2 import KubePodSchema
@@ -495,11 +504,12 @@ class DeploymentInfo:
         check_interval: int = 10,
         spinner: Spinner | None = None,
         cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
-        on_init: t.Callable[[DeploymentInfo], None] | None = None,
+        bento_dir: str | None = None,
     ) -> int:
         from httpx import TimeoutException
 
         start_time = time.time()
+        init_run = False
         if spinner is not None:
             stop_tail_event = Event()
 
@@ -589,11 +599,6 @@ class DeploymentInfo:
                             stop_tail_event.set()
                             tail_thread.join()
                             spinner.start()
-                            if (
-                                status.status == DeploymentStatus.Deploying.value
-                                and on_init is not None
-                            ):
-                                on_init(self)
 
                     if status.status in (
                         DeploymentStatus.Running.value,
@@ -617,6 +622,18 @@ class DeploymentInfo:
                         )
                         return 1
 
+                    if not init_run and bento_dir is not None:
+                        pods = cloud_rest_client.v2.list_deployment_pods(
+                            self.name, self.cluster
+                        )
+                        if any(
+                            pod.labels.get("yatai.ai/bento-function-component-type")
+                            == "api-server"
+                            and pod.pod_status.status in ("Running", "Pending")
+                            for pod in pods
+                        ):
+                            self._init_deployment_files(bento_dir)
+                            init_run = True
                     time.sleep(check_interval)
 
                 spinner.stop()
@@ -691,6 +708,176 @@ class DeploymentInfo:
             bentoml_cattr.structure(data, DeleteDeploymentFilesSchema),
             cluster=self.cluster,
         )
+
+    @inject
+    def list_files(
+        self,
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
+    ) -> DeploymentFileListSchema:
+        return cloud_rest_client.v2.list_files(self.name, cluster=self.cluster)
+
+    def _init_deployment_files(self, bento_dir: str) -> None:
+        from ..bento.build_config import BentoPathSpec
+
+        build_config = get_bento_build_config(bento_dir)
+        bento_spec = BentoPathSpec(build_config.include, build_config.exclude)
+        upload_files: list[tuple[str, bytes]] = []
+        requirements_content = _build_requirements_txt(bento_dir, build_config)
+        ignore_patterns = bento_spec.from_path(bento_dir)
+
+        pod_files = {file.path: file.md5 for file in self.list_files().files}
+        for root, _, files in os.walk(bento_dir):
+            for fn in files:
+                full_path = os.path.join(root, fn)
+                rel_path = os.path.relpath(full_path, bento_dir)
+                if (
+                    not bento_spec.includes(
+                        full_path, recurse_exclude_spec=ignore_patterns
+                    )
+                    and rel_path != "bentofile.yaml"
+                ):
+                    continue
+                if rel_path == REQUIREMENTS_TXT:
+                    continue
+                file_content = open(full_path, "rb").read()
+                file_md5 = hashlib.md5(file_content).hexdigest()
+                if rel_path in pod_files and pod_files[rel_path] == file_md5:
+                    continue
+                rich.print(f" [green]Uploading[/] {rel_path}")
+                upload_files.append((rel_path, file_content))
+        requirements_md5 = hashlib.md5(requirements_content).hexdigest()
+        if requirements_md5 != pod_files.get(REQUIREMENTS_TXT, ""):
+            rich.print(f" [green]Uploading[/] {REQUIREMENTS_TXT}")
+            upload_files.append((REQUIREMENTS_TXT, requirements_content))
+        self.upload_files(upload_files)
+
+    def watch(self, bento_dir: str) -> None:
+        import watchfiles
+
+        from ..bento.build_config import BentoPathSpec
+
+        build_config = get_bento_build_config(bento_dir)
+        bento_spec = BentoPathSpec(build_config.include, build_config.exclude)
+        ignore_patterns = bento_spec.from_path(bento_dir)
+        requirements_content = _build_requirements_txt(bento_dir, build_config)
+        requirements_hash = hashlib.md5(requirements_content).hexdigest()
+        self._init_deployment_files(bento_dir)
+
+        default_filter = watchfiles.filters.DefaultFilter()
+
+        def watch_filter(change: watchfiles.Change, path: str) -> bool:
+            if not default_filter(change, path):
+                return False
+            if path == "bentofile.yaml":
+                return True
+            return bento_spec.includes(path, recurse_exclude_spec=ignore_patterns)
+
+        console = Console(highlight=False)
+        with Spinner(console=console) as spinner:
+            spinner.update(
+                f"Watching file changes in {bento_dir} for deployment {self.name}"
+            )
+            spinner.log(f"💻 View Dashboard: {self.admin_console}")
+            with self._tail_logs(console=console):
+                for changes in watchfiles.watch(bento_dir, watch_filter=watch_filter):
+                    build_config = get_bento_build_config(bento_dir)
+                    upload_files: list[tuple[str, bytes]] = []
+                    delete_files: list[str] = []
+
+                    for change, path in changes:
+                        rel_path = os.path.relpath(path, bento_dir)
+                        if rel_path == REQUIREMENTS_TXT:
+                            continue
+                        if change == watchfiles.Change.deleted:
+                            console.print(f" [red]Deleting[/] {rel_path}")
+                            delete_files.append(rel_path)
+                        else:
+                            console.print(f" [green]Uploading[/] {rel_path}")
+                            upload_files.append((rel_path, open(path, "rb").read()))
+
+                    requirements_content = _build_requirements_txt(
+                        bento_dir, build_config
+                    )
+                    if (
+                        new_hash := hashlib.md5(requirements_content).hexdigest()
+                        != requirements_hash
+                    ):
+                        requirements_hash = new_hash
+                        console.print(f" [green]Uploading[/] {REQUIREMENTS_TXT}")
+                        upload_files.append((REQUIREMENTS_TXT, requirements_content))
+                    if upload_files:
+                        self.upload_files(upload_files)
+                    if delete_files:
+                        self.delete_files(delete_files)
+                    if (status := self.get_status().status) in [
+                        DeploymentStatus.Failed.value,
+                        DeploymentStatus.ImageBuildFailed.value,
+                        DeploymentStatus.Terminated.value,
+                        DeploymentStatus.Terminating.value,
+                        DeploymentStatus.Unhealthy.value,
+                    ]:
+                        console.print(
+                            f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status}"[/]'
+                        )
+                        return
+
+    @contextlib.contextmanager
+    @inject
+    def _tail_logs(
+        self,
+        console: Console,
+        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
+    ) -> t.Generator[None, None, None]:
+        import itertools
+
+        pods = cloud_rest_client.v2.list_deployment_pods(self.name, self.cluster)
+        stop_event = Event()
+        threads: list[Thread] = []
+
+        colors = itertools.cycle(["green", "cyan", "yellow", "blue", "magenta"])
+        runner_color: dict[str, str] = {}
+
+        def pod_log_worker(pod: KubePodSchema, stop_event: Event) -> None:
+            current = ""
+            if pod.runner_name not in runner_color:
+                runner_color[pod.runner_name] = next(colors)
+            color = runner_color[pod.runner_name]
+            for chunk in cloud_rest_client.v2.tail_logs(
+                cluster_name=self.cluster,
+                namespace=self._schema.kube_namespace,
+                pod_name=pod.name,
+                container_name="main",
+                stop_event=stop_event,
+            ):
+                decoded_str = base64.b64decode(chunk).decode("utf-8")
+                chunk = filter_control_codes(decoded_str)
+                if "\n" not in chunk:
+                    current += chunk
+                    continue
+                for i, line in enumerate(chunk.split("\n")):
+                    if i == 0:
+                        line = current + line
+                        current = ""
+                    if i == len(chunk.split("\n")) - 1:
+                        current = line
+                        break
+                    console.print(f"[{color}]\[{pod.runner_name}][/] {line}")
+            console.print(f"[{color}]\[{pod.runner_name}][/] {current}")
+
+        try:
+            for pod in pods:
+                if pod.labels.get("yatai.ai/is-bento-image-builder") == "true":
+                    continue
+                thread = Thread(
+                    target=partial(pod_log_worker, pod=pod, stop_event=stop_event)
+                )
+                thread.start()
+                threads.append(thread)
+            yield
+        finally:
+            stop_event.set()
+            for thread in threads:
+                thread.join()
 
 
 @attr.define
@@ -989,3 +1176,32 @@ class InstanceTypeInfo:
 
     def to_dict(self):
         return {k: v for k, v in attr.asdict(self).items() if v is not None and v != ""}
+
+
+def get_bento_build_config(bento_dir: str) -> BentoBuildConfig:
+    bentofile_path = os.path.join(bento_dir, "bentofile.yaml")
+    if not os.path.exists(bentofile_path):
+        return BentoBuildConfig(service="").with_defaults()
+    else:
+        # respect bentofile.yaml include and exclude
+        with open(bentofile_path, "r") as f:
+            return BentoBuildConfig.from_yaml(f).with_defaults()
+
+
+REQUIREMENTS_TXT = "requirements.txt"
+
+
+def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
+    from bentoml._internal.configuration import BENTOML_VERSION
+    from bentoml._internal.configuration import clean_bentoml_version
+
+    filename = config.python.requirements_txt
+    content = b""
+    if filename and os.path.exists(fullpath := os.path.join(bento_dir, filename)):
+        with open(fullpath, "rb") as f:
+            content = f.read()
+    for package in config.python.packages or []:
+        content += f"{package}\n".encode()
+    bentoml_version = clean_bentoml_version(BENTOML_VERSION)
+    content += f"bentoml=={bentoml_version}\n".encode()
+    return content

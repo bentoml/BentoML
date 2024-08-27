@@ -4,6 +4,7 @@ import typing as t
 from contextlib import contextmanager
 
 import attrs
+from rich import get_console
 from rich.console import Group
 from rich.live import Live
 from rich.panel import Panel
@@ -87,7 +88,8 @@ class Spinner:
     Use it as a context manager to start the live updating.
     """
 
-    def __init__(self):
+    def __init__(self, console: Console | None = None) -> None:
+        self.console = console or get_console()
         self.transmission_progress = Progress(
             TextColumn("[bold blue]{task.description}", justify="right"),
             BarColumn(bar_width=None),
@@ -98,6 +100,7 @@ class Spinner:
             TransferSpeedColumn(),
             "•",
             TimeRemainingColumn(),
+            console=self.console,
         )
 
         self._logs: list[str] = []
@@ -106,13 +109,10 @@ class Spinner:
             TimeElapsedColumn(),
             TextColumn("[bold purple]{task.description}"),
             SpinnerColumn("simpleDots"),
+            console=self.console,
         )
         self._spinner_task_id: t.Optional[TaskID] = None
-        self._live = Live(self)
-
-    @property
-    def console(self) -> "Console":
-        return self._live.console
+        self._live = Live(self, console=self.console)
 
     @contextmanager
     def spin(self, text: str) -> t.Generator[TaskID, None, None]:

@@ -102,6 +102,7 @@ class KubePodSchema:
     namespace: str
     labels: t.Dict[str, str]
     pod_status: KubePodStatusSchema
+    runner_name: str
 
 
 @attr.define
@@ -144,3 +145,17 @@ class UploadDeploymentFilesSchema:
 class DeleteDeploymentFilesSchema:
     __forbid_extra_keys__ = False
     paths: t.List[str]
+
+
+@attr.define
+class DeploymentFileSchema:
+    __forbid_extra_keys__ = False
+    path: str
+    size: int
+    md5: str
+
+
+@attr.define
+class DeploymentFileListSchema:
+    __forbid_extra_keys__ = False
+    files: t.List[DeploymentFileSchema]

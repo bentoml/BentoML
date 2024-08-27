@@ -8,7 +8,6 @@ from threading import Event
 from threading import Thread
 from typing import TYPE_CHECKING
 
-import fs
 from circus.plugins import CircusPlugin
 from watchfiles import watch
 
@@ -89,11 +88,7 @@ class ServiceReloaderPlugin(CircusPlugin):
 
         return any(
             self.bento_spec.includes(
-                path,
-                recurse_exclude_spec=filter(
-                    lambda s: fs.path.isparent(s[0], os.path.dirname(path)),
-                    self.bento_spec.from_path(dirs),
-                ),
+                path, recurse_exclude_spec=self.bento_spec.from_path(dirs)
             )
             for dirs in self.watch_dirs
         )

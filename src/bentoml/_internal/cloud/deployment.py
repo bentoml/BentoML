@@ -7,7 +7,6 @@ import logging
 import os
 import time
 import typing as t
-from functools import partial
 from os import path
 from threading import Event
 from threading import Thread
@@ -829,18 +828,17 @@ class DeploymentInfo:
         cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> t.Generator[None, None, None]:
         import itertools
+        from collections import defaultdict
 
         pods = cloud_rest_client.v2.list_deployment_pods(self.name, self.cluster)
         stop_event = Event()
-        threads: list[Thread] = []
+        workers: list[Thread] = []
 
-        colors = itertools.cycle(["green", "cyan", "yellow", "blue", "magenta"])
-        runner_color: dict[str, str] = {}
+        colors = itertools.cycle(["cyan", "yellow", "blue", "magenta", "green"])
+        runner_color: dict[str, str] = defaultdict(lambda: next(colors))
 
         def pod_log_worker(pod: KubePodSchema, stop_event: Event) -> None:
             current = ""
-            if pod.runner_name not in runner_color:
-                runner_color[pod.runner_name] = next(colors)
             color = runner_color[pod.runner_name]
             for chunk in cloud_rest_client.v2.tail_logs(
                 cluster_name=self.cluster,
@@ -868,15 +866,13 @@ class DeploymentInfo:
             for pod in pods:
                 if pod.labels.get("yatai.ai/is-bento-image-builder") == "true":
                     continue
-                thread = Thread(
-                    target=partial(pod_log_worker, pod=pod, stop_event=stop_event)
-                )
+                thread = Thread(target=pod_log_worker, args=(pod, stop_event))
                 thread.start()
-                threads.append(thread)
+                workers.append(thread)
             yield
         finally:
             stop_event.set()
-            for thread in threads:
+            for thread in workers:
                 thread.join()
 
 

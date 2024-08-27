@@ -20,6 +20,8 @@
 {% block SETUP_BENTO_BASE_IMAGE %}
 FROM {{ __base_image__ }} as base-container
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
 ENV LANG=C.UTF-8
 
 ENV LC_ALL=C.UTF-8

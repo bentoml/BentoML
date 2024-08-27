@@ -173,6 +173,7 @@ Here is an example ``config-file.yaml`` file:
     :caption: `config-file.yaml`
 
     name: "my-deployment-name"
+    bento: .
     access_authorization: true # Setting it to `true` means you need an API token with Protected Endpoint Access to access the exposed endpoint.
     envs: # Set global environment variables
       - name: ENV_VAR_NAME
@@ -194,14 +195,14 @@ You can then create a Deployment as below:
 
         .. code-block:: bash
 
-            bentoml deploy . -f config-file.yaml
+            bentoml deploy -f config-file.yaml
 
     .. tab-item:: Python API
 
         .. code-block:: python
 
             import bentoml
-            bentoml.deployment.create(bento = "./path_to_your_project", config_file="config-file.yaml")
+            bentoml.deployment.create(config_file="config-file.yaml")
 
 Override configurations
 -----------------------

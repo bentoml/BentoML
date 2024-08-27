@@ -778,7 +778,7 @@ class RestApiClientV2(BaseRestApiClient):
             scheme = "ws"
         endpoint = f"{scheme}://{url_.netloc}"
         with connect_ws(
-            url=f"{endpoint}/ws/v2/deployments/{name}/pods?organization_name={deployment.cluster.organization_name}",
+            url=f"{endpoint}/ws/v2/deployments/{name}/pods?{urlencode(dict(organization_name=deployment.cluster.organization_name, cluster=deployment.cluster.name))}",
             client=self.session,
         ) as ws:
             jsn = schema_from_object(ws.receive_json(), KubePodWSResponseSchema)

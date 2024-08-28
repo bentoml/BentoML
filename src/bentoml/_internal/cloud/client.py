@@ -802,7 +802,7 @@ class RestApiClientV2(BaseRestApiClient):
         endpoint = f"{scheme}://{url_.netloc}"
 
         with connect_ws(
-            url=f"{endpoint}/ws/v1/clusters/{cluster_name}/tail?{urlencode(dict(namespace=namespace, pod_name=pod_name))}",
+            url=f"{endpoint}/ws/v1/clusters/{cluster_name}/tail?{urlencode(dict(namespace=namespace, pod_name=pod_name, timestamps='false'))}",
             client=self.session,
         ) as ws:
             req_id = str(uuid.uuid4())

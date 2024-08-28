@@ -66,6 +66,12 @@ class CreateDeploymentSchema(UpdateDeploymentSchema):
 
 
 @attr.define
+class DeploymentManifestSchema:
+    __forbid_extra_keys__ = False
+    dev: bool = False
+
+
+@attr.define
 class DeploymentSchema(ResourceSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
@@ -74,6 +80,7 @@ class DeploymentSchema(ResourceSchema):
     creator: UserSchema
     cluster: ClusterSchema
     latest_revision: t.Optional[DeploymentRevisionSchema]
+    manifest: t.Optional[DeploymentManifestSchema] = None
 
 
 @attr.define
@@ -96,12 +103,20 @@ class KubePodStatusSchema:
 
 
 @attr.define
+class PodStatusSchema:
+    __forbid_extra_keys__ = False
+    phase: str
+    ready: bool
+
+
+@attr.define
 class KubePodSchema:
     __forbid_extra_keys__ = False
     name: str
     namespace: str
     labels: t.Dict[str, str]
     pod_status: KubePodStatusSchema
+    status: PodStatusSchema
     runner_name: str
 
 

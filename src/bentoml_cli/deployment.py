@@ -2,27 +2,33 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import typing as t
 from http import HTTPStatus
 
 import click
 import rich
 import yaml
+from rich.console import Console
 from rich.syntax import Syntax
 from rich.table import Table
 
 from bentoml._internal.cloud.base import Spinner
 from bentoml._internal.cloud.deployment import Deployment
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
+from bentoml._internal.cloud.schemas.modelschemas import DeploymentStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
 from bentoml._internal.utils import rich_console as console
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import InvalidArgument
+from bentoml.exceptions import NotFound
 from bentoml_cli.utils import BentoMLCommandGroup
 
 logger = logging.getLogger("bentoml.cli.deployment")
 
 if t.TYPE_CHECKING:
+    from bentoml._internal.cloud.deployment import DeploymentInfo
+
     TupleStrAny = tuple[str, ...]
 else:
     TupleStrAny = tuple
@@ -729,17 +735,53 @@ def create_deployment(
         cli=True,
         dev=dev,
     )
-    try:
-        config_params.verify()
-    except BentoMLException as e:
-        raise_deployment_config_error(e, "create")
 
-    with Spinner() as spinner:
-        spinner.update("Creating deployment on BentoCloud")
-        deployment = Deployment.create(deployment_config_params=config_params)
-        spinner.log(
-            f'✅ Created deployment "{deployment.name}" in cluster "{deployment.cluster}"'
-        )
+    deployment: DeploymentInfo | None = None
+    if dev:
+        if not wait:
+            raise InvalidArgument(
+                "Cannot use `--no-wait` flag when deploying using development mode"
+            )
+        if not bento or not os.path.exists(bento):
+            raise InvalidArgument(
+                "A local bento directory is expected when deploying using development mode"
+            )
+        if config_params.name is not None:
+            try:
+                deployment_ = Deployment.get(
+                    config_params.name, cluster=config_params.cluster
+                )
+            except NotFound:
+                pass
+            else:
+                if not deployment_.is_dev:
+                    raise InvalidArgument(
+                        "Cannot connect to a non-development deployment"
+                    )
+                if deployment_.get_status(refetch=False).status not in (
+                    DeploymentStatus.Deploying.value,
+                    DeploymentStatus.Running.value,
+                    DeploymentStatus.ScaledToZero.value,
+                ):
+                    raise InvalidArgument(
+                        "Cannot connect to a deployment that is not running or deploying"
+                    )
+                deployment = deployment_
+    if deployment is None:
+        try:
+            config_params.verify()
+        except BentoMLException as e:
+            raise_deployment_config_error(e, "create")
+
+    console = Console(highlight=False)
+    with Spinner(console=console) as spinner:
+        spinner.update("Deploying to BentoCloud")
+        if deployment is None:
+            spinner.update("Creating deployment on BentoCloud")
+            deployment = Deployment.create(deployment_config_params=config_params)
+            spinner.log(
+                f'✅ Created deployment "{deployment.name}" in cluster "{deployment.cluster}"'
+            )
         spinner.log(f"💻 View Dashboard: {deployment.admin_console}")
         if wait:
             spinner.update(
@@ -750,17 +792,3 @@ def create_deployment(
             )
             if retcode != 0:
                 raise SystemExit(retcode)
-        elif dev:
-            raise InvalidArgument(
-                "Cannot use `--no-wait` flag when deploying using development mode"
-            )
-    if dev:
-        deployment.watch(t.cast(str, bento))
-
-
-if __name__ == "__main__":
-    import sys
-    # Testing code
-
-    deployment = Deployment.get(sys.argv[1])
-    deployment.watch(".")

@@ -30,7 +30,6 @@ if t.TYPE_CHECKING:
     from .client import RestApiClient
 
 from ...exceptions import BentoMLException
-from ...exceptions import InvalidArgument
 from ...exceptions import NotFound
 from ..bento.bento import BentoInfo
 from ..configuration.containers import BentoMLContainer
@@ -180,10 +179,6 @@ class DeploymentConfigParameters:
             else:
                 if self.cli:
                     rich.print(f"using bento [green]{bento_name}[/]...")
-                if self.dev:
-                    raise InvalidArgument(
-                        "A local bento directory is expected when deploying using development mode"
-                    )
                 bento_info = get_bento_info(bento=str(bento_name), cli=self.cli)
             self.cfg_dict["bento"] = bento_info.tag
             if self.service_name is None:
@@ -385,6 +380,10 @@ class DeploymentInfo:
     _schema: DeploymentSchema = attr.field(alias="_schema", repr=False)
     _urls: t.Optional[list[str]] = attr.field(alias="_urls", default=None, repr=False)
 
+    @property
+    def is_dev(self) -> bool:
+        return self._schema.manifest is not None and self._schema.manifest.dev
+
     def to_dict(self) -> dict[str, t.Any]:
         return {
             "name": self.name,
@@ -499,9 +498,9 @@ class DeploymentInfo:
     @inject
     def wait_until_ready(
         self,
+        spinner: Spinner,
         timeout: int = 3600,
         check_interval: int = 10,
-        spinner: Spinner | None = None,
         cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
         bento_dir: str | None = None,
     ) -> int:
@@ -509,170 +508,146 @@ class DeploymentInfo:
 
         start_time = time.time()
         init_run = False
-        if spinner is not None:
-            stop_tail_event = Event()
+        stop_tail_event = Event()
+        console = spinner.console
 
-            def tail_image_builder_logs() -> None:
-                started_at = time.time()
-                wait_pod_timeout = 60 * 10
-                pod: KubePodSchema | None = None
-                while True:
-                    pod = cloud_rest_client.v2.get_deployment_image_builder_pod(
-                        self.name, self.cluster
-                    )
-                    if pod is None:
-                        if time.time() - started_at > timeout:
-                            spinner.console.print(
-                                "🚨 [bold red]Time out waiting for image builder pod created[/bold red]"
-                            )
-                            return
-                        if stop_tail_event.wait(check_interval):
-                            return
-                        continue
-                    if pod.pod_status.status == "Running":
-                        break
-                    if time.time() - started_at > wait_pod_timeout:
+        def tail_image_builder_logs() -> None:
+            started_at = time.time()
+            wait_pod_timeout = 60 * 10
+            pod: KubePodSchema | None = None
+            while True:
+                pod = cloud_rest_client.v2.get_deployment_image_builder_pod(
+                    self.name, self.cluster
+                )
+                if pod is None:
+                    if time.time() - started_at > timeout:
                         spinner.console.print(
-                            "🚨 [bold red]Time out waiting for image builder pod running[/bold red]"
+                            "🚨 [bold red]Time out waiting for image builder pod created[/bold red]"
                         )
                         return
                     if stop_tail_event.wait(check_interval):
                         return
+                    continue
+                if pod.pod_status.status == "Running":
+                    break
+                if time.time() - started_at > wait_pod_timeout:
+                    spinner.console.print(
+                        "🚨 [bold red]Time out waiting for image builder pod running[/bold red]"
+                    )
+                    return
+                if stop_tail_event.wait(check_interval):
+                    return
 
-                is_first = True
-                logs_tailer = cloud_rest_client.v2.tail_logs(
-                    cluster_name=self.cluster,
-                    namespace=self._schema.kube_namespace,
-                    pod_name=pod.name,
-                    container_name="builder",
-                    stop_event=stop_tail_event,
-                )
+            is_first = True
+            logs_tailer = cloud_rest_client.v2.tail_logs(
+                cluster_name=self.cluster,
+                namespace=self._schema.kube_namespace,
+                pod_name=pod.name,
+                container_name="builder",
+                stop_event=stop_tail_event,
+            )
 
-                for piece in logs_tailer:
-                    decoded_bytes = base64.b64decode(piece)
-                    decoded_str = decoded_bytes.decode("utf-8")
-                    if is_first:
-                        is_first = False
-                        spinner.update("🚧 Image building...")
-                        spinner.stop()
-                    print(decoded_str, end="", flush=True)
+            for piece in logs_tailer:
+                decoded_bytes = base64.b64decode(piece)
+                decoded_str = decoded_bytes.decode("utf-8")
+                if is_first:
+                    is_first = False
+                    spinner.update("🚧 Image building...")
+                    spinner.stop()
+                console.print(decoded_str, end="")
 
-            tail_thread: Thread | None = None
+        tail_thread: Thread | None = None
+        stack = contextlib.ExitStack()
 
-            try:
-                status: DeploymentState | None = None
-                spinner.update(
-                    f'🔄 Waiting for deployment "{self.name}" to be ready...'
-                )
-                while time.time() - start_time < timeout:
-                    for _ in range(3):
-                        try:
-                            new_status = self.get_status()
-                            break
-                        except TimeoutException:
-                            spinner.update(
-                                "⚠️ Unable to get deployment status, retrying..."
-                            )
-                    else:
-                        spinner.log(
-                            "🚨 [bold red]Unable to contact the server, but the deployment is created. "
-                            "You can check the status on the bentocloud website.[/bold red]"
-                        )
-                        return 1
-                    if (
-                        status is None or status.status != new_status.status
-                    ):  # on status change
-                        status = new_status
-                        spinner.update(
-                            f'🔄 Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
-                        )
-                        if status.status == DeploymentStatus.ImageBuilding.value:
-                            if tail_thread is None:
-                                tail_thread = Thread(
-                                    target=tail_image_builder_logs, daemon=True
-                                )
-                                tail_thread.start()
-                        elif (
-                            tail_thread is not None
-                        ):  # The status has changed from ImageBuilding to other
-                            stop_tail_event.set()
-                            tail_thread.join()
-                            spinner.start()
+        @stack.callback
+        def stop_tail_thread():
+            stop_tail_event.set()
+            if tail_thread is not None:
+                tail_thread.join()
 
-                    if status.status in (
-                        DeploymentStatus.Running.value,
-                        DeploymentStatus.ScaledToZero.value,
-                    ):
-                        spinner.stop()
-                        spinner.console.print(
-                            f'✅ [bold green] Deployment "{self.name}" is ready:[/] {self.admin_console}'
-                        )
-                        return 0
-                    if status.status in [
-                        DeploymentStatus.Failed.value,
-                        DeploymentStatus.ImageBuildFailed.value,
-                        DeploymentStatus.Terminated.value,
-                        DeploymentStatus.Terminating.value,
-                        DeploymentStatus.Unhealthy.value,
-                    ]:
-                        spinner.stop()
-                        spinner.console.print(
-                            f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}"[/]'
-                        )
-                        return 1
-
-                    if not init_run and bento_dir is not None:
-                        pods = cloud_rest_client.v2.list_deployment_pods(
-                            self.name, self.cluster
-                        )
-                        if any(
-                            pod.labels.get("yatai.ai/bento-function-component-type")
-                            == "api-server"
-                            and pod.pod_status.status in ("Running", "Pending")
-                            for pod in pods
-                        ):
-                            self._init_deployment_files(bento_dir)
-                            init_run = True
-                    time.sleep(check_interval)
-
-                spinner.stop()
-                spinner.console.print(
-                    f'🚨 [bold red]Time out waiting for Deployment "{self.name}" ready[/]'
-                )
-                return 1
-            finally:
-                stop_tail_event.set()
-                if tail_thread is not None:
-                    tail_thread.join()
-        else:
+        with stack:
+            status: DeploymentState | None = None
+            spinner.update(f'🔄 Waiting for deployment "{self.name}" to be ready...')
             while time.time() - start_time < timeout:
-                status: DeploymentState | None = None
                 for _ in range(3):
                     try:
-                        status = self.get_status()
+                        new_status = self.get_status()
                         break
                     except TimeoutException:
-                        pass
-                if status is None:
-                    logger.error(
-                        f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Unable to contact the server, but the deployment is created. You can check the status on the bentocloud website."
+                        spinner.update("⚠️ Unable to get deployment status, retrying...")
+                else:
+                    spinner.log(
+                        "🚨 [bold red]Unable to contact the server, but the deployment is created. "
+                        "You can check the status on the bentocloud website.[/bold red]"
                     )
                     return 1
+                if (
+                    status is None or status.status != new_status.status
+                ):  # on status change
+                    status = new_status
+                    spinner.update(
+                        f'🔄 Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
+                    )
+                    if status.status == DeploymentStatus.ImageBuilding.value:
+                        if tail_thread is None:
+                            tail_thread = Thread(
+                                target=tail_image_builder_logs, daemon=True
+                            )
+                            tail_thread.start()
+                    elif (
+                        tail_thread is not None
+                    ):  # The status has changed from ImageBuilding to other
+                        stop_tail_event.set()
+                        tail_thread.join()
+                        tail_thread = None
+                        spinner.start()
+
+                if status.status in [
+                    DeploymentStatus.Failed.value,
+                    DeploymentStatus.ImageBuildFailed.value,
+                    DeploymentStatus.Terminated.value,
+                    DeploymentStatus.Terminating.value,
+                    DeploymentStatus.Unhealthy.value,
+                ]:
+                    spinner.stop()
+                    console.print(
+                        f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}"[/]'
+                    )
+                    return 1
+                if not init_run and bento_dir is not None:
+                    pods = cloud_rest_client.v2.list_deployment_pods(
+                        self.name, self.cluster
+                    )
+                    if any(
+                        pod.labels.get("yatai.ai/bento-function-component-type")
+                        == "api-server"
+                        and pod.status.phase == "Running"
+                        for pod in pods
+                    ):
+                        self._init_deployment_files(bento_dir, console=console)
+                        init_run = True
+                        stack.enter_context(self._tail_logs(console=console))
                 if status.status in (
                     DeploymentStatus.Running.value,
                     DeploymentStatus.ScaledToZero.value,
                 ):
-                    logger.info(
-                        f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Deployment '{self.name}' is ready."
+                    spinner.stop()
+                    console.print(
+                        f'✅ [bold green] Deployment "{self.name}" is ready:[/] {self.admin_console}'
                     )
-                    return 0
-                logger.info(
-                    f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Waiting for deployment '{self.name}' to be ready. Current status: '{status.status}'."
-                )
-                time.sleep(check_interval)
+                    break
 
-        logger.error(f"Timed out waiting for deployment '{self.name}' to be ready.")
-        return 1
+                time.sleep(check_interval)
+            else:
+                spinner.stop()
+                console.print(
+                    f'🚨 [bold red]Time out waiting for Deployment "{self.name}" ready[/]'
+                )
+                return 1
+
+            if bento_dir is not None:
+                return self.watch(bento_dir, spinner)
+        return 0
 
     @inject
     def upload_files(
@@ -715,10 +690,14 @@ class DeploymentInfo:
     ) -> DeploymentFileListSchema:
         return cloud_rest_client.v2.list_files(self.name, cluster=self.cluster)
 
-    def _init_deployment_files(self, bento_dir: str) -> None:
+    def _init_deployment_files(
+        self, bento_dir: str, console: Console | None = None
+    ) -> None:
         from ..bento.build_config import BentoPathSpec
 
         build_config = get_bento_build_config(bento_dir)
+        if console is None:
+            console = rich.get_console()
         bento_spec = BentoPathSpec(build_config.include, build_config.exclude)
         upload_files: list[tuple[str, bytes]] = []
         requirements_content = _build_requirements_txt(bento_dir, build_config)
@@ -742,15 +721,15 @@ class DeploymentInfo:
                 file_md5 = hashlib.md5(file_content).hexdigest()
                 if rel_path in pod_files and pod_files[rel_path] == file_md5:
                     continue
-                rich.print(f" [green]Uploading[/] {rel_path}")
+                console.print(f" [green]Uploading[/] {rel_path}")
                 upload_files.append((rel_path, file_content))
         requirements_md5 = hashlib.md5(requirements_content).hexdigest()
         if requirements_md5 != pod_files.get(REQUIREMENTS_TXT, ""):
-            rich.print(f" [green]Uploading[/] {REQUIREMENTS_TXT}")
+            console.print(f" [green]Uploading[/] {REQUIREMENTS_TXT}")
             upload_files.append((REQUIREMENTS_TXT, requirements_content))
         self.upload_files(upload_files)
 
-    def watch(self, bento_dir: str) -> None:
+    def watch(self, bento_dir: str, spinner: Spinner) -> int:
         import watchfiles
 
         from ..bento.build_config import BentoPathSpec
@@ -760,65 +739,66 @@ class DeploymentInfo:
         ignore_patterns = bento_spec.from_path(bento_dir)
         requirements_content = _build_requirements_txt(bento_dir, build_config)
         requirements_hash = hashlib.md5(requirements_content).hexdigest()
-        self._init_deployment_files(bento_dir)
 
         default_filter = watchfiles.filters.DefaultFilter()
 
         def watch_filter(change: watchfiles.Change, path: str) -> bool:
             if not default_filter(change, path):
                 return False
-            if path == "bentofile.yaml":
+            if os.path.relpath(path, bento_dir) == "bentofile.yaml":
                 return True
             return bento_spec.includes(path, recurse_exclude_spec=ignore_patterns)
 
-        console = Console(highlight=False)
-        with Spinner(console=console) as spinner:
+        console = spinner.console
+        try:
             spinner.update(
                 f"Watching file changes in {bento_dir} for deployment {self.name}"
             )
-            spinner.log(f"💻 View Dashboard: {self.admin_console}")
-            with self._tail_logs(console=console):
-                for changes in watchfiles.watch(bento_dir, watch_filter=watch_filter):
-                    build_config = get_bento_build_config(bento_dir)
-                    upload_files: list[tuple[str, bytes]] = []
-                    delete_files: list[str] = []
+            spinner.start()
+            for changes in watchfiles.watch(bento_dir, watch_filter=watch_filter):
+                build_config = get_bento_build_config(bento_dir)
+                upload_files: list[tuple[str, bytes]] = []
+                delete_files: list[str] = []
 
-                    for change, path in changes:
-                        rel_path = os.path.relpath(path, bento_dir)
-                        if rel_path == REQUIREMENTS_TXT:
-                            continue
-                        if change == watchfiles.Change.deleted:
-                            console.print(f" [red]Deleting[/] {rel_path}")
-                            delete_files.append(rel_path)
-                        else:
-                            console.print(f" [green]Uploading[/] {rel_path}")
-                            upload_files.append((rel_path, open(path, "rb").read()))
+                for change, path in changes:
+                    rel_path = os.path.relpath(path, bento_dir)
+                    if rel_path == REQUIREMENTS_TXT:
+                        continue
+                    if change == watchfiles.Change.deleted:
+                        console.print(f" [red]Deleting[/] {rel_path}")
+                        delete_files.append(rel_path)
+                    else:
+                        console.print(f" [green]Uploading[/] {rel_path}")
+                        upload_files.append((rel_path, open(path, "rb").read()))
 
-                    requirements_content = _build_requirements_txt(
-                        bento_dir, build_config
+                requirements_content = _build_requirements_txt(bento_dir, build_config)
+                if (
+                    new_hash := hashlib.md5(requirements_content).hexdigest()
+                ) != requirements_hash:
+                    requirements_hash = new_hash
+                    console.print(f" [green]Uploading[/] {REQUIREMENTS_TXT}")
+                    upload_files.append((REQUIREMENTS_TXT, requirements_content))
+                if upload_files:
+                    self.upload_files(upload_files)
+                if delete_files:
+                    self.delete_files(delete_files)
+                if (status := self.get_status().status) in [
+                    DeploymentStatus.Failed.value,
+                    DeploymentStatus.ImageBuildFailed.value,
+                    DeploymentStatus.Terminated.value,
+                    DeploymentStatus.Terminating.value,
+                    DeploymentStatus.Unhealthy.value,
+                ]:
+                    console.print(
+                        f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status}"[/]'
                     )
-                    if (
-                        new_hash := hashlib.md5(requirements_content).hexdigest()
-                        != requirements_hash
-                    ):
-                        requirements_hash = new_hash
-                        console.print(f" [green]Uploading[/] {REQUIREMENTS_TXT}")
-                        upload_files.append((REQUIREMENTS_TXT, requirements_content))
-                    if upload_files:
-                        self.upload_files(upload_files)
-                    if delete_files:
-                        self.delete_files(delete_files)
-                    if (status := self.get_status().status) in [
-                        DeploymentStatus.Failed.value,
-                        DeploymentStatus.ImageBuildFailed.value,
-                        DeploymentStatus.Terminated.value,
-                        DeploymentStatus.Terminating.value,
-                        DeploymentStatus.Unhealthy.value,
-                    ]:
-                        console.print(
-                            f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status}"[/]'
-                        )
-                        return
+                    return 1
+        finally:
+            spinner.log(
+                "[blue]Connect to this deployment next time with\n"
+                f"    $ bentoml deploy . --dev --name {self.name} --cluster {self.cluster}[/]"
+            )
+        return 0
 
     @contextlib.contextmanager
     @inject
@@ -860,7 +840,8 @@ class DeploymentInfo:
                         current = line
                         break
                     console.print(f"[{color}]\[{pod.runner_name}][/] {line}")
-            console.print(f"[{color}]\[{pod.runner_name}][/] {current}")
+            if current:
+                console.print(f"[{color}]\[{pod.runner_name}][/] {current}")
 
         try:
             for pod in pods:

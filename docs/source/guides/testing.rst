@@ -187,15 +187,15 @@ An example:
         # Initialize the ASGI app with the Summarization Service
         app = Summarization.to_asgi()
         # Create a test client to interact with the ASGI app
-        test_client = TestClient(app=app)
-
-        response = test_client.post("/summarize", json={"text": EXAMPLE_INPUT})
-        # Retrieve the text from the response for validation
-        summarized_text = response.text
-        # Assert that the HTTP response status code is 200, indicating success
-        assert response.status_code == 200
-        # Assert that the summarized text is not empty
-        assert summarized_text, "The summary should not be empty"
+        # The TestClient must be used as a context manager in order to initialize the ASGI app
+        with TestClient(app=app) as test_client:
+            response = test_client.post("/summarize", json={"text": EXAMPLE_INPUT})
+            # Retrieve the text from the response for validation
+            summarized_text = response.text
+            # Assert that the HTTP response status code is 200, indicating success
+            assert response.status_code == 200
+            # Assert that the summarized text is not empty
+            assert summarized_text, "The summary should not be empty"
 
 This test does the following:
 

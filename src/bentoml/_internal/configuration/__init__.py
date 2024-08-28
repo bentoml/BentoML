@@ -68,36 +68,13 @@ def clean_bentoml_version(bentoml_version: str) -> str:
 @lru_cache(maxsize=1)
 def is_pypi_installed_bentoml() -> bool:
     """Returns true if BentoML is installed via PyPI official release or installed from
-     source with a release tag, which should come with pre-built docker base image on
-     dockerhub.
-
-    BentoML uses setuptools_scm to manage its versions, it looks at three things:
-
-    * the latest tag (with a version number)
-    * the distance to this tag (e.g. number of revisions since latest tag)
-    * workdir state (e.g. uncommitted changes since latest tag)
-
-    BentoML uses setuptools_scm with `version_scheme = "post-release"` option, which
-    uses roughly the following logic to render the version:
-
-    * no distance and clean: {tag}
-    * distance and clean: {tag}.post{distance}+{scm letter}{revision hash}
-    * no distance and not clean: {tag}+dYYYYMMDD
-    * distance and not clean: {tag}.post{distance}+{scm letter}{revision hash}.dYYYYMMDD
-
-    This function looks at the version str and decide if BentoML installation is
-    base on a recent official release.
+    source with a release tag, which should come with pre-built docker base image on
+    dockerhub.
     """
-    # In a git repo with no tag, setuptools_scm generated version starts with "0.1."
-    try:
-        from ..._version import __version_tuple__
-    except ImportError:
-        __version_tuple__ = (0, 0, 0, "dirty")
-
-    is_tagged = not BENTOML_VERSION.startswith("0.1.")
-    is_clean = not str(__version_tuple__[-1]).split(".")[-1].startswith("d")
-    not_been_modified = BENTOML_VERSION == BENTOML_VERSION.split("+")[0]
-    return is_tagged and is_clean and not_been_modified
+    dist = importlib.metadata.distribution("bentoml")
+    return not any(
+        p.as_posix().endswith(".dist-info/direct_url.json") for p in (dist.files or [])
+    )
 
 
 def get_bentoml_config_file_from_env() -> str | None:

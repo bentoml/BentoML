@@ -8,8 +8,6 @@ import webbrowser
 import click
 import click_option_group as cog
 import rich
-from InquirerPy import inquirer
-from rich.prompt import Confirm
 
 from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.cloud.config import CloudClientConfig
@@ -50,8 +48,11 @@ def cloud_command():
 )
 def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
     """Login to BentoCloud."""
+    import questionary
+    from rich.prompt import Confirm
+
     if not api_token:
-        choice = inquirer.select(
+        choice = questionary.select(
             message="How would you like to authenticate BentoML CLI? [Use arrows to move]",
             choices=[
                 {
@@ -60,7 +61,7 @@ def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
                 },
                 {"name": "Paste an existing API token", "value": "paste"},
             ],
-        ).execute()
+        ).ask()
 
         if choice == "create":
             with contextlib.ExitStack() as port_stack:
@@ -73,7 +74,8 @@ def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
             encodedCallback = urllib.parse.quote(callback_server.callback_url)
             authURL = f"{baseURL}?callback={encodedCallback}"
             if Confirm.ask(
-                f"Please Enter Y or N to open [blue]{authURL}[/] in your browser..."
+                f"Would you like to open [blue]{authURL}[/] in your browser?",
+                default=True,
             ):
                 if webbrowser.open_new_tab(authURL):
                     rich.print(f"✅ Opened [blue]{authURL}[/] in your web browser.")

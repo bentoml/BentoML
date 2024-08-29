@@ -116,13 +116,18 @@ copybutton_selector = "div:not(.no-copybutton) > div.highlight > pre"
 # -- Options for HTML output -------------------------------------------------
 html_theme = "furo"
 html_theme_options = {
+    "announcement": "This is the BentoML 1.1 documentation. See the <a href='https://docs.bentoml.com/en/latest/'>latest documentation</a> for more features and examples.",
     "light_css_variables": {
         "color-brand-primary": "#44a4c6 ",
         "color-brand-content": "#44a4c6 ",
+        "color-announcement-background": "#44a4c6 ",
+        "color-announcement-text": "#ffffff ",
     },
     "dark_css_variables": {
         "color-brand-primary": "#c9378a ",
         "color-brand-content": "#c9378a ",
+        "color-announcement-background": "#c9378a ",
+        "color-announcement-text": "#ffffff ",
     },
     "source_repository": "https://github.com/bentoml/bentoml/",
     "source_branch": "main",

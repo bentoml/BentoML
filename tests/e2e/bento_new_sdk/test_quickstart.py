@@ -21,7 +21,7 @@ async def test_async_serve_and_prediction(examples: Path) -> None:
     with bentoml.serve(
         ".", working_dir=str(examples / "quickstart"), port=port
     ) as server:
-        with bentoml.SyncHTTPClient(server.url) as client:
+        with bentoml.SyncHTTPClient(server.url, server_ready_timeout=60) as client:
             result = client.summarize([EXAMPLE_INPUT])[0]
         assert "Whiskers" in result
 
@@ -42,6 +42,6 @@ def test_build_and_prediction(examples: Path) -> None:
     )
 
     with bentoml.serve(bento, port=port) as server:
-        with bentoml.SyncHTTPClient(server.url) as client:
+        with bentoml.SyncHTTPClient(server.url, server_ready_timeout=60) as client:
             result = client.summarize([EXAMPLE_INPUT])[0]
         assert "Whiskers" in result

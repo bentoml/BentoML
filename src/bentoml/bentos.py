@@ -472,7 +472,7 @@ def serve(
         from ._internal.service import load
 
         if not isinstance(bento, (Service, NewService)):
-            svc = load(bento)
+            svc = load(bento, working_dir=working_dir)
         else:
             svc = bento
 

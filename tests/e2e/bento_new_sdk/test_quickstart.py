@@ -1,8 +1,4 @@
-import asyncio
-import subprocess
-import sys
 from pathlib import Path
-from time import sleep
 
 import pytest
 
@@ -22,32 +18,16 @@ to celebrate what is being hailed as 'The Leap of the Century."
 
 @pytest.mark.asyncio
 async def test_async_serve_and_prediction(examples: Path) -> None:
-    server = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "bentoml",
-            "serve",
-            ".",
-            "--working-dir",
-            str(examples / "quickstart"),
-            "--port",
-            str(port),
-        ],
-    )
-
-    await asyncio.sleep(30)
-
-    try:
-        with bentoml.SyncHTTPClient(f"http://127.0.0.1:{port}") as client:
+    with bentoml.serve(
+        ".", working_dir=str(examples / "quickstart"), port=port
+    ) as server:
+        with bentoml.SyncHTTPClient(server.url) as client:
             result = client.summarize([EXAMPLE_INPUT])[0]
         assert "Whiskers" in result
 
-        async with bentoml.AsyncHTTPClient(f"http://127.0.0.1:{port}") as client:
+        async with bentoml.AsyncHTTPClient(server.url) as client:
             result = (await client.summarize([EXAMPLE_INPUT]))[0]
         assert "Whiskers" in result
-    finally:
-        server.terminate()
 
 
 def test_local_prediction(examples: Path) -> None:
@@ -60,23 +40,8 @@ def test_build_and_prediction(examples: Path) -> None:
     bento = bentoml.bentos.build(
         "service.py:Summarization", build_ctx=str(examples / "quickstart")
     )
-    server = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "bentoml",
-            "serve",
-            str(bento.tag),
-            "--port",
-            f"{port}",
-        ],
-    )
 
-    sleep(30)
-
-    try:
-        with bentoml.SyncHTTPClient(f"http://127.0.0.1:{port}") as client:
+    with bentoml.serve(bento, port=port) as server:
+        with bentoml.SyncHTTPClient(server.url) as client:
             result = client.summarize([EXAMPLE_INPUT])[0]
         assert "Whiskers" in result
-    finally:
-        server.terminate()

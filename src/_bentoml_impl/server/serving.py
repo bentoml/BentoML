@@ -12,12 +12,12 @@ import socket
 import tempfile
 import typing as t
 
-import attrs
 from simple_di import Provide
 from simple_di import inject
 
 from _bentoml_sdk import Service
 from bentoml._internal.container import BentoMLContainer
+from bentoml._internal.utils.circus import Server
 from bentoml.exceptions import BentoMLConfigException
 
 AnyService = Service[t.Any]
@@ -25,8 +25,6 @@ AnyService = Service[t.Any]
 if t.TYPE_CHECKING:
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
-
-    from bentoml._internal.utils.circus import Arbiter
 
     from .allocator import ResourceAllocator
 
@@ -352,25 +350,3 @@ def serve_http(
     except Exception:
         shutil.rmtree(uds_path, ignore_errors=True)
         raise
-
-
-@attrs.frozen
-class Server:
-    url: str
-    arbiter: Arbiter = attrs.field(repr=False)
-
-    def start(self) -> None:
-        pass
-
-    def stop(self) -> None:
-        self.arbiter.stop()
-
-    @property
-    def running(self) -> bool:
-        return self.arbiter.running
-
-    def __enter__(self) -> Server:
-        return self
-
-    def __exit__(self, exc_type: t.Any, exc_value: t.Any, traceback: t.Any) -> None:
-        self.stop()

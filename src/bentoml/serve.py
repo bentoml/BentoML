@@ -19,6 +19,7 @@ from simple_di import Provide
 from simple_di import inject
 
 from bentoml._internal.log import SERVER_LOGGING_CONFIG
+from bentoml._internal.utils.circus import Server
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner.runner import Runner
@@ -234,12 +235,13 @@ def serve_http_development(
     reload: bool = False,
     timeout_keep_alive: int | None = None,
     timeout_graceful_shutdown: int | None = None,
-) -> None:
+    threaded: bool = False,
+) -> Server:
     logger.warning(
         "serve_http_development is deprecated. Please use serve_http_production with api_workers=1 and development_mode=True"
     )
 
-    serve_http_production(
+    return serve_http_production(
         bento_identifier,
         working_dir,
         port=port,
@@ -258,6 +260,7 @@ def serve_http_development(
         development_mode=True,
         timeout_keep_alive=timeout_keep_alive,
         timeout_graceful_shutdown=timeout_graceful_shutdown,
+        threaded=threaded,
     )
 
 
@@ -301,7 +304,7 @@ def _get_runner_socket_windows(
 
 @inject(squeeze_none=True)
 def serve_http_production(
-    bento_identifier: str,
+    bento_identifier: str | Service,
     working_dir: str,
     port: int = Provide[BentoMLContainer.http.port],
     host: str = Provide[BentoMLContainer.http.host],
@@ -320,7 +323,8 @@ def serve_http_production(
     reload: bool = False,
     timeout_keep_alive: int | None = None,
     timeout_graceful_shutdown: int | None = None,
-) -> None:
+    threaded: bool = False,
+) -> Server:
     env = {"PROMETHEUS_MULTIPROC_DIR": ensure_prometheus_dir()}
 
     import ipaddress
@@ -331,13 +335,19 @@ def serve_http_production(
 
     from . import load
     from ._internal.configuration.containers import BentoMLContainer
+    from ._internal.service import Service
     from ._internal.utils import reserve_free_port
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
-    svc = load(bento_identifier, working_dir=working_dir)
+    if isinstance(bento_identifier, Service):
+        svc = bento_identifier
+        bento_identifier, _ = svc.get_service_import_origin()
+    else:
+        svc = load(bento_identifier, working_dir=working_dir)
+
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
     runner_bind_map: t.Dict[str, str] = {}
@@ -491,9 +501,8 @@ def serve_http_production(
         )
     )
 
+    log_host = "localhost" if host in ["0.0.0.0", "::"] else host
     if BentoMLContainer.api_server_config.metrics.enabled.get():
-        log_host = "localhost" if host in ["0.0.0.0", "::"] else host
-
         logger.info(
             PROMETHEUS_MESSAGE,
             scheme.upper(),
@@ -504,6 +513,7 @@ def serve_http_production(
     arbiter_kwargs: dict[str, t.Any] = {
         "watchers": watchers,
         "sockets": list(circus_socket_map.values()),
+        "threaded": threaded,
     }
 
     plugins = []
@@ -522,25 +532,33 @@ def serve_http_production(
     arbiter = create_standalone_arbiter(**arbiter_kwargs)
 
     production = False if development_mode else True
+    arbiter.exit_stack.enter_context(
+        track_serve(svc, production=production, serve_kind="http")
+    )
 
-    with track_serve(svc, production=production):
-        try:
-            arbiter.start(
-                cb=lambda _: logger.info(  # type: ignore
-                    'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
-                    scheme.upper(),
-                    bento_identifier,
-                    scheme,
-                    host,
-                    port,
-                ),
-            )
-        finally:
-            if uds_path is not None:
-                shutil.rmtree(uds_path)
+    @arbiter.exit_stack.callback
+    def cleanup():
+        if uds_path is not None:
+            shutil.rmtree(uds_path)
+
+    try:
+        arbiter.start(
+            cb=lambda _: logger.info(  # type: ignore
+                'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
+                scheme.upper(),
+                bento_identifier,
+                scheme,
+                host,
+                port,
+            ),
+        )
+        return Server(url=f"{scheme}://{log_host}:{port}", arbiter=arbiter)
+    except Exception:
+        cleanup()
+        raise
 
 
-@inject
+@inject(squeeze_none=True)
 def serve_grpc_production(
     bento_identifier: str,
     working_dir: str,
@@ -560,7 +578,8 @@ def serve_grpc_production(
     protocol_version: str = LATEST_PROTOCOL_VERSION,
     reload: bool = False,
     development_mode: bool = False,
-) -> None:
+    threaded: bool = False,
+) -> Server:
     env = {"PROMETHEUS_MULTIPROC_DIR": ensure_prometheus_dir()}
 
     from . import load
@@ -770,6 +789,7 @@ def serve_grpc_production(
     arbiter_kwargs: dict[str, t.Any] = {
         "watchers": watchers,
         "sockets": list(circus_socket_map.values()),
+        "threaded": threaded,
     }
 
     plugins = []
@@ -788,18 +808,28 @@ def serve_grpc_production(
     arbiter = create_standalone_arbiter(**arbiter_kwargs)
 
     production: bool = False if development_mode else True
-    with track_serve(svc, production=production, serve_kind="grpc"):
-        try:
-            arbiter.start(
-                cb=lambda _: logger.info(  # type: ignore
-                    'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
-                    "gRPC",
-                    bento_identifier,
-                    scheme,
-                    host,
-                    port,
-                ),
-            )
-        finally:
-            if uds_path is not None:
-                shutil.rmtree(uds_path)
+
+    arbiter.exit_stack.enter_context(
+        track_serve(svc, production=production, serve_kind="grpc")
+    )
+
+    @arbiter.exit_stack.callback
+    def cleanup():
+        if uds_path is not None:
+            shutil.rmtree(uds_path)
+
+    try:
+        arbiter.start(
+            cb=lambda _: logger.info(  # type: ignore
+                'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
+                "gRPC",
+                bento_identifier,
+                scheme,
+                host,
+                port,
+            ),
+        )
+        return Server(url=f"{scheme}://{host}:{port}", arbiter=arbiter)
+    except Exception:
+        cleanup()
+        raise

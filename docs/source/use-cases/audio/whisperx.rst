@@ -11,7 +11,7 @@ All the source code in this tutorial is available in the `BentoWhisperX GitHub r
 Prerequisites
 -------------
 
-- Python 3.8+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
+- Python 3.9+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
 - You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/quickstart` first.
 - If you want to test this project locally, install FFmpeg on your system.
 - Gain access to the model used in this project: `pyannote/segmentation-3.0 <https://huggingface.co/pyannote/segmentation-3.0>`_.

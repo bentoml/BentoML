@@ -12,16 +12,15 @@ TEST_ARGS = [
     "-vv",
 ]
 
-PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12"]
 
 FRAMEWORK_DEPENDENCIES = {
-    "catboost": ["catboost"],
+    "catboost": ["catboost", "numpy<2"],
     "diffusers": ["diffusers", "transformers", "tokenizer"],
     "easyocr": ["easyocr"],
     "fastai": ["fastai"],
     "flax": [
-        "tensorflow~=2.13.1",
-        "pydantic<2",
+        "tensorflow",
         "flax; platform_system!='Windows'",
         "jax[cpu]; platform_system!='Windows'",
         "jaxlib; platform_system!='Windows'",
@@ -34,7 +33,7 @@ FRAMEWORK_DEPENDENCIES = {
     "pytorch": [],
     "pytorch_lightning": ["lightning"],
     "sklearn": ["scikit-learn"],
-    "tensorflow": ["tensorflow~=2.13.1", "pydantic<2"],
+    "tensorflow": ["tensorflow"],
     "torchscript": [],
     "xgboost": ["xgboost"],
     "detectron": ["detectron2"],

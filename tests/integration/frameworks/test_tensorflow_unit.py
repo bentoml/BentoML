@@ -80,11 +80,11 @@ def test_register_container():
     )
 
     assert (
-        LazyType("tensorflow.python.framework.ops", "Tensor")
+        LazyType("tensorflow", "Tensor")
         not in DataContainerRegistry.CONTAINER_BATCH_TYPE_MAP
     )
 
     assert (
-        LazyType("tensorflow.python.framework.ops", "Tensor")
+        LazyType("tensorflow", "Tensor")
         not in DataContainerRegistry.CONTAINER_SINGLE_TYPE_MAP
     )

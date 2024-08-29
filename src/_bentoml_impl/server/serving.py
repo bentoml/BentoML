@@ -102,7 +102,7 @@ def create_dependency_watcher(
     working_dir: str | None = None,
     env: dict[str, str] | None = None,
 ) -> tuple[Watcher, CircusSocket, str]:
-    from bentoml.serve import create_watcher
+    from bentoml.serving import create_watcher
 
     num_workers, worker_envs = scheduler.get_worker_env(svc)
     uri, socket = _get_server_socket(svc, uds_path, port_stack, backlog)
@@ -173,11 +173,11 @@ def serve_http(
     from bentoml._internal.utils import reserve_free_port
     from bentoml._internal.utils.analytics.usage_stats import track_serve
     from bentoml._internal.utils.circus import create_standalone_arbiter
-    from bentoml.serve import construct_ssl_args
-    from bentoml.serve import construct_timeouts_args
-    from bentoml.serve import create_watcher
-    from bentoml.serve import ensure_prometheus_dir
-    from bentoml.serve import make_reload_plugin
+    from bentoml.serving import construct_ssl_args
+    from bentoml.serving import construct_timeouts_args
+    from bentoml.serving import create_watcher
+    from bentoml.serving import ensure_prometheus_dir
+    from bentoml.serving import make_reload_plugin
 
     from ..loader import import_service
     from ..loader import normalize_identifier

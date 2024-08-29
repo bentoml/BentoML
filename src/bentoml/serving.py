@@ -23,7 +23,6 @@ from bentoml._internal.utils.circus import Server
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner.runner import Runner
-from ._internal.utils import is_async_callable
 from .exceptions import BentoMLConfigException
 from .exceptions import BentoMLException
 from .grpc.utils import LATEST_PROTOCOL_VERSION
@@ -209,12 +208,9 @@ def make_reload_plugin(working_dir: str, bentoml_home: str) -> dict[str, str]:
     }
 
 
-async def on_service_deployment(service: Service) -> None:
+def on_service_deployment(service: Service) -> None:
     for on_deployment in service.deployment_hooks:
-        if is_async_callable(on_deployment):
-            await on_deployment()
-        else:
-            on_deployment()
+        on_deployment()
 
 
 @inject
@@ -304,7 +300,7 @@ def _get_runner_socket_windows(
 
 @inject(squeeze_none=True)
 def serve_http_production(
-    bento_identifier: str | Service,
+    bento_identifier: str,
     working_dir: str,
     port: int = Provide[BentoMLContainer.http.port],
     host: str = Provide[BentoMLContainer.http.host],
@@ -335,18 +331,12 @@ def serve_http_production(
 
     from . import load
     from ._internal.configuration.containers import BentoMLContainer
-    from ._internal.service import Service
     from ._internal.utils import reserve_free_port
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
 
+    svc = load(bento_identifier, working_dir=working_dir)
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-
-    if isinstance(bento_identifier, Service):
-        svc = bento_identifier
-        bento_identifier, _ = svc.get_service_import_origin()
-    else:
-        svc = load(bento_identifier, working_dir=working_dir)
 
     watchers: t.List[Watcher] = []
     circus_socket_map: t.Dict[str, CircusSocket] = {}
@@ -486,8 +476,7 @@ def serve_http_production(
 
     close_child_stdin = False if development_mode else True
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(on_service_deployment(svc))
+    on_service_deployment(svc)
 
     scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
     watchers.append(

@@ -36,7 +36,7 @@ def start_runner_server(
     """
     Experimental API for serving a BentoML runner.
     """
-    from .serve import ensure_prometheus_dir
+    from .serving import ensure_prometheus_dir
 
     env = {"PROMETHEUS_MULTIPROC_DIR": ensure_prometheus_dir()}
 
@@ -44,8 +44,8 @@ def start_runner_server(
     from ._internal.utils import reserve_free_port
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
-    from .serve import create_watcher
-    from .serve import find_triton_binary
+    from .serving import create_watcher
+    from .serving import find_triton_binary
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
@@ -162,7 +162,7 @@ def start_http_server(
     timeout_keep_alive: int | None = None,
     timeout_graceful_shutdown: int | None = None,
 ) -> None:
-    from .serve import ensure_prometheus_dir
+    from .serving import ensure_prometheus_dir
 
     env = {"PROMETHEUS_MULTIPROC_DIR": ensure_prometheus_dir()}
 
@@ -172,11 +172,11 @@ def start_http_server(
     from . import load
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
-    from .serve import API_SERVER_NAME
-    from .serve import PROMETHEUS_MESSAGE
-    from .serve import construct_ssl_args
-    from .serve import construct_timeouts_args
-    from .serve import create_watcher
+    from .serving import API_SERVER_NAME
+    from .serving import PROMETHEUS_MESSAGE
+    from .serving import construct_ssl_args
+    from .serving import construct_timeouts_args
+    from .serving import create_watcher
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
@@ -279,7 +279,7 @@ def start_grpc_server(
     ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
     protocol_version: str = LATEST_PROTOCOL_VERSION,
 ) -> None:
-    from .serve import ensure_prometheus_dir
+    from .serving import ensure_prometheus_dir
 
     env = {"PROMETHEUS_MULTIPROC_DIR": ensure_prometheus_dir()}
 
@@ -291,10 +291,10 @@ def start_grpc_server(
     from ._internal.utils import reserve_free_port
     from ._internal.utils.analytics import track_serve
     from ._internal.utils.circus import create_standalone_arbiter
-    from .serve import PROMETHEUS_MESSAGE
-    from .serve import PROMETHEUS_SERVER_NAME
-    from .serve import construct_ssl_args
-    from .serve import create_watcher
+    from .serving import PROMETHEUS_MESSAGE
+    from .serving import PROMETHEUS_SERVER_NAME
+    from .serving import construct_ssl_args
+    from .serving import create_watcher
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
     svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)

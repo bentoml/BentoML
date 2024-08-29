@@ -20,13 +20,18 @@ from .exceptions import BentoMLException
 from .exceptions import InvalidArgument
 
 if t.TYPE_CHECKING:
+    from _bentoml_sdk import Service as NewService
+
     from ._internal.bento import BentoStore
     from ._internal.bento.build_config import CondaOptions
     from ._internal.bento.build_config import DockerOptions
     from ._internal.bento.build_config import ModelSpec
     from ._internal.bento.build_config import PythonOptions
     from ._internal.cloud import BentoCloudClient
+    from ._internal.service import Service
     from ._internal.utils.circus import Server
+
+    Servable = str | Bento | Tag | Service | NewService[t.Any]
 
 
 logger = logging.getLogger(__name__)
@@ -429,14 +434,14 @@ def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:
 
 
 def serve(
-    bento: str | Tag | Bento,
+    bento: Servable,
     server_type: str = "http",
     reload: bool = False,
     production: bool = True,
     env: t.Literal["conda"] | None = None,
     host: str | None = None,
     port: int | None = None,
-    working_dir: str | None = None,
+    working_dir: str = ".",
     api_workers: int | None = None,
     backlog: int | None = None,
     ssl_certfile: str | None = None,
@@ -453,6 +458,7 @@ def serve(
     blocking: bool = False,
 ) -> Server:
     from ._internal.log import configure_logging
+    from ._internal.service import Service
 
     if isinstance(bento, Bento):
         bento = str(bento.tag)
@@ -461,12 +467,20 @@ def serve(
 
     configure_logging()
     if server_type == "http":
-        from ._internal.service import Service
+        from _bentoml_sdk import Service as NewService
+
         from ._internal.service import load
 
-        svc = load(bento)
+        if not isinstance(bento, (Service, NewService)):
+            svc = load(bento)
+        else:
+            svc = bento
+
         if isinstance(svc, Service):  # < 1.2 bento
-            from .serve import serve_http_production
+            from .serving import serve_http_production
+
+            if not isinstance(bento, str):
+                bento, working_dir = svc.get_service_import_origin()
 
             return serve_http_production(
                 bento_identifier=bento,
@@ -489,6 +503,10 @@ def serve(
         else:  # >= 1.2 bento
             from _bentoml_impl.server.serving import serve_http
 
+            if not isinstance(bento, str):
+                bento = svc.import_string
+                working_dir = svc.working_dir
+
             svc.inject_config()
             return serve_http(
                 bento_identifier=bento,
@@ -508,7 +526,11 @@ def serve(
                 ssl_ciphers=ssl_ciphers,
             )
     elif server_type == "grpc":
-        from .serve import serve_grpc_production
+        from .serving import serve_grpc_production
+
+        if not isinstance(bento, str):
+            assert isinstance(bento, Service)
+            bento, working_dir = bento.get_service_import_origin()
 
         return serve_grpc_production(
             bento_identifier=bento,

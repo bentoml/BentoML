@@ -207,10 +207,8 @@ else:
         _bentoml_sdk = None
 
     def __getattr__(name: str) -> Any:
-        if name in ("HTTPServer", "GrpcServer", "server"):
-            import bentoml.server
-
-            return bentoml.server if name == "server" else getattr(bentoml.server, name)
+        if name in ("HTTPServer", "GrpcServer"):
+            return getattr(server, name)
         if name not in _NEW_SDK_ATTRS + _NEW_CLIENTS:
             raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
         if _bentoml_sdk is None:

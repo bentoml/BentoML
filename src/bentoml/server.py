@@ -37,6 +37,11 @@ if TYPE_CHECKING:
 
 STOP_TIMEOUT = 5
 logger = logging.getLogger(__name__)
+warn(
+    "bentoml.server module is deprecated, use bentoml.serve() instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 __all__ = ["Server", "GrpcServer", "HTTPServer"]
 

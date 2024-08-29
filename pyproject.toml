@@ -3,73 +3,81 @@ name = "bentoml"
 description = "BentoML: The easiest way to serve AI apps and models"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
-keywords = ["BentoML", "Compound AI Systems", "MLOps", "LLMOps", "Model Serving", "Model Inference", "Model Deployment"]
+keywords = [
+  "BentoML",
+  "Compound AI Systems",
+  "MLOps",
+  "LLMOps",
+  "Model Serving",
+  "Model Inference",
+  "Model Deployment",
+]
 license = { text = "Apache-2.0" }
 authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Software Development :: Libraries",
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
-    "Jinja2>=3.0.1",
-    "PyYAML>=5.0",
-    "aiohttp",
-    "attrs>=22.2.0",
-    "cattrs>=22.1.0,<23.2.0",
-    "circus>=0.17.0,!=0.17.2",
-    "click>=7.0",
-    "click-option-group",
-    "cloudpickle>=2.0.0",
-    "deepmerge",
-    "fs",
-    "httpx",
-    "inflection",
-    "numpy",
-    "nvidia-ml-py<12",
-    # OpenTelemetry is the server dependencies, rather than SDK
-    # Since there are discrepancies among API and instrumentation packages,
-    # we should always pin the set version of Opentelemetry suite
-    "opentelemetry-api==1.20.0",
-    "opentelemetry-sdk==1.20.0",
-    "opentelemetry-instrumentation==0.41b0",
-    "opentelemetry-instrumentation-aiohttp-client==0.41b0",
-    "opentelemetry-instrumentation-asgi==0.41b0",
-    "opentelemetry-semantic-conventions==0.41b0",
-    "opentelemetry-util-http==0.41b0",
-    "packaging>=22.0",
-    "pathspec",
-    "pip-requirements-parser>=31.2.0",
-    "prometheus-client>=0.10.0",
-    "psutil",
-    "pydantic<3",
-    "python-dateutil",
-    "python-multipart",
-    "python-json-logger",
-    "rich>=11.2.0",
-    "schema",
-    "simple-di>=0.1.4",
-    "starlette>=0.24.0",
-    "uvicorn>=0.22.0",
-    "watchfiles>=0.15.0",
-    # for manipulating pyproject.toml
-    "tomli>=1.1.0; python_version < \"3.11\"",
-    "tomli-w",
-    "httpx-ws>=0.6.0",
-    "aiosqlite>=0.20.0",
-    "uv",
-    "questionary>=2.0.1",
+  "Jinja2>=3.0.1",
+  "PyYAML>=5.0",
+  "aiohttp",
+  "attrs>=22.2.0",
+  "cattrs>=22.1.0,<23.2.0",
+  "circus>=0.17.0,!=0.17.2",
+  "click>=7.0",
+  "click-option-group",
+  "cloudpickle>=2.0.0",
+  "deepmerge",
+  "fs",
+  "httpx",
+  "inflection",
+  "numpy",
+  "nvidia-ml-py<12",
+  # OpenTelemetry is the server dependencies, rather than SDK
+  # Since there are discrepancies among API and instrumentation packages,
+  # we should always pin the set version of Opentelemetry suite
+  "opentelemetry-api==1.20.0",
+  "opentelemetry-sdk==1.20.0",
+  "opentelemetry-instrumentation==0.41b0",
+  "opentelemetry-instrumentation-aiohttp-client==0.41b0",
+  "opentelemetry-instrumentation-asgi==0.41b0",
+  "opentelemetry-semantic-conventions==0.41b0",
+  "opentelemetry-util-http==0.41b0",
+  "packaging>=22.0",
+  "pathspec",
+  "pip-requirements-parser>=31.2.0",
+  "prometheus-client>=0.10.0",
+  "psutil",
+  "pydantic<3",
+  "python-dateutil",
+  "python-multipart",
+  "python-json-logger",
+  "rich>=11.2.0",
+  "schema",
+  "simple-di>=0.1.4",
+  "starlette>=0.24.0",
+  "uvicorn>=0.22.0",
+  "watchfiles>=0.15.0",
+  # for manipulating pyproject.toml
+  "tomli>=1.1.0; python_version < \"3.11\"",
+  "tomli-w",
+  "httpx-ws>=0.6.0",
+  "aiosqlite>=0.20.0",
+  "uv",
+  "questionary>=2.0.1",
 ]
 dynamic = ["version"]
 [project.urls]
@@ -84,35 +92,32 @@ Blog = "https://bentoml.com/blog"
 bentoml = "bentoml_cli.cli:cli"
 [project.optional-dependencies]
 all = [
-    "bentoml[aws,io,grpc,grpc-reflection,grpc-channelz,tracing,monitor-otlp]",
+  "bentoml[aws,io,grpc,grpc-reflection,grpc-channelz,tracing,monitor-otlp]",
 ]
 aws = ["fs-s3fs"]
-io = [
-    "bentoml[io-image,io-pandas]",
-]
+io = ["bentoml[io-image,io-pandas]"]
 io-image = ["Pillow"]
 io-pandas = ["pandas>=1", "pyarrow"]
 triton = ["tritonclient>=2.29.0", "tritonclient[all]; sys_platform != 'darwin'"]
+unsloth = ["bentoml-unsloth"]
 grpc = [
-    "protobuf",
-    "grpcio",
-    "grpcio-health-checking",
-    "opentelemetry-instrumentation-grpc==0.41b0",
+  "protobuf",
+  "grpcio",
+  "grpcio-health-checking",
+  "opentelemetry-instrumentation-grpc==0.41b0",
 ]
 grpc-reflection = ["bentoml[grpc]", "grpcio-reflection"]
 grpc-channelz = ["bentoml[grpc]", "grpcio-channelz"]
 # We kept for compatibility with previous
 # versions of BentoML. It is discouraged to use this, instead use any
 # of the above tracing.* extras.
-tracing = [
-    "bentoml[tracing-jaeger,tracing-zipkin,tracing-otlp]",
-]
+tracing = ["bentoml[tracing-jaeger,tracing-zipkin,tracing-otlp]"]
 tracing-jaeger = ["opentelemetry-exporter-jaeger==1.20.0"]
 tracing-zipkin = ["opentelemetry-exporter-zipkin==1.20.0"]
 tracing-otlp = ["opentelemetry-exporter-otlp==1.20.0"]
 monitor-otlp = [
-    "opentelemetry-exporter-otlp-proto-http==1.20.0",
-    "opentelemetry-exporter-otlp-proto-grpc==1.20.0",
+  "opentelemetry-exporter-otlp-proto-http==1.20.0",
+  "opentelemetry-exporter-otlp-proto-grpc==1.20.0",
 ]
 
 [build-system]
@@ -126,21 +131,31 @@ fallback-version = "0.0.0"
 version-file = "src/bentoml/_version.py"
 [tool.hatch.version.raw-options]
 git_describe_command = [
-    "git",
-    "describe",
-    "--dirty",
-    "--tags",
-    "--long",
-    "--first-parent",
+  "git",
+  "describe",
+  "--dirty",
+  "--tags",
+  "--long",
+  "--first-parent",
 ]
 version_scheme = "post-release"
 fallback_version = "0.0.0"
 [tool.hatch.metadata]
 allow-direct-references = true
 [tool.hatch.build.targets.sdist]
-only-include = ["src/bentoml", "src/bentoml_cli", "src/_bentoml_sdk", "src/_bentoml_impl"]
+only-include = [
+  "src/bentoml",
+  "src/bentoml_cli",
+  "src/_bentoml_sdk",
+  "src/_bentoml_impl",
+]
 [tool.hatch.build.targets.wheel]
-packages = ["src/bentoml", "src/bentoml_cli", "src/_bentoml_sdk", "src/_bentoml_impl"]
+packages = [
+  "src/bentoml",
+  "src/bentoml_cli",
+  "src/_bentoml_sdk",
+  "src/_bentoml_impl",
+]
 
 [[tool.pdm.source]]
 url = "https://download.pytorch.org/whl/cpu"
@@ -151,37 +166,37 @@ respect-source-order = true
 
 [tool.pdm.dev-dependencies]
 docs = [
-    "sphinx>=5",
-    "myst-parser",
-    "sphinx-click>=3.0.2",
-    "furo",
-    "sphinx-inline-tabs",
-    "sphinxext-opengraph",
-    "sphinxcontrib-fulltoc",
-    "sphinxcontrib-spelling",
-    "sphinx-copybutton",
-    "sphinx-issues",
-    "sphinx-design",
-    "pyenchant",
-    "Jinja2>=3.1",
-    "sphinx-autobuild",
-    "sphinx-hoverxref",
-    "pyspark",
-    "ray[serve]; python_version < \"3.12\"",
+  "sphinx>=5",
+  "myst-parser",
+  "sphinx-click>=3.0.2",
+  "furo",
+  "sphinx-inline-tabs",
+  "sphinxext-opengraph",
+  "sphinxcontrib-fulltoc",
+  "sphinxcontrib-spelling",
+  "sphinx-copybutton",
+  "sphinx-issues",
+  "sphinx-design",
+  "pyenchant",
+  "Jinja2>=3.1",
+  "sphinx-autobuild",
+  "sphinx-hoverxref",
+  "pyspark",
+  "ray[serve]; python_version < \"3.12\"",
 ]
 tooling = ["pre-commit", "setuptools-scm", "pandas-stubs", "nox"]
 testing = [
-    "pandas>=1",
-    "scikit-learn",
-    "yamllint==1.32.0",
-    "coverage[toml]==7.2.6",
-    "fastapi",
-    "lxml",
-    "orjson",
-    "pytest-cov==4.1.0",
-    "pytest==7.4.0",
-    "pytest-xdist[psutil]==3.3.1",
-    "pytest-asyncio==0.21.1",
+  "pandas>=1",
+  "scikit-learn",
+  "yamllint==1.32.0",
+  "coverage[toml]==7.2.6",
+  "fastapi",
+  "lxml",
+  "orjson",
+  "pytest-cov==4.1.0",
+  "pytest==7.4.0",
+  "pytest-xdist[psutil]==3.3.1",
+  "pytest-asyncio==0.21.1",
 ]
 
 [tool.coverage.paths]
@@ -189,43 +204,43 @@ bentoml = ["src/bentoml", "*/bentoml/src/bentoml"]
 [tool.coverage.run]
 branch = true
 omit = [
-    "__pypackages__/*",
-    "src/bentoml/__main__.py",
-    "src/bentoml/io.py",
-    "src/bentoml/serve.py",
-    "src/bentoml/start.py",
-    "src/bentoml/_internal/types.py",
-    "src/bentoml/testing/*",
-    "src/bentoml/grpc/v1alpha1/*",
-    "src/bentoml/grpc/v1/*",
-    "src/bentoml/_internal/external_typing/*",
+  "__pypackages__/*",
+  "src/bentoml/__main__.py",
+  "src/bentoml/io.py",
+  "src/bentoml/serve.py",
+  "src/bentoml/start.py",
+  "src/bentoml/_internal/types.py",
+  "src/bentoml/testing/*",
+  "src/bentoml/grpc/v1alpha1/*",
+  "src/bentoml/grpc/v1/*",
+  "src/bentoml/_internal/external_typing/*",
 ]
 [tool.coverage.report]
 show_missing = true
 precision = 2
 omit = [
-    "__pypackages__/*",
-    'src/bentoml/__main__.py',
-    "src/bentoml/io.py",
-    "src/bentoml/serve.py",
-    "src/bentoml/start.py",
-    "src/bentoml/_internal/types.py",
-    "src/bentoml/testing/*",
-    "src/bentoml/grpc/v1alpha1/*",
-    "src/bentoml/grpc/v1/*",
-    "src/bentoml/_internal/external_typing/*",
+  "__pypackages__/*",
+  'src/bentoml/__main__.py',
+  "src/bentoml/io.py",
+  "src/bentoml/serve.py",
+  "src/bentoml/start.py",
+  "src/bentoml/_internal/types.py",
+  "src/bentoml/testing/*",
+  "src/bentoml/grpc/v1alpha1/*",
+  "src/bentoml/grpc/v1/*",
+  "src/bentoml/_internal/external_typing/*",
 ]
 exclude_lines = [
-    "\\#\\s*pragma: no cover",
-    "^\\s*def __repr__",
-    "^\\s*raise AssertionError",
-    "^\\s*raise NotImplementedError",
-    "^\\s*raise MissingDependencyException",
-    "^\\s*except ImportError",
-    "if __name__ == .__main__.:",
-    "^\\s*if TYPE_CHECKING:",
-    "^\\s*@(t\\.)?overload( |$)",
-    "@(abc\\.)?abstractmethod",
+  "\\#\\s*pragma: no cover",
+  "^\\s*def __repr__",
+  "^\\s*raise AssertionError",
+  "^\\s*raise NotImplementedError",
+  "^\\s*raise MissingDependencyException",
+  "^\\s*except ImportError",
+  "if __name__ == .__main__.:",
+  "^\\s*if TYPE_CHECKING:",
+  "^\\s*@(t\\.)?overload( |$)",
+  "@(abc\\.)?abstractmethod",
 ]
 
 [tool.pytest.ini_options]
@@ -243,14 +258,14 @@ target-version = "py310"
 ignore = ["E501"]
 extend-select = ["I"]
 exclude = [
-    "bazel-*/",
-    "venv",
-    "typings",
-    "docs/source",
-    "src/bentoml/_internal/external_typing",
-    "src/bentoml/grpc/v1alpha1",
-    "src/bentoml/grpc/v1",
-    "tests/proto",
+  "bazel-*/",
+  "venv",
+  "typings",
+  "docs/source",
+  "src/bentoml/_internal/external_typing",
+  "src/bentoml/grpc/v1alpha1",
+  "src/bentoml/grpc/v1",
+  "tests/proto",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -268,14 +283,14 @@ known-first-party = ["bentoml", "bentoml_cli", "_bentoml_sdk", "_bentoml_impl"]
 pythonVersion = "3.12"
 include = ["src/", "examples/", "tests/"]
 exclude = [
-    'src/bentoml/_version.py',
-    'src/bentoml/__main__.py',
-    'src/bentoml/_internal/external_typing/',
-    'src/**/*_pb2.py*',
-    "src/**/*_pb2_grpc.py*",
-    "grpc-client/thirdparty",
-    "tests/proto",
-    "bazel-*",
+  'src/bentoml/_version.py',
+  'src/bentoml/__main__.py',
+  'src/bentoml/_internal/external_typing/',
+  'src/**/*_pb2.py*',
+  "src/**/*_pb2_grpc.py*",
+  "grpc-client/thirdparty",
+  "tests/proto",
+  "bazel-*",
 ]
 analysis.useLibraryCodeForTypes = true
 strictListInference = true

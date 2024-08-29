@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 
 import attr
 
-from bentoml._internal.cloud.schemas.utils import dict_options_converter
-
 from ...bento.bento import BentoServiceInfo
+from ...cloud.schemas.utils import dict_options_converter
+from ...tag import Tag
 
 time_format = "%Y-%m-%d %H:%M:%S.%f"
 
@@ -74,16 +74,21 @@ class BentoRunnerSchema:
 @attr.define
 class BentoManifestSchema:
     service: str
-    bentoml_version: str
-    size_bytes: int
+    bentoml_version: str = attr.field(eq=False)
+    size_bytes: int = attr.field(eq=False)
     entry_service: str = attr.field(default="")
     name: t.Optional[str] = attr.field(default=None)
     apis: t.Dict[str, BentoApiSchema] = attr.field(factory=dict)
-    models: t.List[str] = attr.field(factory=list)
+    models: t.List[str] = attr.field(factory=list, eq=False)
     runners: t.Optional[t.List[BentoRunnerSchema]] = attr.field(factory=list)
     services: t.List[BentoServiceInfo] = attr.field(factory=dict)
     envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
     schema: t.Dict[str, t.Any] = attr.field(factory=dict)
+    version: t.Optional[str] = attr.field(default=None, eq=False)
+
+    @property
+    def tag(self) -> Tag:
+        return Tag(self.name, self.version)
 
 
 if TYPE_CHECKING:

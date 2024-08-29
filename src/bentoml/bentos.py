@@ -373,6 +373,7 @@ def build_bentofile(
     version: str | None = None,
     labels: dict[str, str] | None = None,
     build_ctx: str | None = None,
+    bare: bool = False,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
     """
@@ -402,9 +403,12 @@ def build_bentofile(
             build_config.labels = labels
         build_config.labels.update(labels)
 
-    return Bento.create(
-        build_config=build_config, version=version, build_ctx=build_ctx
-    ).save(_bento_store)
+    bento = Bento.create(
+        build_config=build_config, version=version, build_ctx=build_ctx, bare=bare
+    )
+    if not bare:
+        return bento.save(_bento_store)
+    return bento
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:

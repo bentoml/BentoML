@@ -62,13 +62,16 @@ class BentoCloudClient(CloudClient):
         bento: Bento,
         *,
         force: bool = False,
+        bare: bool = False,
         threads: int = 10,
     ):
         with self.spinner:
             upload_task_id = self.spinner.transmission_progress.add_task(
                 f'Pushing Bento "{bento.tag}"', start=False, visible=False
             )
-            self._do_push_bento(bento, upload_task_id, force=force, threads=threads)
+            self._do_push_bento(
+                bento, upload_task_id, force=force, threads=threads, bare=bare
+            )
             self.spinner.log(f'✅ Pushed Bento "{bento.tag}"')
 
     @inject
@@ -79,6 +82,7 @@ class BentoCloudClient(CloudClient):
         *,
         force: bool = False,
         threads: int = 10,
+        bare: bool = False,
         rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
         bentoml_tmp_dir: str = Provide[BentoMLContainer.tmp_bento_store_dir],
     ):
@@ -111,7 +115,8 @@ class BentoCloudClient(CloudClient):
                     threads=threads,
                 )
 
-            executor.map(push_model, models_to_push)
+                executor.map(push_model, models_to_push)
+
         with self.spinner.spin(text=f'Fetching Bento repository "{name}"'):
             bento_repository = rest_client.v1.get_bento_repository(
                 bento_repository_name=name
@@ -197,7 +202,8 @@ class BentoCloudClient(CloudClient):
                         labels=labels,
                     ),
                 )
-
+        if bare:
+            return
         transmission_strategy: TransmissionStrategy = "proxy"
         presigned_upload_url: str | None = None
 

@@ -411,7 +411,7 @@ class TensorflowTensorContainer(
 # NOTE: we only register the TensorflowTensorContainer as if eager execution is enabled.
 if tf.executing_eagerly():
     DataContainerRegistry.register_container(
-        LazyType("tensorflow.python.framework.ops", "Tensor"),
-        LazyType("tensorflow.python.framework.ops", "Tensor"),
+        LazyType("tensorflow", "Tensor"),
+        LazyType("tensorflow", "Tensor"),
         TensorflowTensorContainer,
     )

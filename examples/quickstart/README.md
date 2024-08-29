@@ -4,7 +4,7 @@ This quickstart demonstrates how to build a text summarization application with 
 
 ## Prerequisites
 
-Python 3.8+ and `pip` installed. See the [Python downloads page](https://www.python.org/downloads/) to learn more.
+Python 3.9+ and `pip` installed. See the [Python downloads page](https://www.python.org/downloads/) to learn more.
 
 ## Get started
 

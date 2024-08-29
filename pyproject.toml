@@ -2,7 +2,7 @@
 name = "bentoml"
 description = "BentoML: The easiest way to serve AI apps and models"
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 keywords = ["BentoML", "Compound AI Systems", "MLOps", "LLMOps", "Model Serving", "Model Inference", "Model Deployment"]
 license = { text = "Apache-2.0" }
 authors = [{ name = "BentoML Team", email = "contact@bentoml.com" }]
@@ -14,7 +14,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -71,7 +70,6 @@ dependencies = [
     "aiosqlite>=0.20.0",
     "InquirerPy>=0.3.4",
     "uv",
-    "eval-type-backport>=0.2.0; python_version < \"3.9\"",
 ]
 dynamic = ["version"]
 [project.urls]

@@ -12,7 +12,7 @@ TEST_ARGS = [
     "-vv",
 ]
 
-PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12"]
 
 FRAMEWORK_DEPENDENCIES = {
     "catboost": ["catboost"],

@@ -1,11 +1,11 @@
 import typing as t
 
+from tensorflow import Tensor
 from tensorflow.python.client.session import Session
 from tensorflow.python.eager.def_function import Function
 from tensorflow.python.eager.function_spec import FunctionSpec
 from tensorflow.python.framework.composite_tensor import CompositeTensor
 from tensorflow.python.framework.indexed_slices import IndexedSlices
-from tensorflow.python.framework.ops import Tensor
 from tensorflow.python.framework.sparse_tensor import SparseTensorSpec
 from tensorflow.python.framework.tensor_spec import TensorSpec
 from tensorflow.python.framework.type_spec import TypeSpec

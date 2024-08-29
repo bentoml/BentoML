@@ -37,6 +37,11 @@ if TYPE_CHECKING:
 
 STOP_TIMEOUT = 5
 logger = logging.getLogger(__name__)
+warn(
+    "bentoml.server module is deprecated, use bentoml.serve() instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 __all__ = ["Server", "GrpcServer", "HTTPServer"]
 
@@ -341,8 +346,8 @@ class HTTPServer(Server[HTTPClient]):
         timeout_graceful_shutdown: int | None = None,
     ):
         # hacky workaround to prevent bentoml.serve being overwritten immediately
-        from .serve import construct_ssl_args
-        from .serve import construct_timeouts_args
+        from .serving import construct_ssl_args
+        from .serving import construct_timeouts_args
 
         super().__init__(
             bento,
@@ -427,7 +432,7 @@ class GrpcServer(Server[GrpcClient]):
         ssl_ca_certs: str | None = Provide[BentoMLContainer.ssl.ca_certs],
         grpc_protocol_version: str | None = None,
     ):
-        from .serve import construct_ssl_args
+        from .serving import construct_ssl_args
 
         super().__init__(
             bento,

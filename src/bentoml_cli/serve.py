@@ -261,7 +261,7 @@ def build_serve_command() -> click.Group:
         svc = load(bento_identifier=bento, working_dir=working_dir)
         if isinstance(svc, Service):
             # bentoml<1.2
-            from bentoml.serve import serve_http_production
+            from bentoml.serving import serve_http_production
 
             if development:
                 serve_http_production(
@@ -505,7 +505,7 @@ def build_serve_command() -> click.Group:
             else:
                 working_dir = "."
 
-        from bentoml.serve import serve_grpc_production
+        from bentoml.serving import serve_grpc_production
 
         if development:
             serve_grpc_production(

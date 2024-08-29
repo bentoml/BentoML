@@ -57,7 +57,6 @@ stream_runner = bentoml.Runner(StreamRunnable)
 svc = bentoml.Service(
     name="general_http_service.case-1.e2e", runners=[py_model, stream_runner]
 )
-TEST_DIR = os.getenv("BENTOML_TEST_DATA")
 
 
 metric_test = prometheus_client.Counter(
@@ -269,9 +268,10 @@ def get_uid():
 
 @svc.on_deployment
 def on_deployment():
-    if not TEST_DIR or not os.path.exists(TEST_DIR):
+    test_dir = os.getenv("BENTOML_TEST_DATA")
+    if not test_dir or not os.path.exists(test_dir):
         return
-    deployment_file = os.path.join(TEST_DIR, f"deployment-{get_uid()}.txt")
+    deployment_file = os.path.join(test_dir, f"deployment-{get_uid()}.txt")
     with open(deployment_file, "w"):
         pass
 
@@ -279,9 +279,10 @@ def on_deployment():
 @svc.on_startup
 def on_startup(ctx: bentoml.Context):
     ctx.state["data"] = "hello"
-    if not TEST_DIR or not os.path.exists(TEST_DIR):
+    test_dir = os.getenv("BENTOML_TEST_DATA")
+    if not test_dir or not os.path.exists(test_dir):
         return
-    text_file = os.path.join(TEST_DIR, f"data-{get_uid()}.txt")
+    text_file = os.path.join(test_dir, f"data-{get_uid()}.txt")
     with open(text_file, "w"):
         pass
     ctx.state["text_file"] = text_file

@@ -49,14 +49,10 @@ from .bentos import delete
 from .bentos import export_bento
 from .bentos import get
 from .bentos import import_bento
-from .bentos import list  # pylint: disable=W0622
+from .bentos import list
 from .bentos import pull
 from .bentos import push
 from .bentos import serve
-
-# server API
-from .server import GrpcServer
-from .server import HTTPServer
 
 if TYPE_CHECKING:
     # Framework specific modules
@@ -91,7 +87,6 @@ if TYPE_CHECKING:
     from . import client  # Client API
     from . import batch  # Batch API
     from . import exceptions  # BentoML exceptions
-    from . import server  # Server API
     from . import monitoring  # Monitoring API
     from . import cloud  # Cloud API
     from . import deployment  # deployment API
@@ -212,6 +207,8 @@ else:
         _bentoml_sdk = None
 
     def __getattr__(name: str) -> Any:
+        if name in ("HTTPServer", "GrpcServer"):
+            return getattr(server, name)
         if name not in _NEW_SDK_ATTRS + _NEW_CLIENTS:
             raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
         if _bentoml_sdk is None:
@@ -239,7 +236,6 @@ __all__ = [
     "container",
     "server_context",
     "client",
-    "server",
     "io",
     "Tag",
     "Model",
@@ -260,9 +256,6 @@ __all__ = [
     "serve",
     "Bento",
     "exceptions",
-    # server APIs
-    "HTTPServer",
-    "GrpcServer",
     # Framework specific modules
     "catboost",
     "detectron",

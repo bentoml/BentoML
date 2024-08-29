@@ -32,9 +32,9 @@ logger = logging.getLogger("bentoml.io")
 T = t.TypeVar("T", bound=object)
 
 if t.TYPE_CHECKING:
-    from _bentoml_impl.server.serving import Server
     from bentoml._internal import external_typing as ext
     from bentoml._internal.service.openapi.specification import OpenAPISpecification
+    from bentoml._internal.utils.circus import Server
 
     from .dependency import Dependency
 

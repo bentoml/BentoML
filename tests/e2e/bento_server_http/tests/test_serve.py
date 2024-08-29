@@ -1,6 +1,5 @@
 import asyncio
 import os
-import subprocess
 import sys
 from pathlib import Path
 
@@ -8,100 +7,54 @@ import pytest
 
 import bentoml
 from bentoml.client import AsyncHTTPClient
+from bentoml.client import SyncHTTPClient
 from bentoml.exceptions import BentoMLException
 
 
-@pytest.mark.usefixtures("bentoml_home")
 def test_http_server():
-    server = bentoml.HTTPServer("service.py:svc", port=12345)
+    with bentoml.serve("service.py:svc", port=12345) as server:
+        SyncHTTPClient.wait_until_server_ready("127.0.0.1", 12345)
+        client = SyncHTTPClient.from_url(server.url)
+        resp = client.health()
 
-    server.start(stdout=sys.stdout, stderr=sys.stderr)
+        assert resp.status_code == 200
 
-    client = server.get_client()
-    resp = client.health()
+        res = client.call("echo_json", {"test": "json"})
 
-    assert resp.status_code == 200
-
-    res = client.call("echo_json", {"test": "json"})
-
-    assert res == {"test": "json"}
-
-    server.stop()
-
-    assert server.process is not None  # process should not be removed
-    try:
-        retcode = server.process.wait(10)
-        assert retcode is not None
-
-        if sys.platform != "win32":
-            # on Windows, because of the way that terminate is run, it seems the exit code is set.
-            # negative return codes mean the process was terminated; since we will be terminating
-            # the process, it should be negative.
-            assert retcode <= 0
-    except subprocess.TimeoutExpired:
-        server.process.kill()
+        assert res == {"test": "json"}
+    assert not server.running
 
 
-@pytest.mark.usefixtures("bentoml_home")
 def test_http_server_ctx():
-    server = bentoml.HTTPServer("service.py:svc", port=12346)
-
-    with server.start(stdout=sys.stdout, stderr=sys.stderr) as client:
+    with bentoml.serve("service.py:svc", port=12346) as server:
+        SyncHTTPClient.wait_until_server_ready("127.0.0.1", 12346)
+        client = SyncHTTPClient.from_url(server.url)
         resp = client.health()
         assert resp.status_code == 200
 
         res = client.call("echo_json", {"more_test": "and more json"})
-
         assert res == {"more_test": "and more json"}
-
-    assert server.process is not None  # process should not be removed
-
-    try:
-        retcode = server.process.wait(10)
-        assert retcode is not None
-
-        if sys.platform != "win32":
-            # on Windows, because of the way that terminate is run, it seems the exit code is set.
-            # negative return codes mean the process was terminated; since we will be terminating
-            # the process, it should be negative.
-            assert retcode <= 0
-    except subprocess.TimeoutExpired:
-        server.process.kill()
+    assert not server.running
 
 
 def test_serve_from_svc():
     from service import svc
 
-    server = bentoml.HTTPServer(svc, port=12348)
-    server.start(stdout=sys.stdout, stderr=sys.stderr)
-    client = server.get_client()
-    resp = client.health()
-    assert resp.status_code == 200
-    server.stop()
+    with bentoml.serve(svc, port=12348) as server:
+        SyncHTTPClient.wait_until_server_ready("127.0.0.1", 12348)
+        client = SyncHTTPClient.from_url(server.url)
+        resp = client.health()
+        assert resp.status_code == 200
 
-    assert server.process is not None  # process should not be removed
-
-    try:
-        retcode = server.process.wait(10)
-        assert retcode is not None
-
-        if sys.platform != "win32":
-            # on Windows, because of the way that terminate is run, it seems the exit code is set.
-            # negative return codes mean the process was terminated; since we will be terminating
-            # the process, it should be negative.
-            assert retcode <= 0
-    except subprocess.TimeoutExpired:
-        server.process.kill()
+    assert not server.running
 
 
-@pytest.mark.usefixtures("bentoml_home")
-def test_serve_with_timeout():
-    server = bentoml.HTTPServer("service.py:svc", port=12349)
-    config_file = os.path.abspath("configs/timeout.yml")
-    env = os.environ.copy()
-    env.update(BENTOML_CONFIG=config_file)
+def test_serve_with_timeout(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("BENTOML_CONFIG", os.path.abspath("configs/timeout.yml"))
 
-    with server.start(env=env, stdout=sys.stdout, stderr=sys.stderr) as client:
+    with bentoml.serve("service.py:svc", port=12349) as server:
+        SyncHTTPClient.wait_until_server_ready("127.0.0.1", 12349)
+        client = SyncHTTPClient.from_url(server.url)
         with pytest.raises(
             BentoMLException,
             match="Not able to process the request in 1 seconds",
@@ -110,17 +63,12 @@ def test_serve_with_timeout():
 
 
 @pytest.mark.asyncio
-@pytest.mark.usefixtures("bentoml_home")
-async def test_serve_with_api_max_concurrency():
-    server = bentoml.HTTPServer("service.py:svc", port=12350, api_workers=1)
-    config_file = os.path.abspath("configs/max_concurrency.yml")
-    env = os.environ.copy()
-    env.update(BENTOML_CONFIG=config_file)
+async def test_serve_with_api_max_concurrency(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("BENTOML_CONFIG", os.path.abspath("configs/max_concurrency.yml"))
 
-    with server.start(env=env, stdout=sys.stdout, stderr=sys.stderr):
-        client = await bentoml.client.AsyncHTTPClient.from_url(
-            f"http://{server.host}:{server.port}"
-        )
+    with bentoml.serve("service.py:svc", port=12350, api_workers=1) as server:
+        await AsyncHTTPClient.wait_until_server_ready("127.0.0.1", 12350)
+        client = await AsyncHTTPClient.from_url(server.url)
         tasks = [
             asyncio.create_task(client.call("echo_delay", {"delay": 0.5})),
             asyncio.create_task(client.call("echo_delay", {"delay": 0.5})),
@@ -140,15 +88,14 @@ async def test_serve_with_api_max_concurrency():
     reason="Windows runner doesn't have enough cores to run this test",
 )
 @pytest.mark.asyncio
-@pytest.mark.usefixtures("bentoml_home")
-async def test_serve_with_lifecycle_hooks(tmp_path: Path):
-    server = bentoml.HTTPServer("service.py:svc", port=12351, api_workers=4)
-    env = os.environ.copy()
-    env["BENTOML_TEST_DATA"] = str(tmp_path)
+async def test_serve_with_lifecycle_hooks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("BENTOML_TEST_DATA", str(tmp_path))
 
-    with server.start(env=env, stdout=sys.stdout, stderr=sys.stderr) as client:
-        assert client is not None
-        async with await AsyncHTTPClient.from_url(client.server_url) as http_client:
+    with bentoml.serve("service.py:svc", port=12351, api_workers=4) as server:
+        await AsyncHTTPClient.wait_until_server_ready("127.0.0.1", 12351)
+        async with await AsyncHTTPClient.from_url(server.url) as http_client:
             response = await http_client.client.post(
                 "/use_context", params={"state": "data"}
             )

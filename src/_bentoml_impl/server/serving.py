@@ -12,12 +12,12 @@ import socket
 import tempfile
 import typing as t
 
-import attrs
 from simple_di import Provide
 from simple_di import inject
 
 from _bentoml_sdk import Service
 from bentoml._internal.container import BentoMLContainer
+from bentoml._internal.utils.circus import Server
 from bentoml.exceptions import BentoMLConfigException
 
 AnyService = Service[t.Any]
@@ -25,8 +25,6 @@ AnyService = Service[t.Any]
 if t.TYPE_CHECKING:
     from circus.sockets import CircusSocket
     from circus.watcher import Watcher
-
-    from bentoml._internal.utils.circus import Arbiter
 
     from .allocator import ResourceAllocator
 
@@ -104,7 +102,7 @@ def create_dependency_watcher(
     working_dir: str | None = None,
     env: dict[str, str] | None = None,
 ) -> tuple[Watcher, CircusSocket, str]:
-    from bentoml.serve import create_watcher
+    from bentoml.serving import create_watcher
 
     num_workers, worker_envs = scheduler.get_worker_env(svc)
     uri, socket = _get_server_socket(svc, uds_path, port_stack, backlog)
@@ -175,11 +173,11 @@ def serve_http(
     from bentoml._internal.utils import reserve_free_port
     from bentoml._internal.utils.analytics.usage_stats import track_serve
     from bentoml._internal.utils.circus import create_standalone_arbiter
-    from bentoml.serve import construct_ssl_args
-    from bentoml.serve import construct_timeouts_args
-    from bentoml.serve import create_watcher
-    from bentoml.serve import ensure_prometheus_dir
-    from bentoml.serve import make_reload_plugin
+    from bentoml.serving import construct_ssl_args
+    from bentoml.serving import construct_timeouts_args
+    from bentoml.serving import create_watcher
+    from bentoml.serving import ensure_prometheus_dir
+    from bentoml.serving import make_reload_plugin
 
     from ..loader import import_service
     from ..loader import normalize_identifier
@@ -352,25 +350,3 @@ def serve_http(
     except Exception:
         shutil.rmtree(uds_path, ignore_errors=True)
         raise
-
-
-@attrs.frozen
-class Server:
-    url: str
-    arbiter: Arbiter = attrs.field(repr=False)
-
-    def start(self) -> None:
-        pass
-
-    def stop(self) -> None:
-        self.arbiter.stop()
-
-    @property
-    def running(self) -> bool:
-        return self.arbiter.running
-
-    def __enter__(self) -> Server:
-        return self
-
-    def __exit__(self, exc_type: t.Any, exc_value: t.Any, traceback: t.Any) -> None:
-        self.stop()

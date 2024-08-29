@@ -7,7 +7,7 @@ BentoML is distributed as a Python package available on `PyPI <https://pypi.org/
 Prerequisites
 -------------
 
-- Python 3.8+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
+- Python 3.9+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
 - (Optional) We recommend you create a virtual environment for dependency isolation. See the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_ or the `Python documentation <https://docs.python.org/3/library/venv.html>`_ for details.
 - (Optional) `Git <https://git-scm.com/>`_ installed for `editable install <https://docs.bentoml.com/en/latest/quickstarts/install-bentoml.html#editable-install>`_.
 

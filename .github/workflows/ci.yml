@@ -86,14 +86,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.9'
           cache: pip
       - name: Install dependencies
         run: pipx install pdm && pipx install nox
       - name: Run framework integration tests
         run: nox --session "framework-integration(framework='${{ matrix.framework }}')"
       - name: Disambiguate coverage filename
-        run: mv .coverage ".coverage.integrations.ubuntu-latest.3.11.${{ matrix.framework }}"
+        run: mv .coverage ".coverage.integrations.ubuntu-latest.3.9.${{ matrix.framework }}"
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
         with:

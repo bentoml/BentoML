@@ -12,7 +12,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
 1. Make sure to have [Git](https://git-scm.com/),
    [pip](https://pip.pypa.io/en/stable/installation/),
-   [Python3.8+](https://www.python.org/downloads/), and
+   [Python3.9+](https://www.python.org/downloads/), and
    [PDM](https://pdm.fming.dev/latest/) installed.
 
    Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/)
@@ -75,7 +75,7 @@ If you are interested in proposing a new feature, make sure to create a new feat
 
 1. Confirm that you have the following installed:
 
-   - [Python3.8+](https://www.python.org/downloads/)
+   - [Python3.9+](https://www.python.org/downloads/)
    - VS Code with the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) extensions
 
 2. Fork the BentoML project on [GitHub](https://github.com/bentoml/BentoML).
@@ -264,10 +264,10 @@ pip install git+https://github.com/{YOUR_GITHUB_USERNAME}/bentoml@{YOUR_REVISION
 And in your BentoML projects' `bentofile.yaml`, force the Bento to install this distribution, e.g.:
 
 ```yaml
-service: "service:svc"
-description: "file: ./README.md"
+service: 'service:svc'
+description: 'file: ./README.md'
 include:
-  - "*.py"
+  - '*.py'
 python:
   packages:
     - pandas

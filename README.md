@@ -8,7 +8,6 @@
 
 🍱 Build model inference APIs and multi-model serving systems with any open-source or custom AI models. 👉 [Join our Slack community!](https://l.bentoml.com/join-slack)
 
-
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202-green.svg)](https://github.com/bentoml/BentoML?tab=Apache-2.0-1-ov-file)
 [![Releases](https://img.shields.io/github/v/release/bentoml/bentoml.svg)](https://github.com/bentoml/bentoml/releases)
 [![CI](https://github.com/bentoml/bentoml/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bentoml/BentoML/actions/workflows/ci.yml?query=branch%3Amain)
@@ -25,13 +24,12 @@ BentoML is a Python library for building online serving systems optimized for AI
 - **👩‍💻 Fully customizable.** Easily implement your own APIs or task queues, with custom business logic, model inference and multi-model composition. Supports any ML framework, modality, and inference runtime.
 - **🚀 Ready for Production.** Develop, run and debug locally. Seamlessly deploy to production with Docker containers or [BentoCloud](https://www.bentoml.com/).
 
-
 ## Getting started
 
 Install BentoML:
 
 ```
-# Requires Python≥3.8
+# Requires Python≥3.9
 pip install -U bentoml
 ```
 
@@ -82,13 +80,13 @@ with bentoml.SyncHTTPClient('http://localhost:3000') as client:
 To deploy your BentoML Service code, first create a `bentofile.yaml` file to define its dependencies and environments. Find the full list of bentofile options [here](https://docs.bentoml.com/en/latest/guides/build-options.html).
 
 ```yaml
-service: "service:Summarization" # Entry service import path
+service: 'service:Summarization' # Entry service import path
 include:
-  - "*.py" # Include all .py files in current directory
+  - '*.py' # Include all .py files in current directory
 python:
   packages: # Python dependencies to include
-  - torch
-  - transformers
+    - torch
+    - transformers
 docker:
   python_version: 3.11
 ```

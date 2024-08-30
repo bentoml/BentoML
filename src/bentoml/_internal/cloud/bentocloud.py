@@ -115,7 +115,7 @@ class BentoCloudClient(CloudClient):
                     threads=threads,
                 )
 
-                executor.map(push_model, models_to_push)
+            executor.map(push_model, models_to_push)
 
         with self.spinner.spin(text=f'Fetching Bento repository "{name}"'):
             bento_repository = rest_client.v1.get_bento_repository(

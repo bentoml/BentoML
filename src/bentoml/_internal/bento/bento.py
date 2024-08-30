@@ -282,26 +282,27 @@ class Bento(StoreItem):
             temp_dir=BentoMLContainer.tmp_bento_store_dir.get(),
         )
         models: list[BentoModelInfo] = []
+
+        def append_model(model: BentoModelInfo) -> None:
+            if model not in models:
+                models.append(model)
+
+        if build_config.models:
+            for model_spec in build_config.models:
+                model = BentoModel(model_spec.tag)
+                append_model(model.to_info(model_spec.alias))
+        elif is_legacy:
+            # XXX: legacy way to get models from service
+            # Add all models required by the service
+            for model in svc.models:
+                append_model(BentoModel(model.tag).to_info())
+            # Add all models required by service runners
+            for runner in svc.runners:
+                for model in runner.models:
+                    append_model(BentoModel(model.tag).to_info())
+
         if not bare:
             ctx_fs = fs.open_fs(encode_path_for_uri(build_ctx))
-
-            def append_model(model: BentoModelInfo) -> None:
-                if model not in models:
-                    models.append(model)
-
-            if build_config.models:
-                for model_spec in build_config.models:
-                    model = BentoModel(model_spec.tag)
-                    append_model(model.to_info(model_spec.alias))
-            elif is_legacy:
-                # XXX: legacy way to get models from service
-                # Add all models required by the service
-                for model in svc.models:
-                    append_model(BentoModel(model.tag).to_info())
-                # Add all models required by service runners
-                for runner in svc.runners:
-                    for model in runner.models:
-                        append_model(BentoModel(model.tag).to_info())
 
             # create ignore specs
             specs = BentoPathSpec(build_config.include, build_config.exclude)

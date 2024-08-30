@@ -532,7 +532,7 @@ class BentoCloudClient(CloudClient):
     ):
         with self.spinner:
             upload_task_id = self.spinner.transmission_progress.add_task(
-                f'Pushing model "{model.tag}"', start=False, visible=False
+                f'Pushing model "{model}"', start=False, visible=False
             )
             self._do_push_model(model, upload_task_id, force=force, threads=threads)
 
@@ -549,10 +549,12 @@ class BentoCloudClient(CloudClient):
     ):
         from _bentoml_sdk.models import BentoModel
 
-        name = model.tag.name
-        version = model.tag.version
+        model_info = model.to_info()
+
+        name = model_info.tag.name
+        version = model_info.tag.version
         if version is None:
-            raise BentoMLException(f'Model "{model.tag}" version cannot be None')
+            raise BentoMLException(f'Model "{model}" version cannot be None')
 
         with self.spinner.spin(text=f'Fetching model repository "{name}"'):
             model_repository = rest_client.v1.get_model_repository(
@@ -566,7 +568,7 @@ class BentoCloudClient(CloudClient):
                     req=CreateModelRepositorySchema(name=name, description="")
                 )
         with self.spinner.spin(
-            text=f'Try fetching model "{model.tag}" from remote model store..'
+            text=f'Try fetching model "{model}" from remote model store..'
         ):
             remote_model = rest_client.v1.get_model(
                 model_repository_name=name, version=version
@@ -577,19 +579,19 @@ class BentoCloudClient(CloudClient):
             and remote_model.upload_status == ModelUploadStatus.SUCCESS.value
         ):
             self.spinner.log(
-                f'[bold blue]Model "{model.tag}" already exists in remote model store, skipping'
+                f'[bold blue]Model "{model}" already exists in remote model store, skipping'
             )
             return
         if not remote_model:
             with self.spinner.spin(
-                text=f'Registering model "{model.tag}" with remote model store..'
+                text=f'Registering model "{model}" with remote model store..'
             ):
                 remote_model = rest_client.v1.create_model(
                     model_repository_name=model_repository.name,
                     req=model.to_create_schema(),
                 )
         if not isinstance(model, BentoModel):
-            self.spinner.log(f"[bold blue]Skip uploading non-bentoml model {model.tag}")
+            self.spinner.log(f"[bold blue]Skip uploading non-bentoml model {model}")
             return
         assert model.stored is not None
         transmission_strategy: TransmissionStrategy = "proxy"

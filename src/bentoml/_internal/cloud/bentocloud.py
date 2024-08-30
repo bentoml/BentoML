@@ -93,16 +93,16 @@ class BentoCloudClient(CloudClient):
         models_to_push: list[Model[t.Any]] = []
         for model in info.all_models:
             if model.registry == "huggingface":
-                models_to_push.append(HuggingFaceModel(model.tag, model.endpoint))
+                models_to_push.append(HuggingFaceModel.from_info(model))
             else:
                 model = BentoModel(model.tag)
                 if model.stored is not None:
                     models_to_push.append(model)
         with ThreadPoolExecutor(max_workers=max(len(models_to_push), 1)) as executor:
 
-            def push_model(model: BentoModel) -> None:
+            def push_model(model: Model[t.Any]) -> None:
                 model_upload_task_id = self.spinner.transmission_progress.add_task(
-                    f'Pushing model "{model.tag}"', start=False, visible=False
+                    f'Pushing model "{model}"', start=False, visible=False
                 )
                 self._do_push_model(
                     model,
@@ -550,7 +550,6 @@ class BentoCloudClient(CloudClient):
         from _bentoml_sdk.models import BentoModel
 
         model_info = model.to_info()
-
         name = model_info.tag.name
         version = model_info.tag.version
         if version is None:

@@ -162,12 +162,12 @@ def construct_containerfile(
         bento_model_dir = temp_fs.makedir("models", recreate=True)
         hf_model_dir = temp_fs.makedir("hf-models", recreate=True)
         for model in options.all_models:
-            if model.registry == "bentoml":
+            if model.registry == "huggingface":
+                model_ref = HuggingFaceModel.from_info(model)
+                model_ref.resolve(hf_model_dir)
+            else:
                 model_ref = BentoModel(model.tag)
                 model_ref.resolve(bento_model_dir)
-            else:
-                model_ref = HuggingFaceModel(model.tag)
-                model_ref.resolve(hf_model_dir)
 
         # NOTE: dockerfile_template is already included in the
         # Dockerfile inside bento, and it is not relevant to

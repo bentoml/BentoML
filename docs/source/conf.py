@@ -203,4 +203,4 @@ autodoc_mock_imports = [
     "bentoml._internal.models.model.ModelSignatureDict",
 ]
 
-html_extra_path = ['robots.txt']
+html_extra_path = ["robots.txt"]

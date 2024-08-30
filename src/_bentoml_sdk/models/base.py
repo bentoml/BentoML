@@ -36,6 +36,11 @@ class Model(abc.ABC, t.Generic[T]):
     def to_info(self, alias: str | None = None) -> BentoModelInfo:
         """Return the model info object."""
 
+    @classmethod
+    @abc.abstractmethod
+    def from_info(cls, info: BentoModelInfo) -> Model[T]:
+        """Return the model object from the model info."""
+
     @abc.abstractmethod
     def to_create_schema(self) -> CreateModelSchema:
         """Return the create model schema object."""
@@ -105,6 +110,10 @@ class BentoModel(Model[StoredModel]):
             module=model.manifest.module,
             creation_time=model.created_at,
         )
+
+    @classmethod
+    def from_info(cls, info: BentoModelInfo) -> BentoModel:
+        return cls(tag=info.tag)
 
     @inject
     def resolve(

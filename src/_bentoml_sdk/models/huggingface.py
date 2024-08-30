@@ -18,6 +18,7 @@ from bentoml._internal.types import PathType
 from .base import Model
 
 CONFIG_FILE = "config.json"
+DEFAULT_HF_ENDPOINT = "https://huggingface.co"
 
 
 @attrs.define(unsafe_hash=True)
@@ -25,17 +26,15 @@ class HuggingFaceModel(Model[str]):
     """A model reference to a Hugging Face model.
 
     Args:
-        model_id (Tag): The model tag. E.g. "google-bert/bert-base-uncased".
-            You can specify a rev or commit hash by appending it to the model name separated by a colon:
-                google-bert/bert-base-uncased:main
-                google-bert/bert-base-uncased:86b5e0934494bd15c9632b12f734a8a67f723594
+        model_id (str): The model tag. E.g. "google-bert/bert-base-uncased".
+        revision (str, optional): The revision to use. Defaults to "main".
         endpoint (str, optional): The Hugging Face endpoint to use. Defaults to https://huggingface.co.
 
     Returns:
         str: The downloaded model path.
     """
 
-    model_id: str
+    model_id: str = attrs.field(converter=str.lower)
     revision: str = "main"
     endpoint: str | None = attrs.field(factory=lambda: os.getenv("HF_ENDPOINT"))
 
@@ -75,7 +74,25 @@ class HuggingFaceModel(Model[str]):
     def to_info(self, alias: str | None = None) -> BentoModelInfo:
         tag = Tag(self.model_id.replace("/", "--"), self.commit_hash)
         return BentoModelInfo(
-            tag, registry="huggingface", alias=alias, endpoint=self.endpoint
+            tag,
+            alias=alias,
+            registry="huggingface",
+            metadata={
+                "model_id": self.model_id,
+                "revision": self.commit_hash,
+                "endpoint": self.endpoint or DEFAULT_HF_ENDPOINT,
+            },
+        )
+
+    @classmethod
+    def from_info(cls, info: BentoModelInfo) -> HuggingFaceModel:
+        if not info.metadata:
+            name, revision = info.tag.name, info.tag.version
+            return cls(model_id=name.replace("--", "/"), revision=revision or "main")
+        return cls(
+            model_id=info.metadata["model_id"],
+            revision=info.metadata["revision"],
+            endpoint=info.metadata["endpoint"],
         )
 
     def _get_model_size(self, revision: str) -> int:
@@ -86,7 +103,7 @@ class HuggingFaceModel(Model[str]):
 
     def to_create_schema(self) -> CreateModelSchema:
         context = ModelContext(framework_name="huggingface", framework_versions={})
-        endpoint = self.endpoint or "https://huggingface.co"
+        endpoint = self.endpoint or DEFAULT_HF_ENDPOINT
         revision = self.commit_hash
         url = f"{endpoint}/{self.model_id}/tree/{revision}"
         metadata = {

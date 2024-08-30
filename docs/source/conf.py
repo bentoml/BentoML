@@ -202,3 +202,5 @@ autodoc_mock_imports = [
     "prometheus_client",
     "bentoml._internal.models.model.ModelSignatureDict",
 ]
+
+html_extra_path = ["robots.txt"]

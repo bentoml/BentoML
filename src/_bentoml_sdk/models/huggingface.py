@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 import typing as t
+from functools import cached_property
 
 import attrs
 from fs.base import FS
@@ -19,7 +20,7 @@ from .base import Model
 CONFIG_FILE = "config.json"
 
 
-@attrs.frozen
+@attrs.define(unsafe_hash=True)
 class HuggingFaceModel(Model[str]):
     """A model reference to a Hugging Face model.
 
@@ -34,22 +35,20 @@ class HuggingFaceModel(Model[str]):
         str: The downloaded model path.
     """
 
-    tag: Tag = attrs.field(converter=Tag.from_taglike, alias="model_id")
+    model_id: str
+    revision: str = "main"
     endpoint: str | None = attrs.field(factory=lambda: os.getenv("HF_ENDPOINT"))
 
-    @property
-    def revision(self) -> str:
+    @cached_property
+    def commit_hash(self) -> str:
         from huggingface_hub import get_hf_file_metadata
         from huggingface_hub import hf_hub_url
 
         url = hf_hub_url(
-            self.tag.name,
-            CONFIG_FILE,
-            revision=self.tag.version,
-            endpoint=self.endpoint,
+            self.model_id, CONFIG_FILE, revision=self.revision, endpoint=self.endpoint
         )
         metadata = get_hf_file_metadata(url)
-        return metadata.commit_hash
+        return metadata.commit_hash or self.revision
 
     def resolve(self, base_path: t.Union[PathType, FS, None] = None) -> str:
         from huggingface_hub import snapshot_download
@@ -58,8 +57,8 @@ class HuggingFaceModel(Model[str]):
             base_path = base_path.getsyspath("/")
 
         snapshot_path = snapshot_download(
-            self.tag.name,
-            revision=self.tag.version,
+            self.model_id,
+            revision=self.revision,
             endpoint=self.endpoint,
             cache_dir=os.getenv("BENTOML_HF_CACHE_DIR"),
         )
@@ -74,23 +73,29 @@ class HuggingFaceModel(Model[str]):
         return snapshot_path
 
     def to_info(self, alias: str | None = None) -> BentoModelInfo:
-        tag = Tag(self.tag.name, self.revision)
+        tag = Tag(self.model_id.replace("/", "--"), self.commit_hash)
         return BentoModelInfo(
             tag, registry="huggingface", alias=alias, endpoint=self.endpoint
         )
 
-    def _get_model_size(self, repo_id: str, revision: str) -> int:
+    def _get_model_size(self, revision: str) -> int:
         from huggingface_hub import model_info
 
-        info = model_info(repo_id, revision=revision, files_metadata=True)
+        info = model_info(self.model_id, revision=revision, files_metadata=True)
         return sum((file.size or 0) for file in (info.siblings or []))
 
     def to_create_schema(self) -> CreateModelSchema:
         context = ModelContext(framework_name="huggingface", framework_versions={})
         endpoint = self.endpoint or "https://huggingface.co"
-        revision = self.revision
-        url = f"{endpoint}/{self.tag.name}/tree/{revision}"
-        metadata = {"registry": "huggingface", "endpoint": endpoint, "url": url}
+        revision = self.commit_hash
+        url = f"{endpoint}/{self.model_id}/tree/{revision}"
+        metadata = {
+            "registry": "huggingface",
+            "model_id": self.model_id,
+            "revision": revision,
+            "endpoint": endpoint,
+            "url": url,
+        }
         return CreateModelSchema(
             description="",
             version=revision,
@@ -99,8 +104,11 @@ class HuggingFaceModel(Model[str]):
                 metadata=metadata,
                 api_version="v1",
                 bentoml_version=context.bentoml_version,
-                size_bytes=self._get_model_size(self.tag.name, revision),
+                size_bytes=self._get_model_size(revision),
                 context=context.to_dict(),
                 options={},
             ),
         )
+
+    def __str__(self) -> str:
+        return f"{self.model_id}:{self.revision}"

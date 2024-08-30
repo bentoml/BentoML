@@ -32,13 +32,6 @@ T = t.TypeVar("T")
 class Model(abc.ABC, t.Generic[T]):
     """A model reference to a artifact in various registries."""
 
-    tag: Tag
-
-    @property
-    @abc.abstractmethod
-    def revision(self) -> str:
-        """Get the revision of the model."""
-
     @abc.abstractmethod
     def to_info(self, alias: str | None = None) -> BentoModelInfo:
         """Return the model info object."""
@@ -77,15 +70,6 @@ class BentoModel(Model[StoredModel]):
     """
 
     tag: Tag = attrs.field(converter=Tag.from_taglike)
-
-    @property
-    def revision(self) -> str:
-        if (stored := self.stored) is not None:
-            return stored.tag.version or "latest"
-        model = self._get_remote_model()
-        if model is None:
-            raise NotFound(f"Model {self.tag} not found either locally or remotely.")
-        return model.version
 
     @inject
     def _get_remote_model(
@@ -170,3 +154,6 @@ class BentoModel(Model[StoredModel]):
                 size_bytes=calc_dir_size(stored.path),
             ),
         )
+
+    def __str__(self) -> str:
+        return str(self.tag)

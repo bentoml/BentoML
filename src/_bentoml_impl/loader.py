@@ -163,7 +163,6 @@ def import_service(
         assert (
             module_name and attrs_str
         ), f'Invalid import target "{service_identifier}", must format as "<module>:<attribute>"'
-
         module = importlib.import_module(module_name)
         root_service_name, _, depend_path = attrs_str.partition(".")
         root_service = t.cast("Service[t.Any]", getattr(module, root_service_name))

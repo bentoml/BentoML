@@ -182,9 +182,10 @@ class DeploymentConfigParameters:
                 )
             elif self.dev:  # dev mode and bento is built
                 return
-            if self.cli:
-                rich.print(f"using bento [green]{bento_name}[/]...")
-            bento_info = ensure_bento(bento=str(bento_name), cli=self.cli)
+            else:
+                if self.cli:
+                    rich.print(f"using bento [green]{bento_name}[/]...")
+                bento_info = ensure_bento(bento=str(bento_name), cli=self.cli)
             self.cfg_dict["bento"] = str(bento_info.tag)
             if self.service_name is None:
                 self.service_name = bento_info.entry_service
@@ -301,6 +302,7 @@ def ensure_bento(
     cli: bool = False,
     bare: bool = False,
     push: bool = True,
+    reload: bool = False,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Bento | BentoManifestSchema:
@@ -308,12 +310,12 @@ def ensure_bento(
         from bentoml.bentos import build_bentofile
 
         bento_obj = build_bentofile(
-            build_ctx=project_path, bare=bare, _bento_store=_bento_store
+            build_ctx=project_path, bare=bare, _bento_store=_bento_store, reload=reload
         )
         if cli:
             rich.print(f"🍱 Built bento [green]{bento_obj.info.tag}[/]")
         if push:
-            _cloud_client.push_bento(bento=bento_obj)
+            _cloud_client.push_bento(bento=bento_obj, bare=bare)
         return bento_obj
     elif bento:
         bento = Tag.from_taglike(bento)
@@ -333,7 +335,7 @@ def ensure_bento(
         if bento_obj is not None:
             # push to bentocloud
             if push:
-                _cloud_client.push_bento(bento=bento_obj)
+                _cloud_client.push_bento(bento=bento_obj, bare=bare)
             return bento_obj
         if bento_schema is not None:
             assert bento_schema.manifest is not None
@@ -690,11 +692,14 @@ class DeploymentInfo:
 
         check_interval = 5
         start_time = time.time()
+        if console is None:
+            console = rich.get_console()
         while time.time() - start_time < timeout:
             pods = cloud_rest_client.v2.list_deployment_pods(self.name, self.cluster)
             if any(
                 pod.labels.get("yatai.ai/bento-function-component-type") == "api-server"
                 and pod.status.phase == "Running"
+                and pod.pod_status.status != "Terminating"
                 for pod in pods
             ):
                 break
@@ -703,8 +708,6 @@ class DeploymentInfo:
             raise TimeoutError("Timeout waiting for API server pod to be ready")
 
         build_config = get_bento_build_config(bento_dir)
-        if console is None:
-            console = rich.get_console()
         bento_spec = BentoPathSpec(build_config.include, build_config.exclude)
         upload_files: list[tuple[str, bytes]] = []
         requirements_content = _build_requirements_txt(bento_dir, build_config)
@@ -762,19 +765,23 @@ class DeploymentInfo:
             return bento_spec.includes(path, recurse_exclude_spec=ignore_patterns)
 
         console = Console(highlight=False)
-        bento_info = ensure_bento(bento_dir, bare=True, push=False)
+        bento_info = ensure_bento(bento_dir, bare=True, push=False, reload=True)
+        assert isinstance(bento_info, Bento)
         target = self._refetch_target(False)
-        with Spinner(console=console) as spinner:
+
+        spinner = Spinner(console=console)
+        try:
+            spinner.start()
             upload_id = spinner.transmission_progress.add_task(
                 "Dummy upload task", visible=False
             )
             while True:
-                assert isinstance(bento_info, Bento)
                 if (
                     target is None
                     or target.bento is None
                     or target.bento.manifest != bento_info.get_manifest()
                 ):
+                    console.print("✨ [green bold]Bento change detected[/]")
                     spinner.update("🔄 Pushing Bento to BentoCloud")
                     cloud_client._do_push_bento(bento_info, upload_id, bare=True)  # type: ignore
                     spinner.update("🔄 Updating deployment with new configuration")
@@ -801,7 +808,9 @@ class DeploymentInfo:
                     for changes in watchfiles.watch(
                         bento_dir, watch_filter=watch_filter
                     ):
-                        bento_info = ensure_bento(bento_dir, bare=True, push=False)
+                        bento_info = ensure_bento(
+                            bento_dir, bare=True, push=False, reload=True
+                        )
                         assert isinstance(bento_info, Bento)
                         if (
                             target is None
@@ -852,6 +861,18 @@ class DeploymentInfo:
                                 f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status}"[/]'
                             )
                             return
+        except KeyboardInterrupt:
+            spinner.log(
+                "The deployment is still running, view the dashboard:\n"
+                f"    [blue]{self.admin_console}[/]\n\n"
+                "Next steps:\n"
+                "* Push the bento to BentoCloud:\n"
+                "    [blue]$ bentoml build --push[/]\n\n"
+                "* Terminate the deployment:\n"
+                f"    [blue]$ bentoml deployment terminate {self.name} --cluster {self.cluster}[/]\n"
+            )
+        finally:
+            spinner.stop()
 
     @contextlib.contextmanager
     @inject

@@ -117,13 +117,13 @@ class Spinner:
     @contextmanager
     def spin(self, text: str) -> t.Generator[TaskID, None, None]:
         """Create a spinner as a context manager."""
+        task_id = self.update(text, new=True)
         try:
-            task_id = self.update(text, new=True)
             yield task_id
         finally:
-            self._spinner_task_id = None
-            self._spinner_progress.stop_task(task_id)
-            self._spinner_progress.update(task_id, visible=False)
+            self._spinner_progress.remove_task(task_id)
+            if self._spinner_task_id == task_id:
+                self._spinner_task_id = None
 
     def update(self, text: str, new: bool = False) -> TaskID:
         """Update the spin text."""
@@ -149,8 +149,7 @@ class Spinner:
     def stop(self) -> None:
         """Stop live updating."""
         if self._spinner_task_id is not None:
-            self._spinner_progress.stop_task(self._spinner_task_id)
-            self._spinner_progress.update(self._spinner_task_id, visible=False)
+            self._spinner_progress.remove_task(self._spinner_task_id)
             self._spinner_task_id = None
         self._live.stop()
 

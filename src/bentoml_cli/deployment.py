@@ -223,15 +223,15 @@ def develop_command(bento_dir: str, cluster: str | None):
     chosen = questionary.select(
         message="Select a deployment to attach to or create a new one",
         choices=[{"name": name, "value": d} for name, d in deployments.items()]
-        + [{"name": "Create a new deployment", "value": None}],
+        + [{"name": "Create a new deployment", "value": "new"}],
     ).ask()
 
-    if chosen is None:
+    if chosen == "new":
         deployment = create_deployment(
             bento=bento_dir, cluster=cluster, dev=True, wait=False
         )
     else:
-        deployment = chosen
+        deployment = t.cast(DeploymentInfo, chosen)
     deployment.watch(bento_dir)
 
 

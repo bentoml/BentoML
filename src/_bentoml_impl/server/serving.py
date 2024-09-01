@@ -332,7 +332,6 @@ def serve_http(
         if development_mode:
             arbiter_kwargs["debug"] = True
             arbiter_kwargs["loggerconfig"] = SERVER_LOGGING_CONFIG
-            arbiter_kwargs["loglevel"] = "WARNING"
 
         arbiter = create_standalone_arbiter(**arbiter_kwargs)
         arbiter.exit_stack.enter_context(

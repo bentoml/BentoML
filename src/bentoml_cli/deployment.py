@@ -1,22 +1,29 @@
 from __future__ import annotations
 
 import json
+import logging
 import typing as t
 from http import HTTPStatus
 
 import click
 import rich
+import rich.style
 import yaml
+from rich.console import Console
 from rich.syntax import Syntax
 from rich.table import Table
 
 from bentoml._internal.cloud.base import Spinner
 from bentoml._internal.cloud.deployment import Deployment
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
+from bentoml._internal.cloud.deployment import DeploymentInfo
+from bentoml._internal.cloud.schemas.modelschemas import DeploymentStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
 from bentoml._internal.utils import rich_console as console
 from bentoml.exceptions import BentoMLException
 from bentoml_cli.utils import BentoMLCommandGroup
+
+logger = logging.getLogger("bentoml.cli.deployment")
 
 if t.TYPE_CHECKING:
     TupleStrAny = tuple[str, ...]
@@ -184,6 +191,55 @@ def shared_decorator(
         return decorate(f)
     else:
         return decorate
+
+
+@click.command(name="develop")
+@click.argument(
+    "bento_dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True),
+    default=".",
+)
+@click.option(
+    "--attach", help="Attach to the given deployment instead of creating a new one."
+)
+@shared_decorator
+def develop_command(bento_dir: str, cluster: str | None, attach: str):
+    """Create or attach to a development deployment and watch for local file changes"""
+    import questionary
+
+    console = Console(highlight=False)
+    if attach:
+        deployment = Deployment.get(attach)
+    else:
+        with console.status("Fetching deployments..."):
+            deployments = [
+                d
+                for d in Deployment.list(cluster=cluster)
+                if d.is_dev
+                and d.get_status(False).status
+                in [
+                    DeploymentStatus.Deploying.value,
+                    DeploymentStatus.Running.value,
+                    DeploymentStatus.ScaledToZero.value,
+                    DeploymentStatus.Failed.value,
+                ]
+            ]
+
+        chosen = questionary.select(
+            message="Select a deployment to attach to or create a new one",
+            choices=[{"name": d.name, "value": d} for d in deployments]
+            + [{"name": "Create a new deployment", "value": "new"}],
+        ).ask()
+
+        if chosen == "new":
+            deployment = create_deployment(
+                bento=bento_dir, cluster=cluster, dev=True, wait=False
+            )
+        elif chosen is None:
+            return
+        else:
+            deployment = t.cast(DeploymentInfo, chosen)
+    deployment.watch(bento_dir)
 
 
 @click.group(name="deployment", cls=BentoMLCommandGroup)
@@ -698,21 +754,22 @@ def list_instance_types(  # type: ignore
 
 
 def create_deployment(
-    bento: str | None,
-    name: str | None,
-    cluster: str | None,
-    access_authorization: bool | None,
-    scaling_min: int | None,
-    scaling_max: int | None,
-    instance_type: str | None,
-    strategy: str | None,
-    env: tuple[str] | None,
-    secret: tuple[str] | None,
-    config_file: str | t.TextIO | None,
-    config_dict: str | None,
-    wait: bool,
-    timeout: int,
-) -> None:
+    bento: str | None = None,
+    name: str | None = None,
+    cluster: str | None = None,
+    access_authorization: bool | None = None,
+    scaling_min: int | None = None,
+    scaling_max: int | None = None,
+    instance_type: str | None = None,
+    strategy: str | None = None,
+    env: tuple[str] | None = None,
+    secret: tuple[str] | None = None,
+    config_file: str | t.TextIO | None = None,
+    config_dict: str | None = None,
+    wait: bool = True,
+    timeout: int = 3600,
+    dev: bool = False,
+) -> DeploymentInfo:
     cfg_dict = None
     if config_dict is not None and config_dict != "":
         cfg_dict = json.loads(config_dict)
@@ -730,16 +787,20 @@ def create_deployment(
             if env is not None
             else None
         ),
-        secrets=[item for item in secret] if secret is not None else None,
+        secrets=list(secret) if secret is not None else None,
         config_file=config_file,
         config_dict=cfg_dict,
         cli=True,
+        dev=dev,
     )
+
     try:
         config_params.verify()
     except BentoMLException as e:
         raise_deployment_config_error(e, "create")
-    with Spinner() as spinner:
+
+    console = Console(highlight=False)
+    with Spinner(console=console) as spinner:
         spinner.update("Creating deployment on BentoCloud")
         deployment = Deployment.create(deployment_config_params=config_params)
         spinner.log(
@@ -750,4 +811,7 @@ def create_deployment(
             spinner.update(
                 "[bold blue]Waiting for deployment to be ready, you can use --no-wait to skip this process[/]",
             )
-            deployment.wait_until_ready(timeout=timeout, spinner=spinner)
+            retcode = deployment.wait_until_ready(timeout=timeout, spinner=spinner)
+            if retcode != 0:
+                raise SystemExit(retcode)
+        return deployment

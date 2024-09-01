@@ -378,6 +378,8 @@ def build_bentofile(
     labels: dict[str, str] | None = None,
     build_ctx: str | None = None,
     platform: str | None = None,
+    bare: bool = False,
+    reload: bool = False,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
     """
@@ -390,6 +392,8 @@ def build_bentofile(
         bentofile: The file path to build config yaml file
         version: Override the default auto generated version str
         build_ctx: Build context directory, when used as
+        bare: whether to build a bento without copying files
+        reload: whether to reload the service
 
     Returns:
         Bento: a Bento instance representing the materialized Bento saved in BentoStore
@@ -407,12 +411,17 @@ def build_bentofile(
             build_config.labels = labels
         build_config.labels.update(labels)
 
-    return Bento.create(
+    bento = Bento.create(
         build_config=build_config,
         version=version,
         build_ctx=build_ctx,
         platform=platform,
-    ).save(_bento_store)
+        bare=bare,
+        reload=reload,
+    )
+    if not bare:
+        return bento.save(_bento_store)
+    return bento
 
 
 def containerize(bento_tag: Tag | str, **kwargs: t.Any) -> bool:

@@ -48,12 +48,15 @@ from .schemas.schemasv1 import UpdateDeploymentSchema
 from .schemas.schemasv1 import UpdateSecretSchema
 from .schemas.schemasv1 import UserSchema
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
+from .schemas.schemasv2 import DeleteDeploymentFilesSchema
+from .schemas.schemasv2 import DeploymentFileListSchema
 from .schemas.schemasv2 import DeploymentFullSchema as DeploymentFullSchemaV2
 from .schemas.schemasv2 import DeploymentListSchema as DeploymentListSchemaV2
 from .schemas.schemasv2 import KubePodSchema
 from .schemas.schemasv2 import KubePodWSResponseSchema
 from .schemas.schemasv2 import LogWSResponseSchema
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
+from .schemas.schemasv2 import UploadDeploymentFilesSchema
 from .schemas.utils import schema_from_json
 from .schemas.utils import schema_from_object
 from .schemas.utils import schema_to_json
@@ -775,7 +778,7 @@ class RestApiClientV2(BaseRestApiClient):
             scheme = "ws"
         endpoint = f"{scheme}://{url_.netloc}"
         with connect_ws(
-            url=f"{endpoint}/ws/v1/clusters/{deployment.cluster.name}/pods?{urlencode(dict(organization_name=deployment.cluster.organization_name, namespace=deployment.kube_namespace, selector=f'yatai.ai/bento-repository={target.bento.repository.name},yatai.ai/bento={target.bento.version}'))}",
+            url=f"{endpoint}/ws/v2/deployments/{name}/pods?{urlencode(dict(organization_name=deployment.cluster.organization_name, cluster=deployment.cluster.name))}",
             client=self.session,
         ) as ws:
             jsn = schema_from_object(ws.receive_json(), KubePodWSResponseSchema)
@@ -799,7 +802,7 @@ class RestApiClientV2(BaseRestApiClient):
         endpoint = f"{scheme}://{url_.netloc}"
 
         with connect_ws(
-            url=f"{endpoint}/ws/v1/clusters/{cluster_name}/tail?{urlencode(dict(namespace=namespace, pod_name=pod_name))}",
+            url=f"{endpoint}/ws/v1/clusters/{cluster_name}/tail?{urlencode(dict(namespace=namespace, pod_name=pod_name, timestamps='false'))}",
             client=self.session,
         ) as ws:
             req_id = str(uuid.uuid4())
@@ -847,6 +850,32 @@ class RestApiClientV2(BaseRestApiClient):
             finally:
                 stop_event.set()
                 heartbeat_thread.join()
+
+    def upload_files(
+        self, name: str, files: UploadDeploymentFilesSchema, cluster: str | None = None
+    ) -> None:
+        url = urljoin(self.endpoint, f"/api/v2/deployments/{name}/files")
+        resp = self.session.post(
+            url, content=schema_to_json(files), params={"cluster": cluster}
+        )
+        self._check_resp(resp)
+
+    def delete_files(
+        self, name: str, paths: DeleteDeploymentFilesSchema, cluster: str | None = None
+    ) -> None:
+        url = urljoin(self.endpoint, f"/api/v2/deployments/{name}/files")
+        resp = self.session.request(
+            "DELETE", url, content=schema_to_json(paths), params={"cluster": cluster}
+        )
+        self._check_resp(resp)
+
+    def list_files(
+        self, name: str, cluster: str | None = None
+    ) -> DeploymentFileListSchema:
+        url = urljoin(self.endpoint, f"/api/v2/deployments/{name}/files")
+        resp = self.session.get(url, params={"cluster": cluster})
+        self._check_resp(resp)
+        return schema_from_json(resp.text, DeploymentFileListSchema)
 
 
 class RestApiClient:

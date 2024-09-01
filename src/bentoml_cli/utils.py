@@ -21,8 +21,9 @@ if t.TYPE_CHECKING:
     from click import Parameter
 
     P = t.ParamSpec("P")
+    R = t.TypeVar("R")
 
-    F = t.Callable[P, t.Any]
+    F = t.Callable[P, R]
 
     class ClickFunctionWrapper(t.Protocol[P]):
         __name__: str
@@ -41,14 +42,14 @@ logger = logging.getLogger("bentoml")
 
 
 def kwargs_transformers(
-    f: F[t.Any] | None = None,
+    f: F[P, R] | None = None,
     *,
-    transformer: F[t.Any],
+    transformer: F[P, R],
     pass_click_context: bool = False,
-) -> F[t.Any]:
-    def decorator(_f: F[t.Any]) -> t.Callable[P, t.Any]:
+) -> F[P, R]:
+    def decorator(_f: F[P, R]) -> F[P, R]:
         @functools.wraps(_f)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             transformed = {k: transformer(v) for k, v in kwargs.items()}
             if pass_click_context:
                 return _f(click.get_current_context(), *args, **transformed)

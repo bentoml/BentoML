@@ -552,3 +552,30 @@ def is_async_callable(obj: t.Any) -> t.TypeGuard[t.Callable[..., t.Awaitable[t.A
 
 def dict_filter_none(d: dict[str, t.Any]) -> dict[str, t.Any]:
     return {k: v for k, v in d.items() if v is not None}
+
+
+CONTROL_CODES = re.compile(
+    r"""
+    \x07|                  # BELL
+    \r|                    # CARRIAGE_RETURN
+    \x1b\[H|               # HOME
+    \x1b\[2J|              # CLEAR
+    \x1b\[?1049h|          # ENABLE_ALT_SCREEN
+    \x1b\[?1049l|          # DISABLE_ALT_SCREEN
+    \x1b\[?25h|            # SHOW_CURSOR
+    \x1b\[?25l|            # HIDE_CURSOR
+    \x1b\[\d+A|            # CURSOR_UP
+    \x1b\[\d+B|            # CURSOR_DOWN
+    \x1b\[\d+C|            # CURSOR_FORWARD
+    \x1b\[\d+D|            # CURSOR_BACKWARD
+    \x1b\[\d+G|            # CURSOR_MOVE_TO_COLUMN
+    \x1b\[\d+K|            # ERASE_IN_LINE
+    \x1b\[\d+;\d+H|        # CURSOR_MOVE_TO
+    \x1b\]0;.+?\x07        # SET_WINDOW_TITLE
+""",
+    flags=re.VERBOSE,
+)
+
+
+def filter_control_codes(line: str) -> str:
+    return CONTROL_CODES.sub("", line)

@@ -41,6 +41,7 @@ def import_service(
     *,
     working_dir: t.Optional[str] = None,
     standalone_load: bool = False,
+    reload: bool = False,
     model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> Service | NewService[t.Any]:
     """Import a Service instance from source code, by providing the svc_import_path
@@ -148,10 +149,13 @@ def import_service(
             module_name = import_path
 
         # Import the service using the Bento's own model store
+        needs_reload = module_name in sys.modules
         try:
             module = importlib.import_module(module_name, package=working_dir)
         except ImportError as e:
             raise ImportServiceError(f'Failed to import module "{module_name}": {e}')
+        if reload and needs_reload:
+            importlib.reload(module)
         if not standalone_load:
             recover_standalone_env_change()
 

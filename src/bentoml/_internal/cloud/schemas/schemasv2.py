@@ -61,7 +61,14 @@ class UpdateDeploymentSchema(DeploymentConfigSchema):
 class CreateDeploymentSchema(UpdateDeploymentSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    name: t.Optional[str] = attr.field(default=None)
+    name: t.Optional[str] = None
+    dev: bool = False
+
+
+@attr.define
+class DeploymentManifestSchema:
+    __forbid_extra_keys__ = False
+    dev: bool = False
 
 
 @attr.define
@@ -73,6 +80,7 @@ class DeploymentSchema(ResourceSchema):
     creator: UserSchema
     cluster: ClusterSchema
     latest_revision: t.Optional[DeploymentRevisionSchema]
+    manifest: t.Optional[DeploymentManifestSchema] = None
 
 
 @attr.define
@@ -95,12 +103,21 @@ class KubePodStatusSchema:
 
 
 @attr.define
+class PodStatusSchema:
+    __forbid_extra_keys__ = False
+    phase: str
+    ready: bool
+
+
+@attr.define
 class KubePodSchema:
     __forbid_extra_keys__ = False
     name: str
     namespace: str
     labels: t.Dict[str, str]
     pod_status: KubePodStatusSchema
+    status: PodStatusSchema
+    runner_name: str
 
 
 @attr.define
@@ -124,3 +141,36 @@ class KubePodWSResponseSchema:
     message: str
     type: str
     payload: t.Optional[t.List[KubePodSchema]]
+
+
+@attr.define
+class UploadDeploymentFileSchema:
+    __forbid_extra_keys__ = False
+    path: str
+    b64_encoded_content: str
+
+
+@attr.define
+class UploadDeploymentFilesSchema:
+    __forbid_extra_keys__ = False
+    files: t.List[UploadDeploymentFileSchema]
+
+
+@attr.define
+class DeleteDeploymentFilesSchema:
+    __forbid_extra_keys__ = False
+    paths: t.List[str]
+
+
+@attr.define
+class DeploymentFileSchema:
+    __forbid_extra_keys__ = False
+    path: str
+    size: int
+    md5: str
+
+
+@attr.define
+class DeploymentFileListSchema:
+    __forbid_extra_keys__ = False
+    files: t.List[DeploymentFileSchema]

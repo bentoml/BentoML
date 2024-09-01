@@ -4,6 +4,7 @@ import typing as t
 from contextlib import contextmanager
 
 import attrs
+from rich import get_console
 from rich.console import Group
 from rich.live import Live
 from rich.panel import Panel
@@ -92,7 +93,8 @@ class Spinner:
     Use it as a context manager to start the live updating.
     """
 
-    def __init__(self):
+    def __init__(self, console: Console | None = None) -> None:
+        self.console = console or get_console()
         self.transmission_progress = Progress(
             TextColumn("[bold blue]{task.description}", justify="right"),
             BarColumn(bar_width=None),
@@ -103,6 +105,7 @@ class Spinner:
             TransferSpeedColumn(),
             "•",
             TimeRemainingColumn(),
+            console=self.console,
         )
 
         self._logs: list[str] = []
@@ -111,24 +114,21 @@ class Spinner:
             TimeElapsedColumn(),
             TextColumn("[bold purple]{task.description}"),
             SpinnerColumn("simpleDots"),
+            console=self.console,
         )
         self._spinner_task_id: t.Optional[TaskID] = None
-        self._live = Live(self)
-
-    @property
-    def console(self) -> "Console":
-        return self._live.console
+        self._live = Live(self, console=self.console)
 
     @contextmanager
     def spin(self, text: str) -> t.Generator[TaskID, None, None]:
         """Create a spinner as a context manager."""
+        task_id = self.update(text, new=True)
         try:
-            task_id = self.update(text, new=True)
             yield task_id
         finally:
-            self._spinner_task_id = None
-            self._spinner_progress.stop_task(task_id)
-            self._spinner_progress.update(task_id, visible=False)
+            self._spinner_progress.remove_task(task_id)
+            if self._spinner_task_id == task_id:
+                self._spinner_task_id = None
 
     def update(self, text: str, new: bool = False) -> TaskID:
         """Update the spin text."""
@@ -154,8 +154,7 @@ class Spinner:
     def stop(self) -> None:
         """Stop live updating."""
         if self._spinner_task_id is not None:
-            self._spinner_progress.stop_task(self._spinner_task_id)
-            self._spinner_progress.update(self._spinner_task_id, visible=False)
+            self._spinner_progress.remove_task(self._spinner_task_id)
             self._spinner_task_id = None
         self._live.stop()
 

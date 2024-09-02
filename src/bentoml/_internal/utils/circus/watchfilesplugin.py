@@ -1,23 +1,22 @@
 from __future__ import annotations
 
+import logging
 import os
 import typing as t
-import logging
-from typing import TYPE_CHECKING
 from pathlib import Path
 from threading import Event
 from threading import Thread
+from typing import TYPE_CHECKING
 
-import fs
-from watchfiles import watch
 from circus.plugins import CircusPlugin
+from watchfiles import watch
 
-from ...log import configure_server_logging
-from ...context import component_context
-from ...utils.pkg import source_locations
-from ...configuration import is_pypi_installed_bentoml
-from ...bento.build_config import BentoPathSpec
 from ...bento.build_config import BentoBuildConfig
+from ...bento.build_config import BentoPathSpec
+from ...configuration import is_pypi_installed_bentoml
+from ...context import server_context
+from ...log import configure_server_logging
+from ...utils.pkg import source_locations
 
 if TYPE_CHECKING:
     from watchfiles.main import FileChange
@@ -34,7 +33,7 @@ class ServiceReloaderPlugin(CircusPlugin):
         assert "working_dir" in config, "`working_dir` is required"
 
         configure_server_logging()
-        component_context.component_type = "observer"
+        server_context.service_type = "observer"
 
         super().__init__(*args, **config)
 
@@ -51,7 +50,7 @@ class ServiceReloaderPlugin(CircusPlugin):
             logger.info(
                 "BentoML is installed via development mode, adding source root to 'watch_dirs'."
             )
-            watch_dirs.append(t.cast(str, source_locations("bentoml")))
+            watch_dirs.append(t.cast(str, os.path.dirname(source_locations("bentoml"))))
 
         logger.info("Watching directories: %s", watch_dirs)
         self.watch_dirs = watch_dirs
@@ -89,11 +88,7 @@ class ServiceReloaderPlugin(CircusPlugin):
 
         return any(
             self.bento_spec.includes(
-                path,
-                recurse_exclude_spec=filter(
-                    lambda s: fs.path.isparent(s[0], os.path.dirname(path)),
-                    self.bento_spec.from_path(dirs),
-                ),
+                path, recurse_exclude_spec=self.bento_spec.from_path(dirs)
             )
             for dirs in self.watch_dirs
         )

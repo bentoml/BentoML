@@ -1,26 +1,26 @@
 from __future__ import annotations
 
-import os
-import sys
-import typing as t
 import asyncio
 import inspect
 import logging
-from typing import TYPE_CHECKING
-from functools import partial
+import os
+import sys
+import typing as t
 from concurrent.futures import ThreadPoolExecutor
+from functools import cached_property
+from functools import partial
+from typing import TYPE_CHECKING
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from bentoml.grpc.utils import import_grpc
-from bentoml.grpc.utils import import_generated_stubs
-
-from ..utils import LazyLoader
-from ..utils import cached_property
-from ..utils import resolve_user_filepath
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ...grpc.utils import import_generated_stubs
+from ...grpc.utils import import_grpc
+from ...grpc.utils import load_from_file
 from ..configuration.containers import BentoMLContainer
+from ..context import ServiceContext as Context
+from ..utils import LazyLoader
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +31,9 @@ if TYPE_CHECKING:
     from grpc_health.v1 import health_pb2 as pb_health
     from grpc_health.v1 import health_pb2_grpc as services_health
 
-    from ..service import Service
     from ...grpc.types import Interceptors
-
-    OnStartup = list[t.Callable[[], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]]
+    from ..service import Service
+    from ..types import LifecycleHook
 
 else:
     grpc, aio = import_grpc()
@@ -59,12 +58,6 @@ else:
     )
 
 
-def load_from_file(p: str) -> bytes:
-    rp = resolve_user_filepath(p, ctx=None)
-    with open(rp, "rb") as f:
-        return f.read()
-
-
 # NOTE: we are using the internal aio._server.Server (which is initialized with aio.server)
 class Server(aio._server.Server):
     """An async implementation of a gRPC server."""
@@ -74,10 +67,12 @@ class Server(aio._server.Server):
         self,
         bento_service: Service,
         bind_address: str,
-        max_message_length: int
-        | None = Provide[BentoMLContainer.grpc.max_message_length],
-        maximum_concurrent_rpcs: int
-        | None = Provide[BentoMLContainer.grpc.maximum_concurrent_rpcs],
+        max_message_length: int | None = Provide[
+            BentoMLContainer.grpc.max_message_length
+        ],
+        maximum_concurrent_rpcs: int | None = Provide[
+            BentoMLContainer.grpc.maximum_concurrent_rpcs
+        ],
         enable_reflection: bool = False,
         enable_channelz: bool = False,
         max_concurrent_streams: int | None = None,
@@ -235,6 +230,10 @@ class Server(aio._server.Server):
             except Exception as e:  # pylint: disable=broad-except
                 raise RuntimeError(f"Server failed unexpectedly: {e}") from None
 
+    @cached_property
+    def context(self) -> Context:
+        return Context()
+
     def configure_port(self, addr: str):
         if self.ssl_certfile:
             client_auth = False
@@ -266,8 +265,11 @@ class Server(aio._server.Server):
         await self.wait_for_termination()
 
     @property
-    def on_startup(self) -> OnStartup:
-        on_startup: OnStartup = [self.bento_service.on_grpc_server_startup]
+    def on_startup(self) -> list[LifecycleHook]:
+        on_startup = [
+            *self.bento_service.startup_hooks,
+            self.bento_service.on_grpc_server_startup,
+        ]
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
                 on_startup.append(partial(runner.init_local, quiet=True))
@@ -330,20 +332,24 @@ class Server(aio._server.Server):
         # mark all services as healthy
         for service in service_names:
             await self.health_servicer.set(
-                service, pb_health.HealthCheckResponse.SERVING  # type: ignore (no types available)
+                service,
+                pb_health.HealthCheckResponse.SERVING,  # type: ignore (no types available)
             )
         await self.start()
 
     @property
-    def on_shutdown(self) -> list[t.Callable[[], None]]:
-        on_shutdown = [self.bento_service.on_grpc_server_shutdown]
+    def on_shutdown(self) -> list[LifecycleHook]:
+        on_shutdown = [
+            *self.bento_service.shutdown_hooks,
+            self.bento_service.on_grpc_server_shutdown,
+        ]
         for runner in self.bento_service.runners:
             on_shutdown.append(runner.destroy)
 
         return on_shutdown
 
     async def shutdown(self):
-        # Running on_startup callback.
+        # Running on_shutdown callback.
         for handler in self.on_shutdown:
             out = handler()
             if inspect.isawaitable(out):

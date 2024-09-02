@@ -1,26 +1,28 @@
 from __future__ import annotations
 
+import os
+import shutil
 import sys
-import typing as t
 import tempfile
-from typing import TYPE_CHECKING
+import typing as t
 from asyncio import Future
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
 
+from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.utils import LazyLoader
+from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
+from bentoml.grpc.utils import import_generated_stubs
+from bentoml.grpc.utils import import_grpc
+from bentoml.testing.grpc import async_client_call
+from bentoml.testing.grpc import create_channel
+from bentoml.testing.grpc import create_test_bento_servicer
+from bentoml.testing.grpc import make_standalone_server
 from tests.proto import service_test_pb2 as pb_test
 from tests.proto import service_test_pb2_grpc as services_test
-from bentoml.grpc.utils import import_grpc
-from bentoml.grpc.utils import import_generated_stubs
-from bentoml.testing.grpc import create_channel
-from bentoml.testing.grpc import async_client_call
-from bentoml.testing.grpc import make_standalone_server
-from bentoml.testing.grpc import create_test_bento_servicer
-from bentoml._internal.utils import LazyLoader
 from tests.unit.grpc.conftest import TestServiceServicer
-from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
-from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import grpc
@@ -31,15 +33,24 @@ else:
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
     grpc, aio = import_grpc()
 
-prom_dir = tempfile.mkdtemp("prometheus-multiproc")
-BentoMLContainer.prometheus_multiproc_dir.set(prom_dir)
+
 interceptor = PrometheusServerInterceptor()
 
-if "prometheus_client" in sys.modules:
-    mods = [m for m in sys.modules if "prometheus_client" in m]
-    list(map(lambda s: sys.modules.pop(s), mods))
-    if not interceptor._is_setup:
-        interceptor._setup()
+
+@pytest.fixture(scope="module", autouse=True)
+def init_prometheus_dir():
+    prom_dir = tempfile.mkdtemp("prometheus-multiproc")
+    try:
+        os.environ["PROMETHEUS_MULTIPROC_DIR"] = prom_dir
+        if "prometheus_client" in sys.modules:
+            mods = [m for m in sys.modules if "prometheus_client" in m]
+            list(map(lambda s: sys.modules.pop(s), mods))
+            if not interceptor._is_setup:
+                interceptor._setup()
+        yield
+    finally:
+        os.environ.pop("PROMETHEUS_MULTIPROC_DIR")
+        shutil.rmtree(prom_dir, ignore_errors=True)
 
 
 @pytest.mark.asyncio

@@ -1,0 +1,11 @@
+service: "service.py:InferenceGraph"
+labels:
+  owner: bentoml-team
+  project: gallery
+include:
+  - "service.py"
+python:
+  requirements_txt: "./requirements.txt"
+  lock_packages: false
+docker:
+    distro: debian

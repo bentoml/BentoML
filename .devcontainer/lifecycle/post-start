@@ -6,8 +6,9 @@ git config --global pull.ff only
 # fetch all tags
 git fetch upstream --tags && git pull
 
-# install editable wheels & tools for bentoml
-pip install -e ".[tracing,grpc]" -r requirements/dev-requirements.txt
+curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
+
+~/.local/bin/pdm sync -gp . -d -G io -G grpc -G triton -G tracing -G monitor-otlp -G grpc-reflection -G grpc-channelz -G aws
 
 # setup docker buildx
 docker buildx install

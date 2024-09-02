@@ -1,24 +1,24 @@
 import typing as t
 
-from tensorflow.python.framework.ops import Tensor
-from tensorflow.python.module.module import Module
 from tensorflow.python.client.session import Session
-from tensorflow.python.trackable.base import Trackable
 from tensorflow.python.eager.def_function import Function
 from tensorflow.python.eager.function_spec import FunctionSpec
+from tensorflow.python.framework.composite_tensor import CompositeTensor
+from tensorflow.python.framework.indexed_slices import IndexedSlices
+from tensorflow.python.framework.ops import Tensor
+from tensorflow.python.framework.sparse_tensor import SparseTensorSpec
+from tensorflow.python.framework.tensor_spec import TensorSpec
 from tensorflow.python.framework.type_spec import TypeSpec
+from tensorflow.python.keras.engine.sequential import Sequential
+from tensorflow.python.keras.engine.training import Model
+from tensorflow.python.module.module import Module
+from tensorflow.python.ops.ragged.ragged_tensor import RaggedTensorSpec
 from tensorflow.python.ops.tensor_array_ops import TensorArray
 from tensorflow.python.ops.tensor_array_ops import TensorArraySpec
-from tensorflow.python.framework.tensor_spec import TensorSpec
-from tensorflow.python.keras.engine.training import Model
-from tensorflow.python.framework.sparse_tensor import SparseTensorSpec
-from tensorflow.python.keras.engine.sequential import Sequential
-from tensorflow.python.framework.indexed_slices import IndexedSlices
-from tensorflow.python.ops.ragged.ragged_tensor import RaggedTensorSpec
-from tensorflow.python.saved_model.save_options import SaveOptions
-from tensorflow.python.framework.composite_tensor import CompositeTensor
-from tensorflow.python.training.tracking.tracking import AutoTrackable
 from tensorflow.python.saved_model.function_deserialization import RestoredFunction
+from tensorflow.python.saved_model.save_options import SaveOptions
+from tensorflow.python.trackable.base import Trackable
+from tensorflow.python.training.tracking.tracking import AutoTrackable
 
 # NOTE: FunctionSpec moved from eager.function to eager.function_spec
 # and then to eager.polymorphic_function
@@ -31,21 +31,19 @@ except ImportError:
         from tensorflow.python.eager.polymorphic_function import FunctionSpec
 
 try:
-    from tensorflow.python.types.core import GenericFunction
-    from tensorflow.python.types.core import ConcreteFunction
     from tensorflow.python.framework.ops import _EagerTensorBase as EagerTensor
+    from tensorflow.python.types.core import ConcreteFunction
+    from tensorflow.python.types.core import GenericFunction
 except ImportError:
     from tensorflow.python.eager.function import ConcreteFunction
 
     class GenericFunction(t.Protocol):
-        def __call__(self, *args: t.Any, **kwargs: t.Any):
-            ...
+        def __call__(self, *args: t.Any, **kwargs: t.Any): ...
 
     # NOTE: future proof when tensorflow decided to remove EagerTensor
     # and enable eager execution on Tensor by default. This class only serves
     # as type fallback.
-    class EagerTensor(Tensor):
-        ...
+    class EagerTensor(Tensor): ...
 
 
 class SignatureMap(t.Mapping[str, t.Any], Trackable):
@@ -53,22 +51,17 @@ class SignatureMap(t.Mapping[str, t.Any], Trackable):
 
     _signatures: t.Dict[str, t.Union[ConcreteFunction, RestoredFunction, Function]]
 
-    def __init__(self) -> None:
-        ...
+    def __init__(self) -> None: ...
 
     def __getitem__(
         self, key: str
-    ) -> t.Union[ConcreteFunction, RestoredFunction, Function]:
-        ...
+    ) -> t.Union[ConcreteFunction, RestoredFunction, Function]: ...
 
-    def __iter__(self) -> t.Iterator[str]:
-        ...
+    def __iter__(self) -> t.Iterator[str]: ...
 
-    def __len__(self) -> int:
-        ...
+    def __len__(self) -> int: ...
 
-    def __repr__(self) -> str:
-        ...
+    def __repr__(self) -> str: ...
 
 
 # This denotes all decorated function with `tf.function`

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import logging
 import os
 import typing as t
-import logging
 from types import ModuleType
 from typing import TYPE_CHECKING
 
@@ -10,21 +10,19 @@ import attr
 
 import bentoml
 from bentoml import Tag
-from bentoml.models import ModelContext
-from bentoml.models import ModelOptions
-from bentoml.exceptions import NotFound
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import MissingDependencyException
+from bentoml.exceptions import NotFound
+from bentoml.models import ModelContext
+from bentoml.models import ModelOptions as BaseModelOptions
 
-from ..utils.pkg import get_pkg_version
 from ..utils.pkg import PackageNotFoundError
+from ..utils.pkg import get_pkg_version
 
 if TYPE_CHECKING:
-
     from bentoml.types import ModelSignature
     from bentoml.types import ModelSignatureDict
 
-    from .utils.onnx import ONNXArgType
     from .utils.onnx import ONNXArgCastedType
 
     ProvidersType = list[str | tuple[str, dict[str, t.Any]]]
@@ -59,7 +57,7 @@ def flatten_providers_list(lst: ProvidersType) -> list[str]:
 
 
 @attr.define
-class ONNXOptions(ModelOptions):
+class ModelOptions(BaseModelOptions):
     """Options for the ONNX model"""
 
     input_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
@@ -95,7 +93,6 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 
 
 def _load_raw_model(bento_model: str | Tag | bentoml.Model) -> onnx.ModelProto:
-
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
 
@@ -159,7 +156,7 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: onnx.ModelProto,
     *,
     signatures: dict[str, ModelSignatureDict] | dict[str, ModelSignature] | None = None,
@@ -250,7 +247,7 @@ def save_model(
             output_names=output_names,
         )
 
-        bento_model = bentoml.onnx.save_model("onnx_model", model_path, signatures={"run": "batchable": True})
+        bento_model = bentoml.onnx.save_model("onnx_model", model_path, signatures={"run": {"batchable": True}})
 
     """
 
@@ -302,9 +299,9 @@ def save_model(
     input_specs = {"run": run_input_specs}
     output_specs = {"run": run_output_specs}
 
-    options = ONNXOptions(input_specs=input_specs, output_specs=output_specs)
+    options = ModelOptions(input_specs=input_specs, output_specs=output_specs)
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,
@@ -329,9 +326,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     # backward compatibility for v1, load raw model to infer
     # input_specs/output_specs for onnx model
     if bento_model.info.api_version == "v1":
-
         raw_model: onnx.ModelProto | None = None
-        options = t.cast(ONNXOptions, bento_model.info.options)
+        options = t.cast(ModelOptions, bento_model.info.options)
 
         if not options.input_specs:
             raw_model = _load_raw_model(bento_model)
@@ -406,7 +402,6 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         input_specs: list[dict[str, t.Any]],
         output_specs: list[dict[str, t.Any]],
     ):
-
         casting_funcs = [gen_input_casting_func(spec) for spec in input_specs]
 
         if len(output_specs) > 1:
@@ -419,7 +414,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             def _process_output(outs):
                 return outs[0]
 
-        def _run(self: ONNXRunnable, *args: ONNXArgType) -> t.Any:
+        def _run(self: ONNXRunnable, *args: t.Any) -> t.Any:
             casted_args = [
                 casting_funcs[idx](args[idx]) for idx in range(len(casting_funcs))
             ]
@@ -441,7 +436,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
         )
 
     for method_name, signatures in bento_model.info.signatures.items():
-        options = t.cast(ONNXOptions, bento_model.info.options)
+        options = t.cast(ModelOptions, bento_model.info.options)
         input_specs = options.input_specs[method_name]
         output_specs = options.output_specs[method_name]
         add_runnable_method(method_name, signatures, input_specs, output_specs)

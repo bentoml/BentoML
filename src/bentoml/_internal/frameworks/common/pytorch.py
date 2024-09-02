@@ -1,25 +1,25 @@
 from __future__ import annotations
 
-import pickle
-import typing as t
-import logging
 import functools
 import itertools
+import logging
+import pickle
+import typing as t
 from typing import TYPE_CHECKING
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
 import bentoml
 
-from ...types import LazyType
 from ....exceptions import MissingDependencyException
+from ...configuration.containers import BentoMLContainer
 from ...models.model import Model
-from ...runner.utils import Params
-from ...runner.container import Payload
 from ...runner.container import DataContainer
 from ...runner.container import DataContainerRegistry
-from ...configuration.containers import BentoMLContainer
+from ...runner.container import Payload
+from ...runner.utils import Params
+from ...types import LazyType
 
 try:
     import torch
@@ -85,11 +85,7 @@ def make_pytorch_runnable_method(
     if partial_kwargs is None:
         partial_kwargs = {}
 
-    def _run(
-        self: PytorchModelRunnable,
-        *args: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
-        **kwargs: ext.PdDataFrame | ext.NpNDArray | torch.Tensor,
-    ) -> torch.Tensor:
+    def _run(self: PytorchModelRunnable, *args: t.Any, **kwargs: t.Any) -> torch.Tensor:
         params = Params(*args, **kwargs)
 
         def _mapping(item: T) -> torch.Tensor | T:

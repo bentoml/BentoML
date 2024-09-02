@@ -3,12 +3,12 @@ from __future__ import annotations
 import typing as t
 
 from .emitter import Emitter
-from .resolver import Resolver
-from .resolver import BaseResolver
-from .serializer import Serializer
-from .representer import Representer
 from .representer import BaseRepresenter
+from .representer import Representer
 from .representer import SafeRepresenter
+from .resolver import BaseResolver
+from .resolver import Resolver
+from .serializer import Serializer
 
 class BaseDumper(Emitter, Serializer, BaseRepresenter, BaseResolver):
     def __init__(

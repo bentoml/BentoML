@@ -14,13 +14,14 @@ if t.TYPE_CHECKING:
     import pyspark.sql.types
     from starlette.requests import Request
     from starlette.responses import Response
+    from starlette.responses import StreamingResponse
 
     from bentoml.grpc.types import ProtoField
 
-    from ..types import LazyType
-    from ..context import InferenceApiContext as Context
-    from ..service.openapi.specification import Schema
+    from ..context import ServiceContext as Context
     from ..service.openapi.specification import Reference
+    from ..service.openapi.specification import Schema
+    from ..types import LazyType
 
     InputType = (
         UnionType
@@ -78,8 +79,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
 
     if t.TYPE_CHECKING:
         # Populated by subclasses. Makes pyright happy.
-        def __init__(self, **kwargs: t.Any) -> None:
-            ...
+        def __init__(self, **kwargs: t.Any) -> None: ...
 
     __slots__ = (
         "_mime_type",
@@ -136,6 +136,11 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     def sample(self, value: IOType) -> None:
         self._sample = value
 
+    if t.TYPE_CHECKING:
+
+        @classmethod
+        def from_sample(cls, sample: t.Any, **attrs: t.Any) -> t.Self: ...
+
     @abstractmethod
     def _from_sample(self, sample: t.Any) -> IOType:
         """
@@ -172,7 +177,7 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     @abstractmethod
     async def to_http_response(
         self, obj: IOType, ctx: Context | None = None
-    ) -> Response:
+    ) -> Response | StreamingResponse:
         raise NotImplementedError
 
     @abstractmethod

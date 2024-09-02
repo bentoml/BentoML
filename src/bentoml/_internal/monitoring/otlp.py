@@ -1,32 +1,44 @@
 from __future__ import annotations
 
+import collections
+import datetime
+import logging
+import logging.config
 import os
 import random
 import typing as t
-import logging
-import datetime
-import collections
-import logging.config
-from typing import TYPE_CHECKING
 
+# NOTE: AFAIK, they move this function from opentelemetry.sdk.logs to opentelemetry._logs
+from opentelemetry._logs import set_logger_provider
 from opentelemetry.sdk._logs import LoggerProvider
 from opentelemetry.sdk._logs import LoggingHandler
-from opentelemetry.sdk._logs import set_logger_provider
-from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_HEADERS
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_TIMEOUT
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_INSECURE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_CERTIFICATE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_COMPRESSION
-from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_HEADERS
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_INSECURE
+from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_TIMEOUT
+from opentelemetry.sdk.resources import Resource
 
-from .api import MonitorBase
+from ...exceptions import MissingDependencyException
+from ..context import server_context
 from ..context import trace_context
-from ..context import component_context
+from .base import MonitorBase
 
-if TYPE_CHECKING:
+try:
+    from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
+        OTLPLogExporter as OTLPGrpcLogExporter,
+    )
+    from opentelemetry.exporter.otlp.proto.http._log_exporter import (
+        OTLPLogExporter as OTLPHttpLogExporter,
+    )
+except ImportError:
+    raise MissingDependencyException(
+        "'opentelemetry-exporter-otlp' is required to use OTLP exporter. Make sure to install it with 'pip install \"bentoml[monitor-otlp]\""
+    )
+
+if t.TYPE_CHECKING:
     from ..types import JSONSerializable
 
 
@@ -82,9 +94,10 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
 
     """
 
-    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_META) = (
+    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_TID, COLUMN_META) = (
         "timestamp",
         "request_id",
+        "trace_id",
         "bento_meta",
     )
 
@@ -98,6 +111,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         timeout: int | str | None = None,
         compression: str | None = None,
         meta_sample_rate: float = 1.0,
+        protocol: t.Literal["http", "grpc"] = "http",
         **_: t.Any,
     ) -> None:
         """
@@ -111,6 +125,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
             headers: The headers to use.
             timeout: The timeout to use.
             compression: The compression to use.
+            protocol: The protocol to use.
         """
         super().__init__(name, **_)
 
@@ -127,14 +142,26 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         self._schema: dict[str, dict[str, str]] = {}
         self._will_export_schema = False
 
+        self.protocol = protocol
+
     def _init_logger(self) -> None:
+        from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
+        from opentelemetry.sdk.resources import SERVICE_NAME
+        from opentelemetry.sdk.resources import OTELResourceDetector
+
+        # User can optionally configure the resource with the following environment variables. Only
+        # configure resource if user has not explicitly configured it.
+        system_otel_resources: Resource = OTELResourceDetector().detect()
+        _resource = {}
+        if server_context.bento_name:
+            _resource[SERVICE_NAME] = f"{server_context.bento_name}:{self.name}"
+        if server_context.bento_version:
+            _resource[SERVICE_INSTANCE_ID] = server_context.bento_version
+
+        bentoml_resource = Resource.create(_resource)
+
         self.logger_provider = LoggerProvider(
-            resource=Resource.create(
-                {
-                    "service.name": f"{component_context.bento_name}:{self.name}",
-                    "service.instance.id": "{component_context.bento_version}",
-                }
-            ),
+            resource=bentoml_resource.merge(system_otel_resources)
         )
         set_logger_provider(self.logger_provider)
 
@@ -151,7 +178,27 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         if self.compression is not None:
             os.environ[OTEL_EXPORTER_OTLP_COMPRESSION] = self.compression
 
-        exporter = OTLPLogExporter()
+        exporter: OTLPHttpLogExporter | OTLPGrpcLogExporter
+        if self.protocol == "http":
+            exporter = OTLPHttpLogExporter(
+                endpoint=self.endpoint,
+                certificate_file=self.credentials,
+                headers=self.headers,
+                timeout=self.timeout,
+                compression=self.compression,
+            )
+        elif self.protocol == "grpc":
+            exporter = OTLPGrpcLogExporter(
+                endpoint=self.endpoint,
+                insecure=self.insecure,
+                credentials=self.credentials,
+                headers=self.headers,
+                timeout=self.timeout,
+                compression=self.compression,
+            )
+        else:
+            raise ValueError(f"Invalid protocol: {self.protocol}")
+
         self.logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
         handler = LoggingHandler(
             level=logging.NOTSET, logger_provider=self.logger_provider
@@ -194,23 +241,22 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
             self._init_logger()
             assert self.data_logger is not None
 
+        extra_columns: dict[str, t.Any] = {
+            self.COLUMN_TIME: datetime.datetime.now().timestamp(),
+            self.COLUMN_RID: str(trace_context.request_id),
+            self.COLUMN_TID: str(trace_context.trace_id),
+        }
+
         if self._will_export_schema or random.random() < self.meta_sample_rate:
-            extra_columns = {
-                self.COLUMN_TIME: datetime.datetime.now().timestamp(),
-                self.COLUMN_RID: str(trace_context.request_id),
-                self.COLUMN_META: {
-                    "bento_name": component_context.bento_name,
-                    "bento_version": component_context.bento_version,
-                    "monitor_name": self.name,
-                    "schema": self._schema,
-                },
+            extra_columns[self.COLUMN_META] = {
+                "bento_name": server_context.bento_name,
+                "bento_version": server_context.bento_version,
+                "monitor_name": self.name,
+                "schema": self._schema,
             }
+
             self._will_export_schema = False
-        else:
-            extra_columns = {
-                self.COLUMN_TIME: datetime.datetime.now().timestamp(),
-                self.COLUMN_RID: str(trace_context.request_id),
-            }
+
         while True:
             try:
                 record = {k: v.popleft() for k, v in datas.items()}

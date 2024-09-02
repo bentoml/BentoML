@@ -1,27 +1,28 @@
 from __future__ import annotations
 
 import io
-import uuid
 import typing as t
+import uuid
+from dataclasses import dataclass
+from dataclasses import field
 from enum import Enum
 from tempfile import SpooledTemporaryFile
-from dataclasses import field
-from dataclasses import dataclass
 from urllib.parse import unquote_plus
 
 import multipart.multipart as multipart
+from starlette.datastructures import FormData
+from starlette.datastructures import Headers
+from starlette.datastructures import MutableHeaders
+from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.datastructures import Headers
-from starlette.datastructures import FormData
-from starlette.datastructures import UploadFile
-from starlette.datastructures import MutableHeaders
+from starlette.responses import StreamingResponse
 
-from .http import set_cookies
 from ...exceptions import BentoMLException
+from .http import set_cookies
 
 if t.TYPE_CHECKING:
-    from ..context import InferenceApiContext as Context
+    from ..context import ServiceContext as Context
 
 # Code below adapted from starlette's formparser. See the license: https://github.com/encode/starlette/blob/fc480890fe1f1e421746de303c6f8da1323e5626/LICENSE.md
 
@@ -339,7 +340,7 @@ def _get_disp_filename(headers: MutableHeaders) -> t.Optional[bytes]:
 
 
 async def concat_to_multipart_response(
-    responses: t.Mapping[str, Response], ctx: Context | None
+    responses: t.Mapping[str, Response | StreamingResponse], ctx: Context | None
 ) -> Response:
     boundary = uuid.uuid4().hex
     boundary_bytes = boundary.encode("latin1")
@@ -368,7 +369,15 @@ async def concat_to_multipart_response(
         writer.write(b"\r\n")
 
         # body
-        writer.write(resp.body)
+        if isinstance(resp, StreamingResponse):
+            async for chunk in resp.body_iterator:
+                (
+                    writer.write(chunk)
+                    if isinstance(chunk, bytes)
+                    else writer.write(chunk.encode(resp.charset))
+                )
+        else:
+            writer.write(resp.body)
         writer.write(b"\r\n")
 
     writer.write(b"--%b--\r\n" % boundary_bytes)

@@ -1,10 +1,12 @@
 version: 1
 api_server:
   workers: ~ # cpu_count() will be used when null
-  timeout: 60
   backlog: 2048
   # the maximum number of connections that will be made to any given runner server at once
   max_runner_connections: 16
+  traffic:
+    timeout: 60
+    max_concurrency: ~
   metrics:
     enabled: true
     namespace: bentoml_api_server
@@ -67,11 +69,13 @@ api_server:
 runners:
   resources: ~
   workers_per_resource: 1
-  timeout: 300
+  traffic:
+    timeout: 900
+    max_concurrency: ~
   batching:
     enabled: true
     max_batch_size: 100
-    max_latency_ms: 10000
+    max_latency_ms: 60000
   logging:
     access:
       enabled: true

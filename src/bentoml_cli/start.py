@@ -1,35 +1,49 @@
 from __future__ import annotations
 
-import os
-import sys
 import json
 import logging
+import os
+import sys
 from urllib.parse import urlparse
 
 import click
+import rich
 
 logger = logging.getLogger(__name__)
 
 
-def add_start_command(cli: click.Group) -> None:
-    from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
-    from bentoml._internal.utils import add_experimental_docstring
+def build_start_command() -> click.Group:
     from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.utils import add_experimental_docstring
+    from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
+    from bentoml_cli.utils import BentoMLCommandGroup
+
+    @click.group(name="start", cls=BentoMLCommandGroup)
+    def cli():
+        pass
 
     @cli.command(hidden=True)
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
-        "--remote-runner",
+        "--service-name",
+        type=click.STRING,
+        required=False,
+        default="",
+        envvar="BENTOML_SERVE_SERVICE_NAME",
+        help="specify the runner name to serve",
+    )
+    @click.option(
+        "--depends",
         type=click.STRING,
         multiple=True,
-        envvar="BENTOML_SERVE_REMOTE_RUNNER",
+        envvar="BENTOML_SERVE_DEPENDS",
         help="list of runners map",
     )
     @click.option(
         "--runner-map",
         type=click.STRING,
         envvar="BENTOML_SERVE_RUNNER_MAP",
-        help="[Deprecated] use --remote-runner instead. "
+        help="[Deprecated] use --depends instead. "
         "JSON string of runners map. For backword compatibility for yatai < 1.0.0",
     )
     @click.option(
@@ -42,31 +56,33 @@ def add_start_command(cli: click.Group) -> None:
     @click.option(
         "--port",
         type=click.INT,
-        default=BentoMLContainer.http.port.get(),
         help="The port to listen on for the REST api server",
         envvar="BENTOML_PORT",
-        show_default=True,
+        show_envvar=True,
     )
     @click.option(
         "--host",
         type=click.STRING,
-        default=BentoMLContainer.http.host.get(),
         help="The host to bind for the REST api server [defaults: 127.0.0.1(dev), 0.0.0.0(production)]",
-        envvar="BENTOML_HOST",
+        show_envvar="BENTOML_HOST",
     )
     @click.option(
         "--backlog",
         type=click.INT,
-        default=BentoMLContainer.api_server_config.backlog.get(),
         help="The maximum number of pending connections.",
-        show_default=True,
+        show_envvar=True,
     )
     @click.option(
         "--api-workers",
         type=click.INT,
-        default=BentoMLContainer.api_server_workers.get(),
         help="Specify the number of API server workers to start. Default to number of available CPU cores in production mode",
         envvar="BENTOML_API_WORKERS",
+    )
+    @click.option(
+        "--timeout",
+        type=click.INT,
+        help="Specify the timeout (seconds) for API server",
+        envvar="BENTOML_TIMEOUT",
     )
     @click.option(
         "--working-dir",
@@ -75,59 +91,51 @@ def add_start_command(cli: click.Group) -> None:
         default=None,
         show_default=True,
     )
+    @click.option("--ssl-certfile", type=str, help="SSL certificate file")
+    @click.option("--ssl-keyfile", type=str, help="SSL key file")
+    @click.option("--ssl-keyfile-password", type=str, help="SSL keyfile password")
     @click.option(
-        "--ssl-certfile",
-        type=str,
-        default=BentoMLContainer.ssl.certfile.get(),
-        help="SSL certificate file",
-    )
-    @click.option(
-        "--ssl-keyfile",
-        type=str,
-        default=BentoMLContainer.ssl.keyfile.get(),
-        help="SSL key file",
-    )
-    @click.option(
-        "--ssl-keyfile-password",
-        type=str,
-        default=BentoMLContainer.ssl.keyfile_password.get(),
-        help="SSL keyfile password",
-    )
-    @click.option(
-        "--ssl-version",
-        type=int,
-        default=BentoMLContainer.ssl.version.get(),
-        help="SSL version to use (see stdlib 'ssl' module)",
+        "--ssl-version", type=int, help="SSL version to use (see stdlib 'ssl' module)"
     )
     @click.option(
         "--ssl-cert-reqs",
         type=int,
-        default=BentoMLContainer.ssl.cert_reqs.get(),
         help="Whether client certificate is required (see stdlib 'ssl' module)",
     )
+    @click.option("--ssl-ca-certs", type=str, help="CA certificates file")
     @click.option(
-        "--ssl-ca-certs",
-        type=str,
-        default=BentoMLContainer.ssl.ca_certs.get(),
-        help="CA certificates file",
+        "--ssl-ciphers", type=str, help="Ciphers to use (see stdlib 'ssl' module)"
     )
     @click.option(
-        "--ssl-ciphers",
-        type=str,
-        default=BentoMLContainer.ssl.ciphers.get(),
-        help="Ciphers to use (see stdlib 'ssl' module)",
+        "--timeout-keep-alive",
+        type=int,
+        help="Close Keep-Alive connections if no new data is received within this timeout.",
+    )
+    @click.option(
+        "--timeout-graceful-shutdown",
+        type=int,
+        default=None,
+        help="Maximum number of seconds to wait for graceful shutdown. After this timeout, the server will start terminating requests.",
+    )
+    @click.option(
+        "--reload",
+        is_flag=True,
+        help="Reload Service when code changes detected",
+        default=False,
     )
     @add_experimental_docstring
     def start_http_server(  # type: ignore (unused warning)
         bento: str,
-        remote_runner: list[str] | None,
+        service_name: str,
+        depends: list[str] | None,
         runner_map: str | None,
         bind: str | None,
-        port: int,
-        host: str,
-        backlog: int,
-        working_dir: str,
+        port: int | None,
+        host: str | None,
+        backlog: int | None,
+        working_dir: str | None,
         api_workers: int | None,
+        timeout: int | None,
         ssl_certfile: str | None,
         ssl_keyfile: str | None,
         ssl_keyfile_password: str | None,
@@ -135,10 +143,16 @@ def add_start_command(cli: click.Group) -> None:
         ssl_cert_reqs: int | None,
         ssl_ca_certs: str | None,
         ssl_ciphers: str | None,
+        timeout_keep_alive: int | None,
+        timeout_graceful_shutdown: int | None,
+        reload: bool = False,
     ) -> None:
         """
         Start a HTTP API server standalone. This will be used inside Yatai.
         """
+        from bentoml import Service
+        from bentoml._internal.service.loader import load
+
         if working_dir is None:
             if os.path.isdir(os.path.expanduser(bento)):
                 working_dir = os.path.expanduser(bento)
@@ -146,13 +160,8 @@ def add_start_command(cli: click.Group) -> None:
                 working_dir = "."
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
-
-        from bentoml.start import start_http_server
-
-        if remote_runner:
-            runner_map_dict = dict(
-                [s.split("=", maxsplit=2) for s in remote_runner or []]
-            )
+        if depends:
+            runner_map_dict = dict([s.split("=", maxsplit=2) for s in depends or []])
         elif runner_map:
             runner_map_dict = json.loads(runner_map)
         else:
@@ -164,106 +173,78 @@ def add_start_command(cli: click.Group) -> None:
             host = parsed.hostname or host
             port = parsed.port or port
 
-        click.echo(f"Using remote runners: {runner_map}")
-        start_http_server(
-            bento,
-            runner_map=runner_map_dict,
-            working_dir=working_dir,
-            port=port,
-            host=host,
-            backlog=backlog,
-            api_workers=api_workers,
-            ssl_keyfile=ssl_keyfile,
-            ssl_certfile=ssl_certfile,
-            ssl_keyfile_password=ssl_keyfile_password,
-            ssl_version=ssl_version,
-            ssl_cert_reqs=ssl_cert_reqs,
-            ssl_ca_certs=ssl_ca_certs,
-            ssl_ciphers=ssl_ciphers,
-        )
+        svc = load(bento, working_dir=working_dir)
+        if isinstance(svc, Service):
+            if reload:
+                logger.warning("--reload does not work with legacy style services")
+            # for <1.2 bentos
+            if not service_name or service_name == svc.name:
+                from bentoml.start import start_http_server
 
-    @cli.command(hidden=True)
-    @click.argument("bento", type=click.STRING, default=".")
-    @click.option(
-        "--runner-name",
-        type=click.STRING,
-        required=True,
-        envvar="BENTOML_SERVE_RUNNER_NAME",
-        help="specify the runner name to serve",
-    )
-    @click.option(
-        "--bind",
-        type=click.STRING,
-        help="[Deprecated] use --host and --port instead."
-        "Bind address for the server. For backword compatibility for yatai < 1.0.0",
-        required=False,
-    )
-    @click.option(
-        "--port",
-        type=click.INT,
-        default=BentoMLContainer.http.port.get(),
-        help="The port to listen on for the REST api server",
-        envvar="BENTOML_PORT",
-        show_default=True,
-    )
-    @click.option(
-        "--host",
-        type=click.STRING,
-        default=BentoMLContainer.http.host.get(),
-        help="The host to bind for the REST api server [defaults: 127.0.0.1(dev), 0.0.0.0(production)]",
-        envvar="BENTOML_HOST",
-    )
-    @click.option(
-        "--backlog",
-        type=click.INT,
-        default=BentoMLContainer.api_server_config.backlog.get(),
-        help="The maximum number of pending connections.",
-        show_default=True,
-    )
-    @click.option(
-        "--working-dir",
-        type=click.Path(),
-        help="When loading from source code, specify the directory to find the Service instance",
-        default=None,
-        show_default=True,
-    )
-    @add_experimental_docstring
-    def start_runner_server(  # type: ignore (unused warning)
-        bento: str,
-        runner_name: str,
-        bind: str | None,
-        port: int,
-        host: str,
-        backlog: int,
-        working_dir: str,
-    ) -> None:
-        """
-        Start Runner server standalone. This will be used inside Yatai.
-        """
-        if working_dir is None:
-            if os.path.isdir(os.path.expanduser(bento)):
-                working_dir = os.path.expanduser(bento)
+                for dep in depends or []:
+                    rich.print(f"Using remote: {dep}")
+                start_http_server(
+                    bento,
+                    runner_map=runner_map_dict,
+                    working_dir=working_dir,
+                    port=port,
+                    host=host,
+                    backlog=backlog,
+                    api_workers=api_workers or 1,
+                    timeout=timeout,
+                    ssl_keyfile=ssl_keyfile,
+                    ssl_certfile=ssl_certfile,
+                    ssl_keyfile_password=ssl_keyfile_password,
+                    ssl_version=ssl_version,
+                    ssl_cert_reqs=ssl_cert_reqs,
+                    ssl_ca_certs=ssl_ca_certs,
+                    ssl_ciphers=ssl_ciphers,
+                    timeout_keep_alive=timeout_keep_alive,
+                    timeout_graceful_shutdown=timeout_graceful_shutdown,
+                )
             else:
-                working_dir = "."
-        if sys.path[0] != working_dir:
-            sys.path.insert(0, working_dir)
+                from bentoml.start import start_runner_server
 
-        from bentoml.start import start_runner_server
+                if bind is not None:
+                    parsed = urlparse(bind)
+                    assert parsed.scheme == "tcp"
+                    host = parsed.hostname or host
+                    port = parsed.port or port
 
-        if bind is not None:
-            parsed = urlparse(bind)
-            assert parsed.scheme == "tcp"
-            host = parsed.hostname or host
-            port = parsed.port or port
+                start_runner_server(
+                    bento,
+                    runner_name=service_name,
+                    working_dir=working_dir,
+                    timeout=timeout,
+                    port=port,
+                    host=host,
+                    backlog=backlog,
+                )
+        else:
+            # for >=1.2 bentos
+            from _bentoml_impl.server import serve_http
 
-        start_runner_server(
-            bento,
-            runner_name=runner_name,
-            working_dir=working_dir,
-            port=port,
-            host=host,
-            backlog=backlog,
-        )
+            svc.inject_config()
+            serve_http(
+                bento,
+                working_dir=working_dir,
+                port=port,
+                host=host,
+                backlog=backlog,
+                timeout=timeout,
+                ssl_keyfile=ssl_keyfile,
+                ssl_certfile=ssl_certfile,
+                ssl_keyfile_password=ssl_keyfile_password,
+                ssl_version=ssl_version,
+                ssl_cert_reqs=ssl_cert_reqs,
+                ssl_ca_certs=ssl_ca_certs,
+                ssl_ciphers=ssl_ciphers,
+                timeout_keep_alive=timeout_keep_alive,
+                timeout_graceful_shutdown=timeout_graceful_shutdown,
+                dependency_map=runner_map_dict,
+                service_name=service_name,
+                reload=reload,
+            )
 
     @cli.command(hidden=True)
     @click.argument("bento", type=click.STRING, default=".")
@@ -387,7 +368,7 @@ def add_start_command(cli: click.Group) -> None:
         from bentoml.start import start_grpc_server
 
         runner_map = dict([s.split("=", maxsplit=2) for s in remote_runner or []])
-        click.echo(f"Using remote runners: {runner_map}")
+        rich.print(f"Using remote runners: {runner_map}")
         start_grpc_server(
             bento,
             runner_map=runner_map,
@@ -404,3 +385,105 @@ def add_start_command(cli: click.Group) -> None:
             max_concurrent_streams=max_concurrent_streams,
             protocol_version=protocol_version,
         )
+
+    @cli.command(hidden=True)
+    @click.argument("bento", type=click.STRING, default=".")
+    @click.option(
+        "--runner-name",
+        type=click.STRING,
+        required=True,
+        envvar="BENTOML_SERVE_RUNNER_NAME",
+        help="specify the runner name to serve",
+    )
+    @click.option(
+        "--bind",
+        type=click.STRING,
+        help="[Deprecated] use --host and --port instead."
+        "Bind address for the server. For backword compatibility for yatai < 1.0.0",
+        required=False,
+    )
+    @click.option(
+        "--port",
+        type=click.INT,
+        default=BentoMLContainer.http.port.get(),
+        help="The port to listen on for the REST api server",
+        envvar="BENTOML_PORT",
+        show_default=True,
+    )
+    @click.option(
+        "--host",
+        type=click.STRING,
+        default=BentoMLContainer.http.host.get(),
+        help="The host to bind for the REST api server [defaults: 127.0.0.1(dev), 0.0.0.0(production)]",
+        envvar="BENTOML_HOST",
+    )
+    @click.option(
+        "--backlog",
+        type=click.INT,
+        default=BentoMLContainer.api_server_config.backlog.get(),
+        help="The maximum number of pending connections.",
+        show_default=True,
+    )
+    @click.option(
+        "--working-dir",
+        type=click.Path(),
+        help="When loading from source code, specify the directory to find the Service instance",
+        default=None,
+        show_default=True,
+    )
+    @click.option(
+        "--timeout",
+        type=click.INT,
+        help="Specify the timeout (seconds) for runners",
+        envvar="BENTOML_TIMEOUT",
+    )
+    @add_experimental_docstring
+    def start_runner_server(  # type: ignore (unused warning)
+        bento: str,
+        runner_name: str,
+        bind: str | None,
+        port: int,
+        host: str,
+        backlog: int,
+        working_dir: str | None,
+        timeout: int | None,
+    ) -> None:
+        """
+        Start Runner server standalone. Deprecate in 1.2.0
+        """
+        if working_dir is None:
+            if os.path.isdir(os.path.expanduser(bento)):
+                working_dir = os.path.expanduser(bento)
+            else:
+                working_dir = "."
+        if sys.path[0] != working_dir:
+            sys.path.insert(0, working_dir)
+
+        if bind is not None:
+            parsed = urlparse(bind)
+            assert parsed.scheme == "tcp"
+            host = parsed.hostname or host
+            port = parsed.port or port
+
+        from bentoml.start import start_runner_server as start_runner_server_impl
+
+        if bind is not None:
+            parsed = urlparse(bind)
+            assert parsed.scheme == "tcp"
+            host = parsed.hostname or host
+            port = parsed.port or port
+
+        start_runner_server_impl(
+            bento,
+            runner_name=runner_name,
+            working_dir=working_dir,
+            timeout=timeout,
+            port=port,
+            host=host,
+            backlog=backlog,
+        )
+
+    return cli
+
+
+start_command = build_start_command()

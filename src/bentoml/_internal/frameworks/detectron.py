@@ -1,31 +1,31 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from types import ModuleType
 
 import bentoml
 
-from ..tag import Tag
-from ..types import LazyType
-from ..utils import LazyLoader
-from ..utils.pkg import get_pkg_version
-from ...exceptions import NotFound
 from ...exceptions import MissingDependencyException
+from ...exceptions import NotFound
 from ..models.model import Model
 from ..models.model import ModelContext
 from ..models.model import ModelSignature
 from ..models.model import PartialKwargsModelOptions as ModelOptions
 from ..runner.utils import Params
-from .common.pytorch import torch
-from .common.pytorch import inference_mode_ctx
+from ..tag import Tag
+from ..types import LazyType
+from ..utils import LazyLoader
+from ..utils.pkg import get_pkg_version
 from .common.pytorch import PyTorchTensorContainer  # noqa # type: ignore
+from .common.pytorch import inference_mode_ctx
+from .common.pytorch import torch
 
 try:
+    import detectron2.checkpoint as Checkpoint
     import detectron2.config as Config
     import detectron2.engine as Engine
     import detectron2.modeling as Modeling
-    import detectron2.checkpoint as Checkpoint
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'detectron2' is required in order to use module 'bentoml.detectron'. Install detectron2 with 'pip install 'git+https://github.com/facebookresearch/detectron2.git''."
@@ -129,7 +129,7 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     checkpointables: Engine.DefaultPredictor | nn.Module,
     config: Config.CfgNode | None = None,
     *,
@@ -242,7 +242,7 @@ def save_model(
 
     custom_objects["config"] = config
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

@@ -1,58 +1,52 @@
 from __future__ import annotations
 
+import importlib
+import inspect
 import io
+import logging
 import os
 import typing as t
-import logging
-import importlib
-from sys import version_info as pyver
-from types import ModuleType
-from typing import overload
-from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
+from sys import version_info as pyver
+from types import ModuleType
+from typing import TYPE_CHECKING
+from typing import overload
 
-import fs
 import attr
-import yaml
+import cloudpickle  # type: ignore (no cloudpickle types)
+import fs
 import fs.errors
 import fs.mirror
-import cloudpickle  # type: ignore (no cloudpickle types)
-from fs.base import FS
-from cattr.gen import override
+import yaml
 from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn
-from simple_di import inject
+from cattr.gen import override
+from fs.base import FS
 from simple_di import Provide
+from simple_di import inject
 
-from ..tag import Tag
+from bentoml._internal.utils.uri import encode_path_for_uri
+
+from ...exceptions import BentoMLException
+from ...exceptions import NotFound
+from ..configuration import BENTOML_VERSION
+from ..configuration.containers import BentoMLContainer
 from ..store import Store
 from ..store import StoreItem
+from ..tag import Tag
 from ..types import MetadataDict
+from ..types import ModelSignatureDict
 from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
 from ..utils import normalize_labels_value
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ..configuration import BENTOML_VERSION
-from ..configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
-    from ..types import AnyType
-    from ..types import PathType
-    from ..runner import Runner
+if t.TYPE_CHECKING:
     from ..runner import Runnable
+    from ..runner import Runner
     from ..runner.strategy import Strategy
-
-    class ModelSignatureDict(t.TypedDict, total=False):
-        batchable: bool
-        batch_dim: tuple[int, int] | int | None
-        input_spec: tuple[AnyType] | AnyType | None
-        output_spec: AnyType | None
-
-else:
-    ModelSignaturesDict = dict
+    from ..types import PathType
 
 
 T = t.TypeVar("T")
@@ -101,7 +95,7 @@ class Model(StoreItem):
     ):
         if not _internal:
             raise BentoMLException(
-                "Model cannot be instantiated directly directly; use bentoml.<framework>.save or bentoml.models.get instead"
+                "Model cannot be instantiated directly; use bentoml.<framework>.save or bentoml.models.get instead"
             )
 
         self.__attrs_init__(tag, model_fs, info, custom_objects)  # type: ignore (no types for attrs init)
@@ -146,7 +140,7 @@ class Model(StoreItem):
     @classmethod
     def create(
         cls,
-        name: str,
+        name: Tag | str,
         *,
         module: str,
         api_version: str,
@@ -180,7 +174,7 @@ class Model(StoreItem):
         Returns:
             object: Model instance created in temporary filesystem
         """
-        tag = Tag.from_str(name)
+        tag = Tag.from_taglike(name)
         if tag.version is None:
             tag = tag.make_new_version()
         labels = {} if labels is None else labels
@@ -217,7 +211,9 @@ class Model(StoreItem):
             raise BentoMLException(f"Failed to save {self!s}: {e}") from None
 
         with model_store.register(self.tag) as model_path:
-            out_fs = fs.open_fs(model_path, create=True, writeable=True)
+            out_fs = fs.open_fs(
+                encode_path_for_uri(model_path), create=True, writeable=True
+            )
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
             self.__fs = out_fs
@@ -241,13 +237,6 @@ class Model(StoreItem):
             raise BentoMLException(f"Failed to load {res!s}: {e}") from None
 
         return res
-
-    @property
-    def path(self) -> str:
-        return self.path_of("/")
-
-    def path_of(self, item: str) -> str:
-        return self._fs.getsyspath(item)
 
     @classmethod
     def enter_cloudpickle_context(
@@ -494,7 +483,7 @@ class ModelSignature:
 
     @staticmethod
     def convert_signatures_dict(
-        data: dict[str, ModelSignatureDict | ModelSignature]
+        data: dict[str, ModelSignatureDict | ModelSignature],
     ) -> dict[str, ModelSignature]:
         return {
             k: ModelSignature.from_dict(v) if isinstance(v, dict) else v
@@ -527,7 +516,7 @@ bentoml_cattr.register_unstructure_hook(
 )
 
 
-@attr.define(repr=False, eq=False, frozen=True)
+@attr.define(repr=False, eq=False, frozen=True, init=False)
 class ModelInfo:
     # for backward compatibility in case new fields are added to BentoInfo.
     __forbid_extra_keys__ = False
@@ -621,6 +610,10 @@ class ModelInfo:
     @property
     def imported_module(self) -> ModuleType:
         if self._cached_module is None:
+            if not self.module:
+                raise BentoMLException(
+                    f"Module is not defined in {MODEL_YAML_FILENAME}. If the module argument is not defined when creating a model using `bentoml.models.create`, methods that use `ModelInfo.imported_module` are not supported."
+                ) from None
             try:
                 object.__setattr__(
                     self, "_cached_module", importlib.import_module(self.module)
@@ -635,7 +628,7 @@ class ModelInfo:
     @property
     def options(self) -> ModelOptions:
         if self._cached_options is None:
-            if hasattr(self.imported_module, "ModelOptions"):
+            if self.module and hasattr(self.imported_module, "ModelOptions"):
                 object.__setattr__(
                     self,
                     "_cached_options",
@@ -651,12 +644,10 @@ class ModelInfo:
         return bentoml_cattr.unstructure(self)
 
     @overload
-    def dump(self, stream: io.StringIO) -> io.BytesIO:
-        ...
+    def dump(self, stream: io.StringIO) -> io.BytesIO: ...
 
     @overload
-    def dump(self, stream: None = None) -> None:
-        ...
+    def dump(self, stream: None = None) -> None: ...
 
     def dump(self, stream: io.StringIO | None = None) -> io.BytesIO | None:
         return yaml.safe_dump(self.to_dict(), stream=stream, sort_keys=False)  # type: ignore (bad yaml types)
@@ -699,7 +690,7 @@ class ModelInfo:
 
 
 bentoml_cattr.register_structure_hook_func(
-    lambda cls: issubclass(cls, ModelInfo),
+    lambda cls: inspect.isclass(cls) and issubclass(cls, ModelInfo),
     make_dict_structure_fn(
         ModelInfo,
         bentoml_cattr,
@@ -709,7 +700,7 @@ bentoml_cattr.register_structure_hook_func(
     ),
 )
 bentoml_cattr.register_unstructure_hook_func(
-    lambda cls: issubclass(cls, ModelInfo),
+    lambda cls: inspect.isclass(cls) and issubclass(cls, ModelInfo),
     # Ignore tag, tag is saved via the name and version field
     make_dict_unstructure_fn(
         ModelInfo,

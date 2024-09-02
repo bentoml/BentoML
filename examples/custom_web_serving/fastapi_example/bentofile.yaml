@@ -1,9 +1,0 @@
-service: "service.py:svc"
-include:
-- "service.py"
-python:
-  packages:
-    - scikit-learn
-    - pandas
-    - fastapi
-    - pydantic

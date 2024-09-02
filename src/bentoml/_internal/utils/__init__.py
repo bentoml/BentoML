@@ -1,45 +1,41 @@
 from __future__ import annotations
 
-import os
-import re
-import sys
-import random
-import socket
-import typing as t
+import asyncio
+import contextlib
+import functools
 import inspect
 import logging
-import functools
-import contextlib
-from typing import overload
-from typing import TYPE_CHECKING
+import os
+import random
+import re
+import socket
+import typing as t
+from datetime import date
+from datetime import datetime
+from datetime import time
+from datetime import timedelta
 from pathlib import Path
 from reprlib import recursive_repr as _recursive_repr
-from datetime import date
-from datetime import time
-from datetime import datetime
-from datetime import timedelta
+from typing import TYPE_CHECKING
+from typing import overload
 
-import fs
 import attr
+import fs
 import fs.copy
 from rich.console import Console
 
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-else:
-    from backports.cached_property import cached_property
-
-from .cattr import bentoml_cattr
 from ..types import LazyType
+from .cattr import bentoml_cattr
 from .lazy_loader import LazyLoader
+from .uri import encode_path_for_uri
 
 if TYPE_CHECKING:
     from fs.base import FS
     from typing_extensions import Self
 
-    from ..types import PathType
     from ..types import MetadataDict
     from ..types import MetadataType
+    from ..types import PathType
 
     P = t.ParamSpec("P")
     F = t.Callable[P, t.Any]
@@ -53,12 +49,10 @@ rich_console = Console(theme=None)
 
 __all__ = [
     "bentoml_cattr",
-    "cached_property",
     "cached_contextmanager",
     "reserve_free_port",
     "LazyLoader",
     "validate_or_create_dir",
-    "display_path_under_home",
     "rich_console",
     "experimental",
     "compose",
@@ -121,13 +115,11 @@ def add_experimental_docstring(f: t.Callable[P, t.Any]) -> t.Callable[P, t.Any]:
 
 
 @overload
-def first_not_none(*args: T | None, default: T) -> T:
-    ...
+def first_not_none(*args: T | None, default: T) -> T: ...
 
 
 @overload
-def first_not_none(*args: T | None) -> T | None:
-    ...
+def first_not_none(*args: T | None) -> T | None: ...
 
 
 def first_not_none(*args: T | None, default: None | T = None) -> T | None:
@@ -155,21 +147,11 @@ def validate_or_create_dir(*path: PathType) -> None:
             if not path_obj.is_dir():
                 raise OSError(20, f"{path_obj} is not a directory")
         else:
-            path_obj.mkdir(parents=True)
+            path_obj.mkdir(parents=True, exist_ok=True)
 
 
 def calc_dir_size(path: PathType) -> int:
     return sum(f.stat().st_size for f in Path(path).glob("**/*") if f.is_file())
-
-
-def display_path_under_home(path: str) -> str:
-    # Shorten path under home directory with leading `~`
-    # e.g. from `/Users/foo/bar` to just `~/bar`
-    try:
-        return str("~" / Path(path).relative_to(Path.home()))
-    except ValueError:
-        # when path is not under home directory, return original full path
-        return path
 
 
 def human_readable_size(size: t.Union[int, float], decimal_places: int = 2) -> str:
@@ -282,11 +264,62 @@ def copy_file_to_fs_folder(
     """
     src_path = os.path.realpath(os.path.expanduser(src_path))
     dir_name, file_name = os.path.split(src_path)
-    src_fs = fs.open_fs(dir_name)
+    src_fs = fs.open_fs(encode_path_for_uri(dir_name))
     dst_filename = file_name if dst_filename is None else dst_filename
     dst_path = fs.path.join(dst_folder_path, dst_filename)
     dst_fs.makedir(dst_folder_path, recreate=True)
     fs.copy.copy_file(src_fs, file_name, dst_fs, dst_path)
+
+
+def download_and_zip_git_repo(
+    url: str, ref: str, subdirectory: str | None, dst_path: str
+) -> str:
+    """
+    Download the git repo at the given url and ref, and zip it to a file at dst_path
+    """
+    import shutil
+    import subprocess
+
+    from ...exceptions import BentoMLException
+
+    name = os.path.splitext(os.path.basename(url))[0]
+
+    with fs.open_fs("temp://") as temp_fs:
+        dest_dir = temp_fs.getsyspath(name)
+        git_command = ["git", "clone", "--filter=blob:none", "--quiet", url, dest_dir]
+        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+        try:
+            subprocess.check_call(
+                git_command,
+                env=env,
+                stderr=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+            )
+            if ref:
+                subprocess.check_call(
+                    ["git", "fetch", "-q", url, ref],
+                    cwd=dest_dir,
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                )
+                subprocess.check_call(
+                    ["git", "checkout", "FETCH_HEAD"],
+                    cwd=dest_dir,
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                )
+        except subprocess.CalledProcessError as e:
+            raise BentoMLException(
+                f"Failed to clone git repository {url}: {e.stderr}"
+            ) from e
+        zipball = os.path.join(
+            dst_path,
+            name + (f"-{subdirectory.replace('/', '-')}" if subdirectory else ""),
+        )
+        shutil.rmtree(os.path.join(dest_dir, ".git"), ignore_errors=True)
+        source_dir = os.path.join(dest_dir, subdirectory) if subdirectory else dest_dir
+        result = shutil.make_archive(zipball, "zip", source_dir)
+        return os.path.basename(result)
 
 
 def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
@@ -496,3 +529,26 @@ class compose:
     def functions(self):
         """Read-only tuple of the composed callables, in order of execution."""
         return (self.__wrapped__,) + tuple(self._wrappers)
+
+
+def get_original_func(obj: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+    """
+    Get the original function from a decorated function
+    """
+    if getattr(obj, "__is_bentoml_api_func__", False):
+        obj = obj.func  # type: ignore
+    while isinstance(obj, functools.partial):
+        obj = obj.func
+    return obj
+
+
+def is_async_callable(obj: t.Any) -> t.TypeGuard[t.Callable[..., t.Awaitable[t.Any]]]:
+    obj = get_original_func(obj)
+
+    return asyncio.iscoroutinefunction(obj) or (
+        callable(obj) and asyncio.iscoroutinefunction(obj.__call__)
+    )
+
+
+def dict_filter_none(d: dict[str, t.Any]) -> dict[str, t.Any]:
+    return {k: v for k, v in d.items() if v is not None}

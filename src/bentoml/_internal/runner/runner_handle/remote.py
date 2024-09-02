@@ -1,40 +1,40 @@
 from __future__ import annotations
 
-import os
-import json
-import time
-import pickle
-import typing as t
 import asyncio
-import logging
 import functools
+import json
+import logging
+import os
+import pickle
+import time
 import traceback
+import typing as t
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
-from . import RunnerHandle
-from ..utils import Params
-from ..utils import PAYLOAD_META_HEADER
-from ...utils import LazyLoader
-from ...context import component_context
-from ..container import Payload
-from ...utils.uri import uri_to_path
 from ....exceptions import RemoteException
 from ....exceptions import ServiceUnavailable
 from ...configuration.containers import BentoMLContainer
+from ...context import server_context
+from ...utils import LazyLoader
+from ...utils.uri import uri_to_path
+from ..container import Payload
+from ..utils import PAYLOAD_META_HEADER
+from ..utils import Params
+from . import RunnerHandle
 
 TRITON_EXC_MSG = "tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[all]>=2.29.0\"'."
 
 if t.TYPE_CHECKING:
-    import yarl
     import tritonclient.grpc.aio as tritongrpcclient
     import tritonclient.http.aio as tritonhttpclient
+    import yarl
     from aiohttp import BaseConnector
     from aiohttp.client import ClientSession
 
+    from ....triton import Runner as TritonRunner
     from ..runner import Runner
     from ..runner import RunnerMethod
-    from ....triton import Runner as TritonRunner
 
     P = t.ParamSpec("P")
     R = t.TypeVar("R")
@@ -77,9 +77,9 @@ class RemoteRunnerClient(RunnerHandle):
         "return the configured timeout for this runner."
         runner_cfg = BentoMLContainer.runners_config.get()
         if self._runner.name in runner_cfg:
-            return runner_cfg[self._runner.name]["timeout"]
+            return runner_cfg[self._runner.name].get("traffic", {})["timeout"]
         else:
-            return runner_cfg["timeout"]
+            return runner_cfg.get("traffic", {})["timeout"]
 
     def _close_conn(self) -> None:
         if self._conn:
@@ -171,16 +171,12 @@ class RemoteRunnerClient(RunnerHandle):
 
         inp_batch_dim = __bentoml_method.config.batch_dim[0]
 
-        payload_params = Params[Payload](*args, **kwargs).map(
-            functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
-        )
-
         headers = {
-            "Bento-Name": component_context.bento_name,
-            "Bento-Version": component_context.bento_version,
+            "Bento-Name": server_context.bento_name,
+            "Bento-Version": server_context.bento_version,
             "Runner-Name": self._runner.name,
-            "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-            "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
+            "Yatai-Bento-Deployment-Name": server_context.yatai_bento_deployment_name,
+            "Yatai-Bento-Deployment-Namespace": server_context.yatai_bento_deployment_namespace,
         }
         total_args_num = len(args) + len(kwargs)
         headers["Args-Number"] = str(total_args_num)
@@ -278,6 +274,65 @@ class RemoteRunnerClient(RunnerHandle):
 
         return AutoContainer.from_payload(payload)
 
+    async def async_stream_method(
+        self,
+        __bentoml_method: RunnerMethod[t.Any, P, str],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> t.AsyncGenerator[str, None]:
+        import aiohttp
+
+        from ...runner.container import AutoContainer
+
+        inp_batch_dim = __bentoml_method.config.batch_dim[0]
+
+        headers = {
+            "Bento-Name": server_context.bento_name,
+            "Bento-Version": server_context.bento_version,
+            "Runner-Name": self._runner.name,
+            "Yatai-Bento-Deployment-Name": server_context.yatai_bento_deployment_name,
+            "Yatai-Bento-Deployment-Namespace": server_context.yatai_bento_deployment_namespace,
+        }
+        total_args_num = len(args) + len(kwargs)
+        headers["Args-Number"] = str(total_args_num)
+
+        if total_args_num == 1:
+            # FIXME: also considering kwargs
+            if len(kwargs) == 1:
+                kwarg_name = list(kwargs.keys())[0]
+                headers["Kwarg-Name"] = kwarg_name
+                payload = AutoContainer.to_payload(
+                    kwargs[kwarg_name], batch_dim=inp_batch_dim
+                )
+            else:
+                payload = AutoContainer.to_payload(args[0], batch_dim=inp_batch_dim)
+            data = payload.data
+
+            headers["Payload-Meta"] = json.dumps(payload.meta)
+            headers["Payload-Container"] = payload.container
+            headers["Batch-Size"] = str(payload.batch_size)
+
+        else:
+            payload_params = Params[Payload](*args, **kwargs).map(
+                functools.partial(AutoContainer.to_payload, batch_dim=inp_batch_dim)
+            )
+            data = pickle.dumps(payload_params)  # FIXME: pickle inside pickle
+
+        path = "" if __bentoml_method.name == "__call__" else __bentoml_method.name
+
+        try:
+            async with self._client.post(
+                f"{self._addr}/{path}",
+                data=data,
+                headers=headers,
+            ) as resp:
+                async for b in resp.content.iter_any():
+                    # convert bytes to string
+                    yield b.decode()
+
+        except aiohttp.ClientOSError as e:
+            raise RemoteException("Failed to connect to runner server.") from e
+
     def run_method(
         self,
         __bentoml_method: RunnerMethod[t.Any, P, R],
@@ -301,18 +356,22 @@ class RemoteRunnerClient(RunnerHandle):
         # default kubernetes probe timeout is also 1s; see
         # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
         aio_timeout = aiohttp.ClientTimeout(total=timeout)
-        async with self._client.get(
-            f"{self._addr}/readyz",
-            headers={
-                "Bento-Name": component_context.bento_name,
-                "Bento-Version": component_context.bento_version,
-                "Runner-Name": self._runner.name,
-                "Yatai-Bento-Deployment-Name": component_context.yatai_bento_deployment_name,
-                "Yatai-Bento-Deployment-Namespace": component_context.yatai_bento_deployment_namespace,
-            },
-            timeout=aio_timeout,
-        ) as resp:
-            return resp.status == 200
+        try:
+            async with self._client.get(
+                f"{self._addr}/readyz",
+                headers={
+                    "Bento-Name": server_context.bento_name,
+                    "Bento-Version": server_context.bento_version,
+                    "Runner-Name": self._runner.name,
+                    "Yatai-Bento-Deployment-Name": server_context.yatai_bento_deployment_name,
+                    "Yatai-Bento-Deployment-Namespace": server_context.yatai_bento_deployment_namespace,
+                },
+                timeout=aio_timeout,
+            ) as resp:
+                return resp.status == 200
+        except asyncio.TimeoutError:
+            logger.warn("Timed out waiting for runner to be ready")
+            return False
 
     def __del__(self) -> None:
         self._close_conn()
@@ -443,8 +502,8 @@ class TritonRunnerHandle(RunnerHandle):
     ) -> tritongrpcclient.InferResult | tritonhttpclient.InferResult:
         from ..container import AutoContainer
 
-        assert (len(args) == 0) ^ (
-            len(kwargs) == 0
+        assert (
+            (len(args) == 0) ^ (len(kwargs) == 0)
         ), f"Inputs for model '{__bentoml_method.name}' can be given either as positional (args) or keyword arguments (kwargs), but not both. See https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#model-configuration"
 
         pass_args = args if len(args) > 0 else kwargs
@@ -511,3 +570,12 @@ class TritonRunnerHandle(RunnerHandle):
             __bentoml_method,
             *args,
         )
+
+    @handle_triton_exception
+    def async_stream_method(
+        self,
+        __bentoml_method: RunnerMethod[t.Any, P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> t.AsyncGenerator[R, None]:
+        raise NotImplementedError

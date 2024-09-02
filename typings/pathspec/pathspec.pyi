@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from os import PathLike
 from typing import Any
-from typing import Text
 from typing import AnyStr
 from typing import Callable
+from typing import Collection
 from typing import Iterable
 from typing import Iterator
 from typing import NoReturn
-from typing import Collection
+from typing import Text
 
-from .util import TreeEntry
 from .pattern import Pattern
+from .util import TreeEntry
 
 class PathSpec:
     def __init__(self, patterns: Iterable[Pattern]) -> None: ...

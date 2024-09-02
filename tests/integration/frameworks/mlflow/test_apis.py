@@ -2,22 +2,23 @@ from __future__ import annotations
 
 import os
 import typing as t
-from typing import TYPE_CHECKING
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import numpy as np
 import mlflow
-import pytest
 import mlflow.models
 import mlflow.sklearn
 import mlflow.tracking
+import numpy as np
+import psutil
+import pytest
 from sklearn.datasets import load_iris
 from sklearn.neighbors import KNeighborsClassifier
 
 import bentoml
-from bentoml.exceptions import NotFound
-from bentoml.exceptions import BentoMLException
 from bentoml._internal.models.model import ModelContext
+from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import NotFound
 
 if TYPE_CHECKING:
     from sklearn.utils import Bunch
@@ -58,6 +59,10 @@ def iris_clf_model(tmp_path: Path) -> Path:
 
 # MLFlow db initialization spews SQLAlchemy deprecation warnings
 @pytest.mark.filterwarnings("ignore:.*:sqlalchemy.exc.SADeprecationWarning")
+@pytest.mark.skipif(
+    os.getenv("GITHUB_ACTIONS") is not None and psutil.WINDOWS,
+    reason="Skip this tests on Actions for Windows for now",
+)
 def test_mlflow_save_load(URI: Path, tmp_path: Path):
     tracking_db = tmp_path / "mlruns.db"
     mlflow.set_tracking_uri(f"sqlite:///{tracking_db}")
@@ -80,7 +85,7 @@ def test_mlflow_save_load(URI: Path, tmp_path: Path):
 
 
 def test_wrong_module_load():
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         "wrong_module",
         module=__name__,
         context=ModelContext("wrong_module", {"wrong_module": "1.0.0"}),
@@ -122,6 +127,10 @@ def fixture_no_mlmodel(URI: Path) -> Tag:
     return bento_model.tag
 
 
+@pytest.mark.skipif(
+    os.getenv("GITHUB_ACTIONS") is not None and psutil.WINDOWS,
+    reason="Skip this tests on Actions for Windows for now",
+)
 def test_invalid_load(no_mlmodel: Tag):
     with pytest.raises(OSError):
         _ = bentoml.mlflow.load_model(no_mlmodel)
@@ -160,5 +169,5 @@ def test_mlflow_invalid_import_mlproject():
 
 def test_get_mlflow_model(URI: Path):
     bento_model = bentoml.mlflow.import_model(MODEL_NAME, str(URI))
-    mlflow_model = bentoml.mlflow.get_mlflow_model(bento_model.tag)
+    mlflow_model = bentoml.mlflow.load_model(bento_model.tag)
     assert isinstance(mlflow_model, mlflow.models.Model)

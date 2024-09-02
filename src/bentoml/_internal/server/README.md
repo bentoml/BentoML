@@ -1,4 +1,4 @@
-# Developing BentoServer 
+# Developing BentoServer
 
 
 ## Run BentoServer with sample Service

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import typing as t
 import functools
+import typing as t
 
-from ..runner import Runner
 from ...exceptions import MissingDependencyException
+from ..runner import Runner
 from ..runner.runner import RunnerMethod
 from ..runner.runner_handle import RunnerHandle
 
@@ -60,3 +60,11 @@ class RayRunnerHandle(RunnerHandle):
                 *args, **kwargs
             )
         )
+
+    def async_stream_method(
+        self,
+        __bentoml_method: RunnerMethod[t.Any, P, R],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> t.AsyncGenerator[R, None]:
+        raise NotImplementedError

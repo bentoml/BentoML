@@ -1,5 +1,4 @@
 import abc
-import typing
 from typing import List
 from typing import Text
 
@@ -7,8 +6,6 @@ import six
 
 from ..base import FS
 from .parse import ParseResult
-
-if typing.TYPE_CHECKING: ...
 
 @six.add_metaclass(abc.ABCMeta)
 class Opener:

@@ -1,9 +1,0 @@
-service: "inference_graph_service:svc"
-include:
-- "*.py"
-python:
-  packages:
-  - numpy
-  - pandas
-  - xgboost
-  - scikit-learn

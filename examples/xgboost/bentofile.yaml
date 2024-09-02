@@ -1,12 +1,8 @@
-service: "agaricus:svc"
-description: "file: ./README.md"
+service: "service:CancerClassifier"
 labels:
   owner: bentoml-team
   stage: demo
 include:
- - "*.py"
-exclude:
- - "locustfile.py"
+  - "*.py"
 python:
-  packages:
-   - xgboost
+  requirements_txt: './requirements.txt'

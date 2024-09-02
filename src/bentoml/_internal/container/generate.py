@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-import os
-import typing as t
 import logging
+import os
+import shlex
+import typing as t
 from typing import TYPE_CHECKING
 
 from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 
+from ..configuration.containers import BentoMLContainer
 from ..utils import resolve_user_filepath
 from .frontend.dockerfile import DistroSpec
-from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,7 @@ def get_templates_variables(
     conda: CondaOptions,
     bento_fs: FS,
     *,
+    python_packages: dict[str, str] | None = None,
     _is_cuda: bool = False,
     **bento_env: str | bool,
 ) -> dict[str, t.Any]:
@@ -97,6 +99,8 @@ def get_templates_variables(
     if bento_env:
         default_env.update(bento_env)
 
+    PREHEAT_PIP_PACKAGES = ["torch", "vllm"]
+
     return {
         **{to_options_field(k): v for k, v in docker.to_dict().items()},
         **{to_bento_field(k): v for k, v in default_env.items()},
@@ -104,6 +108,11 @@ def get_templates_variables(
         "__base_image__": base_image,
         "__conda_python_version__": conda_python_version,
         "__is_cuda__": _is_cuda,
+        "__pip_preheat_packages__": [
+            python_packages[k]
+            for k in PREHEAT_PIP_PACKAGES
+            if python_packages and python_packages.get(k)
+        ],
     }
 
 
@@ -158,6 +167,7 @@ def generate_containerfile(
         lstrip_blocks=True,
         loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True),
     )
+    ENVIRONMENT.filters["bash_quote"] = shlex.quote
 
     if docker.cuda_version is not None:
         release_type = "cuda"
@@ -190,12 +200,47 @@ def generate_containerfile(
             globals={"bento_base_template": template, **J2_FUNCTION},
         )
 
+    requirement_file = bento_fs.getsyspath("env/python/requirements.lock.txt")
+    if not os.path.exists(requirement_file):
+        requirement_file = bento_fs.getsyspath("env/python/requirements.txt")
+    if os.path.exists(requirement_file):
+        python_packages = _resolve_package_versions(requirement_file)
+    else:
+        python_packages = {}
+
     return template.render(
         **get_templates_variables(
             docker,
             conda,
             bento_fs,
+            python_packages=python_packages,
             _is_cuda=release_type == "cuda",
             **override_bento_env,
         )
     )
+
+
+def _resolve_package_versions(requirement: str) -> dict[str, str]:
+    from pip_requirements_parser import RequirementsFile
+
+    requirements_txt = RequirementsFile.from_file(
+        requirement,
+        include_nested=True,
+    )
+    deps: dict[str, str] = {}
+    for req in requirements_txt.requirements:
+        if (
+            req.is_editable
+            or req.is_local_path
+            or req.is_url
+            or req.is_wheel
+            or not req.name
+            or not req.specifier
+        ):
+            continue
+        for sp in req.specifier:
+            if sp.operator == "==":
+                assert req.line is not None
+                deps[req.name] = req.line
+                break
+    return deps

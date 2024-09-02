@@ -1,37 +1,36 @@
 # pylint: disable=redefined-outer-name,not-context-manager
 from __future__ import annotations
 
+import asyncio
+import contextlib
+import itertools
 import os
+import socket
+import subprocess
 import sys
 import time
-import socket
 import typing as t
 import urllib
-import asyncio
-import itertools
-import contextlib
-import subprocess
 import urllib.error
 import urllib.request
-import multiprocessing
-from typing import TYPE_CHECKING
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
 import psutil
 
-from bentoml.grpc.utils import import_grpc
 from bentoml._internal.tag import Tag
 from bentoml._internal.utils import LazyLoader
-from bentoml._internal.utils import reserve_free_port
 from bentoml._internal.utils import cached_contextmanager
+from bentoml._internal.utils import reserve_free_port
+from bentoml.grpc.utils import import_grpc
 
 from ..grpc.utils import LATEST_PROTOCOL_VERSION
 
 if TYPE_CHECKING:
     from grpc import aio
     from grpc_health.v1 import health_pb2 as pb_health
-    from starlette.datastructures import Headers
     from starlette.datastructures import FormData
+    from starlette.datastructures import Headers
 
     from bentoml._internal.bento.bento import Bento
 
@@ -198,10 +197,9 @@ def run_bento_server_container(
     from bentoml._internal.configuration.containers import BentoMLContainer
 
     container_name = f"bentoml-test-{image_tag.replace(':', '_')}-{hash(config_file)}"
-    with reserve_free_port(enable_so_reuseport=use_grpc) as port, reserve_free_port(
-        enable_so_reuseport=use_grpc
-    ) as prom_port:
-        pass
+    with reserve_free_port(enable_so_reuseport=use_grpc) as port:
+        with reserve_free_port(enable_so_reuseport=use_grpc) as prom_port:
+            pass
 
     cmd = [
         backend,
@@ -306,15 +304,6 @@ def run_bento_server_standalone(
         p.communicate()
 
 
-def start_mitm_proxy(port: int) -> None:
-    import uvicorn
-
-    from .utils import http_proxy_app
-
-    print(f"Proxy server listen on {port}")
-    uvicorn.run(http_proxy_app, port=port)  # type: ignore (not using ASGI3Application)
-
-
 @contextmanager
 def run_bento_server_distributed(
     bento_tag: str | Tag,
@@ -331,22 +320,11 @@ def run_bento_server_distributed(
 
     import bentoml
 
-    with reserve_free_port(enable_so_reuseport=use_grpc) as proxy_port:
-        pass
-    print(f"Starting proxy on port {proxy_port}")
-    proxy_process = multiprocessing.Process(
-        target=start_mitm_proxy,
-        args=(proxy_port,),
-    )
-    proxy_process.start()
     copied = os.environ.copy()
     # to ensure yatai specified headers BP100
     copied["YATAI_BENTO_DEPLOYMENT_NAME"] = "test-deployment"
     copied["YATAI_BENTO_DEPLOYMENT_NAMESPACE"] = "yatai"
-    if use_grpc:
-        copied["GPRC_PROXY"] = f"localhost:{proxy_port}"
-    else:
-        copied["HTTP_PROXY"] = f"http://127.0.0.1:{proxy_port}"
+
     if config_file is not None:
         copied["BENTOML_CONFIG"] = os.path.abspath(config_file)
 
@@ -363,9 +341,9 @@ def run_bento_server_distributed(
                 sys.executable,
                 "-m",
                 "bentoml",
-                "start-runner-server",
+                "start-http-server",
                 str(bento_tag),
-                "--runner-name",
+                "--service-name",
                 runner["name"],
                 "--host",
                 host,
@@ -384,7 +362,7 @@ def run_bento_server_distributed(
             )
         )
     runner_args = [
-        ("--remote-runner", f"{runner['name']}={runner_map[runner['name']]}")
+        ("--depends", f"{runner['name']}={runner_map[runner['name']]}")
         for runner in bentofile["runners"]
     ]
     cmd = [
@@ -426,9 +404,6 @@ def run_bento_server_distributed(
             kill_subprocess_tree(p)
         for p in processes:
             p.communicate()
-        if proxy_process is not None:
-            proxy_process.terminate()
-            proxy_process.join()
 
 
 @cached_contextmanager(

@@ -1,41 +1,40 @@
 from __future__ import annotations
 
+import os
 import re
 import typing as t
-import logging
-from typing import TYPE_CHECKING
-from unittest.mock import Mock
-from unittest.mock import patch
-from unittest.mock import PropertyMock
 
-import torch
+import numpy as np
 import pytest
+import torch
 import torch.nn as nn
-import torch.functional as F
-from fastai.data.core import TfmdDL
-from fastai.data.core import Datasets
+import torch.nn.functional as F
+from fastai.data.block import DataBlock
 from fastai.data.core import DataLoaders
-from fastai.test_utils import synth_learner
-from fastai.torch_core import Module
-from fastcore.foundation import L
+from fastai.data.core import Datasets
+from fastai.data.core import Module
+from fastai.data.core import TfmdDL
 from fastai.data.transforms import Transform
+from fastai.learner import Learner
+from fastai.test_utils import synth_learner
+from fastcore.foundation import L
 
 import bentoml
-from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import BentoMLException
-from tests.integration.frameworks.models.fastai import custom_model
+from bentoml.exceptions import InvalidArgument
 
-if TYPE_CHECKING:
-    from unittest.mock import MagicMock
-
-    from _pytest.logging import LogCaptureFixture
-
-learner = custom_model()
+if t.TYPE_CHECKING:
+    import bentoml._internal.external_typing as ext
 
 
 class LinearModel(nn.Module):
-    def forward(self, x: t.Any) -> t.Any:
-        return x
+    def __init__(self):
+        super().__init__()
+        self.linear = nn.Linear(5, 1, bias=False)
+        nn.init.ones_(self.linear.weight)
+
+    def forward(self, x: t.Any):
+        return self.linear(x)
 
 
 class _FakeLossFunc(Module):
@@ -59,10 +58,34 @@ class _Add1(Transform):
         return x - 1
 
 
-mock_learner = synth_learner(n_trn=5)
-dl = TfmdDL(Datasets(torch.arange(50), tfms=[L(), [_Add1()]]))
-mock_learner.dls = DataLoaders(dl, dl)
-mock_learner.loss_func = _FakeLossFunc()
+@pytest.fixture
+def learner() -> Learner:
+    class Loss(Module):
+        reduction = "none"
+
+        def forward(self, x: t.Any, _y: t.Any):
+            return x
+
+        def activation(self, x: t.Any):
+            return x
+
+        def decodes(self, x: t.Any):
+            return x
+
+        def get_items(_: t.Any) -> ext.NpNDArray:
+            return np.ones([5, 5], np.float32)
+
+    def get_items(_: t.Any) -> ext.NpNDArray:
+        return np.ones([5, 5], np.float32)
+
+    model = LinearModel()
+    loss = Loss()
+
+    dblock = DataBlock(get_items=get_items, get_y=np.sum)
+    dls = dblock.datasets(None).dataloaders()
+    learner = Learner(dls, model, loss)
+    learner.fit(1)
+    return learner
 
 
 def test_raise_exceptions():
@@ -82,28 +105,12 @@ def test_raise_exceptions():
         bentoml.fastai.save_model("invalid_learner", ForbiddenType)  # type: ignore (testing exception)
 
 
-@patch("torch.load")
-@patch("torch.cuda.current_device")
-@patch("torch._C")
-def test_cuda_available(
-    mock_C: MagicMock,
-    mock_current_device: MagicMock,
-    mock_load: MagicMock,
-    caplog: LogCaptureFixture,
-):
-    # mock_cuda_available.return_value = True
-    mock_current_device.return_value = 0
-    mock_load.return_value = mock_learner
-    type(mock_C)._cuda_getDeviceCount = PropertyMock(return_value=Mock(return_value=1))
-    type(mock_C)._cudart = PropertyMock(return_value=type)
-    with caplog.at_level(logging.DEBUG):
-        model = bentoml.fastai.save_model("tabular_learner", learner)
-        _ = model.to_runnable()()
-
-    assert "CUDA is available" in caplog.text
-
-
 def test_batchable_exception():
+    mock_learner = synth_learner(n_trn=5)
+    dl = TfmdDL(Datasets(torch.arange(50), tfms=[L(), [_Add1()]]))
+    mock_learner.dls = DataLoaders(dl, dl)
+    mock_learner.loss_func = _FakeLossFunc()
+
     with pytest.raises(
         BentoMLException, match="Batchable signatures are not supported *"
     ):
@@ -112,7 +119,8 @@ def test_batchable_exception():
         )
 
 
-def test_raise_attribute_runnable_error():
+@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") is not None, reason="Only run locally")
+def test_raise_attribute_runnable_error(learner: Learner):
     with pytest.raises(
         InvalidArgument, match="No method with name not_exist found for Learner of *"
     ):

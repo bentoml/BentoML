@@ -1,24 +1,24 @@
-import sys
 import datetime
-from types import NoneType
-from types import ModuleType
-from types import FunctionType
+import sys
 from types import BuiltinFunctionType
+from types import FunctionType
+from types import ModuleType
+from types import NoneType
 from typing import Any
-from typing import Tuple
-from typing import Mapping
-from typing import TypeVar
 from typing import Callable
 from typing import ClassVar
 from typing import Iterable
+from typing import Mapping
 from typing import NoReturn
+from typing import Tuple
+from typing import TypeVar
 
 from _typeshed import SupportsItems
 
 from .error import YAMLError as YAMLError
+from .nodes import MappingNode as MappingNode
 from .nodes import Node as Node
 from .nodes import ScalarNode as ScalarNode
-from .nodes import MappingNode as MappingNode
 from .nodes import SequenceNode as SequenceNode
 
 _T = TypeVar("_T")

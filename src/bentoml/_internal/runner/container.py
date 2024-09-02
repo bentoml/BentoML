@@ -2,25 +2,32 @@ from __future__ import annotations
 
 import abc
 import base64
+import io
+import itertools
 import pickle
 import typing as t
-import itertools
+from typing import Any
 
 from ..types import LazyType
 from ..utils import LazyLoader
+from ..utils.pickle import fixed_torch_loads
 from ..utils.pickle import pep574_dumps
 from ..utils.pickle import pep574_loads
+from .utils import Params
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
+T = t.TypeVar("T")
 
 TRITON_EXC_MSG = "tritonclient is required to use triton with BentoML. Install with 'pip install \"tritonclient[all]>=2.29.0\"'."
 
 if t.TYPE_CHECKING:
+    import numpy as np
     import tritonclient.grpc.aio as tritongrpcclient
     import tritonclient.http.aio as tritonhttpclient
 
     from .. import external_typing as ext
+
 else:
     np = LazyLoader("np", globals(), "numpy")
     tritongrpcclient = LazyLoader(
@@ -29,6 +36,8 @@ else:
     tritonhttpclient = LazyLoader(
         "tritonhttpclient", globals(), "tritonclient.http.aio", exc_msg=TRITON_EXC_MSG
     )
+
+InferInput = t.Union["tritongrpcclient.InferInput", "tritonhttpclient.InferInput"]
 
 
 class Payload(t.NamedTuple):
@@ -50,13 +59,26 @@ class DataContainer(t.Generic[SingleType, BatchType]):
 
     @classmethod
     @abc.abstractmethod
-    def to_payload(cls, batch: BatchType, batch_dim: int) -> Payload:
-        ...
+    def to_payload(cls, batch: BatchType, batch_dim: int) -> Payload: ...
 
     @classmethod
     @abc.abstractmethod
-    def from_payload(cls, payload: Payload) -> BatchType:
-        ...
+    def from_payload(cls, payload: Payload) -> BatchType: ...
+
+    @classmethod
+    def batch_to_payloads(
+        cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int = 0
+    ) -> list[Payload]:
+        batches = cls.batch_to_batches(batch, indices, batch_dim)
+        payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
+        return payloads
+
+    @classmethod
+    def from_batch_payloads(
+        cls, payloads: t.Sequence[Payload], batch_dim: int = 0
+    ) -> tuple[BatchType, list[int]]:
+        batches = [cls.from_payload(payload) for payload in payloads]
+        return cls.batches_to_batch(batches, batch_dim)
 
     @t.overload
     @classmethod
@@ -65,8 +87,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         inp: tritongrpcclient.InferInput,
         meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
         _use_http_client: t.Literal[False] = ...,
-    ) -> tritongrpcclient.InferInput:
-        ...
+    ) -> tritongrpcclient.InferInput: ...
 
     @t.overload
     @classmethod
@@ -75,8 +96,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         inp: tritonhttpclient.InferInput,
         meta: dict[str, t.Any],
         _use_http_client: t.Literal[True] = ...,
-    ) -> tritongrpcclient.InferInput:
-        ...
+    ) -> tritongrpcclient.InferInput: ...
 
     @classmethod
     def to_triton_payload(
@@ -126,52 +146,34 @@ class DataContainer(t.Generic[SingleType, BatchType]):
     @classmethod
     @abc.abstractmethod
     def batches_to_batch(
-        cls, batches: t.Sequence[BatchType], batch_dim: int
-    ) -> tuple[BatchType, list[int]]:
-        ...
+        cls, batches: t.Sequence[SingleType], batch_dim: int
+    ) -> tuple[BatchType, list[int]]: ...
 
     @classmethod
     @abc.abstractmethod
     def batch_to_batches(
         cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int
-    ) -> list[BatchType]:
-        ...
+    ) -> list[SingleType]: ...
 
     @classmethod
-    @abc.abstractmethod
-    def batch_to_payloads(
-        cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int
-    ) -> list[Payload]:
-        ...
+    def get_batch_size(cls, batch: SingleType, batch_dim: int) -> int:
+        """A default implementation for backward compatibility"""
+        return 1
 
+
+class TritonInferInputDataContainer(DataContainer[InferInput, InferInput]):
     @classmethod
-    @abc.abstractmethod
-    def from_batch_payloads(
-        cls,
-        payloads: t.Sequence[Payload],
-        batch_dim: int,
-    ) -> tuple[BatchType, list[int]]:
-        ...
-
-
-class TritonInferInputDataContainer(
-    DataContainer[
-        t.Union["tritongrpcclient.InferInput", "tritonhttpclient.InferInput"],
-        t.Union["tritongrpcclient.InferInput", "tritonhttpclient.InferInput"],
-    ]
-):
-    @classmethod
-    def to_payload(cls, batch: tritongrpcclient.InferInput, batch_dim: int) -> Payload:
+    def to_payload(cls, batch: InferInput, batch_dim: int) -> Payload:
         raise NotImplementedError
 
     @classmethod
-    def from_payload(cls, payload: Payload) -> tritongrpcclient.InferInput:
+    def from_payload(cls, payload: Payload) -> InferInput:
         raise NotImplementedError
 
     @classmethod
     def to_triton_grpc_payload(
         cls,
-        inp: tritongrpcclient.InferInput | tritonhttpclient.InferInput,
+        inp: InferInput,
         meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
     ) -> tritongrpcclient.InferInput:
         return t.cast("tritongrpcclient.InferInput", inp)
@@ -179,47 +181,26 @@ class TritonInferInputDataContainer(
     @classmethod
     def to_triton_http_payload(
         cls,
-        inp: tritongrpcclient.InferInput | tritonhttpclient.InferInput,
+        inp: InferInput,
         meta: dict[str, t.Any],
     ) -> tritonhttpclient.InferInput:
         return t.cast("tritonhttpclient.InferInput", inp)
 
     @classmethod
-    @abc.abstractmethod
     def batches_to_batch(
         cls,
-        batches: t.Sequence[tritongrpcclient.InferInput | tritonhttpclient.InferInput],
+        batches: t.Sequence[InferInput],
         batch_dim: int,
-    ) -> tuple[tritongrpcclient.InferInput | tritonhttpclient.InferInput, list[int]]:
+    ) -> tuple[InferInput, list[int]]:
         raise NotImplementedError
 
     @classmethod
-    @abc.abstractmethod
     def batch_to_batches(
         cls,
-        batch: tritongrpcclient.InferInput | tritonhttpclient.InferInput,
+        batch: InferInput,
         indices: t.Sequence[int],
         batch_dim: int,
-    ) -> list[tritongrpcclient.InferInput | tritonhttpclient.InferInput]:
-        raise NotImplementedError
-
-    @classmethod
-    @abc.abstractmethod
-    def batch_to_payloads(
-        cls,
-        batch: tritongrpcclient.InferInput | tritonhttpclient.InferInput,
-        indices: t.Sequence[int],
-        batch_dim: int,
-    ) -> list[Payload]:
-        raise NotImplementedError
-
-    @classmethod
-    @abc.abstractmethod
-    def from_batch_payloads(
-        cls,
-        payloads: t.Sequence[Payload],
-        batch_dim: int,
-    ) -> tuple[tritongrpcclient.InferInput | tritonhttpclient.InferInput, list[int]]:
+    ) -> list[InferInput]:
         raise NotImplementedError
 
 
@@ -277,28 +258,38 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         batch: ext.NpNDArray,
         batch_dim: int,
     ) -> Payload:
-
         # skip 0-dimensional array
         if batch.shape:
-
             if not (batch.flags["C_CONTIGUOUS"] or batch.flags["F_CONTIGUOUS"]):
                 # TODO: use fortan contiguous if it's faster
                 batch = np.ascontiguousarray(batch)
+
+            meta: dict[str, bool | int | float | str | list[int]] = {
+                "format": "pickle5"
+            }
 
             bs: bytes
             concat_buffer_bs: bytes
             indices: list[int]
             bs, concat_buffer_bs, indices = pep574_dumps(batch)
-            bs_str = base64.b64encode(bs).decode("ascii")
+
+            if indices:
+                if len(bs) > 6140:  # ceil(6140 / 3) * 4 = 8188 < 8192
+                    meta["format"] = "default"
+                    data = pickle.dumps(batch)
+                else:
+                    meta["with_buffer"] = True
+                    data = concat_buffer_bs
+                    meta["pickle_bytes_str"] = base64.b64encode(bs).decode("ascii")
+                    meta["indices"] = indices
+            else:
+                meta["with_buffer"] = False
+                data = bs
 
             return cls.create_payload(
-                concat_buffer_bs,
+                data,
                 batch.shape[batch_dim],
-                {
-                    "format": "pickle5",
-                    "pickle_bytes_str": bs_str,
-                    "indices": indices,
-                },
+                meta=meta,
             )
 
         return cls.create_payload(
@@ -308,39 +299,26 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         )
 
     @classmethod
+    def get_batch_size(cls, batch: ext.NpNDArray, batch_dim: int) -> int:
+        return batch.shape[batch_dim]
+
+    @classmethod
     def from_payload(
         cls,
         payload: Payload,
     ) -> ext.NpNDArray:
         format = payload.meta.get("format", "default")
-        if format == "pickle5":
+        if format == "default":
+            return pickle.loads(payload.data)
+
+        # format can be either "default" or "pickle5"
+        if payload.meta["with_buffer"]:
             bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
             bs = base64.b64decode(bs_str)
             indices = t.cast(t.List[int], payload.meta["indices"])
             return t.cast("ext.NpNDArray", pep574_loads(bs, payload.data, indices))
-
-        return pickle.loads(payload.data)
-
-    @classmethod
-    def batch_to_payloads(
-        cls,
-        batch: ext.NpNDArray,
-        indices: t.Sequence[int],
-        batch_dim: int = 0,
-    ) -> list[Payload]:
-        batches = cls.batch_to_batches(batch, indices, batch_dim)
-
-        payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
-        return payloads
-
-    @classmethod
-    def from_batch_payloads(
-        cls,
-        payloads: t.Sequence[Payload],
-        batch_dim: int = 0,
-    ) -> t.Tuple["ext.NpNDArray", list[int]]:
-        batches = [cls.from_payload(payload) for payload in payloads]
-        return cls.batches_to_batch(batches, batch_dim)
+        else:
+            return t.cast("ext.NpNDArray", pep574_loads(payload.data, b"", []))
 
 
 class PandasDataFrameContainer(
@@ -366,7 +344,7 @@ class PandasDataFrameContainer(
     @classmethod
     def batch_to_batches(
         cls,
-        batch: ext.PdDataFrame,
+        batch: ext.PdDataFrame | ext.PdSeries,
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> list[ext.PdDataFrame]:
@@ -402,25 +380,41 @@ class PandasDataFrameContainer(
         bs, concat_buffer_bs, indices = pep574_dumps(batch)
 
         if indices:
-            meta["with_buffer"] = True
-            data = concat_buffer_bs
-            meta["pickle_bytes_str"] = base64.b64encode(bs).decode("ascii")
-            meta["indices"] = indices
+            if len(bs) > 6140:  # ceil(6140 / 3) * 4 = 8188 < 8192
+                meta["format"] = "default"
+                data = pickle.dumps(batch)
+            else:
+                meta["with_buffer"] = True
+                data = concat_buffer_bs
+                meta["pickle_bytes_str"] = base64.b64encode(bs).decode("ascii")
+                meta["indices"] = indices
         else:
             meta["with_buffer"] = False
             data = bs
 
         return cls.create_payload(
             data,
-            batch.size,
+            batch.shape[0],
             meta=meta,
         )
+
+    @classmethod
+    def get_batch_size(
+        cls, batch: ext.PdDataFrame | ext.PdSeries, batch_dim: int
+    ) -> int:
+        assert (
+            batch_dim == 0
+        ), "PandasDataFrameContainer does not support batch_dim other than 0"
+        return batch.shape
 
     @classmethod
     def from_payload(
         cls,
         payload: Payload,
     ) -> ext.PdDataFrame:
+        if payload.meta["format"] == "default":
+            return pickle.loads(payload.data)
+
         if payload.meta["with_buffer"]:
             bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
             bs = base64.b64decode(bs_str)
@@ -430,18 +424,6 @@ class PandasDataFrameContainer(
             return pep574_loads(payload.data, b"", [])
 
     @classmethod
-    def batch_to_payloads(
-        cls,
-        batch: ext.PdDataFrame,
-        indices: t.Sequence[int],
-        batch_dim: int = 0,
-    ) -> list[Payload]:
-        batches = cls.batch_to_batches(batch, indices, batch_dim)
-
-        payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
-        return payloads
-
-    @classmethod
     def from_batch_payloads(  # pylint: disable=arguments-differ
         cls,
         payloads: t.Sequence[Payload],
@@ -449,6 +431,113 @@ class PandasDataFrameContainer(
     ) -> tuple[ext.PdDataFrame, list[int]]:
         batches = [cls.from_payload(payload) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
+
+
+class PILImageContainer(DataContainer["ext.PILImage", "ext.PILImage"]):
+    _error = (
+        "PIL.Image doesn't support batch inference."
+        "You can convert it to numpy.ndarray before passing to the runner."
+    )
+
+    @classmethod
+    def to_payload(cls, batch: ext.PILImage, batch_dim: int) -> Payload:
+        buffer = io.BytesIO()
+        batch.save(buffer, format=batch.format)
+        return cls.create_payload(buffer.getvalue(), batch_size=1)
+
+    @classmethod
+    def from_payload(cls, payload: Payload) -> ext.PILImage:
+        from ..io_descriptors.image import PIL
+
+        return PIL.Image.open(io.BytesIO(payload.data))
+
+    @classmethod
+    def batches_to_batch(
+        cls, batches: t.Sequence[ext.PILImage], batch_dim: int
+    ) -> tuple[ext.PILImage, list[int]]:
+        raise NotImplementedError(cls._error)
+
+    @classmethod
+    def batch_to_batches(
+        cls, batch: ext.PILImage, indices: t.Sequence[int], batch_dim: int
+    ) -> list[ext.PILImage]:
+        raise NotImplementedError(cls._error)
+
+
+class ParamsContainer(DataContainer[Params[Payload], Params[Payload]]):
+    @classmethod
+    def batches_to_batch(
+        cls, batches: t.Sequence[Params[Payload]], batch_dim: int
+    ) -> tuple[Params[Payload], list[int]]:
+        converted = Params.agg(
+            batches,
+            agg_func=lambda payloads: AutoContainer.from_batch_payloads(
+                payloads, batch_dim
+            ),
+        )
+        batch_param, indices, *_ = converted.iter()
+        return t.cast("Params[t.Any]", batch_param).map(
+            lambda x: AutoContainer.to_payload(x, batch_dim)
+        ), t.cast("Params[list[int]]", indices).sample
+
+    @classmethod
+    def batch_to_batches(
+        cls, batch: Params[Payload], indices: t.Sequence[int], batch_dim: int
+    ) -> list[Params[Payload]]:
+        def payload_to_batches(payload: Payload) -> list[Payload]:
+            container_cls = DataContainerRegistry.find_by_name(payload.container)
+            batches = container_cls.batch_to_batches(
+                container_cls.from_payload(payload), indices, batch_dim
+            )
+            return [
+                container_cls.to_payload(subbatch, batch_dim) for subbatch in batches
+            ]
+
+        batches_params = batch.map(payload_to_batches)
+        return list(batches_params.iter())
+
+    @classmethod
+    def to_payload(cls, batch: Params[Payload], batch_dim: int) -> Payload:
+        raise NotImplementedError
+
+    @classmethod
+    def from_payload(cls, payload: Payload) -> Params[Payload]:
+        raise NotImplementedError
+
+    @classmethod
+    def get_batch_size(cls, batch: Params[Payload], batch_dim: int) -> int:
+        return batch.sample.batch_size
+
+
+class PayloadContainer(DataContainer[Payload, Payload]):
+    @classmethod
+    def to_payload(cls, batch: Payload, batch_dim: int) -> Payload:
+        raise NotImplementedError
+
+    @classmethod
+    def from_payload(cls, payload: Payload) -> Payload:
+        raise NotImplementedError
+
+    @classmethod
+    def batch_to_batches(
+        cls, batch: Payload, indices: t.Sequence[int], batch_dim: int
+    ) -> list[Payload]:
+        container_cls = DataContainerRegistry.find_by_name(batch.container)
+        return container_cls.batch_to_payloads(
+            container_cls.from_payload(batch), indices, batch_dim
+        )
+
+    @classmethod
+    def batches_to_batch(
+        cls, batches: t.Sequence[Payload], batch_dim: int
+    ) -> tuple[Payload, list[int]]:
+        container_cls = DataContainerRegistry.find_by_name(batches[0].container)
+        data, indices = container_cls.from_batch_payloads(batches, batch_dim)
+        return container_cls.to_payload(data, batch_dim), indices
+
+    @classmethod
+    def get_batch_size(cls, batch: Payload, batch_dim: int) -> int:
+        return batch.batch_size
 
 
 class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
@@ -480,63 +569,24 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
         if isinstance(batch, t.Generator):  # Generators can't be pickled
             batch = list(t.cast(t.Generator[t.Any, t.Any, t.Any], batch))
 
-        meta: dict[str, bool | int | float | str | list[int]] = {"format": "pickle5"}
-
-        bs: bytes
-        concat_buffer_bs: bytes
-        indices: list[int]
-        bs, concat_buffer_bs, indices = pep574_dumps(batch)
-
-        if indices:
-            meta["with_buffer"] = True
-            data = concat_buffer_bs
-            meta["pickle_bytes_str"] = base64.b64encode(bs).decode("ascii")
-            meta["indices"] = indices
-        else:
-            meta["with_buffer"] = False
-            data = bs
+        data = pickle.dumps(batch)
 
         if isinstance(batch, list):
             batch_size = len(t.cast(t.List[t.Any], batch))
         else:
             batch_size = 1
 
-        return cls.create_payload(
-            data=data,
-            batch_size=batch_size,
-            meta=meta,
-        )
+        return cls.create_payload(data=data, batch_size=batch_size)
+
+    @classmethod
+    def get_batch_size(cls, batch: t.Any, batch_dim: int) -> int:
+        if isinstance(batch, list):
+            return len(t.cast(t.List[t.Any], batch))
+        return 1
 
     @classmethod
     def from_payload(cls, payload: Payload) -> t.Any:
-        if payload.meta["with_buffer"]:
-            bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
-            bs = base64.b64decode(bs_str)
-            indices = t.cast(t.List[int], payload.meta["indices"])
-            return pep574_loads(bs, payload.data, indices)
-        else:
-            return pep574_loads(payload.data, b"", [])
-
-    @classmethod
-    def batch_to_payloads(
-        cls,
-        batch: list[t.Any],
-        indices: t.Sequence[int],
-        batch_dim: int = 0,
-    ) -> list[Payload]:
-        batches = cls.batch_to_batches(batch, indices, batch_dim)
-
-        payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
-        return payloads
-
-    @classmethod
-    def from_batch_payloads(
-        cls,
-        payloads: t.Sequence[Payload],
-        batch_dim: int = 0,
-    ) -> tuple[list[t.Any], list[int]]:
-        batches = [cls.from_payload(payload) for payload in payloads]
-        return cls.batches_to_batch(batches, batch_dim)
+        return fixed_torch_loads(payload.data)
 
 
 class DataContainerRegistry:
@@ -565,20 +615,24 @@ class DataContainerRegistry:
         cls, type_: t.Type[SingleType] | LazyType[SingleType]
     ) -> t.Type[DataContainer[SingleType, t.Any]]:
         typeref = LazyType.from_type(type_)
-        return cls.CONTAINER_SINGLE_TYPE_MAP.get(
-            typeref,
-            DefaultContainer,
-        )
+        if typeref in cls.CONTAINER_SINGLE_TYPE_MAP:
+            return cls.CONTAINER_SINGLE_TYPE_MAP[typeref]
+        for klass in cls.CONTAINER_SINGLE_TYPE_MAP:
+            if klass.issubclass(type_):
+                return cls.CONTAINER_SINGLE_TYPE_MAP[klass]
+        return DefaultContainer
 
     @classmethod
     def find_by_batch_type(
         cls, type_: t.Type[BatchType] | LazyType[BatchType]
     ) -> t.Type[DataContainer[t.Any, BatchType]]:
         typeref = LazyType.from_type(type_)
-        return cls.CONTAINER_BATCH_TYPE_MAP.get(
-            typeref,
-            DefaultContainer,
-        )
+        if typeref in cls.CONTAINER_BATCH_TYPE_MAP:
+            return cls.CONTAINER_BATCH_TYPE_MAP[typeref]
+        for klass in cls.CONTAINER_BATCH_TYPE_MAP:
+            if klass.issubclass(type_):
+                return cls.CONTAINER_BATCH_TYPE_MAP[klass]
+        return DefaultContainer
 
     @classmethod
     def find_by_name(cls, name: str) -> t.Type[DataContainer[t.Any, t.Any]]:
@@ -625,6 +679,13 @@ def register_builtin_containers():
         LazyType("tritonclient.http.aio", "InferInput"),
         TritonInferInputDataContainer,
     )
+    DataContainerRegistry.register_container(
+        LazyType("PIL.Image", "Image"),
+        LazyType("PIL.Image", "Image"),
+        PILImageContainer,
+    )
+    DataContainerRegistry.register_container(Params, Params, ParamsContainer)
+    DataContainerRegistry.register_container(Payload, Payload, PayloadContainer)
 
 
 register_builtin_containers()
@@ -633,10 +694,17 @@ register_builtin_containers()
 class AutoContainer(DataContainer[t.Any, t.Any]):
     @classmethod
     def to_payload(cls, batch: t.Any, batch_dim: int) -> Payload:
-        container_cls: t.Type[
-            DataContainer[t.Any, t.Any]
-        ] = DataContainerRegistry.find_by_batch_type(type(batch))
+        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+            DataContainerRegistry.find_by_batch_type(type(batch))
+        )
         return container_cls.to_payload(batch, batch_dim)
+
+    @classmethod
+    def get_batch_size(cls, batch: Any, batch_dim: int) -> int:
+        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+            DataContainerRegistry.find_by_batch_type(type(batch))
+        )
+        return container_cls.get_batch_size(batch, batch_dim)
 
     @classmethod
     def from_payload(cls, payload: Payload) -> t.Any:
@@ -650,8 +718,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         inp: tritongrpcclient.InferInput,
         meta: tritongrpcclient.service_pb2.ModelMetadataResponse.TensorMetadata,
         _use_http_client: t.Literal[False] = ...,
-    ) -> tritongrpcclient.InferInput:
-        ...
+    ) -> tritongrpcclient.InferInput: ...
 
     @t.overload
     @classmethod
@@ -660,8 +727,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         inp: tritonhttpclient.InferInput,
         meta: dict[str, t.Any],
         _use_http_client: t.Literal[True] = ...,
-    ) -> tritongrpcclient.InferInput:
-        ...
+    ) -> tritongrpcclient.InferInput: ...
 
     @classmethod
     def to_triton_payload(
@@ -686,18 +752,18 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     def batches_to_batch(
         cls, batches: t.Sequence[BatchType], batch_dim: int = 0
     ) -> tuple[BatchType, list[int]]:
-        container_cls: t.Type[
-            DataContainer[t.Any, t.Any]
-        ] = DataContainerRegistry.find_by_batch_type(type(batches[0]))
+        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+            DataContainerRegistry.find_by_batch_type(type(batches[0]))
+        )
         return container_cls.batches_to_batch(batches, batch_dim)
 
     @classmethod
     def batch_to_batches(
         cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int = 0
     ) -> list[BatchType]:
-        container_cls: t.Type[
-            DataContainer[t.Any, t.Any]
-        ] = DataContainerRegistry.find_by_batch_type(type(batch))
+        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+            DataContainerRegistry.find_by_batch_type(type(batch))
+        )
         return container_cls.batch_to_batches(batch, indices, batch_dim)
 
     @classmethod
@@ -707,9 +773,9 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> list[Payload]:
-        container_cls: t.Type[
-            DataContainer[t.Any, t.Any]
-        ] = DataContainerRegistry.find_by_batch_type(type(batch))
+        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+            DataContainerRegistry.find_by_batch_type(type(batch))
+        )
         return container_cls.batch_to_payloads(batch, indices, batch_dim)
 
     @classmethod

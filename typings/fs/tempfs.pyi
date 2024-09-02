@@ -1,5 +1,5 @@
-from typing import Text
 from typing import Optional
+from typing import Text
 
 from .osfs import OSFS
 

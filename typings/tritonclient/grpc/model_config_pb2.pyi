@@ -29,6 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Copyright (c) 2018, TensorFlow Authors. All rights reserved.
 """
+
 import builtins
 import collections.abc
 import google.protobuf.descriptor
@@ -49,7 +50,10 @@ class _DataType:
     ValueType = typing.NewType("ValueType", builtins.int)
     V: typing_extensions.TypeAlias = ValueType
 
-class _DataTypeEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_DataType.ValueType], builtins.type):  # noqa: F821
+class _DataTypeEnumTypeWrapper(
+    google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_DataType.ValueType],
+    builtins.type,
+):  # noqa: F821
     DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
     TYPE_INVALID: _DataType.ValueType  # 0
     """@@  .. cpp:enumerator:: DataType::INVALID = 0"""
@@ -167,12 +171,21 @@ class ModelRateLimiter(google.protobuf.message.Message):
             name: builtins.str = ...,
             count: builtins.int = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["count", b"count", "global", b"global", "name", b"name"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "count", b"count", "global", b"global", "name", b"name"
+            ],
+        ) -> None: ...
 
     RESOURCES_FIELD_NUMBER: builtins.int
     PRIORITY_FIELD_NUMBER: builtins.int
     @property
-    def resources(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelRateLimiter.Resource]:
+    def resources(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___ModelRateLimiter.Resource
+    ]:
         """@@  .. cpp:var:: Resource resources (repeated)
         @@
         @@     The resources required to execute the request on a model instance.
@@ -194,10 +207,17 @@ class ModelRateLimiter(google.protobuf.message.Message):
     def __init__(
         self,
         *,
-        resources: collections.abc.Iterable[global___ModelRateLimiter.Resource] | None = ...,
+        resources: (
+            collections.abc.Iterable[global___ModelRateLimiter.Resource] | None
+        ) = ...,
         priority: builtins.int = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["priority", b"priority", "resources", b"resources"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "priority", b"priority", "resources", b"resources"
+        ],
+    ) -> None: ...
 
 global___ModelRateLimiter = ModelRateLimiter
 
@@ -216,7 +236,12 @@ class ModelInstanceGroup(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _KindEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[ModelInstanceGroup._Kind.ValueType], builtins.type):  # noqa: F821
+    class _KindEnumTypeWrapper(
+        google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[
+            ModelInstanceGroup._Kind.ValueType
+        ],
+        builtins.type,
+    ):  # noqa: F821
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         KIND_AUTO: ModelInstanceGroup._Kind.ValueType  # 0
         """@@    .. cpp:enumerator:: Kind::KIND_AUTO = 0
@@ -306,9 +331,16 @@ class ModelInstanceGroup(google.protobuf.message.Message):
             ValueType = typing.NewType("ValueType", builtins.int)
             V: typing_extensions.TypeAlias = ValueType
 
-        class _SecondaryDeviceKindEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[ModelInstanceGroup.SecondaryDevice._SecondaryDeviceKind.ValueType], builtins.type):  # noqa: F821
+        class _SecondaryDeviceKindEnumTypeWrapper(
+            google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[
+                ModelInstanceGroup.SecondaryDevice._SecondaryDeviceKind.ValueType
+            ],
+            builtins.type,
+        ):  # noqa: F821
             DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
-            KIND_NVDLA: ModelInstanceGroup.SecondaryDevice._SecondaryDeviceKind.ValueType  # 0
+            KIND_NVDLA: (
+                ModelInstanceGroup.SecondaryDevice._SecondaryDeviceKind.ValueType
+            )  # 0
             """@@    .. cpp:enumerator:: SecondaryDeviceKind::KIND_NVDLA = 0
             @@
             @@       An NVDLA core. http://nvdla.org
@@ -316,7 +348,9 @@ class ModelInstanceGroup(google.protobuf.message.Message):
             @@
             """
 
-        class SecondaryDeviceKind(_SecondaryDeviceKind, metaclass=_SecondaryDeviceKindEnumTypeWrapper):
+        class SecondaryDeviceKind(
+            _SecondaryDeviceKind, metaclass=_SecondaryDeviceKindEnumTypeWrapper
+        ):
             """@@
             @@  .. cpp:enum:: SecondaryDeviceKind
             @@
@@ -324,7 +358,9 @@ class ModelInstanceGroup(google.protobuf.message.Message):
             @@
             """
 
-        KIND_NVDLA: ModelInstanceGroup.SecondaryDevice.SecondaryDeviceKind.ValueType  # 0
+        KIND_NVDLA: (
+            ModelInstanceGroup.SecondaryDevice.SecondaryDeviceKind.ValueType
+        )  # 0
         """@@    .. cpp:enumerator:: SecondaryDeviceKind::KIND_NVDLA = 0
         @@
         @@       An NVDLA core. http://nvdla.org
@@ -352,7 +388,12 @@ class ModelInstanceGroup(google.protobuf.message.Message):
             kind: global___ModelInstanceGroup.SecondaryDevice.SecondaryDeviceKind.ValueType = ...,
             device_id: builtins.int = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["device_id", b"device_id", "kind", b"kind"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "device_id", b"device_id", "kind", b"kind"
+            ],
+        ) -> None: ...
 
     NAME_FIELD_NUMBER: builtins.int
     KIND_FIELD_NUMBER: builtins.int
@@ -397,8 +438,11 @@ class ModelInstanceGroup(google.protobuf.message.Message):
         @@     will be applied to this instance group.
         @@
         """
+
     @property
-    def gpus(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+    def gpus(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
         """@@  .. cpp:var:: int32 gpus (repeated)
         @@
         @@     GPU(s) where instances should be available. For each GPU listed,
@@ -407,16 +451,24 @@ class ModelInstanceGroup(google.protobuf.message.Message):
         @@     available GPUs.
         @@
         """
+
     @property
-    def secondary_devices(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelInstanceGroup.SecondaryDevice]:
+    def secondary_devices(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___ModelInstanceGroup.SecondaryDevice
+    ]:
         """@@  .. cpp:var:: SecondaryDevice secondary_devices (repeated)
         @@
         @@     Secondary devices that are required by instances specified by this
         @@     instance group. Optional.
         @@
         """
+
     @property
-    def profile(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
+    def profile(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
         """@@  .. cpp:var:: string profile (repeated)
         @@
         @@     For TensorRT models containing multiple optimization profile, this
@@ -454,13 +506,39 @@ class ModelInstanceGroup(google.protobuf.message.Message):
         count: builtins.int = ...,
         rate_limiter: global___ModelRateLimiter | None = ...,
         gpus: collections.abc.Iterable[builtins.int] | None = ...,
-        secondary_devices: collections.abc.Iterable[global___ModelInstanceGroup.SecondaryDevice] | None = ...,
+        secondary_devices: (
+            collections.abc.Iterable[global___ModelInstanceGroup.SecondaryDevice] | None
+        ) = ...,
         profile: collections.abc.Iterable[builtins.str] | None = ...,
         passive: builtins.bool = ...,
         host_policy: builtins.str = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["rate_limiter", b"rate_limiter"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["count", b"count", "gpus", b"gpus", "host_policy", b"host_policy", "kind", b"kind", "name", b"name", "passive", b"passive", "profile", b"profile", "rate_limiter", b"rate_limiter", "secondary_devices", b"secondary_devices"]) -> None: ...
+    def HasField(
+        self, field_name: typing_extensions.Literal["rate_limiter", b"rate_limiter"]
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "count",
+            b"count",
+            "gpus",
+            b"gpus",
+            "host_policy",
+            b"host_policy",
+            "kind",
+            b"kind",
+            "name",
+            b"name",
+            "passive",
+            b"passive",
+            "profile",
+            b"profile",
+            "rate_limiter",
+            b"rate_limiter",
+            "secondary_devices",
+            b"secondary_devices",
+        ],
+    ) -> None: ...
 
 global___ModelInstanceGroup = ModelInstanceGroup
 
@@ -476,18 +554,23 @@ class ModelTensorReshape(google.protobuf.message.Message):
 
     SHAPE_FIELD_NUMBER: builtins.int
     @property
-    def shape(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+    def shape(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
         """@@  .. cpp:var:: int64 shape (repeated)
         @@
         @@     The shape to use for reshaping.
         @@
         """
+
     def __init__(
         self,
         *,
         shape: collections.abc.Iterable[builtins.int] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["shape", b"shape"]) -> None: ...
+    def ClearField(
+        self, field_name: typing_extensions.Literal["shape", b"shape"]
+    ) -> None: ...
 
 global___ModelTensorReshape = ModelTensorReshape
 
@@ -505,7 +588,12 @@ class ModelInput(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _FormatEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[ModelInput._Format.ValueType], builtins.type):  # noqa: F821
+    class _FormatEnumTypeWrapper(
+        google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[
+            ModelInput._Format.ValueType
+        ],
+        builtins.type,
+    ):  # noqa: F821
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         FORMAT_NONE: ModelInput._Format.ValueType  # 0
         """@@    .. cpp:enumerator:: Format::FORMAT_NONE = 0
@@ -596,13 +684,16 @@ class ModelInput(google.protobuf.message.Message):
     @@
     """
     @property
-    def dims(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+    def dims(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
         """@@  .. cpp:var:: int64 dims (repeated)
         @@
         @@     The dimensions/shape of the input tensor that must be provided
         @@     when invoking the inference API for this model.
         @@
         """
+
     @property
     def reshape(self) -> global___ModelTensorReshape:
         """@@  .. cpp:var:: ModelTensorReshape reshape
@@ -652,8 +743,30 @@ class ModelInput(google.protobuf.message.Message):
         allow_ragged_batch: builtins.bool = ...,
         optional: builtins.bool = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["reshape", b"reshape"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["allow_ragged_batch", b"allow_ragged_batch", "data_type", b"data_type", "dims", b"dims", "format", b"format", "is_shape_tensor", b"is_shape_tensor", "name", b"name", "optional", b"optional", "reshape", b"reshape"]) -> None: ...
+    def HasField(
+        self, field_name: typing_extensions.Literal["reshape", b"reshape"]
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "allow_ragged_batch",
+            b"allow_ragged_batch",
+            "data_type",
+            b"data_type",
+            "dims",
+            b"dims",
+            "format",
+            b"format",
+            "is_shape_tensor",
+            b"is_shape_tensor",
+            "name",
+            b"name",
+            "optional",
+            b"optional",
+            "reshape",
+            b"reshape",
+        ],
+    ) -> None: ...
 
 global___ModelInput = ModelInput
 
@@ -686,12 +799,15 @@ class ModelOutput(google.protobuf.message.Message):
     @@
     """
     @property
-    def dims(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+    def dims(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
         """@@  .. cpp:var:: int64 dims (repeated)
         @@
         @@     The dimensions/shape of the output tensor.
         @@
         """
+
     @property
     def reshape(self) -> global___ModelTensorReshape:
         """@@  .. cpp:var:: ModelTensorReshape reshape
@@ -728,8 +844,26 @@ class ModelOutput(google.protobuf.message.Message):
         label_filename: builtins.str = ...,
         is_shape_tensor: builtins.bool = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["reshape", b"reshape"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["data_type", b"data_type", "dims", b"dims", "is_shape_tensor", b"is_shape_tensor", "label_filename", b"label_filename", "name", b"name", "reshape", b"reshape"]) -> None: ...
+    def HasField(
+        self, field_name: typing_extensions.Literal["reshape", b"reshape"]
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "data_type",
+            b"data_type",
+            "dims",
+            b"dims",
+            "is_shape_tensor",
+            b"is_shape_tensor",
+            "label_filename",
+            b"label_filename",
+            "name",
+            b"name",
+            "reshape",
+            b"reshape",
+        ],
+    ) -> None: ...
 
 global___ModelOutput = ModelOutput
 
@@ -747,7 +881,12 @@ class BatchInput(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _KindEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[BatchInput._Kind.ValueType], builtins.type):  # noqa: F821
+    class _KindEnumTypeWrapper(
+        google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[
+            BatchInput._Kind.ValueType
+        ],
+        builtins.type,
+    ):  # noqa: F821
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         BATCH_ELEMENT_COUNT: BatchInput._Kind.ValueType  # 0
         """@@      .. cpp:enumerator:: Kind::BATCH_ELEMENT_COUNT = 0
@@ -888,7 +1027,9 @@ class BatchInput(google.protobuf.message.Message):
     @@
     """
     @property
-    def target_name(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
+    def target_name(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
         """@@    .. cpp:var:: string target_name (repeated)
         @@
         @@       The name of the model inputs that the backend will create
@@ -903,7 +1044,9 @@ class BatchInput(google.protobuf.message.Message):
     @@
     """
     @property
-    def source_input(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
+    def source_input(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
         """@@    .. cpp:var:: string source_input (repeated)
         @@
         @@       The backend derives the value for each batch input from one or
@@ -911,6 +1054,7 @@ class BatchInput(google.protobuf.message.Message):
         @@       inputs.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -919,7 +1063,19 @@ class BatchInput(google.protobuf.message.Message):
         data_type: global___DataType.ValueType = ...,
         source_input: collections.abc.Iterable[builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["data_type", b"data_type", "kind", b"kind", "source_input", b"source_input", "target_name", b"target_name"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "data_type",
+            b"data_type",
+            "kind",
+            b"kind",
+            "source_input",
+            b"source_input",
+            "target_name",
+            b"target_name",
+        ],
+    ) -> None: ...
 
 global___BatchInput = BatchInput
 
@@ -937,7 +1093,12 @@ class BatchOutput(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _KindEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[BatchOutput._Kind.ValueType], builtins.type):  # noqa: F821
+    class _KindEnumTypeWrapper(
+        google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[
+            BatchOutput._Kind.ValueType
+        ],
+        builtins.type,
+    ):  # noqa: F821
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         BATCH_SCATTER_WITH_INPUT_SHAPE: BatchOutput._Kind.ValueType  # 0
         """@@    .. cpp:enumerator:: Kind::BATCH_SCATTER_WITH_INPUT_SHAPE = 0
@@ -969,7 +1130,9 @@ class BatchOutput(google.protobuf.message.Message):
     KIND_FIELD_NUMBER: builtins.int
     SOURCE_INPUT_FIELD_NUMBER: builtins.int
     @property
-    def target_name(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
+    def target_name(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
         """@@  .. cpp:var:: string target_name (repeated)
         @@
         @@     The name of the outputs to be produced by this batch output
@@ -983,13 +1146,16 @@ class BatchOutput(google.protobuf.message.Message):
     @@
     """
     @property
-    def source_input(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
+    def source_input(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
         """@@  .. cpp:var:: string source_input (repeated)
         @@
         @@     The backend derives each batch output from one or more inputs.
         @@     'source_input' gives the names of those inputs.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -997,7 +1163,17 @@ class BatchOutput(google.protobuf.message.Message):
         kind: global___BatchOutput.Kind.ValueType = ...,
         source_input: collections.abc.Iterable[builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["kind", b"kind", "source_input", b"source_input", "target_name", b"target_name"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "kind",
+            b"kind",
+            "source_input",
+            b"source_input",
+            "target_name",
+            b"target_name",
+        ],
+    ) -> None: ...
 
 global___BatchOutput = BatchOutput
 
@@ -1037,7 +1213,9 @@ class ModelVersionPolicy(google.protobuf.message.Message):
             *,
             num_versions: builtins.int = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["num_versions", b"num_versions"]) -> None: ...
+        def ClearField(
+            self, field_name: typing_extensions.Literal["num_versions", b"num_versions"]
+        ) -> None: ...
 
     class All(google.protobuf.message.Message):
         """@@  .. cpp:var:: message All
@@ -1063,18 +1241,25 @@ class ModelVersionPolicy(google.protobuf.message.Message):
 
         VERSIONS_FIELD_NUMBER: builtins.int
         @property
-        def versions(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+        def versions(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+            builtins.int
+        ]:
             """@@    .. cpp:var:: int64 versions (repeated)
             @@
             @@       The specific versions of the model that will be served.
             @@
             """
+
         def __init__(
             self,
             *,
             versions: collections.abc.Iterable[builtins.int] | None = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["versions", b"versions"]) -> None: ...
+        def ClearField(
+            self, field_name: typing_extensions.Literal["versions", b"versions"]
+        ) -> None: ...
 
     LATEST_FIELD_NUMBER: builtins.int
     ALL_FIELD_NUMBER: builtins.int
@@ -1086,6 +1271,7 @@ class ModelVersionPolicy(google.protobuf.message.Message):
         @@       Serve only latest version(s) of the model.
         @@
         """
+
     @property
     def all(self) -> global___ModelVersionPolicy.All:
         """@@    .. cpp:var:: All all
@@ -1093,6 +1279,7 @@ class ModelVersionPolicy(google.protobuf.message.Message):
         @@       Serve all versions of the model.
         @@
         """
+
     @property
     def specific(self) -> global___ModelVersionPolicy.Specific:
         """@@    .. cpp:var:: Specific specific
@@ -1100,6 +1287,7 @@ class ModelVersionPolicy(google.protobuf.message.Message):
         @@       Serve only specific version(s) of the model.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -1107,9 +1295,35 @@ class ModelVersionPolicy(google.protobuf.message.Message):
         all: global___ModelVersionPolicy.All | None = ...,
         specific: global___ModelVersionPolicy.Specific | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["all", b"all", "latest", b"latest", "policy_choice", b"policy_choice", "specific", b"specific"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["all", b"all", "latest", b"latest", "policy_choice", b"policy_choice", "specific", b"specific"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing_extensions.Literal["policy_choice", b"policy_choice"]) -> typing_extensions.Literal["latest", "all", "specific"] | None: ...
+    def HasField(
+        self,
+        field_name: typing_extensions.Literal[
+            "all",
+            b"all",
+            "latest",
+            b"latest",
+            "policy_choice",
+            b"policy_choice",
+            "specific",
+            b"specific",
+        ],
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "all",
+            b"all",
+            "latest",
+            b"latest",
+            "policy_choice",
+            b"policy_choice",
+            "specific",
+            b"specific",
+        ],
+    ) -> None: ...
+    def WhichOneof(
+        self, oneof_group: typing_extensions.Literal["policy_choice", b"policy_choice"]
+    ) -> typing_extensions.Literal["latest", "all", "specific"] | None: ...
 
 global___ModelVersionPolicy = ModelVersionPolicy
 
@@ -1129,7 +1343,12 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _ModelPriorityEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[ModelOptimizationPolicy._ModelPriority.ValueType], builtins.type):  # noqa: F821
+    class _ModelPriorityEnumTypeWrapper(
+        google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[
+            ModelOptimizationPolicy._ModelPriority.ValueType
+        ],
+        builtins.type,
+    ):  # noqa: F821
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         PRIORITY_DEFAULT: ModelOptimizationPolicy._ModelPriority.ValueType  # 0
         """@@    .. cpp:enumerator:: ModelPriority::PRIORITY_DEFAULT = 0
@@ -1211,7 +1430,9 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
             *,
             level: builtins.int = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["level", b"level"]) -> None: ...
+        def ClearField(
+            self, field_name: typing_extensions.Literal["level", b"level"]
+        ) -> None: ...
 
     class Cuda(google.protobuf.message.Message):
         """@@
@@ -1243,18 +1464,25 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
 
                 DIM_FIELD_NUMBER: builtins.int
                 @property
-                def dim(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+                def dim(
+                    self,
+                ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+                    builtins.int
+                ]:
                     """@@        .. cpp:var:: int64 dim (repeated)
                     @@
                     @@           The dimension.
                     @@
                     """
+
                 def __init__(
                     self,
                     *,
                     dim: collections.abc.Iterable[builtins.int] | None = ...,
                 ) -> None: ...
-                def ClearField(self, field_name: typing_extensions.Literal["dim", b"dim"]) -> None: ...
+                def ClearField(
+                    self, field_name: typing_extensions.Literal["dim", b"dim"]
+                ) -> None: ...
 
             class LowerBound(google.protobuf.message.Message):
                 DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -1266,15 +1494,26 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                     VALUE_FIELD_NUMBER: builtins.int
                     key: builtins.str
                     @property
-                    def value(self) -> global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape: ...
+                    def value(
+                        self,
+                    ) -> global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape: ...
                     def __init__(
                         self,
                         *,
                         key: builtins.str = ...,
-                        value: global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape | None = ...,
+                        value: (
+                            global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape | None
+                        ) = ...,
                     ) -> None: ...
-                    def HasField(self, field_name: typing_extensions.Literal["value", b"value"]) -> builtins.bool: ...
-                    def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+                    def HasField(
+                        self, field_name: typing_extensions.Literal["value", b"value"]
+                    ) -> builtins.bool: ...
+                    def ClearField(
+                        self,
+                        field_name: typing_extensions.Literal[
+                            "key", b"key", "value", b"value"
+                        ],
+                    ) -> None: ...
 
                 BATCH_SIZE_FIELD_NUMBER: builtins.int
                 INPUT_FIELD_NUMBER: builtins.int
@@ -1287,20 +1526,36 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                 @@
                 """
                 @property
-                def input(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape]:
+                def input(
+                    self,
+                ) -> google.protobuf.internal.containers.MessageMap[
+                    builtins.str, global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape
+                ]:
                     """@@      .. cpp:var:: map<string, Shape> input
                     @@
                     @@         The specification of the inputs. 'Shape' is the shape of
                     @@         the input without batching dimension.
                     @@
                     """
+
                 def __init__(
                     self,
                     *,
                     batch_size: builtins.int = ...,
-                    input: collections.abc.Mapping[builtins.str, global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape] | None = ...,
+                    input: (
+                        collections.abc.Mapping[
+                            builtins.str,
+                            global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape,
+                        ]
+                        | None
+                    ) = ...,
                 ) -> None: ...
-                def ClearField(self, field_name: typing_extensions.Literal["batch_size", b"batch_size", "input", b"input"]) -> None: ...
+                def ClearField(
+                    self,
+                    field_name: typing_extensions.Literal[
+                        "batch_size", b"batch_size", "input", b"input"
+                    ],
+                ) -> None: ...
 
             class InputEntry(google.protobuf.message.Message):
                 DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -1309,15 +1564,26 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                 VALUE_FIELD_NUMBER: builtins.int
                 key: builtins.str
                 @property
-                def value(self) -> global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape: ...
+                def value(
+                    self,
+                ) -> global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape: ...
                 def __init__(
                     self,
                     *,
                     key: builtins.str = ...,
-                    value: global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape | None = ...,
+                    value: (
+                        global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape | None
+                    ) = ...,
                 ) -> None: ...
-                def HasField(self, field_name: typing_extensions.Literal["value", b"value"]) -> builtins.bool: ...
-                def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+                def HasField(
+                    self, field_name: typing_extensions.Literal["value", b"value"]
+                ) -> builtins.bool: ...
+                def ClearField(
+                    self,
+                    field_name: typing_extensions.Literal[
+                        "key", b"key", "value", b"value"
+                    ],
+                ) -> None: ...
 
             BATCH_SIZE_FIELD_NUMBER: builtins.int
             INPUT_FIELD_NUMBER: builtins.int
@@ -1331,15 +1597,22 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
             @@
             """
             @property
-            def input(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape]:
+            def input(
+                self,
+            ) -> google.protobuf.internal.containers.MessageMap[
+                builtins.str, global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape
+            ]:
                 """@@      .. cpp:var:: map<string, Shape> input
                 @@
                 @@         The specification of the inputs. 'Shape' is the shape of the
                 @@         input without batching dimension.
                 @@
                 """
+
             @property
-            def graph_lower_bound(self) -> global___ModelOptimizationPolicy.Cuda.GraphSpec.LowerBound:
+            def graph_lower_bound(
+                self,
+            ) -> global___ModelOptimizationPolicy.Cuda.GraphSpec.LowerBound:
                 """@@      .. cpp:var:: LowerBound graph_lower_bound
                 @@
                 @@         Specify the lower bound of the CUDA graph. Optional.
@@ -1354,15 +1627,39 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                 @@         the model is sensitive to uninitialized data.
                 @@
                 """
+
             def __init__(
                 self,
                 *,
                 batch_size: builtins.int = ...,
-                input: collections.abc.Mapping[builtins.str, global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape] | None = ...,
-                graph_lower_bound: global___ModelOptimizationPolicy.Cuda.GraphSpec.LowerBound | None = ...,
+                input: (
+                    collections.abc.Mapping[
+                        builtins.str,
+                        global___ModelOptimizationPolicy.Cuda.GraphSpec.Shape,
+                    ]
+                    | None
+                ) = ...,
+                graph_lower_bound: (
+                    global___ModelOptimizationPolicy.Cuda.GraphSpec.LowerBound | None
+                ) = ...,
             ) -> None: ...
-            def HasField(self, field_name: typing_extensions.Literal["graph_lower_bound", b"graph_lower_bound"]) -> builtins.bool: ...
-            def ClearField(self, field_name: typing_extensions.Literal["batch_size", b"batch_size", "graph_lower_bound", b"graph_lower_bound", "input", b"input"]) -> None: ...
+            def HasField(
+                self,
+                field_name: typing_extensions.Literal[
+                    "graph_lower_bound", b"graph_lower_bound"
+                ],
+            ) -> builtins.bool: ...
+            def ClearField(
+                self,
+                field_name: typing_extensions.Literal[
+                    "batch_size",
+                    b"batch_size",
+                    "graph_lower_bound",
+                    b"graph_lower_bound",
+                    "input",
+                    b"input",
+                ],
+            ) -> None: ...
 
         GRAPHS_FIELD_NUMBER: builtins.int
         BUSY_WAIT_EVENTS_FIELD_NUMBER: builtins.int
@@ -1386,7 +1683,11 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
         @@
         """
         @property
-        def graph_spec(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelOptimizationPolicy.Cuda.GraphSpec]:
+        def graph_spec(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+            global___ModelOptimizationPolicy.Cuda.GraphSpec
+        ]:
             """@@    .. cpp:var:: GraphSpec graph_spec (repeated)
             @@
             @@       Specification of the CUDA graph to be captured. If not specified
@@ -1411,10 +1712,27 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
             *,
             graphs: builtins.bool = ...,
             busy_wait_events: builtins.bool = ...,
-            graph_spec: collections.abc.Iterable[global___ModelOptimizationPolicy.Cuda.GraphSpec] | None = ...,
+            graph_spec: (
+                collections.abc.Iterable[
+                    global___ModelOptimizationPolicy.Cuda.GraphSpec
+                ]
+                | None
+            ) = ...,
             output_copy_stream: builtins.bool = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["busy_wait_events", b"busy_wait_events", "graph_spec", b"graph_spec", "graphs", b"graphs", "output_copy_stream", b"output_copy_stream"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "busy_wait_events",
+                b"busy_wait_events",
+                "graph_spec",
+                b"graph_spec",
+                "graphs",
+                b"graphs",
+                "output_copy_stream",
+                b"output_copy_stream",
+            ],
+        ) -> None: ...
 
     class ExecutionAccelerators(google.protobuf.message.Message):
         """@@
@@ -1462,7 +1780,12 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
                     key: builtins.str = ...,
                     value: builtins.str = ...,
                 ) -> None: ...
-                def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+                def ClearField(
+                    self,
+                    field_name: typing_extensions.Literal[
+                        "key", b"key", "value", b"value"
+                    ],
+                ) -> None: ...
 
             NAME_FIELD_NUMBER: builtins.int
             PARAMETERS_FIELD_NUMBER: builtins.int
@@ -1473,24 +1796,40 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
             @@
             """
             @property
-            def parameters(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+            def parameters(
+                self,
+            ) -> google.protobuf.internal.containers.ScalarMap[
+                builtins.str, builtins.str
+            ]:
                 """@@    .. cpp:var:: map<string, string> parameters
                 @@
                 @@       Additional paremeters used to configure the accelerator.
                 @@
                 """
+
             def __init__(
                 self,
                 *,
                 name: builtins.str = ...,
-                parameters: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+                parameters: (
+                    collections.abc.Mapping[builtins.str, builtins.str] | None
+                ) = ...,
             ) -> None: ...
-            def ClearField(self, field_name: typing_extensions.Literal["name", b"name", "parameters", b"parameters"]) -> None: ...
+            def ClearField(
+                self,
+                field_name: typing_extensions.Literal[
+                    "name", b"name", "parameters", b"parameters"
+                ],
+            ) -> None: ...
 
         GPU_EXECUTION_ACCELERATOR_FIELD_NUMBER: builtins.int
         CPU_EXECUTION_ACCELERATOR_FIELD_NUMBER: builtins.int
         @property
-        def gpu_execution_accelerator(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator]:
+        def gpu_execution_accelerator(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+            global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator
+        ]:
             """@@    .. cpp:var:: Accelerator gpu_execution_accelerator (repeated)
             @@
             @@       The preferred execution provider to be used if the model instance
@@ -1530,8 +1869,13 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
             @@       created with KIND_GPU.
             @@
             """
+
         @property
-        def cpu_execution_accelerator(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator]:
+        def cpu_execution_accelerator(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+            global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator
+        ]:
             """@@    .. cpp:var:: Accelerator cpu_execution_accelerator (repeated)
             @@
             @@       The preferred execution provider to be used if the model instance
@@ -1541,13 +1885,32 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
             @@       and no parameters are required.
             @@
             """
+
         def __init__(
             self,
             *,
-            gpu_execution_accelerator: collections.abc.Iterable[global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator] | None = ...,
-            cpu_execution_accelerator: collections.abc.Iterable[global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator] | None = ...,
+            gpu_execution_accelerator: (
+                collections.abc.Iterable[
+                    global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator
+                ]
+                | None
+            ) = ...,
+            cpu_execution_accelerator: (
+                collections.abc.Iterable[
+                    global___ModelOptimizationPolicy.ExecutionAccelerators.Accelerator
+                ]
+                | None
+            ) = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["cpu_execution_accelerator", b"cpu_execution_accelerator", "gpu_execution_accelerator", b"gpu_execution_accelerator"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "cpu_execution_accelerator",
+                b"cpu_execution_accelerator",
+                "gpu_execution_accelerator",
+                b"gpu_execution_accelerator",
+            ],
+        ) -> None: ...
 
     class PinnedMemoryBuffer(google.protobuf.message.Message):
         """@@
@@ -1579,7 +1942,9 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
             *,
             enable: builtins.bool = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["enable", b"enable"]) -> None: ...
+        def ClearField(
+            self, field_name: typing_extensions.Literal["enable", b"enable"]
+        ) -> None: ...
 
     GRAPH_FIELD_NUMBER: builtins.int
     PRIORITY_FIELD_NUMBER: builtins.int
@@ -1609,15 +1974,21 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
         @@     CUDA-specific optimization settings. Optional.
         @@
         """
+
     @property
-    def execution_accelerators(self) -> global___ModelOptimizationPolicy.ExecutionAccelerators:
+    def execution_accelerators(
+        self,
+    ) -> global___ModelOptimizationPolicy.ExecutionAccelerators:
         """@@  .. cpp:var:: ExecutionAccelerators execution_accelerators
         @@
         @@     The accelerators used for the model. Optional.
         @@
         """
+
     @property
-    def input_pinned_memory(self) -> global___ModelOptimizationPolicy.PinnedMemoryBuffer:
+    def input_pinned_memory(
+        self,
+    ) -> global___ModelOptimizationPolicy.PinnedMemoryBuffer:
         """@@  .. cpp:var:: PinnedMemoryBuffer input_pinned_memory
         @@
         @@     Use pinned memory buffer when the data transfer for inputs
@@ -1625,8 +1996,11 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
         @@     Default is true.
         @@
         """
+
     @property
-    def output_pinned_memory(self) -> global___ModelOptimizationPolicy.PinnedMemoryBuffer:
+    def output_pinned_memory(
+        self,
+    ) -> global___ModelOptimizationPolicy.PinnedMemoryBuffer:
         """@@  .. cpp:var:: PinnedMemoryBuffer output_pinned_memory
         @@
         @@     Use pinned memory buffer when the data transfer for outputs
@@ -1663,14 +2037,54 @@ class ModelOptimizationPolicy(google.protobuf.message.Message):
         graph: global___ModelOptimizationPolicy.Graph | None = ...,
         priority: global___ModelOptimizationPolicy.ModelPriority.ValueType = ...,
         cuda: global___ModelOptimizationPolicy.Cuda | None = ...,
-        execution_accelerators: global___ModelOptimizationPolicy.ExecutionAccelerators | None = ...,
-        input_pinned_memory: global___ModelOptimizationPolicy.PinnedMemoryBuffer | None = ...,
-        output_pinned_memory: global___ModelOptimizationPolicy.PinnedMemoryBuffer | None = ...,
+        execution_accelerators: (
+            global___ModelOptimizationPolicy.ExecutionAccelerators | None
+        ) = ...,
+        input_pinned_memory: (
+            global___ModelOptimizationPolicy.PinnedMemoryBuffer | None
+        ) = ...,
+        output_pinned_memory: (
+            global___ModelOptimizationPolicy.PinnedMemoryBuffer | None
+        ) = ...,
         gather_kernel_buffer_threshold: builtins.int = ...,
         eager_batching: builtins.bool = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["cuda", b"cuda", "execution_accelerators", b"execution_accelerators", "graph", b"graph", "input_pinned_memory", b"input_pinned_memory", "output_pinned_memory", b"output_pinned_memory"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["cuda", b"cuda", "eager_batching", b"eager_batching", "execution_accelerators", b"execution_accelerators", "gather_kernel_buffer_threshold", b"gather_kernel_buffer_threshold", "graph", b"graph", "input_pinned_memory", b"input_pinned_memory", "output_pinned_memory", b"output_pinned_memory", "priority", b"priority"]) -> None: ...
+    def HasField(
+        self,
+        field_name: typing_extensions.Literal[
+            "cuda",
+            b"cuda",
+            "execution_accelerators",
+            b"execution_accelerators",
+            "graph",
+            b"graph",
+            "input_pinned_memory",
+            b"input_pinned_memory",
+            "output_pinned_memory",
+            b"output_pinned_memory",
+        ],
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "cuda",
+            b"cuda",
+            "eager_batching",
+            b"eager_batching",
+            "execution_accelerators",
+            b"execution_accelerators",
+            "gather_kernel_buffer_threshold",
+            b"gather_kernel_buffer_threshold",
+            "graph",
+            b"graph",
+            "input_pinned_memory",
+            b"input_pinned_memory",
+            "output_pinned_memory",
+            b"output_pinned_memory",
+            "priority",
+            b"priority",
+        ],
+    ) -> None: ...
 
 global___ModelOptimizationPolicy = ModelOptimizationPolicy
 
@@ -1688,7 +2102,12 @@ class ModelQueuePolicy(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _TimeoutActionEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[ModelQueuePolicy._TimeoutAction.ValueType], builtins.type):  # noqa: F821
+    class _TimeoutActionEnumTypeWrapper(
+        google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[
+            ModelQueuePolicy._TimeoutAction.ValueType
+        ],
+        builtins.type,
+    ):  # noqa: F821
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         REJECT: ModelQueuePolicy._TimeoutAction.ValueType  # 0
         """@@    .. cpp:enumerator:: Action::REJECT = 0
@@ -1778,7 +2197,19 @@ class ModelQueuePolicy(google.protobuf.message.Message):
         allow_timeout_override: builtins.bool = ...,
         max_queue_size: builtins.int = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["allow_timeout_override", b"allow_timeout_override", "default_timeout_microseconds", b"default_timeout_microseconds", "max_queue_size", b"max_queue_size", "timeout_action", b"timeout_action"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "allow_timeout_override",
+            b"allow_timeout_override",
+            "default_timeout_microseconds",
+            b"default_timeout_microseconds",
+            "max_queue_size",
+            b"max_queue_size",
+            "timeout_action",
+            b"timeout_action",
+        ],
+    ) -> None: ...
 
 global___ModelQueuePolicy = ModelQueuePolicy
 
@@ -1807,8 +2238,13 @@ class ModelDynamicBatching(google.protobuf.message.Message):
             key: builtins.int = ...,
             value: global___ModelQueuePolicy | None = ...,
         ) -> None: ...
-        def HasField(self, field_name: typing_extensions.Literal["value", b"value"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def HasField(
+            self, field_name: typing_extensions.Literal["value", b"value"]
+        ) -> builtins.bool: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
+        ) -> None: ...
 
     PREFERRED_BATCH_SIZE_FIELD_NUMBER: builtins.int
     MAX_QUEUE_DELAY_MICROSECONDS_FIELD_NUMBER: builtins.int
@@ -1818,7 +2254,9 @@ class ModelDynamicBatching(google.protobuf.message.Message):
     DEFAULT_QUEUE_POLICY_FIELD_NUMBER: builtins.int
     PRIORITY_QUEUE_POLICY_FIELD_NUMBER: builtins.int
     @property
-    def preferred_batch_size(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+    def preferred_batch_size(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
         """@@  .. cpp:var:: int32 preferred_batch_size (repeated)
         @@
         @@     Preferred batch sizes for dynamic batching. If a batch of one of
@@ -1877,8 +2315,13 @@ class ModelDynamicBatching(google.protobuf.message.Message):
         @@     default field values will be used.
         @@
         """
+
     @property
-    def priority_queue_policy(self) -> google.protobuf.internal.containers.MessageMap[builtins.int, global___ModelQueuePolicy]:
+    def priority_queue_policy(
+        self,
+    ) -> google.protobuf.internal.containers.MessageMap[
+        builtins.int, global___ModelQueuePolicy
+    ]:
         """@@  .. cpp:var:: map<uint32, ModelQueuePolicy> priority_queue_policy
         @@
         @@     Specify the queue policy for the priority level. The default queue
@@ -1886,6 +2329,7 @@ class ModelDynamicBatching(google.protobuf.message.Message):
         @@     policy.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -1895,10 +2339,35 @@ class ModelDynamicBatching(google.protobuf.message.Message):
         priority_levels: builtins.int = ...,
         default_priority_level: builtins.int = ...,
         default_queue_policy: global___ModelQueuePolicy | None = ...,
-        priority_queue_policy: collections.abc.Mapping[builtins.int, global___ModelQueuePolicy] | None = ...,
+        priority_queue_policy: (
+            collections.abc.Mapping[builtins.int, global___ModelQueuePolicy] | None
+        ) = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["default_queue_policy", b"default_queue_policy"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["default_priority_level", b"default_priority_level", "default_queue_policy", b"default_queue_policy", "max_queue_delay_microseconds", b"max_queue_delay_microseconds", "preferred_batch_size", b"preferred_batch_size", "preserve_ordering", b"preserve_ordering", "priority_levels", b"priority_levels", "priority_queue_policy", b"priority_queue_policy"]) -> None: ...
+    def HasField(
+        self,
+        field_name: typing_extensions.Literal[
+            "default_queue_policy", b"default_queue_policy"
+        ],
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "default_priority_level",
+            b"default_priority_level",
+            "default_queue_policy",
+            b"default_queue_policy",
+            "max_queue_delay_microseconds",
+            b"max_queue_delay_microseconds",
+            "preferred_batch_size",
+            b"preferred_batch_size",
+            "preserve_ordering",
+            b"preserve_ordering",
+            "priority_levels",
+            b"priority_levels",
+            "priority_queue_policy",
+            b"priority_queue_policy",
+        ],
+    ) -> None: ...
 
 global___ModelDynamicBatching = ModelDynamicBatching
 
@@ -1927,7 +2396,12 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             ValueType = typing.NewType("ValueType", builtins.int)
             V: typing_extensions.TypeAlias = ValueType
 
-        class _KindEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[ModelSequenceBatching.Control._Kind.ValueType], builtins.type):  # noqa: F821
+        class _KindEnumTypeWrapper(
+            google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[
+                ModelSequenceBatching.Control._Kind.ValueType
+            ],
+            builtins.type,
+        ):  # noqa: F821
             DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
             CONTROL_SEQUENCE_START: ModelSequenceBatching.Control._Kind.ValueType  # 0
             """@@      .. cpp:enumerator:: Kind::CONTROL_SEQUENCE_START = 0
@@ -2033,7 +2507,11 @@ class ModelSequenceBatching(google.protobuf.message.Message):
         @@
         """
         @property
-        def int32_false_true(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+        def int32_false_true(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+            builtins.int
+        ]:
             """@@    .. cpp:var:: int32 int32_false_true (repeated)
             @@
             @@       The control's true and false setting is indicated by setting
@@ -2043,8 +2521,13 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             @@       first the false value and the second the true value.
             @@
             """
+
         @property
-        def fp32_false_true(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.float]:
+        def fp32_false_true(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+            builtins.float
+        ]:
             """@@    .. cpp:var:: float fp32_false_true (repeated)
             @@
             @@       The control's true and false setting is indicated by setting
@@ -2054,8 +2537,13 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             @@       first the false value and the second the true value.
             @@
             """
+
         @property
-        def bool_false_true(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.bool]:
+        def bool_false_true(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+            builtins.bool
+        ]:
             """@@    .. cpp:var:: bool bool_false_true (repeated)
             @@
             @@       The control's true and false setting is indicated by setting
@@ -2080,7 +2568,21 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             bool_false_true: collections.abc.Iterable[builtins.bool] | None = ...,
             data_type: global___DataType.ValueType = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["bool_false_true", b"bool_false_true", "data_type", b"data_type", "fp32_false_true", b"fp32_false_true", "int32_false_true", b"int32_false_true", "kind", b"kind"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "bool_false_true",
+                b"bool_false_true",
+                "data_type",
+                b"data_type",
+                "fp32_false_true",
+                b"fp32_false_true",
+                "int32_false_true",
+                b"int32_false_true",
+                "kind",
+                b"kind",
+            ],
+        ) -> None: ...
 
     class ControlInput(google.protobuf.message.Message):
         """@@  .. cpp:var:: message ControlInput
@@ -2100,20 +2602,32 @@ class ModelSequenceBatching(google.protobuf.message.Message):
         @@
         """
         @property
-        def control(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelSequenceBatching.Control]:
+        def control(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+            global___ModelSequenceBatching.Control
+        ]:
             """@@    .. cpp:var:: Control control (repeated)
             @@
             @@       The control value(s) that should be communicated to the
             @@       model using this model input.
             @@
             """
+
         def __init__(
             self,
             *,
             name: builtins.str = ...,
-            control: collections.abc.Iterable[global___ModelSequenceBatching.Control] | None = ...,
+            control: (
+                collections.abc.Iterable[global___ModelSequenceBatching.Control] | None
+            ) = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["control", b"control", "name", b"name"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "control", b"control", "name", b"name"
+            ],
+        ) -> None: ...
 
     class InitialState(google.protobuf.message.Message):
         """@@
@@ -2137,7 +2651,11 @@ class ModelSequenceBatching(google.protobuf.message.Message):
         @@
         """
         @property
-        def dims(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+        def dims(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+            builtins.int
+        ]:
             """@@      .. cpp:var:: int64 dims (repeated)
             @@
             @@         The shape of the state tensor, not including the batch
@@ -2176,9 +2694,37 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             data_file: builtins.str = ...,
             name: builtins.str = ...,
         ) -> None: ...
-        def HasField(self, field_name: typing_extensions.Literal["data_file", b"data_file", "state_data", b"state_data", "zero_data", b"zero_data"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing_extensions.Literal["data_file", b"data_file", "data_type", b"data_type", "dims", b"dims", "name", b"name", "state_data", b"state_data", "zero_data", b"zero_data"]) -> None: ...
-        def WhichOneof(self, oneof_group: typing_extensions.Literal["state_data", b"state_data"]) -> typing_extensions.Literal["zero_data", "data_file"] | None: ...
+        def HasField(
+            self,
+            field_name: typing_extensions.Literal[
+                "data_file",
+                b"data_file",
+                "state_data",
+                b"state_data",
+                "zero_data",
+                b"zero_data",
+            ],
+        ) -> builtins.bool: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "data_file",
+                b"data_file",
+                "data_type",
+                b"data_type",
+                "dims",
+                b"dims",
+                "name",
+                b"name",
+                "state_data",
+                b"state_data",
+                "zero_data",
+                b"zero_data",
+            ],
+        ) -> None: ...
+        def WhichOneof(
+            self, oneof_group: typing_extensions.Literal["state_data", b"state_data"]
+        ) -> typing_extensions.Literal["zero_data", "data_file"] | None: ...
 
     class State(google.protobuf.message.Message):
         """@@  .. cpp:var:: message State
@@ -2213,19 +2759,29 @@ class ModelSequenceBatching(google.protobuf.message.Message):
         @@
         """
         @property
-        def dims(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+        def dims(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+            builtins.int
+        ]:
             """@@    .. cpp:var:: int64 dim (repeated)
             @@
             @@       The dimension.
             @@
             """
+
         @property
-        def initial_state(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelSequenceBatching.InitialState]:
+        def initial_state(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+            global___ModelSequenceBatching.InitialState
+        ]:
             """@@  .. cpp:var:: InitialState initial_state (repeated)
             @@
             @@     The optional field to specify the initial state for the model.
             @@
             """
+
         def __init__(
             self,
             *,
@@ -2233,9 +2789,26 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             output_name: builtins.str = ...,
             data_type: global___DataType.ValueType = ...,
             dims: collections.abc.Iterable[builtins.int] | None = ...,
-            initial_state: collections.abc.Iterable[global___ModelSequenceBatching.InitialState] | None = ...,
+            initial_state: (
+                collections.abc.Iterable[global___ModelSequenceBatching.InitialState]
+                | None
+            ) = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["data_type", b"data_type", "dims", b"dims", "initial_state", b"initial_state", "input_name", b"input_name", "output_name", b"output_name"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "data_type",
+                b"data_type",
+                "dims",
+                b"dims",
+                "initial_state",
+                b"initial_state",
+                "input_name",
+                b"input_name",
+                "output_name",
+                b"output_name",
+            ],
+        ) -> None: ...
 
     class StrategyDirect(google.protobuf.message.Message):
         """@@  .. cpp:var:: message StrategyDirect
@@ -2281,7 +2854,15 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             max_queue_delay_microseconds: builtins.int = ...,
             minimum_slot_utilization: builtins.float = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["max_queue_delay_microseconds", b"max_queue_delay_microseconds", "minimum_slot_utilization", b"minimum_slot_utilization"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "max_queue_delay_microseconds",
+                b"max_queue_delay_microseconds",
+                "minimum_slot_utilization",
+                b"minimum_slot_utilization",
+            ],
+        ) -> None: ...
 
     class StrategyOldest(google.protobuf.message.Message):
         """@@  .. cpp:var:: message StrategyOldest
@@ -2312,7 +2893,11 @@ class ModelSequenceBatching(google.protobuf.message.Message):
         @@
         """
         @property
-        def preferred_batch_size(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+        def preferred_batch_size(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+            builtins.int
+        ]:
             """@@    .. cpp:var:: int32 preferred_batch_size (repeated)
             @@
             @@       Preferred batch sizes for dynamic batching of candidate
@@ -2337,7 +2922,17 @@ class ModelSequenceBatching(google.protobuf.message.Message):
             preferred_batch_size: collections.abc.Iterable[builtins.int] | None = ...,
             max_queue_delay_microseconds: builtins.int = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["max_candidate_sequences", b"max_candidate_sequences", "max_queue_delay_microseconds", b"max_queue_delay_microseconds", "preferred_batch_size", b"preferred_batch_size"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "max_candidate_sequences",
+                b"max_candidate_sequences",
+                "max_queue_delay_microseconds",
+                b"max_queue_delay_microseconds",
+                "preferred_batch_size",
+                b"preferred_batch_size",
+            ],
+        ) -> None: ...
 
     DIRECT_FIELD_NUMBER: builtins.int
     OLDEST_FIELD_NUMBER: builtins.int
@@ -2351,6 +2946,7 @@ class ModelSequenceBatching(google.protobuf.message.Message):
         @@       StrategyDirect scheduling strategy.
         @@
         """
+
     @property
     def oldest(self) -> global___ModelSequenceBatching.StrategyOldest:
         """@@    .. cpp:var:: StrategyOldest oldest
@@ -2371,7 +2967,11 @@ class ModelSequenceBatching(google.protobuf.message.Message):
     @@
     """
     @property
-    def control_input(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelSequenceBatching.ControlInput]:
+    def control_input(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___ModelSequenceBatching.ControlInput
+    ]:
         """@@  .. cpp:var:: ControlInput control_input (repeated)
         @@
         @@     The model input(s) that the server should use to communicate
@@ -2379,8 +2979,13 @@ class ModelSequenceBatching(google.protobuf.message.Message):
         @@     model.
         @@
         """
+
     @property
-    def state(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelSequenceBatching.State]:
+    def state(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___ModelSequenceBatching.State
+    ]:
         """@@  .. cpp:var:: State state (repeated)
         @@
         @@     The optional state that can be stored in Triton for performing
@@ -2392,18 +2997,52 @@ class ModelSequenceBatching(google.protobuf.message.Message):
         @@     in the sequence contains garbage data.
         @@
         """
+
     def __init__(
         self,
         *,
         direct: global___ModelSequenceBatching.StrategyDirect | None = ...,
         oldest: global___ModelSequenceBatching.StrategyOldest | None = ...,
         max_sequence_idle_microseconds: builtins.int = ...,
-        control_input: collections.abc.Iterable[global___ModelSequenceBatching.ControlInput] | None = ...,
-        state: collections.abc.Iterable[global___ModelSequenceBatching.State] | None = ...,
+        control_input: (
+            collections.abc.Iterable[global___ModelSequenceBatching.ControlInput] | None
+        ) = ...,
+        state: (
+            collections.abc.Iterable[global___ModelSequenceBatching.State] | None
+        ) = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["direct", b"direct", "oldest", b"oldest", "strategy_choice", b"strategy_choice"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["control_input", b"control_input", "direct", b"direct", "max_sequence_idle_microseconds", b"max_sequence_idle_microseconds", "oldest", b"oldest", "state", b"state", "strategy_choice", b"strategy_choice"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing_extensions.Literal["strategy_choice", b"strategy_choice"]) -> typing_extensions.Literal["direct", "oldest"] | None: ...
+    def HasField(
+        self,
+        field_name: typing_extensions.Literal[
+            "direct",
+            b"direct",
+            "oldest",
+            b"oldest",
+            "strategy_choice",
+            b"strategy_choice",
+        ],
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "control_input",
+            b"control_input",
+            "direct",
+            b"direct",
+            "max_sequence_idle_microseconds",
+            b"max_sequence_idle_microseconds",
+            "oldest",
+            b"oldest",
+            "state",
+            b"state",
+            "strategy_choice",
+            b"strategy_choice",
+        ],
+    ) -> None: ...
+    def WhichOneof(
+        self,
+        oneof_group: typing_extensions.Literal["strategy_choice", b"strategy_choice"],
+    ) -> typing_extensions.Literal["direct", "oldest"] | None: ...
 
 global___ModelSequenceBatching = ModelSequenceBatching
 
@@ -2442,7 +3081,10 @@ class ModelEnsembling(google.protobuf.message.Message):
                 key: builtins.str = ...,
                 value: builtins.str = ...,
             ) -> None: ...
-            def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+            def ClearField(
+                self,
+                field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
+            ) -> None: ...
 
         class OutputMapEntry(google.protobuf.message.Message):
             DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -2457,7 +3099,10 @@ class ModelEnsembling(google.protobuf.message.Message):
                 key: builtins.str = ...,
                 value: builtins.str = ...,
             ) -> None: ...
-            def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+            def ClearField(
+                self,
+                field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
+            ) -> None: ...
 
         MODEL_NAME_FIELD_NUMBER: builtins.int
         MODEL_VERSION_FIELD_NUMBER: builtins.int
@@ -2477,7 +3122,9 @@ class ModelEnsembling(google.protobuf.message.Message):
         @@
         """
         @property
-        def input_map(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+        def input_map(
+            self,
+        ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
             """@@  .. cpp:var:: map<string,string> input_map
             @@
             @@     Map from name of an input tensor on this step's model to ensemble
@@ -2487,8 +3134,11 @@ class ModelEnsembling(google.protobuf.message.Message):
             @@     to multiple model inputs.
             @@
             """
+
         @property
-        def output_map(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+        def output_map(
+            self,
+        ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
             """@@  .. cpp:var:: map<string,string> output_map
             @@
             @@     Map from name of an output tensor on this step's model to ensemble
@@ -2498,30 +3148,52 @@ class ModelEnsembling(google.protobuf.message.Message):
             @@     can appear in an output map only once.
             @@
             """
+
         def __init__(
             self,
             *,
             model_name: builtins.str = ...,
             model_version: builtins.int = ...,
             input_map: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-            output_map: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+            output_map: (
+                collections.abc.Mapping[builtins.str, builtins.str] | None
+            ) = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["input_map", b"input_map", "model_name", b"model_name", "model_version", b"model_version", "output_map", b"output_map"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "input_map",
+                b"input_map",
+                "model_name",
+                b"model_name",
+                "model_version",
+                b"model_version",
+                "output_map",
+                b"output_map",
+            ],
+        ) -> None: ...
 
     STEP_FIELD_NUMBER: builtins.int
     @property
-    def step(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelEnsembling.Step]:
+    def step(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___ModelEnsembling.Step
+    ]:
         """@@  .. cpp:var:: Step step (repeated)
         @@
         @@     The models and the input / output mappings used within the ensemble.
         @@
         """
+
     def __init__(
         self,
         *,
         step: collections.abc.Iterable[global___ModelEnsembling.Step] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["step", b"step"]) -> None: ...
+    def ClearField(
+        self, field_name: typing_extensions.Literal["step", b"step"]
+    ) -> None: ...
 
 global___ModelEnsembling = ModelEnsembling
 
@@ -2547,7 +3219,9 @@ class ModelParameter(google.protobuf.message.Message):
         *,
         string_value: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["string_value", b"string_value"]) -> None: ...
+    def ClearField(
+        self, field_name: typing_extensions.Literal["string_value", b"string_value"]
+    ) -> None: ...
 
 global___ModelParameter = ModelParameter
 
@@ -2583,7 +3257,11 @@ class ModelWarmup(google.protobuf.message.Message):
         @@
         """
         @property
-        def dims(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]:
+        def dims(
+            self,
+        ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+            builtins.int
+        ]:
             """@@    .. cpp:var:: int64 dims (repeated)
             @@
             @@       The shape of the input tensor, not including the batch dimension.
@@ -2627,9 +3305,45 @@ class ModelWarmup(google.protobuf.message.Message):
             random_data: builtins.bool = ...,
             input_data_file: builtins.str = ...,
         ) -> None: ...
-        def HasField(self, field_name: typing_extensions.Literal["input_data_file", b"input_data_file", "input_data_type", b"input_data_type", "random_data", b"random_data", "zero_data", b"zero_data"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing_extensions.Literal["data_type", b"data_type", "dims", b"dims", "input_data_file", b"input_data_file", "input_data_type", b"input_data_type", "random_data", b"random_data", "zero_data", b"zero_data"]) -> None: ...
-        def WhichOneof(self, oneof_group: typing_extensions.Literal["input_data_type", b"input_data_type"]) -> typing_extensions.Literal["zero_data", "random_data", "input_data_file"] | None: ...
+        def HasField(
+            self,
+            field_name: typing_extensions.Literal[
+                "input_data_file",
+                b"input_data_file",
+                "input_data_type",
+                b"input_data_type",
+                "random_data",
+                b"random_data",
+                "zero_data",
+                b"zero_data",
+            ],
+        ) -> builtins.bool: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "data_type",
+                b"data_type",
+                "dims",
+                b"dims",
+                "input_data_file",
+                b"input_data_file",
+                "input_data_type",
+                b"input_data_type",
+                "random_data",
+                b"random_data",
+                "zero_data",
+                b"zero_data",
+            ],
+        ) -> None: ...
+        def WhichOneof(
+            self,
+            oneof_group: typing_extensions.Literal[
+                "input_data_type", b"input_data_type"
+            ],
+        ) -> (
+            typing_extensions.Literal["zero_data", "random_data", "input_data_file"]
+            | None
+        ): ...
 
     class InputsEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -2645,8 +3359,13 @@ class ModelWarmup(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: global___ModelWarmup.Input | None = ...,
         ) -> None: ...
-        def HasField(self, field_name: typing_extensions.Literal["value", b"value"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def HasField(
+            self, field_name: typing_extensions.Literal["value", b"value"]
+        ) -> builtins.bool: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
+        ) -> None: ...
 
     NAME_FIELD_NUMBER: builtins.int
     BATCH_SIZE_FIELD_NUMBER: builtins.int
@@ -2668,7 +3387,11 @@ class ModelWarmup(google.protobuf.message.Message):
     @@
     """
     @property
-    def inputs(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, global___ModelWarmup.Input]:
+    def inputs(
+        self,
+    ) -> google.protobuf.internal.containers.MessageMap[
+        builtins.str, global___ModelWarmup.Input
+    ]:
         """@@  .. cpp:var:: map<string, Input> inputs
         @@
         @@     The warmup meta data associated with every model input, including
@@ -2694,10 +3417,24 @@ class ModelWarmup(google.protobuf.message.Message):
         *,
         name: builtins.str = ...,
         batch_size: builtins.int = ...,
-        inputs: collections.abc.Mapping[builtins.str, global___ModelWarmup.Input] | None = ...,
+        inputs: (
+            collections.abc.Mapping[builtins.str, global___ModelWarmup.Input] | None
+        ) = ...,
         count: builtins.int = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["batch_size", b"batch_size", "count", b"count", "inputs", b"inputs", "name", b"name"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "batch_size",
+            b"batch_size",
+            "count",
+            b"count",
+            "inputs",
+            b"inputs",
+            "name",
+            b"name",
+        ],
+    ) -> None: ...
 
 global___ModelWarmup = ModelWarmup
 
@@ -2713,19 +3450,27 @@ class ModelOperations(google.protobuf.message.Message):
 
     OP_LIBRARY_FILENAME_FIELD_NUMBER: builtins.int
     @property
-    def op_library_filename(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
+    def op_library_filename(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.str]:
         """@@  .. cpp:var:: string op_library_filename (repeated)
         @@
         @@     Optional paths of the libraries providing custom operations for
         @@     this model. Valid only for ONNX models.
         @@
         """
+
     def __init__(
         self,
         *,
         op_library_filename: collections.abc.Iterable[builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["op_library_filename", b"op_library_filename"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "op_library_filename", b"op_library_filename"
+        ],
+    ) -> None: ...
 
 global___ModelOperations = ModelOperations
 
@@ -2757,7 +3502,9 @@ class ModelTransactionPolicy(google.protobuf.message.Message):
         *,
         decoupled: builtins.bool = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["decoupled", b"decoupled"]) -> None: ...
+    def ClearField(
+        self, field_name: typing_extensions.Literal["decoupled", b"decoupled"]
+    ) -> None: ...
 
 global___ModelTransactionPolicy = ModelTransactionPolicy
 
@@ -2795,7 +3542,10 @@ class ModelRepositoryAgents(google.protobuf.message.Message):
                 key: builtins.str = ...,
                 value: builtins.str = ...,
             ) -> None: ...
-            def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+            def ClearField(
+                self,
+                field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
+            ) -> None: ...
 
         NAME_FIELD_NUMBER: builtins.int
         PARAMETERS_FIELD_NUMBER: builtins.int
@@ -2806,23 +3556,37 @@ class ModelRepositoryAgents(google.protobuf.message.Message):
         @@
         """
         @property
-        def parameters(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+        def parameters(
+            self,
+        ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
             """@@    .. cpp:var:: map<string, string> parameters
             @@
             @@       The parameters for the agent.
             @@
             """
+
         def __init__(
             self,
             *,
             name: builtins.str = ...,
-            parameters: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+            parameters: (
+                collections.abc.Mapping[builtins.str, builtins.str] | None
+            ) = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["name", b"name", "parameters", b"parameters"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal[
+                "name", b"name", "parameters", b"parameters"
+            ],
+        ) -> None: ...
 
     AGENTS_FIELD_NUMBER: builtins.int
     @property
-    def agents(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelRepositoryAgents.Agent]:
+    def agents(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___ModelRepositoryAgents.Agent
+    ]:
         """@@
         @@  .. cpp:var:: Agent agents (repeated)
         @@
@@ -2831,12 +3595,17 @@ class ModelRepositoryAgents(google.protobuf.message.Message):
         @@     model.
         @@
         """
+
     def __init__(
         self,
         *,
-        agents: collections.abc.Iterable[global___ModelRepositoryAgents.Agent] | None = ...,
+        agents: (
+            collections.abc.Iterable[global___ModelRepositoryAgents.Agent] | None
+        ) = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["agents", b"agents"]) -> None: ...
+    def ClearField(
+        self, field_name: typing_extensions.Literal["agents", b"agents"]
+    ) -> None: ...
 
 global___ModelRepositoryAgents = ModelRepositoryAgents
 
@@ -2867,7 +3636,9 @@ class ModelResponseCache(google.protobuf.message.Message):
         *,
         enable: builtins.bool = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["enable", b"enable"]) -> None: ...
+    def ClearField(
+        self, field_name: typing_extensions.Literal["enable", b"enable"]
+    ) -> None: ...
 
 global___ModelResponseCache = ModelResponseCache
 
@@ -2894,7 +3665,10 @@ class ModelConfig(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
+        ) -> None: ...
 
     class MetricTagsEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -2909,7 +3683,10 @@ class ModelConfig(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
+        ) -> None: ...
 
     class ParametersEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -2925,8 +3702,13 @@ class ModelConfig(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: global___ModelParameter | None = ...,
         ) -> None: ...
-        def HasField(self, field_name: typing_extensions.Literal["value", b"value"]) -> builtins.bool: ...
-        def ClearField(self, field_name: typing_extensions.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def HasField(
+            self, field_name: typing_extensions.Literal["value", b"value"]
+        ) -> builtins.bool: ...
+        def ClearField(
+            self,
+            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
+        ) -> None: ...
 
     NAME_FIELD_NUMBER: builtins.int
     PLATFORM_FIELD_NUMBER: builtins.int
@@ -2999,35 +3781,55 @@ class ModelConfig(google.protobuf.message.Message):
     @@
     """
     @property
-    def input(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelInput]:
+    def input(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___ModelInput
+    ]:
         """@@  .. cpp:var:: ModelInput input (repeated)
         @@
         @@     The inputs request by the model.
         @@
         """
+
     @property
-    def output(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelOutput]:
+    def output(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___ModelOutput
+    ]:
         """@@  .. cpp:var:: ModelOutput output (repeated)
         @@
         @@     The outputs produced by the model.
         @@
         """
+
     @property
-    def batch_input(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___BatchInput]:
+    def batch_input(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___BatchInput
+    ]:
         """@@  .. cpp:var:: BatchInput batch_input (repeated)
         @@
         @@     The model input(s) that the server should use to communicate
         @@     batch related values to the model.
         @@
         """
+
     @property
-    def batch_output(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___BatchOutput]:
+    def batch_output(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___BatchOutput
+    ]:
         """@@  .. cpp:var:: BatchOutput batch_output (repeated)
         @@
         @@     The outputs produced by the model that requires special handling
         @@     by the model backend.
         @@
         """
+
     @property
     def optimization(self) -> global___ModelOptimizationPolicy:
         """@@  .. cpp:var:: ModelOptimizationPolicy optimization
@@ -3036,6 +3838,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     then default optimization policy is used.
         @@
         """
+
     @property
     def dynamic_batching(self) -> global___ModelDynamicBatching:
         """@@    .. cpp:var:: ModelDynamicBatching dynamic_batching
@@ -3046,6 +3849,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@       improve inference throughput.
         @@
         """
+
     @property
     def sequence_batching(self) -> global___ModelSequenceBatching:
         """@@    .. cpp:var:: ModelSequenceBatching sequence_batching
@@ -3058,6 +3862,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@       improve inference throughput.
         @@
         """
+
     @property
     def ensemble_scheduling(self) -> global___ModelEnsembling:
         """@@    .. cpp:var:: ModelEnsembling ensemble_scheduling
@@ -3070,8 +3875,13 @@ class ModelConfig(google.protobuf.message.Message):
         @@       specified will be the output of the ensemble.
         @@
         """
+
     @property
-    def instance_group(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelInstanceGroup]:
+    def instance_group(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___ModelInstanceGroup
+    ]:
         """@@  .. cpp:var:: ModelInstanceGroup instance_group (repeated)
         @@
         @@     Instances of this model. If not specified, one instance
@@ -3089,7 +3899,9 @@ class ModelConfig(google.protobuf.message.Message):
     @@
     """
     @property
-    def cc_model_filenames(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    def cc_model_filenames(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
         """@@  .. cpp:var:: map<string,string> cc_model_filenames
         @@
         @@     Optional map from CUDA compute capability to the filename of
@@ -3097,8 +3909,11 @@ class ModelConfig(google.protobuf.message.Message):
         @@     refers to a file within the model version directory.
         @@
         """
+
     @property
-    def metric_tags(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
+    def metric_tags(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]:
         """@@  .. cpp:var:: map<string,string> metric_tags
         @@
         @@     Optional metric tags. User-specific key-value pairs for metrics
@@ -3106,15 +3921,25 @@ class ModelConfig(google.protobuf.message.Message):
         @@     reported on the HTTP metrics port.
         @@
         """
+
     @property
-    def parameters(self) -> google.protobuf.internal.containers.MessageMap[builtins.str, global___ModelParameter]:
+    def parameters(
+        self,
+    ) -> google.protobuf.internal.containers.MessageMap[
+        builtins.str, global___ModelParameter
+    ]:
         """@@  .. cpp:var:: map<string,ModelParameter> parameters
         @@
         @@     Optional model parameters. User-specified parameter values.
         @@
         """
+
     @property
-    def model_warmup(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___ModelWarmup]:
+    def model_warmup(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___ModelWarmup
+    ]:
         """@@  .. cpp:var:: ModelWarmup model_warmup (repeated)
         @@
         @@     Warmup setting of this model. If specified, all instances
@@ -3124,6 +3949,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     model.
         @@
         """
+
     @property
     def model_operations(self) -> global___ModelOperations:
         """@@  .. cpp:var:: ModelOperations model_operations
@@ -3132,6 +3958,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     this model.
         @@
         """
+
     @property
     def model_transaction_policy(self) -> global___ModelTransactionPolicy:
         """@@  .. cpp:var:: ModelTransactionPolicy model_transaction_policy
@@ -3140,6 +3967,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     to be expected from the model.
         @@
         """
+
     @property
     def model_repository_agents(self) -> global___ModelRepositoryAgents:
         """@@  .. cpp:var:: ModelRepositoryAgents model_repository_agents
@@ -3148,6 +3976,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     with repository actions are performed for this model.
         @@
         """
+
     @property
     def response_cache(self) -> global___ModelResponseCache:
         """@@  .. cpp:var:: ModelResponseCache response_cache
@@ -3156,6 +3985,7 @@ class ModelConfig(google.protobuf.message.Message):
         @@     model.
         @@
         """
+
     def __init__(
         self,
         *,
@@ -3172,19 +4002,111 @@ class ModelConfig(google.protobuf.message.Message):
         dynamic_batching: global___ModelDynamicBatching | None = ...,
         sequence_batching: global___ModelSequenceBatching | None = ...,
         ensemble_scheduling: global___ModelEnsembling | None = ...,
-        instance_group: collections.abc.Iterable[global___ModelInstanceGroup] | None = ...,
+        instance_group: (
+            collections.abc.Iterable[global___ModelInstanceGroup] | None
+        ) = ...,
         default_model_filename: builtins.str = ...,
-        cc_model_filenames: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
+        cc_model_filenames: (
+            collections.abc.Mapping[builtins.str, builtins.str] | None
+        ) = ...,
         metric_tags: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
-        parameters: collections.abc.Mapping[builtins.str, global___ModelParameter] | None = ...,
+        parameters: (
+            collections.abc.Mapping[builtins.str, global___ModelParameter] | None
+        ) = ...,
         model_warmup: collections.abc.Iterable[global___ModelWarmup] | None = ...,
         model_operations: global___ModelOperations | None = ...,
         model_transaction_policy: global___ModelTransactionPolicy | None = ...,
         model_repository_agents: global___ModelRepositoryAgents | None = ...,
         response_cache: global___ModelResponseCache | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing_extensions.Literal["dynamic_batching", b"dynamic_batching", "ensemble_scheduling", b"ensemble_scheduling", "model_operations", b"model_operations", "model_repository_agents", b"model_repository_agents", "model_transaction_policy", b"model_transaction_policy", "optimization", b"optimization", "response_cache", b"response_cache", "scheduling_choice", b"scheduling_choice", "sequence_batching", b"sequence_batching", "version_policy", b"version_policy"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing_extensions.Literal["backend", b"backend", "batch_input", b"batch_input", "batch_output", b"batch_output", "cc_model_filenames", b"cc_model_filenames", "default_model_filename", b"default_model_filename", "dynamic_batching", b"dynamic_batching", "ensemble_scheduling", b"ensemble_scheduling", "input", b"input", "instance_group", b"instance_group", "max_batch_size", b"max_batch_size", "metric_tags", b"metric_tags", "model_operations", b"model_operations", "model_repository_agents", b"model_repository_agents", "model_transaction_policy", b"model_transaction_policy", "model_warmup", b"model_warmup", "name", b"name", "optimization", b"optimization", "output", b"output", "parameters", b"parameters", "platform", b"platform", "response_cache", b"response_cache", "scheduling_choice", b"scheduling_choice", "sequence_batching", b"sequence_batching", "version_policy", b"version_policy"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing_extensions.Literal["scheduling_choice", b"scheduling_choice"]) -> typing_extensions.Literal["dynamic_batching", "sequence_batching", "ensemble_scheduling"] | None: ...
+    def HasField(
+        self,
+        field_name: typing_extensions.Literal[
+            "dynamic_batching",
+            b"dynamic_batching",
+            "ensemble_scheduling",
+            b"ensemble_scheduling",
+            "model_operations",
+            b"model_operations",
+            "model_repository_agents",
+            b"model_repository_agents",
+            "model_transaction_policy",
+            b"model_transaction_policy",
+            "optimization",
+            b"optimization",
+            "response_cache",
+            b"response_cache",
+            "scheduling_choice",
+            b"scheduling_choice",
+            "sequence_batching",
+            b"sequence_batching",
+            "version_policy",
+            b"version_policy",
+        ],
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing_extensions.Literal[
+            "backend",
+            b"backend",
+            "batch_input",
+            b"batch_input",
+            "batch_output",
+            b"batch_output",
+            "cc_model_filenames",
+            b"cc_model_filenames",
+            "default_model_filename",
+            b"default_model_filename",
+            "dynamic_batching",
+            b"dynamic_batching",
+            "ensemble_scheduling",
+            b"ensemble_scheduling",
+            "input",
+            b"input",
+            "instance_group",
+            b"instance_group",
+            "max_batch_size",
+            b"max_batch_size",
+            "metric_tags",
+            b"metric_tags",
+            "model_operations",
+            b"model_operations",
+            "model_repository_agents",
+            b"model_repository_agents",
+            "model_transaction_policy",
+            b"model_transaction_policy",
+            "model_warmup",
+            b"model_warmup",
+            "name",
+            b"name",
+            "optimization",
+            b"optimization",
+            "output",
+            b"output",
+            "parameters",
+            b"parameters",
+            "platform",
+            b"platform",
+            "response_cache",
+            b"response_cache",
+            "scheduling_choice",
+            b"scheduling_choice",
+            "sequence_batching",
+            b"sequence_batching",
+            "version_policy",
+            b"version_policy",
+        ],
+    ) -> None: ...
+    def WhichOneof(
+        self,
+        oneof_group: typing_extensions.Literal[
+            "scheduling_choice", b"scheduling_choice"
+        ],
+    ) -> (
+        typing_extensions.Literal[
+            "dynamic_batching", "sequence_batching", "ensemble_scheduling"
+        ]
+        | None
+    ): ...
 
 global___ModelConfig = ModelConfig

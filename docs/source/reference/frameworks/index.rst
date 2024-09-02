@@ -5,12 +5,16 @@ Framework APIs
 .. note::
 
     This page contains the API reference for all frameworks. For more information on a specific
-    framework, please see :doc:`/frameworks/index`
+    framework, please see :doc:`/reference/frameworks/index`
 
 .. grid:: 1 2 2 2
     :gutter: 3
     :margin: 0
     :padding: 3 4 0 0
+
+    .. grid-item-card:: :doc:`/reference/frameworks/diffusers`
+        :link: /reference/frameworks/diffusers
+        :link-type: doc
 
     .. grid-item-card:: :doc:`/reference/frameworks/onnx`
         :link: /reference/frameworks/onnx
@@ -80,6 +84,7 @@ Framework APIs
 .. toctree::
     :hidden:
 
+    diffusers
     onnx
     sklearn
     transformers

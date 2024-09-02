@@ -5,14 +5,16 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from bentoml._internal.utils import LazyLoader
+from bentoml.exceptions import InvalidArgument
+from bentoml.grpc.utils import import_generated_stubs
 from bentoml.io import JSON
 from bentoml.io import Image
 from bentoml.io import Multipart
-from bentoml.exceptions import InvalidArgument
-from bentoml.grpc.utils import import_generated_stubs
-from bentoml._internal.utils import LazyLoader
+from bentoml.io import Text
 
 example = Multipart(arg1=JSON(), arg2=Image(mime_type="image/bmp", pilmode="RGB"))
+example2 = Multipart(arg1=Image(), arg2=Text(content_type="text/event-stream"))
 
 if TYPE_CHECKING:
     import PIL.Image as PILImage
@@ -98,3 +100,14 @@ async def test_multipart_from_to_proto(img_file: str):
     )
     assert isinstance(message, pb.Multipart)
     assert message.fields["arg1"].json.struct_value.fields["asd"].string_value == "asd"
+
+
+@pytest.mark.asyncio
+async def test_multipart_to_http_response(img_file: str):
+    try:
+        res = await example2.to_http_response(
+            {"arg1": PILImage.open(img_file), "arg2": "test prompt"}
+        )
+        assert res
+    except Exception as e:
+        pytest.fail(f"Unexpected exception: {e}")

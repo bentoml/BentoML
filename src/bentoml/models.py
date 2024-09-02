@@ -1,27 +1,27 @@
 from __future__ import annotations
 
 import typing as t
+from contextlib import contextmanager
 from types import ModuleType
 from typing import TYPE_CHECKING
-from contextlib import contextmanager
 
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from .exceptions import BentoMLException
-from ._internal.tag import Tag
-from ._internal.utils import calc_dir_size
+from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import Model
 from ._internal.models import ModelContext
 from ._internal.models import ModelOptions
-from ._internal.utils.analytics import track
+from ._internal.tag import Tag
+from ._internal.utils import calc_dir_size
 from ._internal.utils.analytics import ModelSaveEvent
-from ._internal.configuration.containers import BentoMLContainer
+from ._internal.utils.analytics import track
+from .exceptions import BentoMLException
 
 if TYPE_CHECKING:
+    from ._internal.cloud import BentoCloudClient
     from ._internal.models import ModelStore
     from ._internal.models.model import ModelSignaturesType
-    from ._internal.yatai_client import YataiClient
 
 
 @inject
@@ -38,7 +38,11 @@ def get(
     tag: t.Union[Tag, str],
     *,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    model_aliases: t.Dict[str, str] = Provide[BentoMLContainer.model_aliases],
 ) -> "Model":
+    """Get a model by tag. If the tag is a string, it will be looked up in the model_aliases dict."""
+    if isinstance(tag, str) and tag in model_aliases:
+        tag = model_aliases[tag]
     return _model_store.get(tag)
 
 
@@ -206,12 +210,12 @@ def push(
     *,
     force: bool = False,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     model_obj = _model_store.get(tag)
     if not model_obj:
         raise BentoMLException(f"Model {tag} not found in local store")
-    _yatai_client.push_model(model_obj, force=force)
+    _cloud_client.push_model(model_obj, force=force)
 
 
 @inject
@@ -219,29 +223,125 @@ def pull(
     tag: t.Union[Tag, str],
     *,
     force: bool = False,
-    _yatai_client: YataiClient = Provide[BentoMLContainer.yatai_client],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Model:
-    return _yatai_client.pull_model(tag, force=force)
+    return _cloud_client.pull_model(tag, force=force)
+
+
+if t.TYPE_CHECKING:
+
+    class CreateKwargs(t.TypedDict):
+        module: str
+        api_version: str | None
+        signatures: t.Required[ModelSignaturesType]
+        labels: dict[str, t.Any] | None
+        options: ModelOptions | None
+        custom_objects: dict[str, t.Any] | None
+        external_modules: t.List[ModuleType] | None
+        metadata: dict[str, t.Any] | None
+        context: t.Required[ModelContext]
+        _model_store: t.NotRequired[ModelStore]
+
+
+@t.overload
+@contextmanager
+def _create(
+    name: Tag | str, /, **attrs: t.Unpack[CreateKwargs]
+) -> t.Generator[Model, None, None]: ...
+
+
+@t.overload
+@contextmanager
+def _create(
+    name: Tag | str,
+    *,
+    module: str = ...,
+    api_version: str | None = ...,
+    signatures: ModelSignaturesType,
+    labels: dict[str, t.Any] | None = ...,
+    options: ModelOptions | None = ...,
+    custom_objects: dict[str, t.Any] | None = ...,
+    external_modules: t.List[ModuleType] | None = ...,
+    metadata: dict[str, t.Any] | None = ...,
+    context: ModelContext,
+    _model_store: ModelStore = ...,
+) -> t.Generator[Model, None, None]: ...
 
 
 @inject
 @contextmanager
-def create(
-    name: str,
+def _create(
+    name: Tag | str,
     *,
     module: str = "",
     api_version: str | None = None,
-    signatures: ModelSignaturesType,
+    signatures: ModelSignaturesType | None = None,
     labels: dict[str, t.Any] | None = None,
     options: ModelOptions | None = None,
     custom_objects: dict[str, t.Any] | None = None,
     external_modules: t.List[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
-    context: ModelContext,
+    context: ModelContext | None = None,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> t.Generator[Model, None, None]:
     options = ModelOptions() if options is None else options
     api_version = "v1" if api_version is None else api_version
+    res = Model.create(
+        name,
+        module=module,
+        api_version=api_version,
+        labels=labels,
+        signatures=signatures or {},
+        options=options,
+        custom_objects=custom_objects,
+        metadata=metadata,
+        context=context or ModelContext("", {}),
+    )
+    external_modules = [] if external_modules is None else external_modules
+    imported_modules: t.List[ModuleType] = []
+    try:
+        res.enter_cloudpickle_context(external_modules, imported_modules)
+        yield res
+    except Exception:
+        raise
+    else:
+        res.flush()
+        res.save(_model_store)
+        track(
+            ModelSaveEvent(
+                module=res.info.module,
+                model_size_in_kb=calc_dir_size(res.path_of("/")) / 1024,
+            ),
+        )
+    finally:
+        res.exit_cloudpickle_context(imported_modules)
+
+
+@inject
+@contextmanager
+def create(
+    name: Tag | str,
+    *,
+    labels: dict[str, t.Any] | None = None,
+    metadata: dict[str, t.Any] | None = None,
+    _model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    module: str = "",  # deprecated
+    api_version: str = "v1",  # deprecated
+    signatures: ModelSignaturesType = {},  # deprecated
+    options: ModelOptions = ModelOptions(),  # deprecated
+    custom_objects: dict[str, t.Any] | None = None,  # deprecated
+    external_modules: t.List[ModuleType] | None = None,  # deprecated
+    context: ModelContext = ModelContext(
+        framework_name="", framework_versions={}
+    ),  # deprecated
+) -> t.Generator[Model, None, None]:
+    """
+    Create a model instance in BentoML modelstore.
+
+    The following function arguments are deprecated:
+        module, api_version, signatures, options, custom_objects, external_modules, context
+    """
+
     res = Model.create(
         name,
         module=module,
@@ -254,12 +354,12 @@ def create(
         context=context,
     )
     external_modules = [] if external_modules is None else external_modules
-    imported_modules = []
+    imported_modules: t.List[ModuleType] = []
     try:
         res.enter_cloudpickle_context(external_modules, imported_modules)
         yield res
-    except Exception as e:
-        raise e
+    except Exception:
+        raise
     else:
         res.flush()
         res.save(_model_store)
@@ -283,4 +383,5 @@ __all__ = [
     "pull",
     "ModelContext",
     "ModelOptions",
+    "create",
 ]

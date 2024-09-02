@@ -1,20 +1,40 @@
 from __future__ import annotations
 
+import contextlib
+import contextvars
 import os
 import typing as t
-import contextvars
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 import attr
 import starlette.datastructures
+from starlette.background import BackgroundTasks
 
 from .utils.http import Cookie
+from .utils.temp import TempfilePool
 
 if TYPE_CHECKING:
     import starlette.requests
     import starlette.responses
+
+_request_var: contextvars.ContextVar[starlette.requests.Request] = (
+    contextvars.ContextVar("request")
+)
+_response_var: contextvars.ContextVar[ServiceContext.ResponseContext] = (
+    contextvars.ContextVar("response")
+)
+
+request_tempdir_pool = TempfilePool(prefix="bentoml-request-")
+
+
+def request_temp_dir() -> str:
+    """A request-unique directory for storing temporary files"""
+    request = _request_var.get()
+    if not hasattr(request.state, "temp_dir"):
+        request.state.temp_dir = request_tempdir_pool.acquire()
+    return request.state.temp_dir
 
 
 class Metadata(t.Mapping[str, str], ABC):
@@ -72,54 +92,52 @@ class Metadata(t.Mapping[str, str], ABC):
         """
 
 
-@attr.define
-class InferenceApiContext:
-    request: "RequestContext"
-    response: "ResponseContext"
+class ServiceContext:
+    def __init__(self) -> None:
+        # A dictionary for storing global state shared by the process
+        self.state: dict[str, t.Any] = {}
 
-    def __init__(self, request: "RequestContext", response: "ResponseContext"):
-        self.request = request
-        self.response = response
+    @contextlib.contextmanager
+    def in_request(
+        self, request: starlette.requests.Request
+    ) -> t.Generator[ServiceContext, None, None]:
+        request.metadata = request.headers  # type: ignore[attr-defined]
+        request_token = _request_var.set(request)
+        response_token = _response_var.set(ServiceContext.ResponseContext())
+        try:
+            yield self
+        finally:
+            if hasattr(request.state, "temp_dir"):
+                request_tempdir_pool.release(request.state.temp_dir)
+            _request_var.reset(request_token)
+            _response_var.reset(response_token)
 
-    @staticmethod
-    def from_http(request: "starlette.requests.Request") -> "InferenceApiContext":
-        request_ctx = InferenceApiContext.RequestContext.from_http(request)
-        response_ctx = InferenceApiContext.ResponseContext()
+    @property
+    def request(self) -> starlette.requests.Request:
+        return _request_var.get()
 
-        return InferenceApiContext(request_ctx, response_ctx)
+    @property
+    def response(self) -> ResponseContext:
+        return _response_var.get()
 
-    @attr.define
-    class RequestContext:
-        metadata: Metadata
-        headers: Metadata
-        query_params: Metadata
-
-        def __init__(self, metadata: Metadata, query_params: Metadata):
-            self.metadata = metadata
-            self.headers = metadata
-            self.query_params = query_params
-
-        @staticmethod
-        def from_http(
-            request: "starlette.requests.Request",
-        ) -> "InferenceApiContext.RequestContext":
-            return InferenceApiContext.RequestContext(
-                request.headers,  # type: ignore # coercing Starlette types to Metadata
-                request.query_params,  # type: ignore
-            )
+    @property
+    def temp_dir(self) -> str:
+        return request_temp_dir()
 
     @attr.define
     class ResponseContext:
-        metadata: Metadata
-        cookies: list[Cookie]
-        headers: Metadata
-        status_code: int
+        metadata: Metadata = attr.field(factory=starlette.datastructures.MutableHeaders)
+        cookies: list[Cookie] = attr.field(factory=list)
+        status_code: int = 200
+        background: BackgroundTasks = attr.field(factory=BackgroundTasks)
 
-        def __init__(self):
-            self.metadata = starlette.datastructures.MutableHeaders()  # type: ignore (coercing Starlette headers to Metadata)
-            self.headers = self.metadata  # type: ignore (coercing Starlette headers to Metadata)
-            self.cookies = []
-            self.status_code = 200
+        @property
+        def headers(self) -> Metadata:
+            return self.metadata
+
+        @headers.setter
+        def headers(self, headers: Metadata) -> None:
+            self.metadata = headers
 
         def set_cookie(
             self,
@@ -157,12 +175,10 @@ class _ServiceTraceContext:
     )
 
     @property
-    def trace_id(self) -> t.Optional[int]:
+    def trace_id(self) -> int:
         from opentelemetry import trace
 
         span = trace.get_current_span()
-        if span is None:
-            return None
         return span.get_span_context().trace_id
 
     @property
@@ -170,17 +186,13 @@ class _ServiceTraceContext:
         from opentelemetry import trace
 
         span = trace.get_current_span()
-        if span is None:
-            return 0
         return 1 if span.get_span_context().trace_flags.sampled else 0
 
     @property
-    def span_id(self) -> t.Optional[int]:
+    def span_id(self) -> int:
         from opentelemetry import trace
 
         span = trace.get_current_span()
-        if span is None:
-            return None
         return span.get_span_context().span_id
 
     @property
@@ -203,12 +215,25 @@ class _ServiceTraceContext:
         self._service_name_var.set(service_name)
 
 
+@attr.define
 class _ComponentContext:
     bento_name: str = ""
     bento_version: str = "not available"
-    component_type: str | None = None
-    component_name: str | None = None
-    component_index: int | None = None
+    service_type: str | None = None
+    service_name: str | None = None
+    worker_index: int | None = None
+
+    @property
+    def component_type(self) -> str | None:
+        return self.service_type
+
+    @property
+    def component_name(self) -> str | None:
+        return self.service_name
+
+    @property
+    def component_index(self) -> int | None:
+        return self.worker_index
 
     @property
     def yatai_bento_deployment_name(self) -> str:
@@ -220,4 +245,4 @@ class _ComponentContext:
 
 
 trace_context = _ServiceTraceContext()
-component_context = _ComponentContext()
+server_context = component_context = _ComponentContext()

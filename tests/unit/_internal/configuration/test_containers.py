@@ -36,7 +36,7 @@ api_server:
 
 @pytest.mark.usefixtures("container_from_envvar")
 def test_containers_from_envvar(
-    container_from_envvar: t.Callable[[str], ConfigDictType]
+    container_from_envvar: t.Callable[[str], ConfigDictType],
 ):
     envvar = 'api_server.http.host="127.0.0.1" api_server.http.port=5000'
     config = container_from_envvar(envvar)
@@ -117,7 +117,7 @@ runners:
 
 @pytest.mark.usefixtures("container_from_file")
 def test_runner_gpu_configuration(
-    container_from_file: t.Callable[[str], ConfigDictType]
+    container_from_file: t.Callable[[str], ConfigDictType],
 ):
     GPU_INDEX = """\
 runners:
@@ -145,14 +145,33 @@ runners:
 def test_runner_timeouts(container_from_file: t.Callable[[str], ConfigDictType]):
     RUNNER_TIMEOUTS = """\
 runners:
-    timeout: 50
+    traffic:
+        timeout: 50
     test_runner_1:
-        timeout: 100
+        traffic:
+            timeout: 100
     test_runner_2:
         resources: system
+    test_runner_3:
+        timeout: 60
 """
     bentoml_cfg = container_from_file(RUNNER_TIMEOUTS)
     runner_cfg = bentoml_cfg["runners"]
-    assert runner_cfg["timeout"] == 50
-    assert runner_cfg["test_runner_1"]["timeout"] == 100
-    assert runner_cfg["test_runner_2"]["timeout"] == 50
+    assert runner_cfg["traffic"]["timeout"] == 50
+    assert runner_cfg["test_runner_1"]["traffic"]["timeout"] == 100
+    assert runner_cfg["test_runner_2"]["traffic"]["timeout"] == 50
+    assert runner_cfg["test_runner_3"]["traffic"]["timeout"] == 60
+
+
+def test_expand_env_vars_in_values(container_from_file, monkeypatch):
+    CONFIG = """\
+api_server:
+    ssl:
+        keyfile_password: ${KEYFILE_PASSWORD:-123456}
+"""
+    config = container_from_file(CONFIG)
+    assert config["api_server"]["ssl"]["keyfile_password"] == "123456"
+
+    monkeypatch.setenv("KEYFILE_PASSWORD", "654321")
+    config = container_from_file(CONFIG)
+    assert config["api_server"]["ssl"]["keyfile_password"] == "654321"

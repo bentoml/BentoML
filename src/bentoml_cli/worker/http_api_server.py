@@ -30,11 +30,6 @@ import click
     help="Working directory for the API server",
 )
 @click.option(
-    "--prometheus-dir",
-    type=click.Path(exists=True),
-    help="Required by prometheus to pass the metrics in multi-process mode",
-)
-@click.option(
     "--worker-id",
     required=False,
     type=click.INT,
@@ -84,12 +79,29 @@ import click
     help="Ciphers to use (see stdlib 'ssl' module)",
 )
 @click.option(
+    "--timeout-keep-alive",
+    type=click.INT,
+    default=5,
+    help="Close Keep-Alive connections if no new data is received within this timeout.",
+)
+@click.option(
+    "--timeout-graceful-shutdown",
+    type=click.INT,
+    default=None,
+    help="Maximum number of seconds to wait for graceful shutdown. After this timeout, the server will start terminating requests.",
+)
+@click.option(
     "--development-mode",
     type=click.BOOL,
     help="Run the API server in development mode",
     is_flag=True,
     default=False,
     show_default=True,
+)
+@click.option(
+    "--timeout",
+    type=click.INT,
+    help="Specify the timeout for API server",
 )
 def main(
     bento_identifier: str,
@@ -98,7 +110,6 @@ def main(
     backlog: int,
     working_dir: str | None,
     worker_id: int,
-    prometheus_dir: str | None,
     ssl_certfile: str | None,
     ssl_keyfile: str | None,
     ssl_keyfile_password: str | None,
@@ -106,7 +117,10 @@ def main(
     ssl_cert_reqs: int | None,
     ssl_ca_certs: str | None,
     ssl_ciphers: str | None,
+    timeout_keep_alive: int | None,
+    timeout_graceful_shutdown: int | None,
     development_mode: bool,
+    timeout: int | None,
 ):
     """
     Start a HTTP api server worker.
@@ -114,35 +128,36 @@ def main(
     import psutil
 
     import bentoml
-    from bentoml._internal.log import configure_server_logging
-    from bentoml._internal.context import component_context
     from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.context import server_context
+    from bentoml._internal.log import configure_server_logging
 
-    component_context.component_type = "api_server"
-    component_context.component_index = worker_id
+    server_context.service_type = "api_server"
+    server_context.worker_index = worker_id
     configure_server_logging()
 
     if worker_id is None:
         # worker ID is not set; this server is running in standalone mode
         # and should not be concerned with the status of its runners
         BentoMLContainer.config.runner_probe.enabled.set(False)
+    else:
+        BentoMLContainer.worker_index.set(worker_id)
 
     BentoMLContainer.development_mode.set(development_mode)
-    if prometheus_dir is not None:
-        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
-
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
+    if timeout is not None:
+        BentoMLContainer.api_server_config.traffic.timeout.set(timeout)
     svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
 
     # setup context
-    component_context.component_name = svc.name
+    server_context.service_name = svc.name
     if svc.tag is None:
-        component_context.bento_name = svc.name
-        component_context.bento_version = "not available"
+        server_context.bento_name = svc.name
+        server_context.bento_version = "not available"
     else:
-        component_context.bento_name = svc.tag.name
-        component_context.bento_version = svc.tag.version or "not available"
+        server_context.bento_name = svc.tag.name
+        server_context.bento_version = svc.tag.version or "not available"
 
     uvicorn_options: dict[str, t.Any] = {
         "backlog": backlog,
@@ -170,6 +185,11 @@ def main(
         if not ssl_ciphers:
             ssl_ciphers = "TLSv1"
             uvicorn_options["ssl_ciphers"] = ssl_ciphers
+
+    if timeout_keep_alive:
+        uvicorn_options["timeout_keep_alive"] = timeout_keep_alive
+    if timeout_graceful_shutdown:
+        uvicorn_options["timeout_graceful_shutdown"] = timeout_graceful_shutdown
 
     if psutil.WINDOWS:
         uvicorn_options["loop"] = "asyncio"

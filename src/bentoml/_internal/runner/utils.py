@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import typing as t
-import logging
 import itertools
+import logging
+import typing as t
 from typing import TYPE_CHECKING
+
+import anyio
 
 from bentoml.exceptions import InvalidArgument
 
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
     from ..runner.container import Payload
 
 
-T = t.TypeVar("T")
+T = t.TypeVar("T", covariant=True)
 To = t.TypeVar("To")
 Ti = t.TypeVar("Ti")
 
@@ -77,7 +79,7 @@ class Params(t.Generic[T]):
             **{k: function(self.kwargs[k], b) for k, b in zip(self.kwargs, iterable)}
         )
 
-    def iter(self: Params[tuple[t.Any, ...]]) -> t.Iterator[Params[t.Any]]:
+    def iter(self: Params[t.Iterable[Ti]]) -> t.Iterator[Params[Ti]]:
         """
         Iter over a Params of iterable values into a list of Params. All values should
         have the same length.
@@ -88,15 +90,15 @@ class Params(t.Generic[T]):
             while True:
                 args = tuple(next(a) for a in iter_params.args)
                 kwargs = {k: next(v) for k, v in iter_params.kwargs.items()}
-                yield Params[To](*args, **kwargs)
+                yield Params(*args, **kwargs)
         except StopIteration:
             pass
 
     @classmethod
     def agg(
         cls,
-        params_list: t.Sequence[Params[T]],
-        agg_func: t.Callable[[t.Sequence[T]], To] = pass_through,
+        params_list: t.Sequence[Params[Ti]],
+        agg_func: t.Callable[[t.Sequence[Ti]], To] = pass_through,
     ) -> Params[To]:
         """
         Aggregate a list of Params into a single Params by performing the aggregate
@@ -138,10 +140,7 @@ def payload_paramss_to_batch_params(
 
     _converted_params = Params.agg(
         paramss,
-        agg_func=lambda i: AutoContainer.from_batch_payloads(
-            i,
-            batch_dim=batch_dim,
-        ),
+        agg_func=lambda i: AutoContainer.from_batch_payloads(i, batch_dim),
     ).iter()
     batched_params = next(_converted_params)
     indice_params: Params[list[int]] = next(_converted_params)
@@ -149,6 +148,31 @@ def payload_paramss_to_batch_params(
     # considering skip this check if the CPU overhead of each inference is too high
     if not indice_params.all_equal():
         raise InvalidArgument(
-            f"argument lengths for parameters do not matchs: {tuple(indice_params.items())}"
+            f"argument lengths for parameters do not match: {tuple(indice_params.items())}"
         )
     return batched_params, indice_params.sample
+
+
+# This is a reference to starlette.concurrency
+class _StopIteration(Exception):
+    pass
+
+
+def _next(iterator: t.Iterator[T]) -> T:
+    # We can't raise `StopIteration` from within the threadpool iterator
+    # and catch it outside that context, so we coerce them into a different
+    # exception type.
+    try:
+        return next(iterator)
+    except StopIteration:
+        raise _StopIteration
+
+
+async def iterate_in_threadpool(
+    iterator: t.Iterator[T],
+) -> t.AsyncIterator[T]:
+    while True:
+        try:
+            yield await anyio.to_thread.run_sync(_next, iterator)
+        except _StopIteration:
+            break

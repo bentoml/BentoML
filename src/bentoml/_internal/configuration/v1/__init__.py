@@ -2,22 +2,22 @@ from __future__ import annotations
 
 import re
 import typing as t
+from copy import deepcopy
+from numbers import Real
 
 import schema as s
 
-from ..helpers import depth
-from ..helpers import ensure_range
-from ..helpers import rename_fields
-from ..helpers import ensure_larger_than
-from ..helpers import is_valid_ip_address
-from ..helpers import ensure_iterable_type
-from ..helpers import validate_tracing_type
-from ..helpers import validate_otlp_protocol
-from ..helpers import ensure_larger_than_zero
 from ...utils.metrics import DEFAULT_BUCKET
 from ...utils.unflatten import unflatten
-
-__all__ = ["SCHEMA", "migration"]
+from ..helpers import depth
+from ..helpers import ensure_iterable_type
+from ..helpers import ensure_larger_than
+from ..helpers import ensure_larger_than_zero
+from ..helpers import ensure_range
+from ..helpers import is_valid_ip_address
+from ..helpers import rename_fields
+from ..helpers import validate_otlp_protocol
+from ..helpers import validate_tracing_type
 
 TRACING_CFG = {
     "exporter_type": s.Or(s.And(str, s.Use(str.lower), validate_tracing_type), None),
@@ -64,7 +64,10 @@ TRACING_CFG = {
 }
 _API_SERVER_CONFIG = {
     "workers": s.Or(s.And(int, ensure_larger_than_zero), None),
-    "timeout": s.And(int, ensure_larger_than_zero),
+    s.Optional("traffic"): {
+        "timeout": s.And(Real, ensure_larger_than_zero),
+        s.Optional("max_concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),
+    },
     "backlog": s.And(int, ensure_larger_than(64)),
     "max_runner_connections": s.And(int, ensure_larger_than_zero),
     "metrics": {
@@ -146,8 +149,12 @@ _RUNNER_CONFIG = {
     },
     # NOTE: there is a distinction between being unset and None here; if set to 'None'
     # in configuration for a specific runner, it will override the global configuration.
-    s.Optional("resources"): s.Or({s.Optional(str): object}, lambda s: s == "system", None),  # type: ignore (incomplete schema typing)
-    s.Optional("workers_per_resource"): s.And(int, ensure_larger_than_zero),
+    s.Optional("resources"): s.Or(
+        {s.Optional(str): object}, lambda s: s == "system", None
+    ),  # type: ignore (incomplete schema typing)
+    s.Optional("workers_per_resource"): s.And(
+        s.Or(int, float), ensure_larger_than_zero
+    ),
     s.Optional("logging"): {
         s.Optional("access"): {
             s.Optional("enabled"): bool,
@@ -161,7 +168,10 @@ _RUNNER_CONFIG = {
         "enabled": bool,
         "namespace": str,
     },
-    s.Optional("timeout"): s.And(int, ensure_larger_than_zero),
+    s.Optional("traffic"): {
+        "timeout": s.And(Real, ensure_larger_than_zero),
+        s.Optional("max_concurrency"): s.Or(s.And(int, ensure_larger_than_zero), None),
+    },
 }
 SCHEMA = s.Schema(
     {
@@ -177,6 +187,7 @@ SCHEMA = s.Schema(
             s.Optional("type"): s.Or(str, None),
             s.Optional("options"): s.Or(dict, None),
         },
+        s.Optional("services"): s.Or(dict, None),
     }
 )
 
@@ -279,4 +290,47 @@ def migration(*, override_config: dict[str, t.Any]):
             current=f"logging.formatting.{f}_format",
             replace_with=f"api_server.logging.access.format.{f}",
         )
+    # 7. move timeout to traffic.timeout
+    for namespace in ("api_server", "runners"):
+        rename_fields(
+            override_config,
+            current=f"{namespace}.timeout",
+            replace_with=f"{namespace}.traffic.timeout",
+        )
+    for key in list(override_config):
+        if key.startswith("runners."):
+            runner_name = key.split(".")[1]
+            if any(key.schema == runner_name for key in _RUNNER_CONFIG):
+                continue
+            rename_fields(
+                override_config,
+                current=f"runners.{runner_name}.timeout",
+                replace_with=f"runners.{runner_name}.traffic.timeout",
+            )
+
     return unflatten(override_config)
+
+
+def finalize_config(config: dict[str, t.Any]) -> None:
+    from ..containers import config_merger
+
+    # 8. if runner is overriden, set the runner default values
+    RUNNER_CFG_KEYS = [
+        "batching",
+        "resources",
+        "logging",
+        "metrics",
+        "traffic",
+        "workers_per_resource",
+    ]
+    default_runner_config: dict[str, t.Any] = {
+        key: value for key, value in config["runners"].items() if key in RUNNER_CFG_KEYS
+    }
+
+    for runner_name, runner_cfg in config["runners"].items():
+        if runner_name in RUNNER_CFG_KEYS:
+            continue
+        # key is a runner name
+        config["runners"][runner_name] = config_merger.merge(
+            deepcopy(default_runner_config), runner_cfg
+        )

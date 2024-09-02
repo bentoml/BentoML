@@ -3,22 +3,23 @@ from __future__ import annotations
 import click
 import psutil
 
-from bentoml_cli.env import add_env_command
-from bentoml_cli.serve import add_serve_command
-from bentoml_cli.start import add_start_command
-from bentoml_cli.utils import BentoMLCommandGroup
-from bentoml_cli.yatai import add_login_command
-from bentoml_cli.bentos import add_bento_management_commands
-from bentoml_cli.models import add_model_management_commands
-from bentoml_cli.containerize import add_containerize_command
 
+def create_bentoml_cli() -> click.Command:
+    from bentoml._internal.configuration import BENTOML_VERSION
+    from bentoml._internal.context import server_context
+    from bentoml_cli.bentos import bento_command
+    from bentoml_cli.cloud import cloud_command
+    from bentoml_cli.containerize import containerize_command
+    from bentoml_cli.deployment import deploy_command
+    from bentoml_cli.deployment import deployment_command
+    from bentoml_cli.env import env_command
+    from bentoml_cli.models import model_command
+    from bentoml_cli.secret import secret_command
+    from bentoml_cli.serve import serve_command
+    from bentoml_cli.start import start_command
+    from bentoml_cli.utils import BentoMLCommandGroup
 
-def create_bentoml_cli() -> click.Group:
-
-    from bentoml import __version__ as BENTOML_VERSION
-    from bentoml._internal.context import component_context
-
-    component_context.component_type = "cli"
+    server_context.service_type = "cli"
 
     CONTEXT_SETTINGS = {"help_option_names": ("-h", "--help")}
 
@@ -27,22 +28,25 @@ def create_bentoml_cli() -> click.Group:
     def bentoml_cli():
         """
         \b
-        ██████╗░███████╗███╗░░██╗████████╗░█████╗░███╗░░░███╗██╗░░░░░
-        ██╔══██╗██╔════╝████╗░██║╚══██╔══╝██╔══██╗████╗░████║██║░░░░░
-        ██████╦╝█████╗░░██╔██╗██║░░░██║░░░██║░░██║██╔████╔██║██║░░░░░
-        ██╔══██╗██╔══╝░░██║╚████║░░░██║░░░██║░░██║██║╚██╔╝██║██║░░░░░
-        ██████╦╝███████╗██║░╚███║░░░██║░░░╚█████╔╝██║░╚═╝░██║███████╗
-        ╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░░╚════╝░╚═╝░░░░░╚═╝╚══════╝
+        ██████╗ ███████╗███╗   ██╗████████╗ ██████╗ ███╗   ███╗██╗
+        ██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔═══██╗████╗ ████║██║
+        ██████╔╝█████╗  ██╔██╗ ██║   ██║   ██║   ██║██╔████╔██║██║
+        ██╔══██╗██╔══╝  ██║╚██╗██║   ██║   ██║   ██║██║╚██╔╝██║██║
+        ██████╔╝███████╗██║ ╚████║   ██║   ╚██████╔╝██║ ╚═╝ ██║███████╗
+        ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚══════╝
         """
 
     # Add top-level CLI commands
-    add_env_command(bentoml_cli)
-    add_login_command(bentoml_cli)
-    add_bento_management_commands(bentoml_cli)
-    add_model_management_commands(bentoml_cli)
-    add_start_command(bentoml_cli)
-    add_serve_command(bentoml_cli)
-    add_containerize_command(bentoml_cli)
+    bentoml_cli.add_command(env_command)
+    bentoml_cli.add_command(cloud_command)
+    bentoml_cli.add_command(model_command)
+    bentoml_cli.add_subcommands(bento_command)
+    bentoml_cli.add_subcommands(start_command)
+    bentoml_cli.add_subcommands(serve_command)
+    bentoml_cli.add_command(containerize_command)
+    bentoml_cli.add_command(deploy_command)
+    bentoml_cli.add_command(deployment_command)
+    bentoml_cli.add_command(secret_command)
 
     if psutil.WINDOWS:
         import sys

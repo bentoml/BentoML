@@ -1,0 +1,4 @@
+scikit-learn
+pydantic>=2
+transformers
+torch

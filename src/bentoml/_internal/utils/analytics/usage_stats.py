@@ -1,30 +1,30 @@
 from __future__ import annotations
 
-import os
-import typing as t
+import contextlib
 import logging
+import os
 import secrets
 import threading
-import contextlib
-from typing import TYPE_CHECKING
+import typing as t
 from datetime import datetime
 from datetime import timezone
-from functools import wraps
 from functools import lru_cache
+from functools import wraps
+from typing import TYPE_CHECKING
 
 import attr
-import requests
-from simple_di import inject
+import httpx
 from simple_di import Provide
+from simple_di import inject
 
-from ...utils import compose
-from .schemas import EventMeta
-from .schemas import ServeInitEvent
-from .schemas import TrackingPayload
-from .schemas import CommonProperties
-from .schemas import ServeUpdateEvent
 from ...configuration import get_debug_mode
 from ...configuration.containers import BentoMLContainer
+from ...utils import compose
+from .schemas import CommonProperties
+from .schemas import EventMeta
+from .schemas import ServeInitEvent
+from .schemas import ServeUpdateEvent
+from .schemas import TrackingPayload
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 
     from prometheus_client.samples import Sample
 
+    from _bentoml_sdk import Service as NewService
     from bentoml import Service
 
     from ...server.metrics.prometheus import PrometheusClient
@@ -40,22 +41,28 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 BENTOML_DO_NOT_TRACK = "BENTOML_DO_NOT_TRACK"
+BENTOML_SERVE_FROM_SERVER_API = "__BENTOML_SERVE_FROM_SERVER_API"
 USAGE_TRACKING_URL = "https://t.bentoml.com"
 SERVE_USAGE_TRACKING_INTERVAL_SECONDS = int(12 * 60 * 60)  # every 12 hours
 USAGE_REQUEST_TIMEOUT_SECONDS = 1
+
+
+@lru_cache(maxsize=None)
+def _bentoml_serve_from_server_api() -> bool:
+    return os.environ.get(BENTOML_SERVE_FROM_SERVER_API, "False").lower() == "true"
 
 
 @lru_cache(maxsize=1)
 def do_not_track() -> bool:  # pragma: no cover
     # Returns True if and only if the environment variable is defined and has value True.
     # The function is cached for better performance.
-    return os.environ.get(BENTOML_DO_NOT_TRACK, str(False)).lower() == "true"
+    return os.environ.get(BENTOML_DO_NOT_TRACK, "False").lower() == "true"
 
 
 @lru_cache(maxsize=1)
 def _usage_event_debugging() -> bool:
     # For BentoML developers only - debug and print event payload if turned on
-    return os.environ.get("__BENTOML_DEBUG_USAGE", str(False)).lower() == "true"
+    return os.environ.get("__BENTOML_DEBUG_USAGE", "False").lower() == "true"
 
 
 def silent(func: t.Callable[P, T]) -> t.Callable[P, T]:  # pragma: no cover
@@ -116,54 +123,85 @@ def track(event_properties: EventMeta):
         logger.info("Tracking Payload: %s", payload)
         return
 
-    requests.post(
-        USAGE_TRACKING_URL, json=payload, timeout=USAGE_REQUEST_TIMEOUT_SECONDS
-    )
+    httpx.post(USAGE_TRACKING_URL, json=payload, timeout=USAGE_REQUEST_TIMEOUT_SECONDS)
 
 
 @inject
 def _track_serve_init(
-    svc: Service,
+    svc: Service | NewService[t.Any],
     production: bool,
     serve_kind: str,
+    from_server_api: bool,
     serve_info: ServeInfo = Provide[BentoMLContainer.serve_info],
 ):
+    from bentoml import Service
+
+    is_legacy = isinstance(svc, Service)
+
     if svc.bento is not None:
         bento = svc.bento
         event_properties = ServeInitEvent(
             serve_id=serve_info.serve_id,
             serve_from_bento=True,
+            serve_from_server_api=from_server_api,
             production=production,
             serve_kind=serve_kind,
             bento_creation_timestamp=bento.info.creation_time,
-            num_of_models=len(bento.info.models),
-            num_of_runners=len(svc.runners),
+            num_of_models=len(bento.info.all_models),
+            num_of_runners=len(svc.runners) if is_legacy else len(svc.dependencies),
             num_of_apis=len(bento.info.apis),
-            model_types=[m.module for m in bento.info.models],
+            model_types=[m.module for m in bento.info.all_models],
             runnable_types=[r.runnable_type for r in bento.info.runners],
             api_input_types=[api.input_type for api in bento.info.apis],
             api_output_types=[api.output_type for api in bento.info.apis],
         )
     else:
-        event_properties = ServeInitEvent(
-            serve_id=serve_info.serve_id,
-            serve_from_bento=False,
-            production=production,
-            serve_kind=serve_kind,
-            bento_creation_timestamp=None,
-            num_of_models=len(
+        if is_legacy:
+            num_models = len(
                 set(
                     svc.models
                     + [model for runner in svc.runners for model in runner.models]
                 )
-            ),
-            num_of_runners=len(svc.runners),
+            )
+        else:
+            from bentoml import Model
+
+            def _get_models(svc: NewService[t.Any], seen: set[str]) -> t.Set[Model]:
+                if svc.name in seen:
+                    return set()
+                seen.add(svc.name)
+                models = set(svc.models)
+                for dep in svc.dependencies.values():
+                    models.update(_get_models(dep.on, seen))
+                return models
+
+            num_models = len(_get_models(svc, set()))
+
+        event_properties = ServeInitEvent(
+            serve_id=serve_info.serve_id,
+            serve_from_bento=False,
+            serve_from_server_api=from_server_api,
+            production=production,
+            serve_kind=serve_kind,
+            bento_creation_timestamp=None,
+            num_of_models=num_models,
+            num_of_runners=len(svc.runners) if is_legacy else len(svc.dependencies),
             num_of_apis=len(svc.apis.keys()),
-            runnable_types=[r.runnable_class.__name__ for r in svc.runners],
-            api_input_types=[api.input.__class__.__name__ for api in svc.apis.values()],
-            api_output_types=[
-                api.output.__class__.__name__ for api in svc.apis.values()
-            ],
+            runnable_types=(
+                [r.runnable_class.__name__ for r in svc.runners]
+                if is_legacy
+                else [d.on.name for d in svc.dependencies.values()]
+            ),
+            api_input_types=(
+                [api.input.__class__.__name__ for api in svc.apis.values()]
+                if is_legacy
+                else []
+            ),
+            api_output_types=(
+                [api.output.__class__.__name__ for api in svc.apis.values()]
+                if is_legacy
+                else []
+            ),
         )
 
     track(event_properties)
@@ -234,9 +272,10 @@ def get_metrics_report(
 @inject
 @contextlib.contextmanager
 def track_serve(
-    svc: Service,
+    svc: Service | NewService[t.Any],
     *,
     production: bool = False,
+    from_server_api: bool | None = None,
     serve_kind: str = "http",
     component: str = "standalone",
     metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
@@ -246,7 +285,15 @@ def track_serve(
         yield
         return
 
-    _track_serve_init(svc=svc, production=production, serve_kind=serve_kind)
+    if from_server_api is None:
+        from_server_api = _bentoml_serve_from_server_api()
+
+    _track_serve_init(
+        svc=svc,
+        production=production,
+        serve_kind=serve_kind,
+        from_server_api=from_server_api,
+    )
 
     if _usage_event_debugging():
         tracking_interval = 5
@@ -267,6 +314,8 @@ def track_serve(
                 serve_kind=serve_kind,
                 # Current accept components are "standalone", "api_server" and "runner"
                 component=component,
+                # check if serve is running from server API or just normal CLI
+                serve_from_server_api=from_server_api,
                 triggered_at=now,
                 duration_in_seconds=int((now - last_tracked_timestamp).total_seconds()),
                 metrics=get_metrics_report(metrics_client, serve_kind=serve_kind),

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import bentoml
+import prometheus_client
 
-inference_duration = bentoml.metrics.Histogram(
+inference_duration = prometheus_client.Histogram(
     name="inference_duration",
     documentation="Duration of inference",
     labelnames=["nltk_version", "sentiment_cls"],
@@ -25,7 +25,7 @@ inference_duration = bentoml.metrics.Histogram(
     ),
 )
 
-polarity_counter = bentoml.metrics.Counter(
+polarity_counter = prometheus_client.Counter(
     name="polarity_total",
     documentation="Count total number of analysis by polarity scores",
     labelnames=["polarity"],

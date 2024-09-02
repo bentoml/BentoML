@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import json
 import os
 import sys
-import json
 import typing as t
 
 import click
@@ -40,9 +40,9 @@ import click
     help="The environment variables to pass to the worker process. The format is a JSON string, e.g. '{0: {\"CUDA_VISIBLE_DEVICES\": 0}}'.",
 )
 @click.option(
-    "--prometheus-dir",
-    type=click.Path(exists=True),
-    help="Required by prometheus to pass the metrics in multi-process mode",
+    "--timeout",
+    type=click.INT,
+    help="Specify the timeout (seconds) for runner",
 )
 def main(
     bento_identifier: str,
@@ -51,8 +51,8 @@ def main(
     working_dir: t.Optional[str],
     no_access_log: bool,
     worker_id: int,
+    timeout: int | None,
     worker_env_map: str | None,
-    prometheus_dir: str | None,
 ) -> None:
     """
     Start a runner server.
@@ -83,12 +83,12 @@ def main(
     import psutil
 
     from bentoml import load
-    from bentoml._internal.context import component_context
+    from bentoml._internal.context import server_context
 
     # setup context
-    component_context.component_type = "runner"
-    component_context.component_name = runner_name
-    component_context.component_index = worker_id
+    server_context.service_type = "runner"
+    server_context.service_name = runner_name
+    server_context.worker_index = worker_id
 
     from bentoml._internal.log import configure_server_logging
 
@@ -97,9 +97,6 @@ def main(
     import uvicorn
 
     from bentoml._internal.configuration.containers import BentoMLContainer
-
-    if prometheus_dir is not None:
-        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
 
     if no_access_log:
         access_log_config = BentoMLContainer.runners_config.logging.access
@@ -111,11 +108,11 @@ def main(
 
     # setup context
     if service.tag is None:
-        component_context.bento_name = service.name
-        component_context.bento_version = "not available"
+        server_context.bento_name = service.name
+        server_context.bento_version = "not available"
     else:
-        component_context.bento_name = service.tag.name
-        component_context.bento_version = service.tag.version or "not available"
+        server_context.bento_name = service.tag.name
+        server_context.bento_version = service.tag.version or "not available"
 
     for runner in service.runners:
         if runner.name == runner_name:
@@ -123,7 +120,10 @@ def main(
     else:
         raise ValueError(f"Runner {runner_name} not found")
 
-    app = RunnerAppFactory(runner, worker_index=worker_id)()
+    factory = RunnerAppFactory(runner, worker_index=worker_id)
+    if timeout is not None:
+        factory.timeout = timeout
+    app = factory()
 
     uvicorn_options: dict[str, int | None | str] = {
         "log_config": None,

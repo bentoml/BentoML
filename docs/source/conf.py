@@ -1,6 +1,5 @@
+import importlib.metadata
 from datetime import datetime
-
-from bentoml import __version__
 
 # -- Project information -----------------------------------------------------
 
@@ -8,7 +7,7 @@ project = "BentoML"
 copyright = f"2022-{datetime.now().year}, bentoml.com"
 author = "bentoml.com"
 
-version = __version__
+version = importlib.metadata.version("bentoml")
 
 # -- General configuration ---------------------------------------------------
 
@@ -88,8 +87,8 @@ autodoc_typehints_description_target = "documented"
 autosectionlabel_prefix_document = True
 autosectionlabel_maxdepth = 10
 
-ogp_site_url = "http://docs.bentoml.org"
-ogp_image = "https://docs.bentoml.org/en/latest/_images/bentoml-banner.png"
+ogp_site_url = "http://docs.bentoml.com"
+ogp_image = "https://docs.bentoml.com/en/latest/_static/img/bentoml-banner.jpg"
 ogp_site_name = "BentoML Documentation"
 ogp_use_first_image = True
 
@@ -117,12 +116,12 @@ copybutton_selector = "div:not(.no-copybutton) > div.highlight > pre"
 html_theme = "furo"
 html_theme_options = {
     "light_css_variables": {
-        "color-brand-primary": "#44a4c6 ",
-        "color-brand-content": "#44a4c6 ",
+        "color-brand-primary": "#4dad8c ",
+        "color-brand-content": "#4dad8c ",
     },
     "dark_css_variables": {
-        "color-brand-primary": "#c9378a ",
-        "color-brand-content": "#c9378a ",
+        "color-brand-primary": "#4dad8c ",
+        "color-brand-content": "#4dad8c ",
     },
     "source_repository": "https://github.com/bentoml/bentoml/",
     "source_branch": "main",
@@ -130,20 +129,42 @@ html_theme_options = {
     "footer_icons": [
         {
             "name": "GitHub",
-            "url": "https://github.com/bentoml/bentoml",
-            "html": " 🍱 ",
-            "class": "",
+            "url": "https://github.com/bentoml",
+            "html": "&nbsp;&nbsp;",
+            "class": "fab fa-github",
+        },
+        {
+            "name": "LinkedIn",
+            "url": "https://www.linkedin.com/company/bentoml/",
+            "html": "&nbsp;&nbsp;",
+            "class": "fab fa-linkedin",
+        },
+        {
+            "name": "X",
+            "url": "https://twitter.com/bentomlai",
+            "html": "&nbsp;&nbsp;",
+            "class": "fab fa-x-twitter",
+        },
+        {
+            "name": "Slack",
+            "url": "https://l.bentoml.com/join-slack",
+            "html": "&nbsp;&nbsp;",
+            "class": "fab fa-slack",
         },
     ],
+    "light_logo": "img/logo-light.svg",
+    "dark_logo": "img/logo-dark.svg",
 }
 
 html_title = "BentoML"
-html_logo = "_static/img/logo.svg"
 html_static_path = ["_static"]
-html_css_files = ["css/custom.css"]
+html_css_files = [
+    "css/custom.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css",
+]
 html_js_files = ["js/custom.js"]
 html_show_sphinx = False
-html_favicon = "_static/img/favicon-96x96.ico"
+html_favicon = "_static/img/favicon-32x32.png"
 
 # Private dictionary for spell checker
 spelling_word_list_filename = ["bentoml_wordlist.txt"]
@@ -152,6 +173,12 @@ spelling_word_list_filename = ["bentoml_wordlist.txt"]
 autodoc_mock_imports = [
     "torch",
     "torchvision",
+    "diffusers",
+    "detectron2",
+    "easyocr",
+    "flax",
+    "jax",
+    "jaxlib",
     "torchtext",
     "fastai",
     "fastai.learner.Learner",
@@ -175,3 +202,5 @@ autodoc_mock_imports = [
     "prometheus_client",
     "bentoml._internal.models.model.ModelSignatureDict",
 ]
+
+html_extra_path = ["robots.txt"]

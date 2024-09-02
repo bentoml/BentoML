@@ -1,8 +1,8 @@
 import typing as t
 
 import numpy as np
-from numpy.typing import NDArray
 from numpy.typing import DTypeLike
+from numpy.typing import NDArray
 
 def raise_error(msg: str) -> t.NoReturn:
     """
@@ -56,6 +56,7 @@ class InferenceServerException(Exception):
 
         """
         ...
+
     def status(self) -> str:
         """Get the status of the exception.
 
@@ -66,6 +67,7 @@ class InferenceServerException(Exception):
 
         """
         ...
+
     def debug_details(self) -> str:
         """Get the detailed information about the exception
         for debugging purposes

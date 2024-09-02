@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-import typing as t
-import logging
+import importlib.metadata
 import importlib.util
+import logging
+import typing as t
 from typing import TYPE_CHECKING
 
 from bentoml.exceptions import BentoMLException
 
 from ...types import LazyType
 from ...utils.lazy_loader import LazyLoader
-
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
 
 if TYPE_CHECKING:
     import tensorflow as tf
@@ -99,9 +95,9 @@ def get_tf_version() -> str:
         # For the metadata, we have to look for both tensorflow and tensorflow-cpu
         for pkg in candidates:
             try:
-                _tf_version = importlib_metadata.version(pkg)
+                _tf_version = importlib.metadata.version(pkg)
                 break
-            except importlib_metadata.PackageNotFoundError:
+            except importlib.metadata.PackageNotFoundError:
                 pass
     return _tf_version
 
@@ -406,9 +402,7 @@ def cast_tensor_by_spec(
         _input
     ) or LazyType["tf_ext.CastableTensorType"](
         "tensorflow.python.framework.ops.EagerTensor"
-    ).isinstance(
-        _input
-    ):
+    ).isinstance(_input):
         # TensorFlow Issues #43038
         # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
         return t.cast(
@@ -460,7 +454,8 @@ class tf_function_wrapper:  # pragma: no cover
         # how signature with kwargs works?
         # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
         transformed_args: t.Tuple[t.Any, ...] = tuple(
-            cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)  # type: ignore[arg-type]
+            cast_tensor_by_spec(arg, spec)
+            for arg, spec in zip(args, self.arg_specs)  # type: ignore[arg-type]
         )
 
         transformed_kwargs = {

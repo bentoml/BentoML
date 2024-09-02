@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from types import ModuleType
 
 import cloudpickle
 
 import bentoml
 
-from ..tag import Tag
-from ..utils.pkg import get_pkg_version
-from ...exceptions import NotFound
 from ...exceptions import MissingDependencyException
+from ...exceptions import NotFound
 from ..models.model import Model
 from ..models.model import ModelContext
 from ..models.model import ModelOptions
 from ..models.model import ModelSignature
+from ..tag import Tag
+from ..utils.pkg import get_pkg_version
 from .common.pytorch import PyTorchTensorContainer  # noqa # type: ignore
 
 try:
@@ -100,7 +100,7 @@ def load_model(bento_model: str | Tag | Model) -> easyocr.Reader:
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     reader: easyocr.Reader,
     *,
     signatures: ModelSignaturesType | None = None,
@@ -154,7 +154,7 @@ def save_model(
             name,
         )
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,

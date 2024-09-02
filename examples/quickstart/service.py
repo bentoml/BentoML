@@ -1,18 +1,18 @@
-import numpy as np
+from __future__ import annotations  # I001
 
 import bentoml
-from bentoml.io import NumpyNdarray
-
-iris_clf_runner = bentoml.sklearn.get("iris_clf:latest").to_runner()
-
-svc = bentoml.Service("iris_classifier", runners=[iris_clf_runner])
 
 
-@svc.api(
-    input=NumpyNdarray.from_sample(
-        np.array([[4.9, 3.0, 1.4, 0.2]], dtype=np.double), enforce_shape=False
-    ),
-    output=NumpyNdarray.from_sample(np.array([0.0], dtype=np.double)),
-)
-async def classify(input_series: np.ndarray) -> np.ndarray:
-    return await iris_clf_runner.predict.async_run(input_series)
+@bentoml.service(resources={"cpu": "4"})
+class Summarization:
+    def __init__(self) -> None:
+        import torch
+        from transformers import pipeline
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.pipeline = pipeline("summarization", device=device)
+
+    @bentoml.api(batchable=True)
+    def summarize(self, texts: list[str]) -> list[str]:
+        results = self.pipeline(texts)
+        return [item["summary_text"] for item in results]

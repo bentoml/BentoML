@@ -1,27 +1,27 @@
 from __future__ import annotations
 
-import typing as t
-import logging
 import functools
-from typing import TYPE_CHECKING
+import logging
+import typing as t
 from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING
 
-from simple_di import inject
-from simple_di import Provide
 from opentelemetry import trace
 from opentelemetry.context import attach
 from opentelemetry.context import detach
 from opentelemetry.propagate import extract
+from opentelemetry.semconv.trace import SpanAttributes
 from opentelemetry.trace.status import Status
 from opentelemetry.trace.status import StatusCode
-from opentelemetry.semconv.trace import SpanAttributes
+from simple_di import Provide
+from simple_di import inject
 
-from bentoml.grpc.utils import import_grpc
-from bentoml.grpc.utils import wrap_rpc_handler
-from bentoml.grpc.utils import GRPC_CONTENT_TYPE
-from bentoml.grpc.utils import parse_method_name
-from bentoml._internal.utils.pkg import get_pkg_version
 from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.utils.pkg import get_pkg_version
+from bentoml.grpc.utils import GRPC_CONTENT_TYPE
+from bentoml.grpc.utils import import_grpc
+from bentoml.grpc.utils import parse_method_name
+from bentoml.grpc.utils import wrap_rpc_handler
 
 if TYPE_CHECKING:
     import grpc
@@ -29,15 +29,15 @@ if TYPE_CHECKING:
     from grpc.aio._typing import MetadataKey
     from grpc.aio._typing import MetadataType
     from grpc.aio._typing import MetadataValue
-    from opentelemetry.trace import Span
     from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.trace import Span
 
+    from bentoml.grpc.types import AsyncHandlerMethod
+    from bentoml.grpc.types import BentoServicerContext
+    from bentoml.grpc.types import HandlerCallDetails
     from bentoml.grpc.types import Request
     from bentoml.grpc.types import Response
     from bentoml.grpc.types import RpcMethodHandler
-    from bentoml.grpc.types import AsyncHandlerMethod
-    from bentoml.grpc.types import HandlerCallDetails
-    from bentoml.grpc.types import BentoServicerContext
 else:
     grpc, aio = import_grpc()
 
@@ -255,7 +255,6 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
             async def new_behaviour(
                 request: Request, context: BentoServicerContext
             ) -> Response | t.Awaitable[Response]:
-
                 async with self.set_remote_context(context):
                     with self.start_span(method_name, context) as span:
                         # wrap context

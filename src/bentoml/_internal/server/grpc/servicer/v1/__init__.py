@@ -1,20 +1,20 @@
 from __future__ import annotations
 
+import logging
 import sys
 import typing as t
-import asyncio
-import logging
 from typing import TYPE_CHECKING
 
 import anyio
 
-from .....utils import LazyLoader
-from ......exceptions import InvalidArgument
 from ......exceptions import BentoMLException
-from ......grpc.utils import import_grpc
+from ......exceptions import InvalidArgument
 from ......grpc.utils import grpc_status_code
-from ......grpc.utils import validate_proto_fields
 from ......grpc.utils import import_generated_stubs
+from ......grpc.utils import import_grpc
+from ......grpc.utils import validate_proto_fields
+from .....utils import LazyLoader
+from .....utils import is_async_callable
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +24,9 @@ if TYPE_CHECKING:
     import grpc
     from google.protobuf import struct_pb2
 
+    from ......grpc.types import BentoServicerContext
     from ......grpc.v1 import service_pb2 as pb
     from ......grpc.v1 import service_pb2_grpc as services
-    from ......grpc.types import BentoServicerContext
     from .....service.service import Service
 else:
     grpc, _ = import_grpc()
@@ -72,7 +72,7 @@ def create_bento_servicer(service: Service) -> services.BentoServiceServicer:
                     validate_proto_fields(request.WhichOneof("content"), api.input),
                 )
                 input_data = await api.input.from_proto(input_proto)
-                if asyncio.iscoroutinefunction(api.func):
+                if is_async_callable(api.func):
                     if api.multi_input:
                         output = await api.func(**input_data)
                     else:

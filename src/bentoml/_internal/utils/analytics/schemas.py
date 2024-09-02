@@ -1,29 +1,31 @@
+from __future__ import annotations
+
 import os
 import re
-import uuid
 import typing as t
+import uuid
 from abc import ABC
-from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
+from functools import lru_cache
 from platform import platform
 from platform import python_version
-from functools import lru_cache
 
 import attr
-import yaml
-import psutil
 import attr.converters
-from simple_di import inject
+import psutil
+import yaml
 from simple_di import Provide
+from simple_di import inject
 
-from ...utils import bentoml_cattr
+from ...cloud.config import CloudClientConfig
 from ...configuration import BENTOML_VERSION
 from ...configuration.containers import BentoMLContainer
-from ...yatai_rest_api_client.config import get_config_path
-from ...yatai_rest_api_client.config import get_current_context
+from ...utils import bentoml_cattr
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from pathlib import Path
+
     P = t.ParamSpec("P")
     GenericFunction = t.Callable[P, t.Any]
 
@@ -74,10 +76,13 @@ def get_client_info(
         return new_client_info
 
 
+@inject
 @lru_cache(maxsize=1)
-def get_yatai_user_email() -> t.Optional[str]:
-    if os.path.exists(get_config_path()):
-        return get_current_context().email
+def get_yatai_user_email(
+    cloud_config: Path = Provide[BentoMLContainer.cloud_config],
+) -> str | None:
+    if cloud_config.exists():
+        return CloudClientConfig.get_config(cloud_config).get_context().email
 
 
 @lru_cache(maxsize=1)
@@ -190,6 +195,7 @@ class ServeInitEvent(EventMeta):
     serve_id: str
     production: bool
     serve_from_bento: bool
+    serve_from_server_api: bool
 
     bento_creation_timestamp: t.Optional[datetime]
     serve_kind: str = attr.field(validator=attr.validators.in_(SERVE_KIND))
@@ -209,6 +215,7 @@ class ServeUpdateEvent(EventMeta):
     triggered_at: datetime
     duration_in_seconds: int
     serve_kind: str = attr.field(validator=attr.validators.in_(SERVE_KIND))
+    serve_from_server_api: bool
     component: str = attr.field(
         validator=attr.validators.and_(
             attr.validators.instance_of(str), attr.validators.in_(COMPONENT_KIND)

@@ -1,30 +1,30 @@
 from __future__ import annotations
 
+import contextlib
+import importlib
+import logging
 import os
 import sys
 import types
 import typing as t
-import logging
-import importlib
-import contextlib
 from typing import TYPE_CHECKING
 
 import fs
 import fs.mirror
-from simple_di import inject
 from simple_di import Provide
+from simple_di import inject
 
-from .base import OCIBuilder
-from ..utils import bentoml_cattr
-from .generate import generate_containerfile
 from ...exceptions import InvalidArgument
 from ..configuration.containers import BentoMLContainer
+from ..utils import bentoml_cattr
+from .base import OCIBuilder
+from .generate import generate_containerfile
 
 if TYPE_CHECKING:
-    from ..tag import Tag
-    from .base import Arguments
     from ..bento import Bento
     from ..bento import BentoStore
+    from ..tag import Tag
+    from .base import Arguments
 
     P = t.ParamSpec("P")
 
@@ -33,16 +33,14 @@ if TYPE_CHECKING:
         ENV: dict[str, str] | None
         BUILDKIT_SUPPORT: bool
 
-        def find_binary(self) -> str | None:
-            ...
+        def find_binary(self) -> str | None: ...
 
         def construct_build_args(
-            self, **kwargs: t.Any  # pylint: disable=unused-argument
-        ) -> Arguments:
-            ...
+            self,
+            **kwargs: t.Any,  # pylint: disable=unused-argument
+        ) -> Arguments: ...
 
-        def health(self) -> bool:
-            ...
+        def health(self) -> bool: ...
 
     DefaultBuilder: t.TypeAlias = t.Literal[
         "docker", "podman", "buildah", "buildx", "nerdctl", "buildctl"
@@ -146,17 +144,28 @@ def construct_containerfile(
 ) -> t.Generator[tuple[str, str], None, None]:
     from ..bento.bento import BentoInfo
     from ..bento.build_config import DockerOptions
+    from ..models import ModelStore
+    from ..models import copy_model
 
     dockerfile_path = "env/docker/Dockerfile"
     instruction: list[str] = []
 
-    with fs.open_fs("temp://") as temp_fs, open(
-        bento.path_of("bento.yaml"), "rb"
-    ) as bento_yaml:
+    with fs.open_fs("temp://") as temp_fs:
         tempdir = temp_fs.getsyspath("/")
-        options = BentoInfo.from_yaml_file(bento_yaml)
+        with open(bento.path_of("bento.yaml"), "rb") as bento_yaml:
+            options = BentoInfo.from_yaml_file(bento_yaml)
         # tmpdir is our new build context.
         fs.mirror.mirror(bento._fs, temp_fs, copy_if_newer=True)
+
+        # copy models from model store
+        model_store = BentoMLContainer.model_store.get()
+        bento_model_store = ModelStore(temp_fs.makedir("models", recreate=True))
+        for model in options.all_models:
+            copy_model(
+                model.tag,
+                src_model_store=model_store,
+                target_model_store=bento_model_store,
+            )
 
         # NOTE: dockerfile_template is already included in the
         # Dockerfile inside bento, and it is not relevant to
@@ -291,13 +300,11 @@ def register_backend(
 
 
 @t.overload
-def health(backend: DefaultBuilder) -> bool:
-    ...
+def health(backend: DefaultBuilder) -> bool: ...
 
 
 @t.overload
-def health(backend: str) -> bool:
-    ...
+def health(backend: str) -> bool: ...
 
 
 def health(backend: str) -> bool:
@@ -319,13 +326,11 @@ def health(backend: str) -> bool:
 
 
 @t.overload
-def get_backend(backend: DefaultBuilder) -> OCIBuilder:
-    ...
+def get_backend(backend: DefaultBuilder) -> OCIBuilder: ...
 
 
 @t.overload
-def get_backend(backend: str) -> OCIBuilder:
-    ...
+def get_backend(backend: str) -> OCIBuilder: ...
 
 
 def get_backend(backend: str) -> OCIBuilder:

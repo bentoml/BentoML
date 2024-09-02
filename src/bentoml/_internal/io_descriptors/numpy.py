@@ -1,25 +1,25 @@
 from __future__ import annotations
 
 import json
-import typing as t
 import logging
+import typing as t
 from functools import lru_cache
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .base import IODescriptor
-from ..types import LazyType
-from ..utils import LazyLoader
-from ..utils.http import set_cookies
 from ...exceptions import BadInput
 from ...exceptions import InvalidArgument
 from ...exceptions import UnprocessableEntity
-from ...grpc.utils import import_generated_stubs
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
+from ...grpc.utils import import_generated_stubs
 from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import Schema
 from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import Schema
+from ..types import LazyType
+from ..utils import LazyLoader
+from ..utils.http import set_cookies
+from .base import IODescriptor
 
 if t.TYPE_CHECKING:
     import numpy as np
@@ -31,8 +31,8 @@ if t.TYPE_CHECKING:
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
     from .. import external_typing as ext
+    from ..context import ServiceContext as Context
     from .base import OpenAPIResponse
-    from ..context import InferenceApiContext as Context
 else:
     pb, _ = import_generated_stubs("v1")
     pb_v1alpha1, _ = import_generated_stubs("v1alpha1")
@@ -65,15 +65,13 @@ FIELDPB_TO_NPDTYPE_NAME_MAP = {
 @t.overload
 def dtypepb_to_npdtype_map(
     version: t.Literal["v1"] = ...,
-) -> dict[pb.NDArray.DType.ValueType, ext.NpDTypeLike]:
-    ...
+) -> dict[pb.NDArray.DType.ValueType, ext.NpDTypeLike]: ...
 
 
 @t.overload
 def dtypepb_to_npdtype_map(
     version: t.Literal["v1alpha1"] = ...,
-) -> dict[pb_v1alpha1.NDArray.DType.ValueType, ext.NpDTypeLike]:
-    ...
+) -> dict[pb_v1alpha1.NDArray.DType.ValueType, ext.NpDTypeLike]: ...
 
 
 @lru_cache(maxsize=2)
@@ -97,15 +95,13 @@ def dtypepb_to_npdtype_map(
 @t.overload
 def dtypepb_to_fieldpb_map(
     version: t.Literal["v1"] = ...,
-) -> dict[pb.NDArray.DType.ValueType, str]:
-    ...
+) -> dict[pb.NDArray.DType.ValueType, str]: ...
 
 
 @t.overload
 def dtypepb_to_fieldpb_map(
     version: t.Literal["v1alpha1"] = ...,
-) -> dict[pb_v1alpha1.NDArray.DType.ValueType, str]:
-    ...
+) -> dict[pb_v1alpha1.NDArray.DType.ValueType, str]: ...
 
 
 @lru_cache(maxsize=2)
@@ -125,15 +121,13 @@ def fieldpb_to_npdtype_map() -> dict[str, ext.NpDTypeLike]:
 @t.overload
 def npdtype_to_dtypepb_map(
     version: t.Literal["v1"] = ...,
-) -> dict[ext.NpDTypeLike, pb.NDArray.DType.ValueType]:
-    ...
+) -> dict[ext.NpDTypeLike, pb.NDArray.DType.ValueType]: ...
 
 
 @t.overload
 def npdtype_to_dtypepb_map(
     version: t.Literal["v1alpha1"] = ...,
-) -> dict[ext.NpDTypeLike, pb_v1alpha1.NDArray.DType.ValueType]:
-    ...
+) -> dict[ext.NpDTypeLike, pb_v1alpha1.NDArray.DType.ValueType]: ...
 
 
 @lru_cache(maxsize=2)
@@ -593,14 +587,12 @@ class NumpyNdarray(
     @t.overload
     async def _to_proto_impl(
         self, obj: ext.NpNDArray, *, version: t.Literal["v1"]
-    ) -> pb.NDArray:
-        ...
+    ) -> pb.NDArray: ...
 
     @t.overload
     async def _to_proto_impl(
         self, obj: ext.NpNDArray, *, version: t.Literal["v1alpha1"]
-    ) -> pb_v1alpha1.NDArray:
-        ...
+    ) -> pb_v1alpha1.NDArray: ...
 
     async def _to_proto_impl(
         self, obj: ext.NpNDArray, *, version: str
@@ -646,9 +638,9 @@ class NumpyNdarray(
         return pyarrow.RecordBatch.from_arrays([pyarrow.array(arr)], names=["output"])
 
     def spark_schema(self) -> pyspark.sql.types.StructType:
-        from pyspark.sql.types import StructType
-        from pyspark.sql.types import StructField
         from pyspark.pandas.typedef import as_spark_type
+        from pyspark.sql.types import StructField
+        from pyspark.sql.types import StructType
 
         if self._dtype is None:
             raise InvalidArgument(

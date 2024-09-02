@@ -1,40 +1,44 @@
 from __future__ import annotations
 
+import logging
 import os
 import re
+import shlex
+import subprocess
 import sys
 import typing as t
-import logging
-import subprocess
 from sys import version_info
-from shlex import quote
-from typing import TYPE_CHECKING
 
-import fs
 import attr
-import yaml
-import psutil
+import fs
 import fs.copy
+import jinja2
+import psutil
+import yaml
 from pathspec import PathSpec
 
-from ..utils import bentoml_cattr
-from ..utils import resolve_user_filepath
-from ..utils import copy_file_to_fs_folder
-from ..container import generate_containerfile
-from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
-from ..utils.dotenv import parse_dotenv
-from ..configuration import CLEAN_BENTOML_VERSION
-from ..container.generate import BENTO_PATH
-from .build_dev_bentoml_whl import build_bentoml_editable_wheel
+from ...exceptions import InvalidArgument
+from ..configuration import BENTOML_VERSION
+from ..configuration import clean_bentoml_version
+from ..configuration import get_debug_mode
+from ..configuration import get_quiet_mode
+from ..configuration import is_pypi_installed_bentoml
+from ..container import generate_containerfile
+from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
+from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
+from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
 from ..container.frontend.dockerfile import DistroSpec
 from ..container.frontend.dockerfile import get_supported_spec
-from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
-from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
-from ..container.frontend.dockerfile import SUPPORTED_PYTHON_VERSIONS
-from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
+from ..container.generate import BENTO_PATH
+from ..utils import bentoml_cattr
+from ..utils import copy_file_to_fs_folder
+from ..utils import download_and_zip_git_repo
+from ..utils import resolve_user_filepath
+from ..utils.dotenv import parse_dotenv
+from ..utils.uri import encode_path_for_uri
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from attr import Attribute
     from fs.base import FS
 
@@ -59,13 +63,13 @@ def _convert_python_version(py_version: str | None) -> str | None:
     if match is None:
         raise InvalidArgument(
             f'Invalid build option: docker.python_version="{py_version}", python '
-            f"version must follow standard python semver format, e.g. 3.7.10 ",
+            "version must follow standard python semver format, e.g. 3.8.15",
         )
     major, minor = match.groups()
     target_python_version = f"{major}.{minor}"
     if target_python_version != py_version:
         logger.warning(
-            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced",
+            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.com/en/latest/concepts/bento.html#custom-base-image-advanced",
             target_python_version,
             py_version,
         )
@@ -73,7 +77,7 @@ def _convert_python_version(py_version: str | None) -> str | None:
 
 
 def _convert_cuda_version(
-    cuda_version: t.Optional[t.Union[str, int]]
+    cuda_version: t.Optional[t.Union[str, int]],
 ) -> t.Optional[str]:
     if cuda_version is None or cuda_version == "" or cuda_version == "None":
         return None
@@ -95,9 +99,9 @@ def _convert_cuda_version(
 
 
 def _convert_env(
-    env: str | list[str] | dict[str, str] | None
+    env: str | list[str] | dict[str, str] | None,
 ) -> dict[str, str] | dict[str, str | None] | None:
-    if env is None:
+    if not env:
         return None
 
     if isinstance(env, str):
@@ -154,11 +158,7 @@ class DockerOptions:
         ),
     )
     python_version: t.Optional[str] = attr.field(
-        converter=_convert_python_version,
-        default=None,
-        validator=attr.validators.optional(
-            attr.validators.in_(SUPPORTED_PYTHON_VERSIONS)
-        ),
+        converter=_convert_python_version, default=None
     )
     cuda_version: t.Optional[str] = attr.field(
         default=None,
@@ -210,7 +210,9 @@ class DockerOptions:
                     f'Distro "{self.distro}" does not support CUDA. Distros that support CUDA are: {supports_cuda}.'
                 )
 
-    def with_defaults(self) -> DockerOptions:
+    def with_defaults(
+        self, default_envs: list[dict[str, str]] | None = None
+    ) -> DockerOptions:
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
 
@@ -220,6 +222,9 @@ class DockerOptions:
             if self.python_version is None:
                 python_version = f"{version_info.major}.{version_info.minor}"
                 defaults["python_version"] = python_version
+
+        if self.env is None and default_envs:
+            defaults["env"] = {e["name"]: e.get("value", "") for e in default_envs}
 
         return attr.evolve(self, **defaults)
 
@@ -278,7 +283,7 @@ class DockerOptions:
         return bentoml_cattr.unstructure(self)
 
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     CondaPipType = dict[t.Literal["pip"], list[str]]
     DependencyType = list[str | CondaPipType]
 else:
@@ -312,7 +317,7 @@ def conda_dependencies_validator(
                 )
 
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     ListStr: t.TypeAlias = list[str]
     CondaYamlDict = dict[str, DependencyType | list[str]]
 else:
@@ -459,8 +464,12 @@ class PythonOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    lock_packages: t.Optional[bool] = attr.field(
-        default=None,
+    lock_packages: bool = attr.field(
+        default=True,
+        validator=attr.validators.optional(attr.validators.instance_of(bool)),
+    )
+    pack_git_packages: bool = attr.field(
+        default=True,
         validator=attr.validators.optional(attr.validators.instance_of(bool)),
     )
     index_url: t.Optional[str] = attr.field(
@@ -508,7 +517,20 @@ class PythonOptions:
     def is_empty(self) -> bool:
         return not self.requirements_txt and not self.packages
 
+    @property
+    def _jinja_environment(self) -> jinja2.Environment:
+        env = jinja2.Environment(
+            extensions=["jinja2.ext.debug"],
+            variable_start_string="<<",
+            variable_end_string=">>",
+            loader=jinja2.FileSystemLoader(os.path.dirname(__file__), followlinks=True),
+        )
+        env.filters["bash_quote"] = shlex.quote
+        return env
+
     def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
+        from .bentoml_builder import build_bentoml_sdist
+
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
         bento_fs.makedirs(py_folder, recreate=True)
@@ -517,8 +539,8 @@ class PythonOptions:
         with bento_fs.open(fs.path.join(py_folder, "version.txt"), "w") as f:
             f.write(f"{version_info.major}.{version_info.minor}.{version_info.micro}")
 
-        # Build BentoML whl from local source if BENTOML_BUNDLE_LOCAL_BUILD=True
-        build_bentoml_editable_wheel(bento_fs.getsyspath(wheels_folder))
+        # Build BentoML sdist from local source if BENTOML_BUNDLE_LOCAL_BUILD=True
+        sdist_name = build_bentoml_sdist(bento_fs.getsyspath(wheels_folder))
 
         # Move over required wheel files
         if self.wheels:
@@ -527,7 +549,7 @@ class PythonOptions:
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
                 copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
-        pip_compile_compat: t.List[str] = []
+        pip_compile_compat: list[str] = []
         if self.index_url:
             pip_compile_compat.extend(["--index-url", self.index_url])
         if self.trusted_host:
@@ -541,7 +563,7 @@ class PythonOptions:
                 pip_compile_compat.extend(["--extra-index-url", url])
 
         # add additional pip args that does not apply to pip-compile
-        pip_args: t.List[str] = []
+        pip_args: list[str] = []
         pip_args.extend(pip_compile_compat)
         if self.no_index:
             pip_args.append("--no-index")
@@ -549,85 +571,47 @@ class PythonOptions:
             pip_args.extend(self.pip_args.split())
 
         with bento_fs.open(fs.path.combine(py_folder, "install.sh"), "w") as f:
-            args = ["--no-warn-script-location"]
+            args: list[str] = []
             if pip_args:
                 args.extend(pip_args)
-            install_sh = (
-                """\
-#!/usr/bin/env bash
-set -exuo pipefail
-
-# Parent directory https://stackoverflow.com/a/246128/8643197
-BASEDIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )"
-
-PIP_ARGS=("""
-                + " ".join(map(quote, args))
-                + """)
-
-# BentoML by default generates two requirement files:
-#  - ./env/python/requirements.lock.txt: all dependencies locked to its version presented during `build`
-#  - ./env/python/requirements.txt: all dependencies as user specified in code or requirements.txt file
-REQUIREMENTS_TXT="$BASEDIR/requirements.txt"
-REQUIREMENTS_LOCK="$BASEDIR/requirements.lock.txt"
-WHEELS_DIR="$BASEDIR/wheels"
-BENTOML_VERSION=${BENTOML_VERSION:-"""
-                + CLEAN_BENTOML_VERSION
-                + """}
-# Install python packages, prefer installing the requirements.lock.txt file if it exist
-if [ -f "$REQUIREMENTS_LOCK" ]; then
-    echo "Installing pip packages from 'requirements.lock.txt'.."
-    pip3 install -r "$REQUIREMENTS_LOCK" "${PIP_ARGS[@]}"
-else
-    if [ -f "$REQUIREMENTS_TXT" ]; then
-        echo "Installing pip packages from 'requirements.txt'.."
-        pip3 install -r "$REQUIREMENTS_TXT" "${PIP_ARGS[@]}"
-    fi
-fi
-
-# Install user-provided wheels
-if [ -d "$WHEELS_DIR" ]; then
-    echo "Installing wheels packaged in Bento.."
-    pip3 install "$WHEELS_DIR"/*.whl "${PIP_ARGS[@]}"
-fi
-
-# Install the BentoML from PyPI if it's not already installed
-if python3 -c "import bentoml" &> /dev/null; then
-    existing_bentoml_version=$(python3 -c "import bentoml; print(bentoml.__version__)")
-    if [ "$existing_bentoml_version" != "$BENTOML_VERSION" ]; then
-        echo "WARNING: using BentoML version ${existing_bentoml_version}"
-    fi
-else
-    pip3 install bentoml=="$BENTOML_VERSION"
-fi
-"""
+            f.write(
+                self._jinja_environment.get_template("install.sh.j2").render(
+                    bentoml_version=clean_bentoml_version(BENTOML_VERSION),
+                    pip_args=shlex.join(args),
+                )
             )
-            f.write(install_sh)
 
-        if self.requirements_txt is not None:
-            from pip_requirements_parser import RequirementsFile
+        with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
+            # Add the pinned BentoML requirement first if it's not a local version
+            if is_pypi_installed_bentoml():
+                logger.info(
+                    "Adding current BentoML version to requirements.txt: %s",
+                    BENTOML_VERSION,
+                )
+                f.write(f"bentoml=={BENTOML_VERSION}\n")
+            elif sdist_name:
+                f.write(f"./wheels/{sdist_name}\n")
+            if self.requirements_txt is not None:
+                from pip_requirements_parser import RequirementsFile
 
-            requirements_txt = RequirementsFile.from_file(
-                resolve_user_filepath(self.requirements_txt, build_ctx),
-                include_nested=True,
-            )
-            # We need to make sure that we don't write any file references
-            # back into the final `requirements.txt` file. We've already
-            # resolved them and included their contents so we can discard
-            # them.
-            for option_line in requirements_txt.options:
-                option_line.options.pop("constraints", None)
-                option_line.options.pop("requirements", None)
+                requirements_txt = RequirementsFile.from_file(
+                    resolve_user_filepath(self.requirements_txt, build_ctx),
+                    include_nested=True,
+                )
+                # We need to make sure that we don't write any file references
+                # back into the final `requirements.txt` file. We've already
+                # resolved them and included their contents so we can discard
+                # them.
+                for option_line in requirements_txt.options:
+                    option_line.options.pop("constraints", None)
+                    option_line.options.pop("requirements", None)
 
-            with bento_fs.open(
-                fs.path.combine(py_folder, "requirements.txt"), "w"
-            ) as f:
                 f.write(requirements_txt.dumps(preserve_one_empty_line=True))
-        elif self.packages is not None:
-            with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
-                f.write("\n".join(self.packages))
-        else:
-            # Return early if no python packages were specified
-            return
+            elif self.packages is not None:
+                f.write("\n".join(self.packages) + "\n")
+            else:
+                # Return early if no python packages were specified
+                return
 
         if self.lock_packages and not self.is_empty():
             # Note: "--allow-unsafe" is required for including setuptools in the
@@ -648,33 +632,81 @@ fi
             pip_compile_args.extend(pip_compile_compat)
             pip_compile_args.extend(
                 [
-                    "--quiet",
                     "--allow-unsafe",
                     "--no-header",
                     f"--output-file={pip_compile_out}",
-                    "--resolver=backtracking",
+                    "--emit-index-url",
+                    "--emit-find-links",
+                    "--no-annotate",
                 ]
             )
+            if get_debug_mode():
+                pip_compile_args.append("--verbose")
+            else:
+                pip_compile_args.append("--quiet")
             logger.info("Locking PyPI package versions.")
-            cmd = [sys.executable, "-m", "piptools", "compile"]
+            cmd = [sys.executable, "-m", "uv", "pip", "compile"]
             cmd.extend(pip_compile_args)
             try:
-                subprocess.check_call(cmd)
-            except subprocess.CalledProcessError as e:
-                logger.error("Failed to lock PyPI packages: %s", e, exc_info=e)
-                logger.error(
-                    "Falling back to using the user-provided package requirement specifiers, which is equivalent to 'lock_packages=false'."
+                subprocess.check_call(
+                    cmd,
+                    text=True,
+                    stderr=subprocess.DEVNULL if get_quiet_mode() else None,
+                    cwd=bento_fs.getsyspath(py_folder),
                 )
+            except subprocess.CalledProcessError as e:
+                raise BentoMLException(f"Failed to lock PyPI packages: {e}") from None
+            self._fix_dep_urls(pip_compile_out, bento_fs.getsyspath(wheels_folder))
+        else:
+            requirements_txt = bento_fs.getsyspath(
+                fs.path.combine(py_folder, "requirements.txt")
+            )
+            if os.path.exists(requirements_txt):
+                self._fix_dep_urls(requirements_txt, bento_fs.getsyspath(wheels_folder))
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
-        defaults: dict[str, t.Any] = {}
+        if not self.pack_git_packages and self.lock_packages is not False:
+            logger.warning(
+                "Setting 'lock_packages' to False since 'pack_git_packages' is False"
+            )
+            return attr.evolve(self, lock_packages=False)
+        return self
 
-        if self.requirements_txt is None:
-            if self.lock_packages is None:
-                defaults["lock_packages"] = True
+    def _fix_dep_urls(self, requirements_txt: str, wheels_folder: str) -> None:
+        """Replace the git dependencies in the requirements.lock file with the
+        paths to the local copy.
+        """
+        from pip_requirements_parser import RequirementsFile
+        from pip_requirements_parser import parse_reqparts_from_string
 
-        return attr.evolve(self, **defaults)
+        parsed_requirements = RequirementsFile.from_file(
+            requirements_txt, include_nested=True
+        )
+        for req in parsed_requirements.requirements:
+            link = req.link
+            if not link:
+                continue
+
+            if "/env/python/wheels" in link.url:
+                filename = link.filename
+            elif self.pack_git_packages and link.url.startswith("git+"):
+                # We are only able to handle SSH Git URLs
+                url, ref = link.url_without_fragment[4:], ""
+                if "@" in link.path:  # ssh://git@owner/repo@ref
+                    url, _, ref = url.rpartition("@")
+                filename = download_and_zip_git_repo(
+                    url, ref, link.subdirectory_fragment, wheels_folder
+                )
+            else:
+                continue
+            parsed_parts = parse_reqparts_from_string(f"./wheels/{filename}")
+            req.link = parsed_parts.link
+            req.req = parsed_parts.requirement
+            req.requirement_line.line = f"./wheels/{filename}"
+
+        with open(requirements_txt, "w") as f:
+            f.write(parsed_requirements.dumps(preserve_one_empty_line=True))
 
 
 def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:
@@ -689,14 +721,14 @@ def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> Python
 bentoml_cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
-if TYPE_CHECKING:
-    OptionsCls = DockerOptions | CondaOptions | PythonOptions
+if t.TYPE_CHECKING:
+    OptionsCls = t.TypeVar("OptionsCls", DockerOptions, CondaOptions, PythonOptions)
 
 
 def dict_options_converter(
     options_type: t.Type[OptionsCls],
-) -> t.Callable[[OptionsCls | dict[str, t.Any]], t.Any]:
-    def _converter(value: OptionsCls | dict[str, t.Any]) -> options_type:
+) -> t.Callable[[OptionsCls | dict[str, t.Any] | None], OptionsCls]:
+    def _converter(value: OptionsCls | dict[str, t.Any] | None) -> OptionsCls:
         if value is None:
             return options_type()
         if isinstance(value, dict):
@@ -704,6 +736,38 @@ def dict_options_converter(
         return value
 
     return _converter
+
+
+@attr.frozen
+class ModelSpec:
+    tag: str
+    filter: t.Optional[str] = None
+    alias: t.Optional[str] = None
+
+    @classmethod
+    def from_item(cls, item: str | dict[str, t.Any] | ModelSpec) -> ModelSpec:
+        if isinstance(item, str):
+            return cls(tag=item)
+        if isinstance(item, ModelSpec):
+            return item
+        return cls(**item)
+
+
+def convert_models_config(
+    models_config: list[str | dict[str, t.Any] | ModelSpec] | None,
+) -> list[ModelSpec]:
+    if not models_config:
+        return []
+    return [ModelSpec.from_item(item) for item in models_config]
+
+
+def _model_spec_structure_hook(
+    d: str | dict[str, t.Any], cls: t.Type[ModelSpec]
+) -> ModelSpec:
+    return cls.from_item(d)
+
+
+bentoml_cattr.register_structure_hook(ModelSpec, _model_spec_structure_hook)
 
 
 @attr.frozen
@@ -739,13 +803,23 @@ class BentoBuildConfig:
         default=None,
         converter=dict_options_converter(CondaOptions),
     )
+    models: t.List[ModelSpec] = attr.field(
+        factory=list, converter=convert_models_config
+    )
+    envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
 
-    if TYPE_CHECKING:
+    if t.TYPE_CHECKING:
         # NOTE: This is to ensure that BentoBuildConfig __init__
         # satisfies type checker. docker, python, and conda accepts
         # dict[str, t.Any] since our converter will handle the conversion.
         # There is no way to tell type checker signatures of the converter from attrs
-        # if given attribute is alrady has a type annotation.
+        # if given attribute is already has a type annotation.
+        from typing_extensions import TypedDict
+
+        class EnvironmentEntry(TypedDict):
+            name: str
+            value: str
+
         def __init__(
             self,
             service: str,
@@ -754,11 +828,12 @@ class BentoBuildConfig:
             labels: dict[str, t.Any] | None = ...,
             include: list[str] | None = ...,
             exclude: list[str] | None = ...,
+            envs: list[EnvironmentEntry] | None = ...,
             docker: DockerOptions | dict[str, t.Any] | None = ...,
             python: PythonOptions | dict[str, t.Any] | None = ...,
             conda: CondaOptions | dict[str, t.Any] | None = ...,
-        ) -> None:
-            ...
+            models: list[ModelSpec | str | dict[str, t.Any]] | None = ...,
+        ) -> None: ...
 
     def __attrs_post_init__(self) -> None:
         use_conda = not self.conda.is_empty()
@@ -766,7 +841,7 @@ class BentoBuildConfig:
 
         if use_cuda and use_conda:
             logger.warning(
-                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a dockerfile_template, see https://docs.bentoml.org/en/latest/concepts/bento.html#custom-base-image-advanced"
+                "BentoML does not support using both conda dependencies and setting a CUDA version for GPU. If you need both conda and CUDA, use a custom base image or create a dockerfile_template, see https://docs.bentoml.com/en/latest/concepts/bento.html#custom-base-image-advanced"
             )
 
         if self.docker.distro is not None:
@@ -811,10 +886,16 @@ class BentoBuildConfig:
             {} if self.labels is None else self.labels,
             ["*"] if self.include is None else self.include,
             [] if self.exclude is None else self.exclude,
-            self.docker.with_defaults(),
+            self.docker.with_defaults(self.envs),
             self.python.with_defaults(),
             self.conda.with_defaults(),
+            self.models,
+            self.envs,
         )
+
+    @property
+    def model_aliases(self) -> t.Dict[str, str]:
+        return {model.alias: model.tag for model in self.models if model.alias}
 
     @classmethod
     def from_yaml(cls, stream: t.TextIO) -> BentoBuildConfig:
@@ -851,9 +932,10 @@ class BentoPathSpec:
     _exclude: PathSpec = attr.field(
         converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
     )
-    # we want to ignore .git folder in cases the .git folder is very large.
-    git: PathSpec = attr.field(
-        default=PathSpec.from_lines("gitwildmatch", [".git"]), init=False
+    # we want to ignore .git and venv folders in cases they are very large.
+    extra: PathSpec = attr.field(
+        default=PathSpec.from_lines("gitwildmatch", [".git/", ".venv/", "venv/"]),
+        init=False,
     )
 
     def includes(
@@ -867,23 +949,23 @@ class BentoPathSpec:
         to_include = (
             self._include.match_file(path)
             and not self._exclude.match_file(path)
-            and not self.git.match_file(path)
+            and not self.extra.match_file(path)
         )
-        if to_include:
-            if recurse_exclude_spec is not None:
-                return not any(
-                    ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
-                    for ignore_parent, ignore_spec in recurse_exclude_spec
-                )
-        return False
+        if to_include and recurse_exclude_spec is not None:
+            return not any(
+                ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
+                for ignore_parent, ignore_spec in recurse_exclude_spec
+                if fs.path.isparent(ignore_parent, path)
+            )
+        return to_include
 
     def from_path(self, path: str) -> t.Generator[t.Tuple[str, PathSpec], None, None]:
         """
         yield (parent, exclude_spec) from .bentoignore file of a given path
         """
-        fs_ = fs.open_fs(path)
+        fs_ = fs.open_fs(encode_path_for_uri(path))
         for file in fs_.walk.files(filter=[".bentoignore"]):
-            dir_path = "".join(fs.path.parts(file)[:-1])
+            dir_path = fs.path.dirname(file)
             yield dir_path, PathSpec.from_lines("gitwildmatch", fs_.open(file))
 
 
@@ -897,3 +979,5 @@ class FilledBentoBuildConfig(BentoBuildConfig):
     docker: DockerOptions
     python: PythonOptions
     conda: CondaOptions
+    models: t.List[ModelSpec]
+    envs: t.List[t.Dict[str, str]]

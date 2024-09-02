@@ -1,16 +1,11 @@
 from __future__ import annotations
 
+import importlib.metadata
+import importlib.util
+from functools import lru_cache
+from importlib.metadata import PackageNotFoundError
 from types import ModuleType
 from typing import cast
-
-try:
-    import importlib.metadata as importlib_metadata
-    from importlib.metadata import PackageNotFoundError
-except ImportError:
-    import importlib_metadata
-    from importlib_metadata import PackageNotFoundError
-
-import importlib.util
 
 from packaging.version import Version
 
@@ -22,10 +17,11 @@ __all__ = [
     "find_spec",
 ]
 
-get_pkg_version = importlib_metadata.version
+get_pkg_version = importlib.metadata.version
 find_spec = importlib.util.find_spec
 
 
+@lru_cache(maxsize=None)
 def pkg_version_info(pkg_name: str | ModuleType) -> tuple[int, int, int]:
     if isinstance(pkg_name, ModuleType):
         pkg_name = pkg_name.__name__

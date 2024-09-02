@@ -1,28 +1,29 @@
 from __future__ import annotations
 
+import functools
+import logging
 import os
 import re
 import sys
 import typing as t
-import logging
-import functools
 from shutil import which
 
-import fs
 import click
-from simple_di import inject
+import fs
 from simple_di import Provide
+from simple_di import inject
 
-from bentoml.exceptions import NotFound as BentoNotFound
-from bentoml.exceptions import BentoMLException
-from bentoml._internal.bento.bento import Bento
-from bentoml._internal.bento.bento import BentoStore
 from bentoml._internal.bento.bento import BENTO_YAML_FILENAME
 from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
-from bentoml._internal.env_manager import EnvManager
+from bentoml._internal.bento.bento import Bento
+from bentoml._internal.bento.bento import BentoStore
 from bentoml._internal.configuration import get_debug_mode
-from bentoml._internal.env_manager.envs import Environment
 from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.env_manager import EnvManager
+from bentoml._internal.env_manager.envs import Environment
+from bentoml._internal.utils.uri import encode_path_for_uri
+from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import NotFound as BentoNotFound
 
 if t.TYPE_CHECKING:
     P = t.ParamSpec("P")
@@ -59,7 +60,7 @@ def get_environment(
     # env created will be ephemeral
     if os.path.isdir(os.path.expanduser(bento_identifier)):
         bento_path_fs = fs.open_fs(
-            os.path.abspath(os.path.expanduser(bento_identifier))
+            encode_path_for_uri(os.path.abspath(os.path.expanduser(bento_identifier)))
         )
         if bento_path_fs.isfile(BENTO_YAML_FILENAME):
             # path to a build bento dir

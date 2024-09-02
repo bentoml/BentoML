@@ -1,12 +1,7 @@
 import typing as t
-from types import FunctionType
 from types import BuiltinFunctionType
+from types import FunctionType
 from typing import overload
-
-OpsType = Schema | And | Or | Use | Optional | Regex | Literal | Const
-AcceptedDictType = dict[str | OpsType, t.Any]
-_CallableLike = FunctionType | BuiltinFunctionType | t.Callable[..., t.Any]
-_SchemaLike = _CallableLike | OpsType
 
 class SchemaError(Exception):
     def __init__(
@@ -153,3 +148,8 @@ class Literal:
     def schema(self) -> str: ...
 
 class Const(Schema): ...
+
+OpsType = Schema | And | Or | Use | Optional | Regex | Literal | Const
+AcceptedDictType = dict[str | OpsType, t.Any]
+_CallableLike = FunctionType | BuiltinFunctionType | t.Callable[..., t.Any]
+_SchemaLike = _CallableLike | OpsType | AcceptedDictType

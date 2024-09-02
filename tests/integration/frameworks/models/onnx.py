@@ -1,30 +1,30 @@
 from __future__ import annotations
 
 import os
-import typing as t
 import tempfile
+import typing as t
 from typing import TYPE_CHECKING
 
-import onnx
 import numpy as np
-import torch
-import sklearn
-import torch.nn as nn
+import onnx
 import onnxruntime as ort
+import sklearn
+import torch
+import torch.nn as nn
 from skl2onnx import convert_sklearn
-from sklearn.datasets import load_iris
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx.common.data_types import Int64TensorType
 from skl2onnx.common.data_types import StringTensorType
+from sklearn.datasets import load_iris
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 if TYPE_CHECKING:
     import bentoml._internal.external_typing as ext
@@ -157,7 +157,7 @@ def make_rf_onnx_model() -> (
     iris: sklearn.utils.Bunch = load_iris()
     X: ext.NpNDArray = iris.data
     y: ext.NpNDArray = iris.target
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    X_train, X_test, y_train, _ = train_test_split(X, y)
     clr = RandomForestClassifier()
     clr.fit(X_train, y_train)
 
@@ -178,7 +178,7 @@ def make_rf_onnx_model() -> (
 # of onnxruntime (also the BentoML runner) to the outputs of original
 # model
 def gen_rf_output_checker(
-    expected_output: tuple[ext.NpNDArray, ext.NpNDArray]
+    expected_output: tuple[ext.NpNDArray, ext.NpNDArray],
 ) -> t.Callable[[t.Any], bool]:
     expected_output1, expected_output2 = expected_output
 
@@ -200,7 +200,6 @@ rf_input, rf_expected_output = _expected_data
 onnx_rf_model = FrameworkTestModel(
     name="onnx_rf_model",
     model=onnx_rf_raw_model,
-    model_method_caller=method_caller,
     model_signatures={"run": {"batchable": True}},
     configurations=[
         Config(

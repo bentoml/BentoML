@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import functools
+import logging
+import math
 import os
 import re
-import math
 import typing as t
-import logging
-import functools
 from abc import ABC
 from abc import abstractmethod
 
@@ -248,7 +248,11 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
             pynvml.nvmlInit()
             device_count = pynvml.nvmlDeviceGetCount()
             return list(range(device_count))
-        except (pynvml.nvml.NVMLError, OSError):
+        except (
+            pynvml.NVMLError_LibraryNotFound,
+            pynvml.NVMLError_DriverNotLoaded,
+            OSError,
+        ):
             logger.debug("GPU not detected. Unable to initialize pynvml lib.")
             return []
         finally:

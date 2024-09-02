@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import typing as t
-import logging
 import contextlib
+import logging
+import typing as t
 from types import ModuleType
 from typing import TYPE_CHECKING
 
 import bentoml
 
-from ..utils.pkg import get_pkg_version
-from ...exceptions import NotFound
-from ...exceptions import InvalidArgument
 from ...exceptions import BentoMLException
+from ...exceptions import InvalidArgument
 from ...exceptions import MissingDependencyException
+from ...exceptions import NotFound
 from ..models.model import ModelContext
+from ..utils.pkg import get_pkg_version
 
 # register PyTorchTensorContainer as import side effect.
 from .common.pytorch import PyTorchTensorContainer
@@ -26,10 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from .. import external_typing as ext
-    from ..tag import Tag
     from ...types import ModelSignature
     from ..models.model import ModelSignaturesType
+    from ..tag import Tag
 
 try:
     import torch
@@ -118,7 +117,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> learner.Learner:
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     learner_: learner.Learner,
     *,
     signatures: ModelSignaturesType | None = None,
@@ -206,10 +205,10 @@ def save_model(
         )
     batchable_enabled_signatures = [v for v in signatures if signatures[v]["batchable"]]
     if len(batchable_enabled_signatures) > 0:
-        message = f"Batchable signatures are not supported for fastai models. The following signatures have batchable sets to 'True': {batchable_enabled_signatures}. Consider using PyTorch layer from the learner model. To learn more, visit https://docs.bentoml.org/en/latest/frameworks/fastai.html."
+        message = f"Batchable signatures are not supported for fastai models. The following signatures have batchable sets to 'True': {batchable_enabled_signatures}. Consider using PyTorch layer from the learner model. To learn more, visit https://docs.bentoml.com/en/latest/frameworks/fastai.html."
         raise BentoMLException(message)
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,
@@ -267,10 +266,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 self._no_grad_context.close()
 
     def add_runnable_method(method_name: str, options: ModelSignature):
-        def _run(
-            self: FastAIRunnable,
-            input_data: ext.NpNDArray | torch.Tensor | ext.PdSeries | ext.PdDataFrame,
-        ) -> torch.Tensor:
+        def _run(self: FastAIRunnable, input_data: t.Any) -> torch.Tensor:
             return self.predict_fns[method_name](input_data)
 
         FastAIRunnable.add_method(

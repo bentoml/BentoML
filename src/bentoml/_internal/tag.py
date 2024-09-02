@@ -1,14 +1,16 @@
-import re
-import uuid
+from __future__ import annotations
+
 import base64
-import typing as t
 import logging
+import re
+import typing as t
+import uuid
 
-import fs
 import attr
+import fs
 
-from .utils import bentoml_cattr
 from ..exceptions import BentoMLException
+from .utils import bentoml_cattr
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +19,22 @@ tag_max_length = 63
 tag_max_length_error_msg = (
     f"a tag's name or version must be at most {tag_max_length} characters in length"
 )
-tag_invalid_error_msg = "a tag's name or version must consist of alphanumeric characters, '_', '-', or '.', and must start and end with an alphanumeric character"
+tag_invalid_error_msg = "a tag's name or version must consist of lowercase alphanumeric characters, '_', '-', or '.', and must start and end with an alphanumeric character"
 tag_regex = re.compile(f"^{tag_fmt}$")
+
+camelcase_re = re.compile(r"([A-Z]+)(?=[a-z0-9])")
+
+
+def to_snake_case(name: str) -> str:
+    def _join(match: re.Match[str]) -> str:
+        word = match.group()
+
+        if len(word) > 1:
+            return f"_{word[:-1]}_{word[-1]}".lower()
+
+        return "_" + word.lower()
+
+    return camelcase_re.sub(_join, name).lstrip("_")
 
 
 def validate_tag_str(value: str):

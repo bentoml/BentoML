@@ -1,15 +1,22 @@
 from __future__ import annotations
 
+import importlib.metadata
 import os
-import sys
+import platform
 import shlex
 import shutil
-import typing as t
-import platform
 import subprocess
+import sys
+import typing as t
 from gettext import gettext
 
 import click
+import rich
+import rich.pretty
+
+from bentoml._internal.utils.pkg import PackageNotFoundError
+from bentoml._internal.utils.pkg import get_pkg_version
+from bentoml.exceptions import CLIException
 
 conda_packages_name = "conda_packages"
 
@@ -28,6 +35,7 @@ _CONDITIONAL_ENVVAR = [
     # Only print if set
     "BENTOML_RETRY_RUNNER_REQUESTS",
     "BENTOML_CONTAINERIZE_BACKEND",
+    "BENTOML_ENABLE_FEATURES",
     "BENTOML_NUM_THREAD",
     "OMP_NUM_THREADS",
     "OPENBLAS_NUM_THREADS",
@@ -73,9 +81,7 @@ def format_md(env: list[str], info_dict: dict[str, str | list[str]]) -> list[str
 ```bash
 {env}
 ```
-""".format(
-            env="\n".join(_format_env(env))
-        )
+""".format(env="\n".join(_format_env(env)))
     )
     out.append("#### System information\n")
     for key, value in info_dict.items():
@@ -104,68 +110,61 @@ def pretty_format(
     return "\n".join({"md": format_md, "bash": format_bash}[output](env, info_dict))
 
 
-def add_env_command(cli: click.Group) -> None:
-    from bentoml import __version__ as BENTOML_VERSION
-    from bentoml.exceptions import CLIException
-    from bentoml._internal.utils.pkg import get_pkg_version
-    from bentoml._internal.utils.pkg import PackageNotFoundError
+@click.command(help=gettext("Print environment info and exit"), name="env")
+@click.option(
+    "-o",
+    "--output",
+    type=click.Choice(["md", "bash"]),
+    default="md",
+    show_default=True,
+    help="Output format. '-o bash' to display without format.",
+)
+@click.pass_context
+def env_command(ctx: click.Context, output: t.Literal["md", "bash"]) -> None:  # type: ignore (unused warning)
+    if output not in ["md", "bash"]:
+        raise CLIException(f"Unknown output format: {output}")
 
-    @cli.command(help=gettext("Print environment info and exit"))
-    @click.option(
-        "-o",
-        "--output",
-        type=click.Choice(["md", "bash"]),
-        default="md",
-        show_default=True,
-        help="Output format. '-o bash' to display without format.",
-    )
-    @click.pass_context
-    def env(ctx: click.Context, output: t.Literal["md", "bash"]) -> None:  # type: ignore (unused warning)
-        if output not in ["md", "bash"]:
-            raise CLIException(f"Unknown output format: {output}")
+    is_windows = sys.platform == "win32"
 
-        is_windows = sys.platform == "win32"
+    info_dict: dict[str, str | list[str]] = {
+        "bentoml": importlib.metadata.version("bentoml"),
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+    }
 
-        info_dict: dict[str, str | list[str]] = {
-            "bentoml": BENTOML_VERSION,
-            "python": platform.python_version(),
-            "platform": platform.platform(),
-        }
+    if is_windows:
+        from ctypes import windll
 
-        if is_windows:
-            from ctypes import windll
+        # https://stackoverflow.com/a/1026626
+        is_admin: bool = windll.shell32.IsUserAnAdmin() != 0
+        info_dict["is_window_admin"] = str(is_admin)
+    else:
+        info_dict["uid_gid"] = f"{os.geteuid()}:{os.getegid()}"
 
-            # https://stackoverflow.com/a/1026626
-            is_admin: bool = windll.shell32.IsUserAnAdmin() != 0
-            info_dict["is_window_admin"] = str(is_admin)
-        else:
-            info_dict["uid_gid"] = f"{os.geteuid()}:{os.getegid()}"
+    if "CONDA_PREFIX" in os.environ:
+        # conda packages
+        conda_like = None
+        for possible_exec in ["conda", "mamba", "micromamba"]:
+            if shutil.which(possible_exec) is not None:
+                conda_like = possible_exec
+                break
+        assert (
+            conda_like is not None
+        ), "couldn't find a conda-like executable, while CONDA_PREFIX is set."
+        conda_packages = run_cmd([conda_like, "env", "export"])
 
-        if "CONDA_PREFIX" in os.environ:
-            # conda packages
-            conda_like = None
-            for possible_exec in ["conda", "mamba", "micromamba"]:
-                if shutil.which(possible_exec) is not None:
-                    conda_like = possible_exec
-                    break
-            assert (
-                conda_like is not None
-            ), "couldn't find a conda-like executable, while CONDA_PREFIX is set."
-            conda_packages = run_cmd([conda_like, "env", "export"])
+        # user is currently in a conda environment,
+        # doing this is faster than invoking `conda --version`
+        try:
+            conda_version = get_pkg_version("conda")
+        except PackageNotFoundError:
+            conda_version = run_cmd([conda_like, "--version"])[0].split(" ")[-1]
 
-            # user is currently in a conda environment,
-            # doing this is faster than invoking `conda --version`
-            try:
-                conda_version = get_pkg_version("conda")
-            except PackageNotFoundError:
-                conda_version = run_cmd([conda_like, "--version"])[0].split(" ")[-1]
+        info_dict[conda_like] = conda_version
+        info_dict["in_conda_env"] = "True"
+        info_dict["conda_packages"] = conda_packages
 
-            info_dict[conda_like] = conda_version
-            info_dict["in_conda_env"] = str(True)
-            info_dict["conda_packages"] = conda_packages
-
-        # process info from `pip freeze`
-        pip_packages = run_cmd([sys.executable, "-m", "pip", "freeze"])
-        info_dict["pip_packages"] = pip_packages
-        click.echo(pretty_format(info_dict, output=output))
-        ctx.exit(0)
+    # process info from `pip freeze`
+    pip_packages = run_cmd([sys.executable, "-m", "uv", "pip", "freeze"])
+    info_dict["pip_packages"] = pip_packages
+    rich.print(pretty_format(info_dict, output=output))

@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from types import ModuleType
 from typing import TYPE_CHECKING
 
 import bentoml
 from bentoml import Tag
 
-from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
 from ..models.model import Model
 from ..models.model import ModelContext
 from ..models.model import PartialKwargsModelOptions as ModelOptions
+from ..utils.pkg import get_pkg_version
 from .common.pytorch import torch
 
 if TYPE_CHECKING:
@@ -79,7 +79,7 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: torch.ScriptModule,
     *,
     signatures: ModelSignaturesType | None = None,
@@ -150,7 +150,7 @@ def save_model(
             name,
         )
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=_module_name,
         api_version=API_VERSION,
@@ -172,9 +172,9 @@ def get_runnable(bento_model: Model):
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
-    from .common.pytorch import partial_class
     from .common.pytorch import PytorchModelRunnable
     from .common.pytorch import make_pytorch_runnable_method
+    from .common.pytorch import partial_class
 
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
     model_runnable_class = partial_class(

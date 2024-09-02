@@ -2,23 +2,24 @@
 from __future__ import annotations
 
 import os
-from sys import version_info
-from typing import TYPE_CHECKING
 from datetime import datetime
 from datetime import timezone
+from sys import version_info
+from typing import TYPE_CHECKING
 
 import fs
 import pytest
 
 from bentoml import Tag
+from bentoml import bentos
 from bentoml._internal.bento import Bento
-from bentoml._internal.models import ModelStore
-from bentoml._internal.bento.bento import BentoInfo
 from bentoml._internal.bento.bento import BentoApiInfo
+from bentoml._internal.bento.bento import BentoInfo
 from bentoml._internal.bento.bento import BentoModelInfo
 from bentoml._internal.bento.bento import BentoRunnerInfo
-from bentoml._internal.configuration import BENTOML_VERSION
 from bentoml._internal.bento.build_config import BentoBuildConfig
+from bentoml._internal.configuration import BENTOML_VERSION
+from bentoml._internal.models import ModelStore
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -46,6 +47,7 @@ def test_bento_info(tmpdir: Path):
         tag=Tag("model_b", "v3"),
         module="model_b_module",
         creation_time=model_creation_time,
+        alias="model_b_alias",
     )
     models = [model_a, model_b]
     runner_a = BentoRunnerInfo(
@@ -90,6 +92,7 @@ models:
 - tag: model_b:v3
   module: model_b_module
   creation_time: '{model_creation_time}'
+  alias: model_b_alias
 runners:
 - name: runner_a
   runnable_type: test_runnable_a
@@ -98,6 +101,10 @@ runners:
   - runner_a_model
   resource_config:
     cpu: 2
+entry_service: ''
+services: []
+envs: []
+schema: {{}}
 apis:
 - name: predict
   input_type: NumpyNdarray
@@ -115,6 +122,7 @@ python:
   requirements_txt: null
   packages: null
   lock_packages: true
+  pack_git_packages: true
   index_url: null
   no_index: null
   trusted_host: null
@@ -159,6 +167,7 @@ def build_test_bento() -> Bento:
             "dataset_version": "abc",
             "framework": "pytorch",
         },
+        models=["testmodel"],
     )
 
     return Bento.create(bento_cfg, version="1.0", build_ctx="./simplebento")
@@ -315,6 +324,24 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
 
 
 @pytest.mark.usefixtures("change_test_dir")
+def test_export_bento_with_models(model_store: ModelStore, tmp_path: "Path"):
+    working_dir = os.getcwd()
+    bento = build_test_bento()
+    os.chdir(working_dir)
+
+    assert bento._model_store is None
+    model_tag = bento.info.models[0].tag
+    path = os.path.join(tmp_path, "testbento.bento")
+    exported_path = bento.export(path)
+    # clear models
+    model_store.delete(model_tag)
+    imported_bento = Bento.import_from(exported_path).save()
+    assert imported_bento._model_store is None
+    assert model_store.get(model_tag) is not None
+    bentos.delete(imported_bento.tag)
+
+
+@pytest.mark.usefixtures("change_test_dir")
 def test_bento(model_store: ModelStore):
     start = datetime.now(timezone.utc)
     bento = build_test_bento()
@@ -328,7 +355,6 @@ def test_bento(model_store: ModelStore):
         assert set(bento_fs.listdir("/")) == {
             "bento.yaml",
             "apis",
-            "models",
             "README.md",
             "src",
             "env",
@@ -336,6 +362,7 @@ def test_bento(model_store: ModelStore):
         assert set(bento_fs.listdir("src")) == {
             "simplebento.py",
             "subdir",
+            "bentofile.yaml",
             ".bentoignore",
         }
         assert set(bento_fs.listdir("src/subdir")) == {"somefile"}

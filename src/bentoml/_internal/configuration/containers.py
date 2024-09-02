@@ -1,41 +1,43 @@
 from __future__ import annotations
 
-import os
-import math
-import uuid
-import typing as t
 import logging
-from copy import deepcopy
-from typing import TYPE_CHECKING
+import math
+import os
+import typing as t
+import uuid
 from dataclasses import dataclass
+from pathlib import Path
+from typing import TYPE_CHECKING
 
-import yaml
 import schema as s
+import yaml
+from deepmerge.merger import Merger
 from simple_di import Provide
 from simple_di import providers
-from deepmerge.merger import Merger
 
-from . import expand_env_var
+from ...exceptions import BentoMLConfigException
+from ..context import server_context
+from ..context import trace_context
+from ..resource import CpuResource
 from ..utils import split_with_quotes
 from ..utils import validate_or_create_dir
+from ..utils.unflatten import unflatten
+from . import expand_env_var
+from .helpers import expand_env_var_in_values
 from .helpers import flatten_dict
-from .helpers import load_config_file
 from .helpers import get_default_config
 from .helpers import import_configuration_spec
-from ..context import trace_context
-from ..context import component_context
-from ..resource import CpuResource
-from ..resource import system_resources
-from ...exceptions import BentoMLConfigException
-from ..utils.unflatten import unflatten
+from .helpers import load_config_file
 
 if TYPE_CHECKING:
     from fs.base import FS
 
     from .. import external_typing as ext
+    from ..bento import BentoStore
+    from ..cloud.client import RestApiClient
     from ..models import ModelStore
-    from ..utils.analytics import ServeInfo
     from ..server.metrics.prometheus import PrometheusClient
+    from ..utils.analytics import ServeInfo
 
     SerializationStrategy = t.Literal["EXPORT_BENTO", "LOCAL_BENTO", "REMOTE_BENTO"]
 
@@ -56,6 +58,8 @@ class BentoMLConfiguration:
         self,
         override_config_file: str | None = None,
         override_config_values: str | None = None,
+        override_defaults: dict[str, t.Any] | None = None,
+        override_config_json: dict[str, t.Any] | None = None,
         *,
         validate_schema: bool = True,
         use_version: int = 1,
@@ -63,6 +67,14 @@ class BentoMLConfiguration:
         # Load default configuration with latest version.
         self.config = get_default_config(version=use_version)
         spec_module = import_configuration_spec(version=use_version)
+        migration = getattr(spec_module, "migration", None)
+
+        if override_defaults:
+            if migration is not None:
+                override_defaults = migration(
+                    override_config=dict(flatten_dict(override_defaults)),
+                )
+            config_merger.merge(self.config, override_defaults)
 
         # User override configuration
         if override_config_file is not None:
@@ -70,21 +82,23 @@ class BentoMLConfiguration:
                 "Applying user config override from path: %s" % override_config_file
             )
             override = load_config_file(override_config_file)
-            if "version" not in override:
-                # If users does not define a version, we then by default assume they are using v1
-                # and we will migrate it to latest version
-                logger.debug(
-                    "User config does not define a version, assuming given config is version %d..."
-                    % use_version
-                )
-                current = use_version
-            else:
-                current = override["version"]
-            migration = getattr(import_configuration_spec(current), "migration", None)
             # Running migration layer if it exists
             if migration is not None:
-                override = migration(override_config=dict(flatten_dict(override)))
+                override = migration(
+                    override_config=dict(flatten_dict(override)),
+                )
             config_merger.merge(self.config, override)
+
+        if override_config_json is not None:
+            logger.info(
+                "Applying user config override from json: %s" % override_config_json
+            )
+            # Running migration layer if it exists
+            if migration is not None:
+                override_config_json = migration(
+                    override_config=dict(flatten_dict(override_config_json)),
+                )
+            config_merger.merge(self.config, override_config_json)
 
         if override_config_values is not None:
             logger.info(
@@ -104,18 +118,6 @@ class BentoMLConfiguration:
                     if line.strip()
                 ]
             }
-            # Note that this values will only support latest version of configuration,
-            # as there is no way for us to infer what values user can pass in.
-            # however, if users pass in a version inside this value, we will that to migrate up
-            # if possible
-            override_version = override_config_map.get("version", use_version)
-            logger.debug(
-                "Found defined 'version=%d' in BENTOML_CONFIG_OPTIONS."
-                % override_version
-            )
-            migration = getattr(
-                import_configuration_spec(override_version), "migration", None
-            )
             # Running migration layer if it exists
             if migration is not None:
                 override_config_map = migration(override_config=override_config_map)
@@ -128,8 +130,9 @@ class BentoMLConfiguration:
                 ) from None
             config_merger.merge(self.config, override)
 
-        if override_config_file is not None or override_config_values is not None:
-            self._finalize()
+        if finalize_config := getattr(spec_module, "finalize_config", None):
+            finalize_config(self.config)
+        expand_env_var_in_values(self.config)
 
         if validate_schema:
             try:
@@ -139,32 +142,6 @@ class BentoMLConfiguration:
                     f"Invalid configuration file was given:\n{e}"
                 ) from None
 
-    def _finalize(self):
-        RUNNER_CFG_KEYS = [
-            "batching",
-            "resources",
-            "logging",
-            "metrics",
-            "timeout",
-            "workers_per_resource",
-        ]
-        global_runner_cfg = {k: self.config["runners"][k] for k in RUNNER_CFG_KEYS}
-        custom_runners_cfg = dict(
-            filter(
-                lambda kv: kv[0] not in RUNNER_CFG_KEYS,
-                self.config["runners"].items(),
-            )
-        )
-        if custom_runners_cfg:
-            for runner_name, runner_cfg in custom_runners_cfg.items():
-                # key is a runner name
-                if runner_cfg.get("resources") == "system":
-                    runner_cfg["resources"] = system_resources()
-                self.config["runners"][runner_name] = config_merger.merge(
-                    deepcopy(global_runner_cfg),
-                    runner_cfg,
-                )
-
     def to_dict(self) -> providers.ConfigDictType:
         return t.cast(providers.ConfigDictType, self.config)
 
@@ -172,6 +149,7 @@ class BentoMLConfiguration:
 @dataclass
 class _BentoMLContainerClass:
     config = providers.Configuration()
+    model_aliases = providers.Static({})
 
     @providers.SingletonFactory
     @staticmethod
@@ -190,6 +168,16 @@ class _BentoMLContainerClass:
 
         validate_or_create_dir(home, bentos, models, envs, tmp_bentos)
         return home
+
+    @providers.SingletonFactory
+    @staticmethod
+    def result_store_file(bentoml_home: str = Provide[bentoml_home]) -> str:
+        path = os.getenv(
+            "BENTOML_RESULT_STORE", os.path.join(bentoml_home, "task_result.db")
+        )
+        return (
+            os.path.realpath(os.path.expanduser(path)) if path != ":memory:" else path
+        )
 
     @providers.SingletonFactory
     @staticmethod
@@ -216,11 +204,13 @@ class _BentoMLContainerClass:
     def env_store(bentoml_home: str = Provide[bentoml_home]) -> FS:
         import fs
 
-        return fs.open_fs(os.path.join(bentoml_home, "envs"))
+        from ..utils.uri import encode_path_for_uri
+
+        return fs.open_fs(encode_path_for_uri(os.path.join(bentoml_home, "envs")))
 
     @providers.SingletonFactory
     @staticmethod
-    def bento_store(base_dir: str = Provide[bento_store_dir]):
+    def bento_store(base_dir: str = Provide[bento_store_dir]) -> BentoStore:
         from ..bento import BentoStore
 
         return BentoStore(base_dir)
@@ -244,6 +234,11 @@ class _BentoMLContainerClass:
     def session_id() -> str:
         return uuid.uuid1().hex
 
+    @providers.SingletonFactory
+    @staticmethod
+    def cloud_config(bentoml_home: str = Provide[bentoml_home]) -> Path:
+        return Path(bentoml_home) / ".yatai.yaml"
+
     api_server_config = config.api_server
     runners_config = config.runners
 
@@ -252,14 +247,24 @@ class _BentoMLContainerClass:
     ssl = api_server_config.ssl
 
     development_mode = providers.Static(True)
-    serialization_strategy: SerializationStrategy = providers.Static("EXPORT_BENTO")
+    serialization_strategy: providers.Static[SerializationStrategy] = providers.Static(
+        "EXPORT_BENTO"
+    )
+    worker_index: providers.Static[int] = providers.Static(0)
 
     @providers.SingletonFactory
     @staticmethod
     def yatai_client():
-        from ..yatai_client import YataiClient
+        from ..cloud.yatai import YataiClient
 
         return YataiClient()
+
+    @providers.SingletonFactory
+    @staticmethod
+    def bentocloud_client():
+        from ..cloud.bentocloud import BentoCloudClient
+
+        return BentoCloudClient()
 
     @providers.SingletonFactory
     @staticmethod
@@ -273,22 +278,23 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-        allow_origins: list[str]
-        | str
-        | None = Provide[cors.access_control_allow_origins],
-        allow_origin_regex: str
-        | None = Provide[cors.access_control_allow_origin_regex],
+        allow_origins: list[str] | str | None = Provide[
+            cors.access_control_allow_origins
+        ],
+        allow_origin_regex: str | None = Provide[
+            cors.access_control_allow_origin_regex
+        ],
         allow_credentials: bool | None = Provide[cors.access_control_allow_credentials],
-        allow_methods: list[str]
-        | str
-        | None = Provide[cors.access_control_allow_methods],
-        allow_headers: list[str]
-        | str
-        | None = Provide[cors.access_control_allow_headers],
+        allow_methods: list[str] | str | None = Provide[
+            cors.access_control_allow_methods
+        ],
+        allow_headers: list[str] | str | None = Provide[
+            cors.access_control_allow_headers
+        ],
         max_age: int | None = Provide[cors.access_control_max_age],
-        expose_headers: list[str]
-        | str
-        | None = Provide[cors.access_control_expose_headers],
+        expose_headers: list[str] | str | None = Provide[
+            cors.access_control_expose_headers
+        ],
     ) -> dict[str, list[str] | str | int]:
         if isinstance(allow_origins, str):
             allow_origins = [allow_origins]
@@ -323,12 +329,10 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def metrics_client(
-        multiproc_dir: str = Provide[prometheus_multiproc_dir],
-    ) -> PrometheusClient:
+    def metrics_client() -> PrometheusClient:
         from ..server.metrics.prometheus import PrometheusClient
 
-        return PrometheusClient(multiproc_dir=multiproc_dir)
+        return PrometheusClient()
 
     tracing = config.tracing
 
@@ -343,13 +347,13 @@ class _BentoMLContainerClass:
         jaeger: dict[str, t.Any] = Provide[tracing.jaeger],
         otlp: dict[str, t.Any] = Provide[tracing.otlp],
     ):
-        from opentelemetry.sdk.trace import TracerProvider
-        from opentelemetry.sdk.resources import Resource
-        from opentelemetry.sdk.resources import SERVICE_NAME
-        from opentelemetry.sdk.resources import SERVICE_VERSION
-        from opentelemetry.sdk.resources import SERVICE_NAMESPACE
         from opentelemetry.sdk.resources import SERVICE_INSTANCE_ID
+        from opentelemetry.sdk.resources import SERVICE_NAME
+        from opentelemetry.sdk.resources import SERVICE_NAMESPACE
+        from opentelemetry.sdk.resources import SERVICE_VERSION
         from opentelemetry.sdk.resources import OTELResourceDetector
+        from opentelemetry.sdk.resources import Resource
+        from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
         from ...exceptions import InvalidArgument
@@ -359,7 +363,7 @@ class _BentoMLContainerClass:
             sample_rate = 0.0
         if sample_rate == 0.0:
             logger.debug(
-                "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.org/en/latest/guides/tracing.html for more details."
+                "'tracing.sample_rate' is set to zero. No traces will be collected. Please refer to https://docs.bentoml.com/en/latest/guides/tracing.html for more details."
             )
 
         # User can optionally configure the resource with the following environment variables. Only
@@ -367,14 +371,14 @@ class _BentoMLContainerClass:
         system_otel_resources: Resource = OTELResourceDetector().detect()
 
         _resource = {}
-        if component_context.component_name:
-            _resource[SERVICE_NAME] = component_context.component_name
-        if component_context.component_index:
-            _resource[SERVICE_INSTANCE_ID] = component_context.component_index
-        if component_context.bento_name:
-            _resource[SERVICE_NAMESPACE] = component_context.bento_name
-        if component_context.bento_version:
-            _resource[SERVICE_VERSION] = component_context.bento_version
+        if server_context.service_name:
+            _resource[SERVICE_NAME] = server_context.service_name
+        if server_context.worker_index:
+            _resource[SERVICE_INSTANCE_ID] = server_context.worker_index
+        if server_context.bento_name:
+            _resource[SERVICE_NAMESPACE] = server_context.bento_name
+        if server_context.bento_version:
+            _resource[SERVICE_VERSION] = server_context.bento_version
 
         bentoml_resource = Resource.create(_resource)
 
@@ -462,7 +466,7 @@ class _BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def duration_buckets(
-        duration: dict[str, t.Any] = Provide[api_server_config.metrics.duration]
+        duration: dict[str, t.Any] = Provide[api_server_config.metrics.duration],
     ) -> tuple[float, ...]:
         """
         Returns a tuple of duration buckets in seconds. If not explicitly configured,
@@ -472,16 +476,20 @@ class _BentoMLContainerClass:
         from ..utils.metrics import INF
         from ..utils.metrics import exponential_buckets
 
-        if "buckets" in duration:
+        if None not in (
+            duration.get("min"),
+            duration.get("max"),
+            duration.get("factor"),
+        ):
+            return exponential_buckets(
+                duration["min"], duration["factor"], duration["max"]
+            )
+        elif "buckets" in duration:
             return tuple(duration["buckets"]) + (INF,)
         else:
-            if len(set(duration) - {"min", "max", "factor"}) == 0:
-                return exponential_buckets(
-                    duration["min"], duration["factor"], duration["max"]
-                )
             raise BentoMLConfigException(
-                f"Keys 'min', 'max', and 'factor' are required for 'duration' configuration, '{duration!r}'."
-            ) from None
+                "Either `buckets` or `min`, `max`, and `factor` must be set in `api_server.metrics.duration`"
+            )
 
     @providers.SingletonFactory
     @staticmethod
@@ -489,6 +497,24 @@ class _BentoMLContainerClass:
         cfg: dict[str, t.Any] = Provide[api_server_config.logging.access.format],
     ) -> dict[str, str]:
         return cfg
+
+    @providers.SingletonFactory
+    @staticmethod
+    def enabled_features() -> list[str]:
+        return os.getenv("BENTOML_ENABLE_FEATURES", "").split(",")
+
+    @property
+    def new_index(self) -> bool:
+        return "new_index" in self.enabled_features.get()
+
+    cloud_context = providers.Static[t.Optional[str]](None)
+
+    @providers.Factory
+    @staticmethod
+    def rest_api_client(context: str | None = Provide[cloud_context]) -> RestApiClient:
+        from ..cloud.config import get_rest_api_client
+
+        return get_rest_api_client(context)
 
 
 BentoMLContainer = _BentoMLContainerClass()

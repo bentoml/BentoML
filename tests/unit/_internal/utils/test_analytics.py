@@ -1,19 +1,19 @@
 # pylint: disable=unused-argument
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
-from schema import Or
+from prometheus_client.parser import text_string_to_metric_families
+
+# type: ignore (no prometheus types)
 from schema import And
+from schema import Or
 from schema import Schema
-from prometheus_client.parser import (
-    text_string_to_metric_families,  # type: ignore (no prometheus types)
-)
 
 import bentoml
 from bentoml._internal.utils import analytics
@@ -67,7 +67,7 @@ def test_get_payload(event_properties: analytics.schemas.ModelSaveEvent):
     assert SCHEMA.validate(payload)
 
 
-@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.httpx.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
 @patch("bentoml._internal.utils.analytics.usage_stats._usage_event_debugging")
 def test_send_usage(
@@ -91,7 +91,7 @@ def test_send_usage(
     assert "Tracking Payload" in caplog.text
 
 
-@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.httpx.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
 def test_do_not_track(
     mock_do_not_track: MagicMock,
@@ -106,7 +106,7 @@ def test_do_not_track(
 
 
 @patch("bentoml._internal.utils.analytics.usage_stats.logger")
-@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.httpx.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
 def test_send_usage_failure(
     mock_do_not_track: MagicMock,
@@ -123,7 +123,7 @@ def test_send_usage_failure(
     mock_logger.debug.assert_called_with("Tracking Error: %s", mock_post.side_effect)
 
 
-@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.httpx.post")
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
 @patch("bentoml._internal.utils.analytics.usage_stats._usage_event_debugging")
 @pytest.mark.parametrize("production", [False, True])
@@ -136,7 +136,6 @@ def test_track_serve_init(
     production: bool,
     caplog: LogCaptureFixture,
 ):
-
     mock_do_not_track.return_value = False
     mock_usage_event_debugging.return_value = False
 
@@ -149,6 +148,7 @@ def test_track_serve_init(
         production=production,
         serve_info=analytics.usage_stats.get_serve_info(),
         serve_kind="http",
+        from_server_api=False,
     )
 
     assert mock_do_not_track.called
@@ -161,6 +161,7 @@ def test_track_serve_init(
             production=production,
             serve_info=analytics.usage_stats.get_serve_info(),
             serve_kind="http",
+            from_server_api=False,
         )
     assert "model_types" in caplog.text
 
@@ -185,6 +186,7 @@ def test_track_serve_init_no_bento(
             production=False,
             serve_info=analytics.usage_stats.get_serve_info(),
             serve_kind="http",
+            from_server_api=False,
         )
     assert "model_types" not in caplog.text
 
@@ -242,16 +244,16 @@ def test_legacy_get_metrics_report(
 ):
     mock_do_not_track.return_value = True
     mock_prometheus_client.multiproc.return_value = False
-    mock_prometheus_client.text_string_to_metric_families.return_value = text_string_to_metric_families(
-        b"""\
+    mock_prometheus_client.text_string_to_metric_families.return_value = (
+        text_string_to_metric_families(
+            b"""\
 # HELP BENTOML_simple_service_request_in_progress Multiprocess metric
 # TYPE BENTOML_simple_service_request_in_progress gauge
 BENTOML_simple_service_request_in_progress{endpoint="/predict",service_version="not available"} 0.0
 # HELP BENTOML_simple_service_request_total Multiprocess metric
 # TYPE BENTOML_simple_service_request_total counter
 BENTOML_simple_service_request_total{endpoint="/predict",http_response_code="200",service_version="not available"} 8.0
-""".decode(
-            "utf-8"
+""".decode("utf-8")
         )
     )
     output = analytics.usage_stats.get_metrics_report(
@@ -297,9 +299,7 @@ BENTOML_simple_service_request_total{endpoint="/predict",http_response_code="200
                 # HELP bentoml_api_server_request_in_progress Multiprocess metric
                 # TYPE bentoml_api_server_request_in_progress gauge
                 bentoml_api_server_request_in_progress{api_name="pred_json",service_name="simple_service",service_version="not available"} 0.0
-                """.decode(
-                "utf-8"
-            )
+                """.decode("utf-8")
         )
     ],
 )
@@ -322,7 +322,7 @@ def test_get_metrics_report(
 
 
 @patch("bentoml._internal.utils.analytics.usage_stats.do_not_track")
-@patch("bentoml._internal.utils.analytics.usage_stats.requests.post")
+@patch("bentoml._internal.utils.analytics.usage_stats.httpx.post")
 @patch("bentoml._internal.utils.analytics.usage_stats._track_serve_init")
 @patch("bentoml._internal.utils.analytics.usage_stats._usage_event_debugging")
 @patch("bentoml._internal.server.metrics.prometheus.PrometheusClient")

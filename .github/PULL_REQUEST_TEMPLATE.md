@@ -37,7 +37,7 @@ Fixes #(issue)
 
 - [ ] Does the Pull Request follow [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/#summary) naming? Here are [GitHub's
       guide](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request) on how to create a pull request.
-- [ ] Does the code follow BentoML's code style, both `make format` and `make lint` script have passed ([instructions](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md#style-check-auto-formatting-type-checking))?
+- [ ] Does the code follow BentoML's code style, `pre-commit run -a` script has passed ([instructions](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md#style-check-auto-formatting-type-checking))?
 - [ ] Did you read through [contribution guidelines](https://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md#ways-to-contribute) and follow [development guidelines](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md#start-developing)?
 - [ ] Did your changes require updates to the documentation? Have you updated
       those accordingly? Here are [documentation guidelines](https://github.com/bentoml/BentoML/tree/main/docs) and [tips on writting docs](https://github.com/bentoml/BentoML/tree/main/docs#writing-documentation).

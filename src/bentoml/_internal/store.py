@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import datetime
 import os
 import typing as t
-import datetime
 from abc import ABC
 from abc import abstractmethod
 from contextlib import contextmanager
@@ -11,11 +11,13 @@ import fs
 import fs.errors
 from fs.base import FS
 
+from ..exceptions import BentoMLException
+from ..exceptions import NotFound
+from .exportable import Exportable
 from .tag import Tag
 from .types import PathType
-from .exportable import Exportable
-from ..exceptions import NotFound
-from ..exceptions import BentoMLException
+from .utils import calc_dir_size
+from .utils.uri import encode_path_for_uri
 
 T = t.TypeVar("T")
 
@@ -43,6 +45,17 @@ class StoreItem(Exportable):
     def creation_time(self) -> datetime.datetime:
         raise NotImplementedError
 
+    @property
+    def path(self) -> str:
+        return self.path_of("/")
+
+    def path_of(self, item: str) -> str:
+        return self._fs.getsyspath(item)
+
+    @property
+    def file_size(self) -> int:
+        return calc_dir_size(self.path)
+
     def __repr__(self):
         return f'{self.get_typename()}(tag="{self.tag}")'
 
@@ -66,6 +79,8 @@ class Store(ABC, t.Generic[Item]):
         self._item_type = item_type
         if isinstance(base_path, os.PathLike):
             base_path = base_path.__fspath__()
+        if isinstance(base_path, str):
+            base_path = encode_path_for_uri(base_path)
         self._fs = fs.open_fs(base_path)
 
     def list(self, tag: t.Optional[t.Union[Tag, str]] = None) -> t.List[Item]:
@@ -144,7 +159,8 @@ class Store(ABC, t.Generic[Item]):
         counts = matches.count().directories
         if counts == 0:
             raise NotFound(
-                f"{self._item_type.get_typename()} '{tag}' is not found in BentoML store {self._fs}"
+                f"{self._item_type.get_typename()} '{tag}' is not found in BentoML store {self._fs}, "
+                "you may need to run `bentoml models pull` first"
             )
         elif counts == 1:
             match = next(iter(matches))
@@ -158,7 +174,7 @@ class Store(ABC, t.Generic[Item]):
             )
 
     @contextmanager
-    def register(self, tag: t.Union[str, Tag]):
+    def register(self, tag: str | Tag) -> t.Generator[str, None, None]:
         _tag = Tag.from_taglike(tag)
 
         item_path = _tag.path()
@@ -169,17 +185,26 @@ class Store(ABC, t.Generic[Item]):
         self._fs.makedirs(item_path)
         try:
             yield self._fs.getsyspath(item_path)
-        finally:
-            # item generation is most likely successful, link latest path
-            if (
-                not self._fs.exists(_tag.latest_path())
-                or self.get(_tag).creation_time >= self.get(_tag.name).creation_time
-            ):
-                with self._fs.open(_tag.latest_path(), "w") as latest_file:
-                    latest_file.write(_tag.version)
+        except Exception:
+            self._fs.removetree(item_path)
+            raise
+        # item generation is most likely successful, link latest path
+        if (
+            not self._fs.exists(_tag.latest_path())
+            or self.get(_tag).creation_time >= self.get(_tag.name).creation_time
+        ):
+            with self._fs.open(_tag.latest_path(), "w") as latest_file:
+                latest_file.write(_tag.version)
 
     def delete(self, tag: t.Union[str, Tag]) -> None:
         _tag = Tag.from_taglike(tag)
+
+        if _tag.version == "latest":
+            try:
+                _tag.version = self._fs.readtext(_tag.latest_path())
+            except fs.errors.ResourceNotFound:
+                # if latest path doesn't exist, we don't need to delete anything
+                return
 
         if not self._fs.exists(_tag.path()):
             raise NotFound(f"{self._item_type.get_typename()} '{tag}' not found")

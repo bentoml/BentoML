@@ -20,7 +20,7 @@ services:
     ports:
       - "3000:3000"
       - "3001:3001"
-    command: ["serve-grpc", "--production"]
+    command: ["serve-grpc"]
     environment:
       - OTEL_EXPORTER_JAEGER_AGENT_HOST=jaeger
       - OTEL_EXPORTER_JAEGER_AGENT_PORT=6831

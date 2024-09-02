@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-import typing as t
+import inspect
 import logging
-from typing import overload
+import typing as t
 from typing import TYPE_CHECKING
+from typing import overload
 
 import attr
 
-from ..types import LazyType
 from ...exceptions import BentoMLException
+from ..types import LazyType
 
 if TYPE_CHECKING:
     from ..types import AnyType
@@ -30,9 +31,9 @@ class Runnable:
     SUPPORTED_RESOURCES: tuple[str, ...]
     SUPPORTS_CPU_MULTI_THREADING: bool
 
-    bentoml_runnable_methods__: dict[
-        str, RunnableMethod[t.Any, t.Any, t.Any]
-    ] | None = None
+    bentoml_runnable_methods__: (
+        dict[str, RunnableMethod[t.Any, t.Any, t.Any]] | None
+    ) = None
 
     def __setattr__(self, attr_name: str, value: t.Any):
         if attr_name in ("SUPPORTED_RESOURCES", "SUPPORTS_CPU_MULTI_THREADING"):
@@ -82,8 +83,7 @@ class Runnable:
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
         output_spec: AnyType | None = None,
-    ) -> RunnableMethod[T, P, R]:
-        ...
+    ) -> RunnableMethod[T, P, R]: ...
 
     @overload
     @staticmethod
@@ -94,8 +94,7 @@ class Runnable:
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
         output_spec: AnyType | None = None,
-    ) -> t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]:
-        ...
+    ) -> t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]: ...
 
     @staticmethod
     def method(
@@ -105,19 +104,24 @@ class Runnable:
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
         output_spec: AnyType | None = None,
-    ) -> t.Callable[
-        [t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]
-    ] | RunnableMethod[T, P, R]:
+    ) -> (
+        t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]
+        | RunnableMethod[T, P, R]
+    ):
         def method_decorator(
-            meth: t.Callable[t.Concatenate[T, P], R]
+            meth: t.Callable[t.Concatenate[T, P], R],
         ) -> RunnableMethod[T, P, R]:
             return RunnableMethod(
                 meth,
                 RunnableMethodConfig(
+                    is_stream=inspect.isasyncgenfunction(meth)
+                    or inspect.isgeneratorfunction(meth),
                     batchable=batchable,
-                    batch_dim=(batch_dim, batch_dim)
-                    if isinstance(batch_dim, int)
-                    else batch_dim,
+                    batch_dim=(
+                        (batch_dim, batch_dim)
+                        if isinstance(batch_dim, int)
+                        else batch_dim
+                    ),
                     input_spec=input_spec,
                     output_spec=output_spec,
                 ),
@@ -134,9 +138,21 @@ class RunnableMethod(t.Generic[T, P, R]):
     config: RunnableMethodConfig
     _bentoml_runnable_method: None = None
 
-    def __get__(self, obj: T, _: t.Type[T] | None = None) -> t.Callable[P, R]:
-        def method(*args: P.args, **kwargs: P.kwargs) -> R:
-            return self.func(obj, *args, **kwargs)
+    def __get__(self, obj: T | None, _: t.Type[T] | None = None) -> t.Callable[P, R]:
+        from ..utils import is_async_callable
+
+        if obj is None:
+            return self
+
+        if is_async_callable(self.func):
+
+            async def method(*args: P.args, **kwargs: P.kwargs) -> R:
+                return await self.func(obj, *args, **kwargs)
+
+        else:
+
+            def method(*args: P.args, **kwargs: P.kwargs) -> R:
+                return self.func(obj, *args, **kwargs)
 
         return method
 
@@ -152,3 +168,4 @@ class RunnableMethodConfig:
     batch_dim: tuple[int, int]
     input_spec: AnyType | tuple[AnyType, ...] | None = None
     output_spec: AnyType | None = None
+    is_stream: bool = False

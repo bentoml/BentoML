@@ -9,9 +9,16 @@ class BentoMLException(Exception):
     """
 
     error_code = HTTPStatus.INTERNAL_SERVER_ERROR
+    error_mapping: dict[HTTPStatus, type[BentoMLException]] = {}
 
-    def __init__(self, message: str):
+    def __init_subclass__(cls) -> None:
+        if "error_code" in cls.__dict__:
+            cls.error_mapping.setdefault(cls.error_code, cls)
+
+    def __init__(self, message: str, *, error_code: HTTPStatus | None = None):
         self.message = message
+        if error_code is not None:
+            self.error_code = error_code
         super().__init__(message)
 
 
@@ -109,13 +116,25 @@ class CLIException(BentoMLException):
     """Raised when CLI encounters an issue"""
 
 
-class YataiRESTApiClientError(BentoMLException):
-    """Raised when communicating with BentoCloud server."""
+class CloudRESTApiClientError(BentoMLException):
+    """Raised when communicating with Yatai or BentoCloud server."""
 
     pass
 
 
 class ImportServiceError(BentoMLException):
     """Raised when BentoML failed to import the user's service file."""
+
+    pass
+
+
+class UnservableException(StateException):
+    """Raised when a service is not servable."""
+
+    pass
+
+
+class ServerStateException(StateException):
+    """Raised when a server API requiring the BentoML server to be running is executed when the server is not running."""
 
     pass

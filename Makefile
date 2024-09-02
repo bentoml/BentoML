@@ -2,53 +2,53 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
-USE_VERBOSE ?=false
-USE_GPU ?= false
-USE_GRPC ?= false
 
-help: ## Show all Makefile targets
+help: ## Show a;ll Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
-
-.PHONY: format format-proto lint lint-proto type style clean
+.PHONY: .pdm
+.pdm:  ## Check that PDM is installed
+	@pdm -V || echo 'Please install PDM: https://pdm.fming.dev/latest/\#installation'
+.PHONY: .pre-commit
+.pre-commit:  ## Check that pre-commit is installed
+	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
+.PHONY: install
+install: .pdm .pre-commit  ## Install the package, dependencies, and pre-commit for local development
+	pdm install -G all
+	pre-commit install --install-hooks
+.PHONY: refresh-lockfiles
+refresh-lockfiles: .pdm  ## Sync lockfiles with requirements files.
+	pdm update --update-reuse -G all
+.PHONY: format format-proto lint lint-proto type style clean ui
 format: ## Running code formatter: black and isort
 	@echo "(black) Formatting codebase..."
-	@black --config pyproject.toml src tests docs examples
-	@echo "(black) Formatting stubs..."
-	@find src -name "*.pyi" ! -name "*_pb2*" -exec black --pyi --config pyproject.toml {} \;
-	@echo "(isort) Reordering imports..."
-	@isort .
-	@echo "(ruff) Running fix only..."
-	@ruff check src examples tests --fix-only
+	@pre-commit run --all-files black-jupyter
 format-proto: ## Running proto formatter: buf
-	@echo "Formatting proto files..."
-	docker run --init --rm --volume $(GIT_ROOT)/src:/workspace --workdir /workspace bufbuild/buf format --config "/workspace/bentoml/grpc/buf.yaml" -w bentoml/grpc
+	@echo "(buf) Formatting proto files..."
+	@pre-commit run --all-files buf-format
 lint: ## Running lint checker: ruff
 	@echo "(ruff) Linting development project..."
-	@ruff check src examples tests
-lint-proto: ## Running proto lint checker: buf
-	@echo "Linting proto files..."
-	docker run --init --rm --volume $(GIT_ROOT)/src:/workspace --workdir /workspace bufbuild/buf lint --config "/workspace/bentoml/grpc/buf.yaml" --error-format msvs bentoml/grpc
+	@pre-commit run --all-files ruff
+lint-proto: ## Running proto lint checker: buf via docker
+	@echo "(buf) Linting proto files..."
+	@pre-commit run --all-files buf-lint
 type: ## Running type checker: pyright
 	@echo "(pyright) Typechecking codebase..."
-	@pyright -p src -w
+	@pre-commit run typecheck --all-files
 style: format lint format-proto lint-proto ## Running formatter and linter
 clean: ## Clean all generated files
 	@echo "Cleaning all generated files..."
-	@cd $(GIT_ROOT)/docs && make clean
-	@cd $(GIT_ROOT) || exit 1
+	@$(MAKE) clean -C $(GIT_ROOT)/docs
 	@find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 # Docs
 watch-docs: ## Build and watch documentation
-	sphinx-autobuild docs/source docs/build/html --watch $(GIT_ROOT)/src/ --ignore "bazel-*"
+	pdm run sphinx-autobuild docs/source docs/build/html --watch $(GIT_ROOT)/src/ --ignore "bazel-*"
 spellcheck-docs: ## Spell check documentation
-	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
-
+	pdm run sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
 install-spellchecker-deps: ## Install MacOS dependencies for spellchecker
 	brew install enchant
-	pip install sphinxcontrib-spelling
 else ifneq ("$(wildcard $(/etc/debian_version))","")
 install-spellchecker-deps: ## Install Debian-based dependencies for spellchecker
 	sudo apt install libenchant-dev

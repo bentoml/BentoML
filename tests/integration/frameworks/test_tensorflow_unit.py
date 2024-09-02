@@ -7,9 +7,9 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from bentoml._internal.types import LazyType
 from bentoml._internal.runner.container import AutoContainer
 from bentoml._internal.runner.container import DataContainerRegistry
+from bentoml._internal.types import LazyType
 
 if TYPE_CHECKING:
     from bentoml._internal.external_typing import tensorflow as ext
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def requires_disable_eager_execution(
-    function: t.Callable[P, None]
+    function: t.Callable[P, None],
 ) -> t.Callable[P, None]:
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
         if tf.executing_eagerly():
@@ -38,8 +38,7 @@ def assert_tensor_equal(t1: ext.TensorLike, t2: ext.TensorLike) -> None:
 @pytest.mark.requires_eager_execution
 @pytest.mark.parametrize("batch_axis", [0, 1])
 def test_tensorflow_container(batch_axis: int):
-
-    from bentoml._internal.frameworks.tensorflow_v2 import TensorflowTensorContainer
+    from bentoml._internal.frameworks.tensorflow import TensorflowTensorContainer
 
     one_batch: ext.TensorLike = tf.reshape(tf.convert_to_tensor(np.arange(6)), (2, 3))
     batch_list: list[ext.TensorLike] = [one_batch, one_batch + 1]
@@ -74,10 +73,9 @@ def test_tensorflow_container(batch_axis: int):
 
 @requires_disable_eager_execution
 def test_register_container():
-
     assert not tf.executing_eagerly()
 
-    from bentoml._internal.frameworks.tensorflow_v2 import (  # type: ignore # noqa
+    from bentoml._internal.frameworks.tensorflow import (  # type: ignore # noqa
         TensorflowTensorContainer,
     )
 

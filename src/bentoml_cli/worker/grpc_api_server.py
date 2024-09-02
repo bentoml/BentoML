@@ -22,11 +22,6 @@ import click
     help="Working directory for the API server",
 )
 @click.option(
-    "--prometheus-dir",
-    type=click.Path(exists=True),
-    help="Required by prometheus to pass the metrics in multi-process mode",
-)
-@click.option(
     "--worker-id",
     required=False,
     type=click.INT,
@@ -89,7 +84,6 @@ def main(
     bento_identifier: str,
     host: str,
     port: int,
-    prometheus_dir: str | None,
     runner_map: str | None,
     working_dir: str | None,
     worker_id: int | None,
@@ -109,12 +103,12 @@ def main(
     """
 
     import bentoml
-    from bentoml._internal.log import configure_server_logging
-    from bentoml._internal.context import component_context
     from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.context import server_context
+    from bentoml._internal.log import configure_server_logging
 
-    component_context.component_type = "grpc_api_server"
-    component_context.component_index = worker_id
+    server_context.service_type = "grpc_api_server"
+    server_context.worker_index = worker_id
     configure_server_logging()
 
     if worker_id is None:
@@ -123,8 +117,6 @@ def main(
         BentoMLContainer.config.runner_probe.enabled.set(False)
 
     BentoMLContainer.development_mode.set(development_mode)
-    if prometheus_dir is not None:
-        BentoMLContainer.prometheus_multiproc_dir.set(prometheus_dir)
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
 
@@ -135,13 +127,13 @@ def main(
         host = BentoMLContainer.grpc.host.get()
 
     # setup context
-    component_context.component_name = svc.name
+    server_context.service_name = svc.name
     if svc.tag is None:
-        component_context.bento_name = svc.name
-        component_context.bento_version = "not available"
+        server_context.bento_name = svc.name
+        server_context.bento_version = "not available"
     else:
-        component_context.bento_name = svc.tag.name
-        component_context.bento_version = svc.tag.version or "not available"
+        server_context.bento_name = svc.tag.name
+        server_context.bento_version = svc.tag.version or "not available"
 
     from bentoml._internal.server import grpc_app as grpc
 

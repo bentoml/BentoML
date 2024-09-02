@@ -1,18 +1,18 @@
 from __future__ import annotations
 
+import logging
 import os
 import typing as t
-import logging
 
 import pytest
 import transformers
-from transformers.pipelines import pipeline  # type: ignore
-from transformers.pipelines import check_task  # type: ignore
-from transformers.trainer_utils import set_seed
-from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.modeling_auto import AutoModelForAudioClassification
+from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.modeling_auto import AutoModelForSequenceClassification
+from transformers.pipelines import check_task  # type: ignore
+from transformers.pipelines import pipeline  # type: ignore
 from transformers.pipelines.audio_classification import AudioClassificationPipeline
+from transformers.trainer_utils import set_seed
 
 import bentoml
 from bentoml.exceptions import BentoMLException
@@ -75,7 +75,7 @@ def fixture_sentiment() -> tuple[transformers.Pipeline, TaskDefinition]:
 
 
 def test_raise_different_default_definition(
-    sentiment_task: tuple[transformers.Pipeline, TaskDefinition]
+    sentiment_task: tuple[transformers.Pipeline, TaskDefinition],
 ):
     # implementation is different
     sentiment, _ = sentiment_task
@@ -102,7 +102,7 @@ def test_raise_different_default_definition(
 
 
 def test_raise_does_not_match_task_name(
-    sentiment_task: tuple[transformers.Pipeline, TaskDefinition]
+    sentiment_task: tuple[transformers.Pipeline, TaskDefinition],
 ):
     # pipeline task does not match given task name or pipeline.task is None
     sentiment, original_task = sentiment_task
@@ -120,7 +120,7 @@ def test_raise_does_not_match_task_name(
 
 
 def test_raise_does_not_match_impl_field(
-    sentiment_task: tuple[transformers.Pipeline, TaskDefinition]
+    sentiment_task: tuple[transformers.Pipeline, TaskDefinition],
 ):
     sentiment, original_task = sentiment_task
     # task_definition['impl'] is different from pipeline type
@@ -236,13 +236,16 @@ def fixture_pair_classification_pipeline(unload_registry: bool, tmp_path: Path):
         model=model,
         tokenizer=transformers.BertTokenizer(vocab_file.__fspath__()),
     )
+    yield classifier
     if unload_registry:
         del PIPELINE_REGISTRY.supported_tasks[TASK_NAME]
 
-    return classifier
-
 
 @pytest.mark.parametrize("unload_registry", [True, False])
+@pytest.mark.skipif(
+    os.getenv("GITHUB_ACTIONS") is not None,
+    reason="Eager import from general frameworks on GitHub actions.",
+)
 def test_custom_pipeline(pair_classification_pipeline: PairClassificationPipeline):
     """
     Test saving and loading a custom pipeline from scratch. This is not covered by the framework tests
@@ -288,3 +291,56 @@ def test_custom_pipeline(pair_classification_pipeline: PairClassificationPipelin
     ) == pair_classification_pipeline("I hate you", second_text="I love you")
 
     runner.destroy()
+
+
+def test_import_model_with_synced_version():
+    revision = "3956d303d3cddf0708ff20660c1ea5f6ec30e434"
+    bento_model = bentoml.transformers.import_model(
+        "tiny-bert",
+        "hf-internal-testing/tiny-random-BertModel",
+        sync_with_hub_version=True,
+        revision=revision,
+    )
+
+    assert bento_model.tag.version == revision
+    bentoml.models.delete("tiny-bert:3956d303d3cddf0708ff20660c1ea5f6ec30e434")
+
+    revision = "3956d303d3cddf0708ff20660c1ea5f6ec30e434"
+    bento_model = bentoml.transformers.import_model(
+        "tiny-bert:asdf",
+        "hf-internal-testing/tiny-random-BertModel",
+        sync_with_hub_version=True,
+        revision=revision,
+    )
+
+    assert bento_model.tag.version == revision
+    bentoml.models.delete("tiny-bert:3956d303d3cddf0708ff20660c1ea5f6ec30e434")
+
+    revision = "3956d303d3cddf0708ff20660c1ea5f6ec30e434"
+    bento_model = bentoml.transformers.import_model(
+        "tiny-bert:asdf",
+        "hf-internal-testing/tiny-random-BertModel",
+        revision=revision,
+    )
+
+    assert bento_model.tag.version == "asdf"
+    bentoml.models.delete("tiny-bert:asdf")
+
+
+def test_import_model_has_required_files():
+    revision = "3956d303d3cddf0708ff20660c1ea5f6ec30e434"
+    labels = {"framework": "transformers"}
+    bento_model = bentoml.transformers.import_model(
+        "tiny-bert",
+        "hf-internal-testing/tiny-random-BertModel",
+        sync_with_hub_version=True,
+        revision=revision,
+        labels=labels,
+    )
+
+    assert os.path.exists(bento_model.path_of("config.json"))
+    assert os.path.exists(bento_model.path_of("pytorch_model.bin"))
+    assert os.path.exists(bento_model.path_of("pretrained.v2.pkl"))
+    assert os.path.exists(bento_model.path_of("model.yaml"))
+    assert bento_model.info.labels == labels
+    bentoml.models.delete("tiny-bert:3956d303d3cddf0708ff20660c1ea5f6ec30e434")

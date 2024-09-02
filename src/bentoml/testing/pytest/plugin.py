@@ -1,10 +1,10 @@
 # pylint: disable=unused-argument
 from __future__ import annotations
 
-import os
-import typing as t
-import tempfile
 import contextlib
+import os
+import tempfile
+import typing as t
 from typing import TYPE_CHECKING
 
 import psutil
@@ -12,21 +12,22 @@ import pytest
 from pytest import MonkeyPatch
 
 import bentoml
+from bentoml._internal.configuration import BENTOML_VERSION
+from bentoml._internal.configuration import clean_bentoml_version
+from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.models import ModelContext
 from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils import validate_or_create_dir
-from bentoml._internal.models import ModelContext
-from bentoml._internal.configuration import CLEAN_BENTOML_VERSION
-from bentoml._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     import numpy as np
-    from _pytest.main import Session
-    from _pytest.nodes import Item
     from _pytest.config import Config
     from _pytest.config import ExitCode
-    from _pytest.python import Metafunc
-    from _pytest.fixtures import FixtureRequest
     from _pytest.config.argparsing import Parser
+    from _pytest.fixtures import FixtureRequest
+    from _pytest.main import Session
+    from _pytest.nodes import Item
+    from _pytest.python import Metafunc
 
     from bentoml._internal.server.metrics.prometheus import PrometheusClient
 
@@ -45,7 +46,7 @@ _RUN_GRPC_TESTS_MARKER = "--run-grpc-tests"
 
 @pytest.mark.tryfirst
 def pytest_report_header(config: Config) -> list[str]:
-    return [f"bentoml: version={CLEAN_BENTOML_VERSION}"]
+    return [f"bentoml: version={clean_bentoml_version(BENTOML_VERSION)}"]
 
 
 @pytest.hookimpl
@@ -130,21 +131,21 @@ def _setup_deployment_mode(metafunc: Metafunc):
 
 def _setup_model_store(metafunc: Metafunc):
     """Setup dummy models for test session."""
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         "testmodel",
         module=__name__,
         signatures={},
         context=TEST_MODEL_CONTEXT,
     ):
         pass
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         "testmodel",
         module=__name__,
         signatures={},
         context=TEST_MODEL_CONTEXT,
     ):
         pass
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         "anothermodel",
         module=__name__,
         signatures={},
@@ -311,3 +312,13 @@ def fixture_change_dir(request: FixtureRequest) -> t.Generator[None, None, None]
     os.chdir(
         request.config.invocation_dir,  # type: ignore (bad pytest stubs)
     )
+
+
+@pytest.fixture(scope="function", autouse=True)
+def fixture_reset_config() -> t.Generator[None, None, None]:
+    """Reset BentoML config to default."""
+    before = BentoMLContainer.config.get()
+    try:
+        yield
+    finally:
+        BentoMLContainer.config.set(before)

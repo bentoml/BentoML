@@ -1,110 +1,147 @@
-===============
-Advanced Guides
-===============
+======
+Guides
+======
 
-This guide introduces advanced features in BentoML.
-
-Make sure to go through the :doc:`/tutorial` and :doc:`/concepts/index` before diving
-into this part of the documentation.
+This chapter introduces the key features of BentoML. We recommend you read :doc:`/get-started/quickstart` before diving into this chapter.
 
 .. grid:: 1 2 2 2
     :gutter: 3
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`/guides/batching`
-        :link: /guides/batching
+    .. grid-item-card:: :doc:`/guides/services`
+        :link: /guides/services
         :link-type: doc
+
+        Understand the BentoML Service and its key components.
+
+    .. grid-item-card:: :doc:`/guides/iotypes`
+        :link: /guides/iotypes
+        :link-type: doc
+
+        Customize the input and output type of BentoML Services.
+
+    .. grid-item-card:: :doc:`/guides/deployment`
+        :link: /guides/deployment
+        :link-type: doc
+
+        Gain a general understanding of BentoCloud deployment.
 
     .. grid-item-card:: :doc:`/guides/containerization`
         :link: /guides/containerization
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/client`
-        :link: /guides/client
+        Create an OCI-compliant image for your BentoML project and deploy it anywhere.
+
+    .. grid-item-card:: :doc:`/guides/workers`
+        :link: /guides/workers
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/server`
-        :link: /guides/server
+        Understand BentoML workers and how to configure them.
+
+    .. grid-item-card:: :doc:`/guides/build-options`
+        :link: /guides/build-options
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/grpc`
-        :link: /guides/grpc
+        Customize the build configurations of a Bento.
+
+    .. grid-item-card:: :doc:`/guides/model-store`
+        :link: /guides/model-store
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/configuration`
-        :link: /guides/configuration
+        Use the BentoML local Model Store to manage your models in a unified way.
+
+    .. grid-item-card:: :doc:`/guides/tasks`
+        :link: /guides/tasks
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/scheduling`
-        :link: /guides/scheduling
+        Create BentoML tasks to handle long-running workloads and asynchronously get the results.
+
+    .. grid-item-card:: :doc:`/guides/gpu-inference`
+        :link: /guides/gpu-inference
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/graph`
-        :link: /guides/graph
+        Configure GPUs to power your machine learning server with BentoML.
+
+    .. grid-item-card:: :doc:`/guides/model-composition`
+        :link: /guides/model-composition
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/monitoring`
-        :link: /guides/monitoring
+        Compose multiple models in your BentoML project.
+
+    .. grid-item-card:: :doc:`/guides/distributed-services`
+        :link: /guides/distributed-services
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/logging`
-        :link: /guides/logging
+        Create distributed Services for advanced use cases.
+
+    .. grid-item-card:: :doc:`/guides/testing`
+        :link: /guides/testing
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/metrics`
-        :link: /guides/metrics
+        Create tests to verify the functionality of your model and the operational aspect of your Service.
+
+    .. grid-item-card:: :doc:`/guides/clients`
+        :link: /guides/clients
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/performance`
-        :link: /guides/performance
+        Use BentoML clients to interact with your Service.
+
+    .. grid-item-card:: :doc:`/guides/adaptive-batching`
+        :link: /guides/adaptive-batching
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/gpu`
-        :link: /guides/gpu
+        Enable adaptive batching to batch requests for reduced latency and optimized resource use.
+
+    .. grid-item-card:: :doc:`/guides/observability/index`
+        :link: /guides/observability/index
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/security`
-        :link: /guides/security
+        Understand observability in BentoML, including monitoring, logging, tracing, and metrics.
+
+    .. grid-item-card:: :doc:`/guides/asgi`
+        :link: /guides/asgi
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/tracing`
-        :link: /guides/tracing
+        Integrate ASGI frameworks in a BentoML Service to provide additional features to exposed endpoints.
+
+    .. grid-item-card:: :doc:`/guides/configurations`
+        :link: /guides/configurations
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/envmanager`
-        :link: /guides/envmanager
+        Customize the runtime behaviors of your Service.
+
+    .. grid-item-card:: :doc:`/guides/lifecycle-hooks`
+        :link: /guides/lifecycle-hooks
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/guides/migration`
-        :link: /guides/migration
+        Configure hooks to run custom logic at different stages of a Service's lifecycle.
+
+    .. grid-item-card:: :doc:`/guides/error-handling`
+        :link: /guides/error-handling
         :link-type: doc
+
+        Define custom error handling logic for your BentoML Service.
 
 .. toctree::
     :hidden:
 
-    batching
+    services
+    iotypes
+    deployment
     containerization
-    client
-    server
-    configuration
-    scheduling
-    envmanager
-    graph
-    monitoring
-    logging
-    metrics
-    performance
-    grpc
-    gpu
-    security
-    tracing
-    migration
-
-.. admonition:: Help us improve the project!
-
-    Found an issue or a TODO item? You're always welcome to make contributions to the
-    project and its documentation. Check out the
-    `BentoML development guide <https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md>`_
-    and `documentation guide <https://github.com/bentoml/BentoML/blob/main/docs/README.md>`_
-    to get started.
+    workers
+    build-options
+    model-store
+    tasks
+    gpu-inference
+    model-composition
+    distributed-services
+    testing
+    clients
+    adaptive-batching
+    observability/index
+    asgi
+    configurations
+    lifecycle-hooks
+    error-handling

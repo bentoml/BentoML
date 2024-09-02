@@ -13,7 +13,6 @@ from bentoml._internal.types import MetadataDict
 
 
 def test_typeref():
-
     # assert __eq__
     assert LazyType("numpy", "ndarray") == np.ndarray
     assert LazyType("numpy", "ndarray") == LazyType(type(np.array([2, 3])))
@@ -97,7 +96,9 @@ def test_validate_metadata():
     assert inp == expected
 
     inp: MetadataDict = {
-        "dataframe": pd.DataFrame(data={"col1": [1, 2], "col2": pd.Series({"a": 3, "b": 4})})  # type: ignore (we don't annotate translated types)
+        "dataframe": pd.DataFrame(
+            data={"col1": [1, 2], "col2": pd.Series({"a": 3, "b": 4})}
+        )  # type: ignore (we don't annotate translated types)
     }
     expected = {"dataframe": {"col1": {"a": 1, "b": 2}, "col2": {"a": 3, "b": 4}}}
     utils.validate_metadata(inp)

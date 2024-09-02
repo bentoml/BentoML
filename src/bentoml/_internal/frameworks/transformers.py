@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import os
-import typing as t
+import inspect
 import logging
+import os
 import platform
+import shutil
+import typing as t
 import warnings
 from types import ModuleType
 
@@ -11,21 +13,25 @@ import attr
 
 import bentoml
 
+from ...exceptions import BentoMLException
+from ...exceptions import MissingDependencyException
+from ...exceptions import NotFound
+from ..models.model import Model
+from ..models.model import ModelContext
+from ..models.model import ModelOptions as BaseModelOptions
+from ..models.model import ModelSignature
 from ..tag import Tag
 from ..types import LazyType
 from ..utils import LazyLoader
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import pkg_version_info
-from ...exceptions import NotFound
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
-from ..models.model import Model
-from ..models.model import ModelContext
-from ..models.model import ModelOptions
-from ..models.model import ModelSignature
+from .utils.transformers import extract_commit_hash
+from .utils.transformers import init_empty_weights
 
 if t.TYPE_CHECKING:
     import cloudpickle
+    import tensorflow as tf
+    import torch
     from transformers.models.auto.auto_factory import (
         _BaseAutoModelClass as BaseAutoModelClass,
     )
@@ -49,14 +55,15 @@ if t.TYPE_CHECKING:
     TupleAutoModel = tuple[BaseAutoModelClass, ...]
 
     class PreTrainedProtocol(t.Protocol):
-        def save_pretrained(self, save_directory: str, **kwargs: t.Any) -> None:
-            ...
+        @property
+        def framework(self) -> str: ...
+
+        def save_pretrained(self, save_directory: str, **kwargs: t.Any) -> None: ...
 
         @classmethod
         def from_pretrained(
-            cls, pretrained_model_name_or_path: str, **kwargs: t.Any
-        ) -> PreTrainedProtocol:
-            ...
+            cls, pretrained_model_name_or_path: str, *args: t.Any, **kwargs: t.Any
+        ) -> PreTrainedProtocol: ...
 
     P = t.ParamSpec("P")
 
@@ -64,6 +71,8 @@ else:
     TupleStr = TupleAutoModel = tuple
     DefaultMapping = SimpleDefaultMapping = ModelDefaultMapping = dict
 
+    torch = LazyLoader("torch", globals(), "torch")
+    tf = LazyLoader("tf", globals(), "tensorflow")
     cloudpickle = LazyLoader(
         "cloudpickle",
         globals(),
@@ -93,7 +102,7 @@ if t.TYPE_CHECKING:
     )
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get"]
+__all__ = ["load_model", "import_model", "save_model", "get_runnable", "get"]
 
 _object_setattr = object.__setattr__
 
@@ -101,7 +110,6 @@ MODULE_NAME = "bentoml.transformers"
 API_VERSION = "v2"
 PIPELINE_PICKLE_NAME = f"pipeline.{API_VERSION}.pkl"
 PRETRAINED_PROTOCOL_NAME = f"pretrained.{API_VERSION}.pkl"
-
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +119,7 @@ HAS_PIPELINE_REGISTRY = TRANSFORMERS_VERSION >= (4, 21, 0)
 
 
 def _deep_convert_to_tuple(
-    dct: dict[str, str | TupleStr | list[str] | dict[str, t.Any]]
+    dct: dict[str, str | TupleStr | list[str] | dict[str, t.Any]],
 ) -> dict[str, str | TupleStr | list[str] | dict[str, t.Any]]:
     for k, v in dct.items():
         override = v
@@ -150,7 +158,7 @@ else:
 
 
 def _autoclass_converter(
-    value: tuple[BaseAutoModelClass | str, ...] | None
+    value: tuple[BaseAutoModelClass | str, ...] | None,
 ) -> TupleStr:
     if value is None:
         return TupleStr()
@@ -162,7 +170,7 @@ def _autoclass_converter(
 
 
 @attr.define
-class TransformersOptions(ModelOptions):
+class ModelOptions(BaseModelOptions):
     """Options for the Transformers model."""
 
     task: str = attr.field(factory=str, validator=attr.validators.instance_of(str))
@@ -190,14 +198,18 @@ class TransformersOptions(ModelOptions):
     @staticmethod
     def process_task_mapping(
         impl: type[transformers.Pipeline],
-        pt: tuple[BaseAutoModelClass | str, ...]
-        | TupleAutoModel
-        | BaseAutoModelClass
-        | None = None,
-        tf: tuple[BaseAutoModelClass | str, ...]
-        | TupleAutoModel
-        | BaseAutoModelClass
-        | None = None,
+        pt: (
+            tuple[BaseAutoModelClass | str, ...]
+            | TupleAutoModel
+            | BaseAutoModelClass
+            | None
+        ) = None,
+        tf: (
+            tuple[BaseAutoModelClass | str, ...]
+            | TupleAutoModel
+            | BaseAutoModelClass
+            | None
+        ) = None,
         default: DefaultMapping | None = None,
         type: str | None = None,
     ) -> TaskDefinition:
@@ -228,7 +240,7 @@ class TransformersOptions(ModelOptions):
         return task_impl
 
     @classmethod
-    def from_task(cls, task: str, definition: TaskDefinition) -> TransformersOptions:
+    def from_task(cls, task: str, definition: TaskDefinition) -> ModelOptions:
         return cls(
             task=task,
             tf=definition.get("tf", None),  # type: ignore (handle by cattrs converter)
@@ -292,18 +304,22 @@ def get(tag_like: str | Tag) -> Model:
 def register_pipeline(
     task: str,
     impl: type[transformers.Pipeline],
-    pt: tuple[BaseAutoModelClass | str, ...]
-    | TupleAutoModel
-    | BaseAutoModelClass
-    | None = None,
-    tf: tuple[BaseAutoModelClass | str, ...]
-    | TupleAutoModel
-    | BaseAutoModelClass
-    | None = None,
+    pt: (
+        tuple[BaseAutoModelClass | str, ...]
+        | TupleAutoModel
+        | BaseAutoModelClass
+        | None
+    ) = None,
+    tf: (
+        tuple[BaseAutoModelClass | str, ...]
+        | TupleAutoModel
+        | BaseAutoModelClass
+        | None
+    ) = None,
     default: DefaultMapping | None = None,
     type: str | None = None,
 ):
-    task_impl = TransformersOptions.process_task_mapping(impl, pt, tf, default, type)
+    task_impl = ModelOptions.process_task_mapping(impl, pt, tf, default, type)
 
     if HAS_PIPELINE_REGISTRY:
         from transformers.pipelines import PIPELINE_REGISTRY
@@ -343,16 +359,16 @@ def delete_pipeline(task: str) -> None:
 @t.overload
 def load_model(
     bento_model: str | Tag | Model, **kwargs: t.Any
-) -> transformers.Pipeline:
-    ...
+) -> transformers.Pipeline: ...
 
 
 @t.overload
-def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> PreTrainedProtocol:
-    ...
+def load_model(
+    bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any
+) -> TransformersPreTrained: ...
 
 
-def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
+def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) -> t.Any:
     """
     Load the Transformers model from BentoML local modelstore with given name.
 
@@ -360,6 +376,8 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
         bento_model: Either the tag of the model to get from the store,
                      or a BentoML :class:`~bentoml.Model` instance to load the
                      model from.
+        args: Additional model args to be passed into the model if the object is a Transformers PreTrained protocol.
+              This shouldn't be used when the bento_model is a pipeline.
         kwargs: Additional keyword arguments to pass into the pipeline.
 
     Returns:
@@ -381,11 +399,10 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
             f"Model {bento_model.tag} was saved with module {bento_model.info.module}, not loading with {MODULE_NAME}."
         )
 
-    options = t.cast(TransformersOptions, bento_model.info.options)
+    options = t.cast(ModelOptions, bento_model.info.options)
     api_version = bento_model.info.api_version
     task = options.task
     pipeline: transformers.Pipeline | None = None
-
     if api_version == "v1":
         # NOTE: backward compatibility
         from transformers.pipelines import get_supported_tasks
@@ -455,8 +472,11 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
         if "_pretrained_class" in bento_model.info.metadata:
             with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "rb") as f:
                 protocol: PreTrainedProtocol = cloudpickle.load(f)
-            return protocol.from_pretrained(bento_model.path, **kwargs)
+            return protocol.from_pretrained(bento_model.path, *args, **kwargs)
         else:
+            assert (
+                len(args) == 0
+            ), "Positional args are not supported for pipeline. Make sure to only use kwargs instead."
             with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
                 pipeline_class: type[transformers.Pipeline] = cloudpickle.load(f)
 
@@ -511,61 +531,7 @@ def load_model(bento_model: str | Tag | Model, **kwargs: t.Any) -> t.Any:
                 raise
 
 
-@t.overload
-def save_model(
-    name: str,
-    pretrained_or_pipeline: PreTrainedProtocol,
-    pipeline: transformers.Pipeline | None = ...,
-    task_name: t.LiteralString | None = ...,
-    task_definition: TaskDefinition | None = ...,
-    *,
-    signatures: ModelSignaturesType | None = ...,
-    labels: dict[str, str] | None = ...,
-    custom_objects: dict[str, t.Any] | None = ...,
-    external_modules: t.List[ModuleType] | None = ...,
-    metadata: dict[str, t.Any] | None = ...,
-    **save_kwargs: t.Any,
-) -> bentoml.Model:
-    ...
-
-
-@t.overload
-def save_model(
-    name: str,
-    pretrained_or_pipeline: TransformersPreTrained,
-    pipeline: transformers.Pipeline | None = ...,
-    task_name: t.LiteralString | None = ...,
-    task_definition: TaskDefinition | None = ...,
-    *,
-    signatures: ModelSignaturesType | None = ...,
-    labels: dict[str, str] | None = ...,
-    custom_objects: dict[str, t.Any] | None = ...,
-    external_modules: t.List[ModuleType] | None = ...,
-    metadata: dict[str, t.Any] | None = ...,
-    **save_kwargs: t.Any,
-) -> bentoml.Model:
-    ...
-
-
-@t.overload
-def save_model(
-    name: str,
-    pretrained_or_pipeline: transformers.Pipeline,
-    pipeline: transformers.Pipeline | None = ...,
-    task_name: t.LiteralString | None = ...,
-    task_definition: TaskDefinition | None = ...,
-    *,
-    signatures: ModelSignaturesType | None = ...,
-    labels: dict[str, str] | None = ...,
-    custom_objects: dict[str, t.Any] | None = ...,
-    external_modules: t.List[ModuleType] | None = ...,
-    metadata: dict[str, t.Any] | None = ...,
-    **save_kwargs: t.Any,
-) -> bentoml.Model:
-    ...
-
-
-def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
+def make_default_signatures(pretrained_cls: t.Any) -> ModelSignaturesType:
     default_config = ModelSignature(batchable=False)
     infer_fn = ("__call__",)
 
@@ -577,14 +543,14 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
         )
         return {}
 
-    if transformers.processing_utils.ProcessorMixin in pretrained.__class__.__bases__:
+    if transformers.processing_utils.ProcessorMixin in pretrained_cls.__bases__:
         logger.info(
             "Given '%s' extends the 'transformers.ProcessorMixin'. Make sure to specify the signatures manually if it has additional functions.",
-            pretrained.__class__.__name__,
+            pretrained_cls.__name__,
         )
         return {k: default_config for k in ("__call__", "batch_decode", "decode")}
 
-    if isinstance(pretrained, transformers.PreTrainedTokenizerBase):
+    if issubclass(pretrained_cls, transformers.PreTrainedTokenizerBase):
         infer_fn = (
             "__call__",
             "tokenize",
@@ -603,7 +569,7 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
             "clean_up_tokenization",
             "prepare_seq2seq_batch",
         )
-    elif isinstance(pretrained, transformers.PreTrainedModel):
+    elif issubclass(pretrained_cls, transformers.PreTrainedModel):
         infer_fn = (
             "__call__",
             "forward",
@@ -616,7 +582,7 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
             "group_beam_search",
             "constrained_beam_search",
         )
-    elif isinstance(pretrained, transformers.TFPreTrainedModel):
+    elif issubclass(pretrained_cls, transformers.TFPreTrainedModel):
         infer_fn = (
             "__call__",
             "predict",
@@ -628,25 +594,334 @@ def make_default_signatures(pretrained: t.Any) -> ModelSignaturesType:
             "beam_search",
             "contrastive_search",
         )
-    elif isinstance(pretrained, transformers.FlaxPreTrainedModel):
+    elif issubclass(pretrained_cls, transformers.FlaxPreTrainedModel):
         infer_fn = ("__call__", "generate")
-    elif isinstance(pretrained, transformers.image_processing_utils.BaseImageProcessor):
+    elif issubclass(
+        pretrained_cls, transformers.image_processing_utils.BaseImageProcessor
+    ):
         infer_fn = ("__call__", "preprocess")
-    elif isinstance(pretrained, transformers.SequenceFeatureExtractor):
+    elif issubclass(pretrained_cls, transformers.SequenceFeatureExtractor):
         infer_fn = ("pad",)
-    elif not isinstance(pretrained, transformers.Pipeline):
+    elif not issubclass(pretrained_cls, transformers.Pipeline):
         logger.warning(
             "Unable to infer default signatures for '%s'. Make sure to specify it manually.",
-            pretrained,
+            pretrained_cls,
         )
         return {}
 
     return {k: default_config for k in infer_fn}
 
 
+def import_model(
+    name: Tag | str,
+    model_name_or_path: str | os.PathLike[str],
+    *,
+    proxies: dict[str, str] | None = None,
+    revision: str = "main",
+    force_download: bool = False,
+    resume_download: bool = False,
+    trust_remote_code: bool = False,
+    clone_repository: bool = False,
+    sync_with_hub_version: bool = False,
+    signatures: ModelSignaturesType | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: t.List[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
+    **extra_hf_hub_kwargs: dict[str, t.Any],
+) -> bentoml.Model:
+    """
+    Import Transformer model from a artifact URI to the BentoML model store.
+
+    Args:
+        name:
+            The name to give to the model in the BentoML store. This must be a valid
+            :obj:`~bentoml.Tag` name.
+        model_name_or_path:
+            Can be either:
+            - A string, the *repo id* of a model repo hosted on https://huggingface.co/
+              Valid repo ids have to be located under a user or organization name, like
+              `CompVis/ldm-text2im-large-256`.
+            - A path to a *directory* containing weights saved using
+              [`~transformers.AutoModel.save_pretrained`], e.g., `./my_pretrained_directory/`.
+        proxies (`Dict[str, str]`, *optional*):
+            A dictionary of proxy servers to use by protocol or endpoint, e.g., `{'http': 'foo.bar:3128',
+            'http://hostname': 'foo.bar:4012'}`. The proxies are used on each request.
+        revision (`str`, *optional*, defaults to `"main"`):
+            The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
+            git-based system for storing models and other artifacts on huggingface.co, so `revision` can be any
+            identifier allowed by git.
+        force_download (`boolean`, *optional*, defaults to False):
+            Force to (re-)download the model weights and configuration files and override the cached versions if they exist.
+        resume_download (`boolean`, *optional*, defaults to False):
+            Do not delete incompletely received file. Attempt to resume the download if such a file exists.
+        trust_remote_code (`boolean`, *optional*, defaults to False):
+            Whether or not to allow for custom models defined on the Hub in their own modeling files. This option
+            should only be set to `True` for repositories you trust and in which you have read the code, as it will
+            execute code present on the Hub on your local machine.
+        clone_repository: (`boolean`, *optional*, defaults to False):
+            Download all files from the huggingface repository of the given model
+        sync_with_hub_version (`bool`, default to False):
+            If sync_with_hub_version is true, then the model imported by
+        signatures:
+            Signatures of predict methods to be used. If not provided, the signatures
+            default to {"__call__": {"batchable": False}}. See
+            :obj:`~bentoml.types.ModelSignature` for more details.
+        labels:
+            A default set of management labels to be associated with the model. For
+            example: ``{"training-set": "data-v1"}``.
+        custom_objects:
+            Custom objects to be saved with the model. An example is
+            ``{"my-normalizer": normalizer}``. Custom objects are serialized with
+            cloudpickle.
+        metadata:
+            Metadata to be associated with the model. An example is ``{"param_a": .2}``.
+
+            Metadata is intended for display in a model management UI and therefore all
+            values in metadata dictionary must be a primitive Python type, such as
+            ``str`` or ``int``.
+        extra_hf_hub_kwargs:
+            Additional keyword arguments for download options.
+                Setting `from_tf=True` will download the following file `tf_model.h5`.
+                Setting `from_flax=True` will download the following file `flax_model.msgpack`.
+                Setting `use_safetensors=True` will download the following file `model.safetensors`.
+                Otherwise, the default targeted file is `pytorch_model.bin`
+
+    Returns:
+        A :obj:`~bentoml.Model` instance referencing a saved model in the local BentoML
+        model store.
+
+    Example:
+
+    .. code-block:: python
+
+        import bentoml
+
+        bentoml.transformers.import_model(
+            'my_t5_model',
+            "t5-base",
+            signatures={
+                "__call__": {"batchable": False},
+            }
+        )
+    """
+
+    tag = Tag.from_taglike(name)
+
+    try:
+        model = bentoml.models.get(tag)
+        return model
+    except bentoml.exceptions.NotFound:
+        pass
+
+    if sync_with_hub_version:
+        if tag.version is not None:
+            logger.warn(
+                f"sync_with_hub_version is True, user provided version {tag.version} may be overridden by huggingface hub's commit hash"
+            )
+
+    # The below API are introduced since 4.18
+    if pkg_version_info("transformers")[:2] >= (4, 18):
+        from transformers.utils import is_flax_available
+        from transformers.utils import is_tf_available
+        from transformers.utils import is_torch_available
+    else:
+        from .utils.transformers import is_flax_available
+        from .utils.transformers import is_tf_available
+        from .utils.transformers import is_torch_available
+
+    framework_versions = {"transformers": get_pkg_version("transformers")}
+    if is_torch_available():
+        framework_versions["torch"] = get_pkg_version("torch")
+    if is_tf_available():
+        from .utils.tensorflow import get_tf_version
+
+        framework_versions["tensorflow"] = get_tf_version()
+    if is_flax_available():
+        framework_versions.update(
+            {
+                "flax": get_pkg_version("flax"),
+                "jax": get_pkg_version("jax"),
+                "jaxlib": get_pkg_version("jaxlib"),
+            }
+        )
+    context = ModelContext(
+        framework_name="transformers", framework_versions=framework_versions
+    )
+
+    if trust_remote_code:
+        logger.warning(
+            "trust_remote_code is set to True. Bentoml will load the specified model into memory by default. To avoid loading the model to memory, try setting the keyword argument clone_repository=True."
+        )
+
+    config = transformers.AutoConfig.from_pretrained(
+        model_name_or_path,
+        proxies=proxies,
+        revision=revision,
+        force_download=force_download,
+        resume_download=resume_download,
+        trust_remote_code=trust_remote_code,
+        **extra_hf_hub_kwargs,
+    )
+
+    is_auto_class = False
+    pretrained_model_class = None
+    if getattr(config, "architectures", None):
+        try:
+            pretrained_model_class = getattr(transformers, config.architectures[0])
+        except AttributeError:
+            pass
+    if getattr(config, "auto_map", None):
+        for auto_class in config.auto_map:
+            if "AutoModel" in auto_class:
+                pretrained_model_class = getattr(transformers, auto_class)
+                is_auto_class = True
+                break
+
+    if pretrained_model_class is None:
+        raise BentoMLException(
+            "BentoML cannot automatically determine the pretrained model class/architecture for the given model."
+        )
+
+    model = None
+    if os.path.isdir(model_name_or_path):
+        src_dir = model_name_or_path
+        if sync_with_hub_version:
+            raise BentoMLException(
+                "Cannot sync version with huggingface hub when importing a local model"
+            )
+    else:
+        try:
+            if clone_repository:
+                from huggingface_hub import snapshot_download
+
+                # filter out kwargs as snapshot_download my not accept some kwargs
+                params = inspect.signature(snapshot_download).parameters.values()
+                param_names = {param.name for param in params}
+                input_params = dict(
+                    filter(lambda x: x[0] in param_names, extra_hf_hub_kwargs.items())
+                )
+                src_dir = snapshot_download(
+                    model_name_or_path,
+                    proxies=proxies,
+                    revision=revision,
+                    force_download=force_download,
+                    resume_download=resume_download,
+                    **input_params,
+                )
+            else:
+                with init_empty_weights():
+                    model = pretrained_model_class.from_pretrained(
+                        model_name_or_path,
+                        proxies=proxies,
+                        revision=revision,
+                        force_download=force_download,
+                        resume_download=resume_download,
+                        trust_remote_code=trust_remote_code,
+                        **extra_hf_hub_kwargs,
+                    )
+                    path_to_config = transformers.utils.cached_file(
+                        model_name_or_path,
+                        transformers.CONFIG_NAME,
+                        proxies=proxies,
+                        revision=revision,
+                        force_download=force_download,
+                        resume_download=resume_download,
+                        **extra_hf_hub_kwargs,
+                    )
+                    src_dir = os.path.dirname(path_to_config)
+
+                if sync_with_hub_version:
+                    from huggingface_hub.file_download import REGEX_COMMIT_HASH
+
+                    version = extract_commit_hash(src_dir, REGEX_COMMIT_HASH)
+                    if version is not None:
+                        tag.version = version
+        except Exception:
+            logger.info(
+                "Failed to download model file for (%s).",
+                model_name_or_path,
+            )
+            raise
+
+    if model is None:
+        with init_empty_weights():
+            if is_auto_class:
+                # NOTE: Under `init_empty_weights`, `.from_config` won't load the model weights. Whereas for `.from_pretrained`, transformers needs to find out what layers to load with the architecture, thereby loading the models into memory, then unload afterwards.
+                # See https://github.com/huggingface/accelerate/issues/2163 for more information.
+                model = pretrained_model_class.from_config(
+                    trust_remote_code=trust_remote_code,
+                    config=config,
+                    **extra_hf_hub_kwargs,
+                )
+            else:
+                model = pretrained_model_class(config=config)
+
+    pretrained = t.cast("PreTrainedProtocol", model)
+    assert all(
+        hasattr(pretrained, defn) for defn in ("save_pretrained", "from_pretrained")
+    ), f"'pretrained={pretrained}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
+    if metadata is None:
+        metadata = {}
+
+    if signatures is None:
+        signatures = make_default_signatures(pretrained.__class__)
+        # NOTE: ``make_default_signatures`` can return an empty dict, hence we will only
+        # log when signatures are available.
+        if signatures:
+            logger.info(
+                'Using the default model signature for Transformers (%s) for model "%s".',
+                signatures,
+                name,
+            )
+
+    metadata.update(
+        {
+            "_pretrained_class": pretrained.__class__.__name__,
+        }
+    )
+
+    if hasattr(pretrained, "framework") and isinstance(
+        pretrained,
+        (
+            transformers.PreTrainedModel,
+            transformers.TFPreTrainedModel,
+            transformers.FlaxPreTrainedModel,
+        ),
+    ):
+        # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
+        metadata["_framework"] = pretrained.framework
+
+    with bentoml.models._create(  # type: ignore
+        tag,
+        module=MODULE_NAME,
+        api_version=API_VERSION,
+        signatures=signatures,
+        labels=labels,
+        options=ModelOptions(),
+        custom_objects=custom_objects,
+        external_modules=external_modules,
+        metadata=metadata,
+        context=context,
+    ) as bento_model:
+        ignore = shutil.ignore_patterns(".git")
+        shutil.copytree(
+            src_dir,
+            bento_model.path,
+            symlinks=False,
+            ignore=ignore,
+            dirs_exist_ok=True,
+        )
+        with open(bento_model.path_of(PRETRAINED_PROTOCOL_NAME), "wb") as f:
+            cloudpickle.dump(pretrained.__class__, f)
+        return bento_model
+
+
 def save_model(
-    name: str,
-    pretrained_or_pipeline: t.Any = None,
+    name: Tag | str,
+    pretrained_or_pipeline: (
+        TransformersPreTrained | transformers.Pipeline | PreTrainedProtocol | None
+    ) = None,
     pipeline: transformers.Pipeline | None = None,
     task_name: str | None = None,
     task_definition: dict[str, t.Any] | TaskDefinition | None = None,
@@ -732,12 +1007,12 @@ def save_model(
 
     # The below API are introduced since 4.18
     if pkg_version_info("transformers")[:2] >= (4, 18):
-        from transformers.utils import is_tf_available
         from transformers.utils import is_flax_available
+        from transformers.utils import is_tf_available
         from transformers.utils import is_torch_available
     else:
-        from .utils.transformers import is_tf_available
         from .utils.transformers import is_flax_available
+        from .utils.transformers import is_tf_available
         from .utils.transformers import is_torch_available
 
     framework_versions = {"transformers": get_pkg_version("transformers")}
@@ -762,7 +1037,7 @@ def save_model(
     )
 
     if signatures is None:
-        signatures = make_default_signatures(pretrained_or_pipeline)
+        signatures = make_default_signatures(pretrained_or_pipeline.__class__)
         # NOTE: ``make_default_signatures`` can return an empty dict, hence we will only
         # log when signatures are available.
         if signatures:
@@ -799,7 +1074,7 @@ def save_model(
             assert "impl" in task_definition, "'task_definition' requires 'impl' key."
 
             impl = task_definition["impl"]
-            if type(pipeline_) != impl:
+            if isinstance(pipeline_, impl):
                 raise BentoMLException(
                     f"Argument 'pipeline' is not an instance of {impl}. It is an instance of {type(pipeline_)}."
                 )
@@ -826,13 +1101,13 @@ def save_model(
                 check_task(pipeline_.task if task_name is None else task_name)[:2],
             )
 
-        with bentoml.models.create(
+        with bentoml.models._create(  # type: ignore
             name,
             module=MODULE_NAME,
             api_version=API_VERSION,
             labels=labels,
             context=context,
-            options=TransformersOptions.from_task(*options_args),
+            options=ModelOptions.from_task(*options_args),
             signatures=signatures,
             custom_objects=custom_objects,
             external_modules=external_modules,
@@ -853,14 +1128,29 @@ def save_model(
         if metadata is None:
             metadata = {}
 
-        metadata["_pretrained_class"] = pretrained.__class__.__name__
-        with bentoml.models.create(
+        metadata.update(
+            {
+                "_pretrained_class": pretrained.__class__.__name__,
+            }
+        )
+        if hasattr(pretrained, "framework") and isinstance(
+            pretrained,
+            (
+                transformers.PreTrainedModel,
+                transformers.TFPreTrainedModel,
+                transformers.FlaxPreTrainedModel,
+            ),
+        ):
+            # NOTE: Only PreTrainedModel and variants has this, not tokenizer.
+            metadata["_framework"] = pretrained.framework
+
+        with bentoml.models._create(  # type: ignore
             name,
             module=MODULE_NAME,
             api_version=API_VERSION,
             labels=labels,
             context=context,
-            options=TransformersOptions(),
+            options=ModelOptions(),
             signatures=signatures,
             custom_objects=custom_objects,
             external_modules=external_modules,
@@ -886,19 +1176,59 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
             super().__init__()
 
             available_gpus = os.getenv("CUDA_VISIBLE_DEVICES", "")
+            # assign CPU resources
+            kwargs = {}
+
             if available_gpus not in ("", "-1"):
                 # assign GPU resources
                 if not available_gpus.isdigit():
                     raise ValueError(
                         f"Expecting numeric value for CUDA_VISIBLE_DEVICES, got {available_gpus}."
                     )
-                else:
-                    kwargs = {"device": int(available_gpus)}
+                if "_pretrained_class" not in bento_model.info.metadata:
+                    # NOTE: then this is a pipeline. We then pass the device to it.
+                    kwargs["device"] = int(available_gpus)
+            if "_pretrained_class" not in bento_model.info.metadata:
+                self.model = load_model(bento_model, **kwargs)
             else:
-                # assign CPU resources
-                kwargs = {}
-
-            self.model = load_model(bento_model, **kwargs)
+                if "_framework" in bento_model.info.metadata:
+                    if (
+                        "torch" == bento_model.info.metadata["_framework"]
+                        or "pt" == bento_model.info.metadata["_framework"]
+                    ):
+                        self.model = t.cast(
+                            transformers.PreTrainedModel,
+                            load_model(bento_model, **kwargs),
+                        ).to(
+                            torch.device(
+                                "cuda" if available_gpus not in ("", "-1") else "cpu"
+                            )
+                        )
+                        torch.set_default_tensor_type("torch.cuda.FloatTensor")
+                    elif "tf" == bento_model.info.metadata["_framework"]:
+                        with tf.device(
+                            "/device:CPU:0"
+                            if available_gpus in ("", "-1")
+                            else f"/device:GPU:{available_gpus}"
+                        ):
+                            self.model = t.cast(
+                                transformers.TFPreTrainedModel,
+                                load_model(bento_model, **kwargs),
+                            )
+                    else:
+                        # NOTE: we need to hide all GPU from TensorFlow, otherwise it will try to allocate
+                        # memory on the GPU and make it unavailable for JAX.
+                        tf.config.experimental.set_visible_devices([], "GPU")
+                        self.model = t.cast(
+                            transformers.FlaxPreTrainedModel,
+                            load_model(bento_model, **kwargs),
+                        )
+                else:
+                    logger.warning(
+                        "Current %s is saved with an older version of BentoML. Setting GPUs on this won't work as expected. Make sure to save it with a newer version of BentoML.",
+                        bento_model,
+                    )
+                    self.model = load_model(bento_model, **kwargs)
 
             # NOTE: backward compatibility with previous BentoML versions.
             self.pipeline = self.model

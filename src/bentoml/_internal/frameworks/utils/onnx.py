@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 
-from ...types import LazyType
 from ....exceptions import BentoMLException
+from ...types import LazyType
 from ...utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
@@ -76,7 +76,6 @@ def gen_input_casting_func(spec: dict[str, t.Any]) -> ONNXArgCastingFuncType:
 
 
 def _gen_input_casting_func(sig: dict[str, t.Any]) -> ONNXArgCastingFuncType:
-
     input_types = list(sig.keys())
     if len(input_types) != 1:
         raise BentoMLException(
@@ -88,9 +87,8 @@ def _gen_input_casting_func(sig: dict[str, t.Any]) -> ONNXArgCastingFuncType:
 
 
 def _gen_input_casting_func_for_tensor(
-    sig: dict[str, t.Any]
+    sig: dict[str, t.Any],
 ) -> t.Callable[[ONNXArgTensorType], ext.NpNDArray]:
-
     elem_type = sig["elemType"]
     to_dtype = TENSORPROTO_ELEMENT_TYPE_TO_NUMPY_TYPE[elem_type]
 
@@ -120,9 +118,8 @@ CASTING_FUNC_DISPATCHER["tensorType"] = t.cast(
 
 
 def _gen_input_casting_func_for_map(
-    sig: dict[str, t.Any]
+    sig: dict[str, t.Any],
 ) -> t.Callable[[ONNXArgMapType], dict[ONNXArgMapKeyType, ONNXArgCastedType]]:
-
     map_value_sig = t.cast(dict[str, t.Any], sig["valueType"])
     value_casting_func = _gen_input_casting_func(map_value_sig)
 
@@ -139,9 +136,8 @@ CASTING_FUNC_DISPATCHER["mapType"] = t.cast(
 
 
 def _gen_input_casting_func_for_sequence(
-    sig: dict[str, t.Any]
+    sig: dict[str, t.Any],
 ) -> t.Callable[[ONNXArgSequenceType], list[t.Any]]:
-
     seq_elem_sig = t.cast(dict[str, t.Any], sig["elemType"])
     elem_casting_func = _gen_input_casting_func(seq_elem_sig)
 

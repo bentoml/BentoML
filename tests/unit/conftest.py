@@ -1,13 +1,13 @@
 # pylint: disable=unused-argument
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 
-import yaml
-import pytest
 import cloudpickle
+import pytest
+import yaml
 
 import bentoml
 from bentoml.testing.pytest import TEST_MODEL_CONTEXT
@@ -42,8 +42,8 @@ def reload_directory(
     ├── service.py
     └── train.py
     """
-    from bentoml._internal.utils import bentoml_cattr
     from bentoml._internal.bento.build_config import BentoBuildConfig
+    from bentoml._internal.utils import bentoml_cattr
 
     root = tmp_path_factory.mktemp("reload_directory")
     # create a models directory
@@ -112,7 +112,7 @@ def simple_service() -> bentoml.Service:
         def predict(self, data: t.Any) -> t.Any:
             return data
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         "python_function",
         context=TEST_MODEL_CONTEXT,
         module=__name__,

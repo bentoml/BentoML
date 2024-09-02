@@ -1,20 +1,19 @@
 from __future__ import annotations
 
-import typing as t
-import logging
-import datetime
 import collections
+import datetime
+import logging
 import logging.config
-from typing import TYPE_CHECKING
+import typing as t
 from pathlib import Path
 
 import yaml
 
-from .api import MonitorBase
+from ..context import server_context
 from ..context import trace_context
-from ..context import component_context
+from .base import MonitorBase
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from ..types import JSONSerializable
 
 
@@ -35,13 +34,13 @@ handlers:
     class: logging.handlers.TimedRotatingFileHandler
     level: INFO
     formatter: bentoml_json
-    filename: "{data_filename}"
+    filename: '{data_filename}'
     when: "D"
   bentoml_monitor_schema:
     class: logging.handlers.RotatingFileHandler
     level: INFO
     formatter: bentoml_json
-    filename: "{schema_filename}"
+    filename: '{schema_filename}'
 formatters:
   bentoml_json:
     class: pythonjsonlogger.jsonlogger.JsonFormatter
@@ -57,7 +56,11 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
     data is logged as a JSON array.
     """
 
-    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID) = ("timestamp", "request_id")
+    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_TID) = (
+        "timestamp",
+        "request_id",
+        "trace_id",
+    )
 
     def __init__(
         self,
@@ -79,9 +82,13 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
             with open(self.log_config_file, "r", encoding="utf8") as f:
                 logging_config_yaml = f.read()
 
-        worker_id = component_context.component_index or 0
-        schema_path = Path(f"{self.log_path}/{self.name}/schema/schema.{worker_id}.log")
-        data_path = Path(f"{self.log_path}/{self.name}/data/data.{worker_id}.log")
+        worker_id = server_context.worker_index or 0
+        schema_path = Path(self.log_path).joinpath(
+            self.name, "schema", f"schema.{worker_id}.log"
+        )
+        data_path = Path(self.log_path).joinpath(
+            self.name, "data", f"data.{worker_id}.log"
+        )
 
         schema_path.parent.mkdir(parents=True, exist_ok=True)
         data_path.parent.mkdir(parents=True, exist_ok=True)
@@ -93,7 +100,13 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
             monitor_name=self.name,
         )
 
-        logging_config = yaml.safe_load(logging_config_yaml)
+        try:
+            logging_config = yaml.safe_load(logging_config_yaml)
+        except yaml.YAMLError as e:
+            raise ValueError(
+                f"Error loading logging config from {self.log_config_file}: {e}"
+            ) from e
+
         logging.config.dictConfig(logging_config)
         self.data_logger = logging.getLogger("bentoml_monitor_data")
         self.schema_logger = logging.getLogger("bentoml_monitor_schema")
@@ -109,8 +122,8 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         self.schema_logger.info(
             dict(
                 meta_data={
-                    "bento_name": component_context.bento_name,
-                    "bento_version": component_context.bento_version,
+                    "bento_name": server_context.bento_name,
+                    "bento_version": server_context.bento_version,
                 },
                 columns=list(columns_schema.values()),
             )
@@ -118,7 +131,7 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
 
     def export_data(
         self,
-        datas: t.Dict[str, collections.deque[JSONSerializable]],
+        datas: dict[str, collections.deque[JSONSerializable]],
     ) -> None:
         """
         Export data. This method should be called after all data is logged.
@@ -127,10 +140,11 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
             self._init_logger()
             assert self.data_logger is not None
 
-        extra_columns = dict(
-            timestamp=datetime.datetime.now().isoformat(),
-            request_id=str(trace_context.request_id),
-        )
+        extra_columns = {
+            self.COLUMN_TIME: datetime.datetime.now().isoformat(),
+            self.COLUMN_RID: str(trace_context.request_id),
+            self.COLUMN_TID: str(trace_context.trace_id),
+        }
         while True:
             try:
                 record = {k: v.popleft() for k, v in datas.items()}

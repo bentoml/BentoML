@@ -1,24 +1,25 @@
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
+from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING
-from pathlib import Path
+from typing import Any
 
 import cloudpickle
 
 import bentoml
 from bentoml import Tag
 
-from ..types import LazyType
-from ..models import Model
-from ..utils.pkg import get_pkg_version
 from ...exceptions import NotFound
+from ..models import Model
 from ..models.model import ModelContext
 from ..models.model import PartialKwargsModelOptions as ModelOptions
-from .common.pytorch import torch
+from ..types import LazyType
+from ..utils.pkg import get_pkg_version
 from .common.pytorch import PyTorchTensorContainer
+from .common.pytorch import torch
 
 __all__ = ["load_model", "save_model", "get_runnable", "get", "PyTorchTensorContainer"]
 
@@ -46,6 +47,7 @@ def get(tag_like: str | Tag) -> Model:
 def load_model(
     bentoml_model: str | Tag | Model,
     device_id: t.Optional[str] = "cpu",
+    **torch_load_args: Any,
 ) -> torch.nn.Module:
     """
     Load a model from a BentoML Model with given name.
@@ -76,12 +78,14 @@ def load_model(
 
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
     with Path(weight_file).open("rb") as file:
-        model: "torch.nn.Module" = torch.load(file, map_location=device_id)
+        model: "torch.nn.Module" = torch.load(
+            file, map_location=device_id, **torch_load_args
+        )
     return model
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: "torch.nn.Module",
     *,
     signatures: ModelSignaturesType | None = None,
@@ -168,7 +172,7 @@ def save_model(
             name,
         )
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,
@@ -191,9 +195,9 @@ def get_runnable(bento_model: Model):
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
-    from .common.pytorch import partial_class
     from .common.pytorch import PytorchModelRunnable
     from .common.pytorch import make_pytorch_runnable_method
+    from .common.pytorch import partial_class
 
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
 

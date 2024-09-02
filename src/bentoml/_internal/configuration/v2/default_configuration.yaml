@@ -1,0 +1,107 @@
+version: 2
+services:
+  resources: ~
+  workers: ~
+  threads: 1
+  backlog: 2048
+  # the maximum number of connections that will be made to any given runner server at once
+  max_runner_connections: 16
+  traffic:
+    timeout: 60.0
+    max_concurrency: ~
+  metrics:
+    enabled: true
+    namespace: bentoml_service
+    duration:
+      # https://github.com/prometheus/client_python/blob/f17a8361ad3ed5bc47f193ac03b00911120a8d81/prometheus_client/metrics.py#L544
+      buckets: [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0]
+      min: ~
+      max: ~
+      factor: ~
+  runner_probe: # configure whether the API server's health check endpoints (readyz, livez, healthz) also check the runners
+    enabled: true
+    timeout: 1
+    period: 10
+  logging:
+    access:
+      enabled: true
+      request_content_length: true
+      request_content_type: true
+      response_content_length: true
+      response_content_type: true
+      skip_paths: ['/metrics', '/healthz', '/livez', '/readyz']
+      format:
+        trace_id: 032x
+        span_id: 016x
+  ssl:
+    enabled: false
+    certfile: ~
+    keyfile: ~
+    keyfile_password: ~
+    ca_certs: ~
+    version: 17 # ssl.PROTOCOL_TLS_SERVER
+    cert_reqs: 0 # ssl.CERT_NONE
+    ciphers: TLSv1 # default ciphers
+  http:
+    host: 0.0.0.0
+    port: 3000
+    cors:
+      enabled: false
+      access_control_allow_origins: ~
+      access_control_allow_credentials: ~
+      access_control_allow_methods: ~
+      access_control_allow_headers: ~
+      access_control_allow_origin_regex: ~
+      access_control_max_age: ~
+      access_control_expose_headers: ~
+    response:
+      trace_id: false
+  grpc:
+    host: 0.0.0.0
+    port: 3000
+    max_concurrent_streams: ~
+    maximum_concurrent_rpcs: ~
+    max_message_length: -1
+    reflection:
+      enabled: false
+    channelz:
+      enabled: false
+    metrics:
+      host: 0.0.0.0
+      port: 3001
+  monitoring:
+    enabled: true
+    type: default
+    options:
+      log_config_file: ~
+      log_path: monitoring
+  tracing:
+    exporter_type: ~
+    sample_rate: ~
+    excluded_urls: ~
+    timeout: ~
+    max_tag_value_length: ~
+    zipkin:
+      endpoint: ~
+      local_node_ipv4: ~
+      local_node_ipv6: ~
+      local_node_port: ~
+    jaeger:
+      protocol: thrift
+      collector_endpoint: ~
+      thrift:
+        agent_host_name: ~
+        agent_port: ~
+        udp_split_oversized_batches: ~
+      grpc:
+        insecure: ~
+    otlp:
+      protocol: ~
+      endpoint: ~
+      compression: ~
+      http:
+        certificate_file: ~
+        headers: ~
+      grpc:
+        headers: ~
+        insecure: ~

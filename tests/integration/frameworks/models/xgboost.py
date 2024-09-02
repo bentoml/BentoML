@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.datasets import load_iris
 from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import load_iris
 
 import bentoml
 
 from . import FrameworkTestModel
-from . import FrameworkTestModelInput as Input
 from . import FrameworkTestModelConfiguration as Config
+from . import FrameworkTestModelInput as Input
 
 if TYPE_CHECKING:
     from sklearn.utils import Bunch
@@ -63,11 +63,11 @@ cancer_model = FrameworkTestModel(
                 "predict": [
                     Input(
                         input_args=[np.array([cancer_data[0]])],
-                        expected=close_to([[0.87606, 0.123939]]),
+                        expected=close_to([[0.9181239, 0.0818761]]),
                     ),
                     Input(
                         input_args=[np.array([cancer_data[1]])],
-                        expected=close_to([[0.97558, 0.0244234]]),
+                        expected=close_to([[0.97593766, 0.02406229]]),
                     ),
                 ],
             },
@@ -78,11 +78,11 @@ cancer_model = FrameworkTestModel(
                 "predict": [
                     Input(
                         input_args=[pd.DataFrame([cancer_data[0]])],
-                        expected=close_to([[0.87606, 0.123939]]),
+                        expected=close_to([[0.9181239, 0.0818761]]),
                     ),
                     Input(
                         input_args=[pd.DataFrame([cancer_data[1]])],
-                        expected=close_to([[0.97558, 0.0244234]]),
+                        expected=close_to([[0.97593766, 0.02406229]]),
                     ),
                 ],
             },

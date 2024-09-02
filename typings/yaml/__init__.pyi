@@ -3,16 +3,16 @@ from __future__ import annotations
 from io import BytesIO
 from typing import IO
 from typing import Any
-from typing import Text
-from typing import Union
-from typing import TypeVar
 from typing import Callable
 from typing import Iterator
+from typing import Text
+from typing import TypeVar
+from typing import Union
 from typing import overload
 
+from .dumper import Dumper as Dumper
 from .error import YAMLError as YAMLError
 from .nodes import Node
-from .dumper import Dumper as Dumper
 from .representer import BaseRepresenter as BaseRepresenter
 
 _Yaml = Any

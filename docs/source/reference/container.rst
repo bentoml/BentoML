@@ -2,8 +2,7 @@
 Container APIs
 ==============
 
-The following page includes the Python SDK to build BentoContainer. Refer to :ref:`guides/containerization:Containerization with different container engines.`
-for more information.
+The following page includes the Python SDK to build BentoContainer.
 
 .. autofunction:: bentoml.container.build
 

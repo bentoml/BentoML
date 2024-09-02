@@ -1,7 +1,6 @@
-from typing import TYPE_CHECKING
+from __future__ import annotations
 
-if TYPE_CHECKING:
-    from ._internal.models.model import ModelSignature
-    from ._internal.models.model import ModelSignatureDict
+from ._internal.models.model import ModelSignature
+from ._internal.types import ModelSignatureDict
 
-    __all__ = ["ModelSignature", "ModelSignatureDict"]
+__all__ = ["ModelSignature", "ModelSignatureDict"]

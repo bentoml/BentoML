@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
+from contextvars import ContextVar
 from timeit import default_timer
 from typing import TYPE_CHECKING
-from contextvars import ContextVar
+from typing import Sequence
 
 if TYPE_CHECKING:
     from ... import external_typing as ext
@@ -48,6 +49,7 @@ class AccessLogMiddleware:
         has_request_content_type: bool = False,
         has_response_content_length: bool = False,
         has_response_content_type: bool = False,
+        skip_paths: Sequence[str] = (),
     ) -> None:
         self.app = app
         self.has_request_content_length = has_request_content_length
@@ -55,6 +57,7 @@ class AccessLogMiddleware:
         self.has_response_content_length = has_response_content_length
         self.has_response_content_type = has_response_content_type
         self.logger = logging.getLogger("bentoml.access")
+        self.skip_paths = skip_paths
 
     async def __call__(
         self,
@@ -71,6 +74,9 @@ class AccessLogMiddleware:
         scheme = scope["scheme"]
         method = scope["method"]
         path = scope["path"]
+        if path.startswith(tuple(self.skip_paths)):
+            await self.app(scope, receive, send)
+            return
 
         if self.has_request_content_length or self.has_request_content_type:
             for key, value in scope["headers"]:
@@ -112,7 +118,7 @@ class AccessLogMiddleware:
                     response.append(f"length={response_content_length.get().decode()}")
 
                 latency = max(default_timer() - start, 0) * 1000
-
+                await send(message)
                 self.logger.info(
                     "%s (%s) (%s) %.3fms",
                     address,
@@ -120,6 +126,7 @@ class AccessLogMiddleware:
                     ",".join(response),
                     latency,
                 )
+                return
 
             await send(message)
 

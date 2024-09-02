@@ -1,32 +1,32 @@
 from __future__ import annotations
 
-import typing as t
-import logging
 import functools
+import logging
+import typing as t
 from types import ModuleType
 from typing import TYPE_CHECKING
 
 import attr
 
 import bentoml
-from bentoml import Tag
 from bentoml import Runnable
-from bentoml.models import ModelContext
-from bentoml.exceptions import NotFound
+from bentoml import Tag
 from bentoml.exceptions import MissingDependencyException
+from bentoml.exceptions import NotFound
+from bentoml.models import ModelContext
 
-from ..types import LazyType
 from ..models.model import ModelSignature
 from ..models.model import PartialKwargsModelOptions
 from ..runner.utils import Params
+from ..types import LazyType
 from .utils.tensorflow import get_tf_version
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:  # pragma: no cover
     from .. import external_typing as ext
-    from ..models.model import ModelSignatureDict
     from ..external_typing import tensorflow as tf_ext
+    from ..models.model import ModelSignatureDict
 
     KerasArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
 
@@ -43,7 +43,7 @@ API_VERSION = "v1"
 
 
 @attr.define
-class KerasOptions(PartialKwargsModelOptions):
+class ModelOptions(PartialKwargsModelOptions):
     """Options for the Keras model."""
 
     include_optimizer: bool = False
@@ -130,15 +130,15 @@ def load_model(
 
 
 def save_model(
-    name: str,
+    name: Tag | str,
     model: "tf_ext.KerasModel",
     *,
     tf_signatures: "tf_ext.ConcreteFunction" | None = None,
     tf_save_options: "tf_ext.SaveOptions" | None = None,
     include_optimizer: bool = False,
-    signatures: t.Dict[str, ModelSignature]
-    | t.Dict[str, ModelSignatureDict]
-    | None = None,
+    signatures: (
+        t.Dict[str, ModelSignature] | t.Dict[str, ModelSignatureDict] | None
+    ) = None,
     labels: t.Optional[t.Dict[str, str]] = None,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     external_modules: t.Optional[t.List[ModuleType]] = None,
@@ -250,9 +250,14 @@ def save_model(
             name,
         )
 
-    options = KerasOptions(include_optimizer=include_optimizer)
+    options = ModelOptions(include_optimizer=include_optimizer)
+    kwargs = {}
+    if tf_signatures is not None:
+        kwargs["signatures"] = tf_signatures
+    if tf_save_options is not None:
+        kwargs["options"] = tf_save_options
 
-    with bentoml.models.create(
+    with bentoml.models._create(  # type: ignore
         name,
         module=MODULE_NAME,
         api_version=API_VERSION,
@@ -264,12 +269,15 @@ def save_model(
         metadata=metadata,
         signatures=signatures,
     ) as bento_model:
-        model.save(
-            bento_model.path,
-            signatures=tf_signatures,
-            options=tf_save_options,
-            include_optimizer=include_optimizer,
-        )
+        if keras.__version__ >= "3.4.0":
+            model.save(
+                bento_model.path,
+                zipped=False,
+                include_optimizer=include_optimizer,
+                **kwargs,
+            )
+        else:
+            model.save(bento_model.path, include_optimizer=include_optimizer, **kwargs)
 
         return bento_model
 
@@ -338,10 +346,7 @@ def get_runnable(
         return _run_method
 
     def add_run_method(method_name: str, options: ModelSignature):
-        def run_method(
-            runnable_self: KerasRunnable,
-            *args: "KerasArgType",
-        ) -> "ext.NpNDArray":
+        def run_method(runnable_self: KerasRunnable, *args: t.Any) -> t.Any:
             _run_method = runnable_self.methods_cache.get(method_name)
             if not _run_method:
                 _run_method = _gen_run_method(runnable_self, method_name)

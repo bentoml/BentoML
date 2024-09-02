@@ -1,28 +1,27 @@
 from __future__ import annotations
 
 import io
+import logging
 import os
 import typing as t
-import logging
 from functools import lru_cache
 
-from starlette.requests import Request
 from multipart.multipart import parse_options_header
-from starlette.responses import Response
 from starlette.datastructures import UploadFile
+from starlette.requests import Request
+from starlette.responses import Response
 
-from .base import IODescriptor
+from ...exceptions import BadInput
+from ...exceptions import BentoMLException
+from ...exceptions import InvalidArgument
+from ...grpc.utils import import_generated_stubs
+from ..service.openapi import SUCCESS_DESCRIPTION
+from ..service.openapi.specification import MediaType
+from ..service.openapi.specification import Schema
 from ..types import FileLike
 from ..utils import resolve_user_filepath
 from ..utils.http import set_cookies
-from ...exceptions import BadInput
-from ...exceptions import InvalidArgument
-from ...exceptions import BentoMLException
-from ...exceptions import MissingDependencyException
-from ...grpc.utils import import_generated_stubs
-from ..service.openapi import SUCCESS_DESCRIPTION
-from ..service.openapi.specification import Schema
-from ..service.openapi.specification import MediaType
+from .base import IODescriptor
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +29,8 @@ if t.TYPE_CHECKING:
     from bentoml.grpc.v1 import service_pb2 as pb
     from bentoml.grpc.v1alpha1 import service_pb2 as pb_v1alpha1
 
+    from ..context import ServiceContext as Context
     from .base import OpenAPIResponse
-    from ..context import InferenceApiContext as Context
 
     FileKind: t.TypeAlias = t.Literal["binaryio", "textio"]
 else:
@@ -158,17 +157,13 @@ class File(
             ValueError: If the MIME type cannot be inferred automatically.
             :class:`BadInput`: Any other errors that may occur during the process of figure out the MIME type.
         """
-        try:
-            import filetype
-        except ModuleNotFoundError:
-            raise MissingDependencyException(
-                "'filetype' is required to use 'from_sample'. Install it with 'pip install bentoml[io-file]'."
-            )
+        import mimetypes
+
         if isinstance(sample, t.IO):
             sample = FileLike[bytes](sample, "<sample>")
         elif isinstance(sample, (str, os.PathLike)):
             p = resolve_user_filepath(sample, ctx=None)
-            mime = filetype.guess_mime(p)
+            mime = mimetypes.guess_type(p)[0]
             self._mime_type = mime
             with open(p, "rb") as f:
                 sample = FileLike[bytes](f, "<sample>")
@@ -195,9 +190,9 @@ class File(
     def openapi_request_body(self) -> dict[str, t.Any]:
         return {
             "content": {
-                "*/*"
-                if self._mime_type is None
-                else self._mime_type: MediaType(schema=self.openapi_schema())
+                "*/*" if self._mime_type is None else self._mime_type: MediaType(
+                    schema=self.openapi_schema()
+                )
             },
             "required": True,
             "x-bentoml-io-descriptor": self.to_spec(),
@@ -207,9 +202,9 @@ class File(
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                "*/*"
-                if self._mime_type is None
-                else self._mime_type: MediaType(schema=self.openapi_schema())
+                "*/*" if self._mime_type is None else self._mime_type: MediaType(
+                    schema=self.openapi_schema()
+                )
             },
             "x-bentoml-io-descriptor": self.to_spec(),
         }
@@ -231,9 +226,11 @@ class File(
             res = Response(
                 body,
                 headers={
-                    "content-type": self._mime_type
-                    if self._mime_type
-                    else "application/octet-stream"
+                    "content-type": (
+                        self._mime_type
+                        if self._mime_type
+                        else "application/octet-stream"
+                    )
                 },
             )
         return res
@@ -245,9 +242,11 @@ class File(
             body = obj.read()
 
         return pb.File(
-            kind="appliction/octet-stream"
-            if self._mime_type is None
-            else self._mime_type,
+            kind=(
+                "appliction/octet-stream"
+                if self._mime_type is None
+                else self._mime_type
+            ),
             content=body,
         )
 
@@ -259,9 +258,11 @@ class File(
 
         try:
             kind = mimetype_to_filetype_pb_map()[
-                "application/octet-stream"
-                if self._mime_type is None
-                else self._mime_type
+                (
+                    "application/octet-stream"
+                    if self._mime_type is None
+                    else self._mime_type
+                )
             ]
         except KeyError:
             raise BadInput(

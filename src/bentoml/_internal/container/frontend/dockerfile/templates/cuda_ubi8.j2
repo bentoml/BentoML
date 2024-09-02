@@ -22,10 +22,6 @@ ENV \
 
 RUN python3 --version
 
-RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
-    python3 get-pip.py && \
-    rm -rf get-pip.py
-
 {% endblock %}
 {% block SETUP_BENTO_ENTRYPOINT %}
 RUN rm -rf /var/cache/yum

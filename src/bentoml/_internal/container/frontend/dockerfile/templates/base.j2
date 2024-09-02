@@ -44,7 +44,8 @@ RUN groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID 
 {% block SETUP_BENTO_ENVARS %}
 {% if __options__env is not none %}
 {% for key, value in __options__env.items() -%}
-ENV {{ key }}={{ value }}
+ARG {{ key }}={{ value }}
+ENV {{ key }}=${{ key }}
 {% endfor -%}
 {% endif -%}
 
@@ -59,9 +60,16 @@ WORKDIR $BENTO_PATH
 
 # Block SETUP_BENTO_COMPONENTS
 {% block SETUP_BENTO_COMPONENTS %}
+
+{% set __pip_cache__ = common.mount_cache("/root/.cache/uv") %}
+{% if __pip_preheat_packages__ %}
+{% for value in __pip_preheat_packages__ -%}
+{% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} uv pip install {{value | bash_quote}} ; exit 0
+{% endfor -%}
+{% endif -%}
+
 COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
 {% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
-{% set __pip_cache__ = common.mount_cache("/root/.cache/pip") %}
 # install python packages with install.sh
 {% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} bash -euxo pipefail {{ __install_python_scripts__ }}
 COPY --chown={{ bento__user }}:{{ bento__user }} . ./

@@ -1,15 +1,15 @@
-import typing
 import contextlib
-from typing import List
-from typing import Text
-from typing import Type
-from typing import Tuple
-from typing import Union
+import typing
 from typing import Callable
 from typing import Iterator
+from typing import List
+from typing import Text
+from typing import Tuple
+from typing import Type
+from typing import Union
 
-from .base import Opener
 from ..base import FS
+from .base import Opener
 
 if typing.TYPE_CHECKING: ...
 

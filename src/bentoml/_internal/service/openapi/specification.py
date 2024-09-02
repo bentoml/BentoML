@@ -8,16 +8,17 @@ We will refer to the Python object that coresponds to an OpenAPI object as POS (
 Note that even though we cover most bases, there are still a lot of OpenAPI features such as deprecation,
 webhooks, securities, etc. are yet to be implemented/exposed to user.
 """
+
 from __future__ import annotations
 
-import typing as t
 import logging
+import typing as t
 
 import attr
-import yaml
 import cattr.errors
-from cattr.gen import override
+import yaml
 from cattr.gen import make_dict_unstructure_fn
+from cattr.gen import override
 
 from ...utils import bentoml_cattr
 
@@ -81,7 +82,7 @@ class Schema:
 
     __rename_fields__ = {"ref": "$ref", "not_": "not"}
 
-    type: t.Optional[str]
+    type: t.Optional[str] = None
     ref: t.Optional[str] = None
     title: t.Optional[str] = None
     multipleOf: t.Optional[float] = None
@@ -95,6 +96,7 @@ class Schema:
     maxItems: t.Optional[int] = None
     minItems: t.Optional[int] = None
     uniqueItems: t.Optional[bool] = None
+    prefixItems: t.Optional[t.List[Schema]] = None
     maxProperties: t.Optional[int] = None
     minProperties: t.Optional[int] = None
     required: t.Optional[t.List[str]] = None

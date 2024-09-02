@@ -43,38 +43,41 @@ def list(
     output: t.Literal["json", "yaml", "table"],
 ):
     """List all secrets on BentoCloud."""
-    secrets = Secret.list(search=search)
-    if output == "table":
-        table = Table(box=None, expand=True)
-        table.add_column("Secret", overflow="fold")
-        table.add_column("Created_At", overflow="fold")
-        table.add_column("Mount_As", overflow="fold")
-        table.add_column("Keys", overflow="fold")
-        table.add_column("Path", overflow="fold")
+    try:
+        secrets = Secret.list(search=search)
+        if output == "table":
+            table = Table(box=None, expand=True)
+            table.add_column("Secret", overflow="fold")
+            table.add_column("Created_At", overflow="fold")
+            table.add_column("Mount_As", overflow="fold")
+            table.add_column("Keys", overflow="fold")
+            table.add_column("Path", overflow="fold")
 
-        for secret in secrets:
-            keys = [item.key for item in secret.content.items]
-            mountAs = secret.content.type
-            if mountAs == "env":
-                mountAs = "Environment Variable"
-            elif mountAs == "mountfile":
-                mountAs = "File"
-            table.add_row(
-                secret.name,
-                secret.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                mountAs,
-                ", ".join(keys),
-                secret.content.path if secret.content.path else "-",
-            )
-        console.print(table)
-    elif output == "json":
-        res: t.List[dict[str, t.Any]] = [s.to_dict() for s in secrets]
-        info = json.dumps(res, indent=2, default=str)
-        console.print(info)
-    elif output == "yaml":
-        res: t.List[dict[str, t.Any]] = [s.to_dict() for s in secrets]
-        info = yaml.dump(res, indent=2, sort_keys=False)
-        console.print(Syntax(info, "yaml", background_color="default"))
+            for secret in secrets:
+                keys = [item.key for item in secret.content.items]
+                mountAs = secret.content.type
+                if mountAs == "env":
+                    mountAs = "Environment Variable"
+                elif mountAs == "mountfile":
+                    mountAs = "File"
+                table.add_row(
+                    secret.name,
+                    secret.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    mountAs,
+                    ", ".join(keys),
+                    secret.content.path if secret.content.path else "-",
+                )
+            console.print(table)
+        elif output == "json":
+            res: t.List[dict[str, t.Any]] = [s.to_dict() for s in secrets]
+            info = json.dumps(res, indent=2, default=str)
+            console.print(info)
+        elif output == "yaml":
+            res: t.List[dict[str, t.Any]] = [s.to_dict() for s in secrets]
+            info = yaml.dump(res, indent=2, sort_keys=False)
+            console.print(Syntax(info, "yaml", background_color="default"))
+    except BentoMLException as e:
+        raise_secret_error(e, "list")
 
 
 def parse_kvs_argument_callback(
@@ -137,10 +140,8 @@ def parse_from_file_argument_callback(
 def raise_secret_error(err: BentoMLException, action: str) -> t.NoReturn:
     if err.error_code == HTTPStatus.UNAUTHORIZED:
         raise BentoMLException(
-            f"{err}\n* BentoCloud sign up: https://cloud.bentoml.com/\n"
-            "* Login with your API token: "
-            "https://docs.bentoml.com/en/latest/bentocloud/how-tos/manage-access-token.html"
-        )
+            f"{err}\n* BentoCloud API token is required for authorization. Run `bentoml cloud login` command to login first"
+        ) from None
     raise BentoMLException(f"Failed to {action} secret due to: {err}")
 
 
@@ -232,7 +233,7 @@ def create(
             key_vals=key_vals,
         )
         rich.print(f"Secret [green]{secret.name}[/] created successfully")
-    except Exception as e:
+    except BentoMLException as e:
         raise_secret_error(e, "create")
 
 
@@ -248,7 +249,7 @@ def delete(name: str):
     try:
         Secret.delete(name=name)
         rich.print(f"Secret [green]{name}[/] deleted successfully")
-    except Exception as e:
+    except BentoMLException as e:
         raise_secret_error(e, "delete")
 
 
@@ -335,5 +336,5 @@ def apply(
             key_vals=key_vals,
         )
         rich.print(f"Secret [green]{secret.name}[/] applied successfully")
-    except Exception as e:
+    except BentoMLException as e:
         raise_secret_error(e, "apply")

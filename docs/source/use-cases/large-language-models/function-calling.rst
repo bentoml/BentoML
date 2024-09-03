@@ -18,8 +18,8 @@ This document demonstrates how to build an AI agent capable of calling a user-de
             <a href="#bentocloud" style="margin-left: 5px; vertical-align: middle;">Deploy to BentoCloud</a>
         </div>
         <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-left: 10px; text-align: center;">
-		    <img src="../../_static/img/bentoml-icon.png" alt="BentoCloud" style="vertical-align: middle; width: 24px; height: 24px;">
-            <a href="#localserving" style="vertical-align: middle;">Serve with BentoML</a>
+            <img src="../../_static/img/bentoml-icon.png" alt="BentoML" style="vertical-align: middle; width: 24px; height: 24px;">
+            <a href="#localserving" style="margin-left: 5px; vertical-align: middle;">Serve with BentoML</a>
         </div>
     </div>
 

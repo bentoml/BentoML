@@ -431,7 +431,7 @@ class BentoCloudClient(CloudClient):
             bento = bento_store.get(tag)
             if not force:
                 self.spinner.log(
-                    f'[bold blue]Bento "{tag}" exists in local model store'
+                    f'[bold blue]Bento "{tag}" exists in local bento store'
                 )
                 return bento
             bento_store.delete(tag)
@@ -450,12 +450,23 @@ class BentoCloudClient(CloudClient):
         if not remote_bento:
             raise BentoMLException(f'Bento "{_tag}" not found on remote Bento store')
 
+        models_to_pull: list[str] = []
+        assert remote_bento.manifest is not None
+        for model in remote_bento.manifest.models:
+            try:
+                global_model_store.get(model)
+            except NotFound:
+                models_to_pull.append(model)
+            else:
+                self.spinner.log(
+                    f'[bold blue]Model "{model}" exists in local model store'
+                )
         with tempfile.TemporaryDirectory() as temp_dir:
             # Download models to a temporary directory
             model_store = ModelStore(temp_dir)
             assert remote_bento.manifest is not None
             with ThreadPoolExecutor(
-                max_workers=max(len(remote_bento.manifest.models), 1)
+                max_workers=max(len(models_to_pull), 1)
             ) as executor:
 
                 def pull_model(model_tag: Tag):
@@ -473,7 +484,7 @@ class BentoCloudClient(CloudClient):
                         model_store=model_store,
                     )
 
-                futures = executor.map(pull_model, remote_bento.manifest.models)
+                futures = executor.map(pull_model, models_to_pull)
                 list(futures)
 
             # Download bento files from remote Bento store
@@ -548,7 +559,7 @@ class BentoCloudClient(CloudClient):
                             temp_fs.writebytes(member.name, f.read())
                         bento = Bento.from_fs(temp_fs)
                         assert remote_bento.manifest is not None
-                        for model_tag in remote_bento.manifest.models:
+                        for model_tag in models_to_pull:
                             with self.spinner.spin(
                                 text=f'Copying model "{model_tag}" to model store'
                             ):

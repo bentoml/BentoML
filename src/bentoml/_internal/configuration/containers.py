@@ -494,7 +494,10 @@ class _BentoMLContainerClass:
     def new_index(self) -> bool:
         return "new_index" in self.enabled_features.get()
 
-    cloud_context = providers.Static[t.Optional[str]](None)
+    @providers.SingletonFactory
+    @staticmethod
+    def cloud_context() -> str | None:
+        return os.getenv("BENTOML_CLOUD_CONTEXT")
 
     @providers.SingletonFactory
     @staticmethod

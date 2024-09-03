@@ -29,30 +29,39 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
         url: str,
         *,
         service: Service[T] | None = None,
+        media_type: str = "application/vnd.bentoml+pickle",
     ) -> None:
         from bentoml.container import BentoMLContainer
 
-        svc_config: dict[str, ServiceConfig] = BentoMLContainer.config.services.get()
-        assert service is not None, "service must be provided"
-        timeout = (
-            svc_config.get(service.name, {}).get("traffic", {}).get("timeout") or 60
-        ) * 1.01  # get the service timeout add 1% margin for the client
+        if service is not None:
+            svc_config: dict[str, ServiceConfig] = (
+                BentoMLContainer.config.services.get()
+            )
+            timeout = (
+                svc_config.get(service.name, {}).get("traffic", {}).get("timeout") or 60
+            ) * 1.01  # get the service timeout add 1% margin for the client
+        else:
+            timeout = 60
         self._sync = SyncHTTPClient(
             url,
-            media_type="application/vnd.bentoml+pickle",
+            media_type=media_type,
             service=service,
             timeout=timeout,
             server_ready_timeout=0,
         )
         self._async = AsyncHTTPClient(
             url,
-            media_type="application/vnd.bentoml+pickle",
+            media_type=media_type,
             service=service,
             timeout=timeout,
             server_ready_timeout=0,
         )
-        self._inner = service.inner
-        self.endpoints = self._async.endpoints
+        if service is not None:
+            self._inner = service.inner
+            self.endpoints = self._async.endpoints
+        else:
+            self.endpoints = {}
+            self._inner = None
         super().__init__()
 
     @property
@@ -79,6 +88,10 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
         return t.cast(T, self)
 
     def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        if self._inner is None:
+            raise BentoMLException(
+                "The proxy is not callable when the service is not provided. Please use `.to_async` or `.to_sync` property."
+            )
         original_func = getattr(self._inner, __name)
         if not hasattr(original_func, "func"):
             raise BentoMLException(f"calling non-api method {__name} is not allowed")

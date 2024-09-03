@@ -528,7 +528,11 @@ class PythonOptions:
         env.filters["bash_quote"] = shlex.quote
         return env
 
-    def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
+    def write_to_bento(
+        self, bento_fs: FS, build_ctx: str, platform_: str | None = None
+    ) -> None:
+        import platform
+
         from .bentoml_builder import build_bentoml_sdist
 
         py_folder = fs.path.join("env", "python")
@@ -645,6 +649,14 @@ class PythonOptions:
             else:
                 pip_compile_args.append("--quiet")
             logger.info("Locking PyPI package versions.")
+            if platform_:
+                pip_compile_args.extend(["--python-platform", platform_])
+            elif platform.system() != "Linux" or platform.machine() != "x86_64":
+                logger.info(
+                    "Locking packages for x86_64-unknown-linux-gnu. "
+                    "Pass `--platform` option to specify platform."
+                )
+                pip_compile_args.extend(["--python-platform", "linux"])
             cmd = [sys.executable, "-m", "uv", "pip", "compile"]
             cmd.extend(pip_compile_args)
             try:

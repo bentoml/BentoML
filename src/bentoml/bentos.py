@@ -283,6 +283,7 @@ def build(
     models: t.List[ModelSpec | str | dict[str, t.Any]] | None = None,
     version: str | None = None,
     build_ctx: str | None = None,
+    platform: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
     """
@@ -308,7 +309,7 @@ def build(
                :class:`bentoml._internal.bento.build_config.CondaOptions`
         version: Override the default auto generated version str
         build_ctx: Build context directory, when used as
-
+        platform: Platform to build for
     Returns:
         Bento: a Bento instance representing the materialized Bento saved in BentoStore
 
@@ -362,7 +363,10 @@ def build(
     )
 
     return Bento.create(
-        build_config=build_config, version=version, build_ctx=build_ctx
+        build_config=build_config,
+        version=version,
+        build_ctx=build_ctx,
+        platform=platform,
     ).save(_bento_store)
 
 
@@ -373,6 +377,7 @@ def build_bentofile(
     version: str | None = None,
     labels: dict[str, str] | None = None,
     build_ctx: str | None = None,
+    platform: str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
     """
@@ -403,7 +408,10 @@ def build_bentofile(
         build_config.labels.update(labels)
 
     return Bento.create(
-        build_config=build_config, version=version, build_ctx=build_ctx
+        build_config=build_config,
+        version=version,
+        build_ctx=build_ctx,
+        platform=platform,
     ).save(_bento_store)
 
 

@@ -183,6 +183,7 @@ class Bento(StoreItem):
         build_config: BentoBuildConfig,
         version: t.Optional[str] = None,
         build_ctx: t.Optional[str] = None,
+        platform: t.Optional[str] = None,
         model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> Bento:
         from ..service import Service
@@ -278,7 +279,7 @@ class Bento(StoreItem):
 
         # NOTE: we need to generate both Python and Conda
         # first to make sure we can generate the Dockerfile correctly.
-        build_config.python.write_to_bento(bento_fs, build_ctx)
+        build_config.python.write_to_bento(bento_fs, build_ctx, platform_=platform)
         build_config.conda.write_to_bento(bento_fs, build_ctx)
         build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
 

@@ -202,19 +202,19 @@ jobs:
           cache: pip
           python-version: '3.11'
       - name: Download e2e coverage
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: coverage-e2e-data
       - name: Download monitoring coverage
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: coverage-monitoring-data
       - name: Download integrations coverage
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: coverage-integrations-data
       - name: Download unit coverage
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: coverage-unit-data
       - name: Install dependencies
@@ -222,7 +222,7 @@ jobs:
       - name: Export coverage reports and generate summary
         run: nox -s coverage
       - name: Upload uncovered HTML report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: uncovered-html-report
           path: htmlcov

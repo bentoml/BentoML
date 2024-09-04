@@ -254,7 +254,7 @@ class Bento(StoreItem):
                     models.add(model)
 
         # create ignore specs
-        specs = BentoPathSpec(build_config.include, build_config.exclude)
+        specs = BentoPathSpec(build_config.include, build_config.exclude, build_ctx)
 
         # Copy all files base on include and exclude, into `src` directory
         relpaths = [s for s in build_config.include if s.startswith("../")]
@@ -266,12 +266,11 @@ class Bento(StoreItem):
         target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
         with target_fs.open(DEFAULT_BENTO_BUILD_FILE, "w") as bentofile_yaml:
             build_config.to_yaml(bentofile_yaml)
-        ignore_specs = list(specs.from_path(build_ctx))
 
         for dir_path, _, files in ctx_fs.walk():
             for f in files:
                 path = fs.path.combine(dir_path, f.name).lstrip("/")
-                if specs.includes(path, recurse_exclude_spec=ignore_specs):
+                if specs.includes(path):
                     if ctx_fs.getsize(path) > 10 * 1024 * 1024:
                         logger.warn("File size is larger than 10MiB: %s", path)
                     target_fs.makedirs(dir_path, recreate=True)

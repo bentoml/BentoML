@@ -98,7 +98,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
    Key elements within the ``ExchangeAssistant`` Service:
 
    - ``bentoml.depends()``: This function calls the ``Llama`` Service as a dependency, which allows ``ExchangeAssistant`` to utilize all its functionalities. For more information, see :doc:`/guides/distributed-services`.
-   - Service initialization: Use `a helper function <https://github.com/bentoml/BentoFunctionCalling/blob/main/utils.py>`_ ``_make_httpx_client`` from ``utils.py`` to make an HTTPX client for the BentoML Service. Because the ``Llama`` Service provides OpenAI-compatible endpoints, you can create an OpenAI client to interact with it.
+   - Service initialization: Because the ``Llama`` Service provides OpenAI-compatible endpoints, you can use its HTTP client and ``client_url`` to construct an OpenAI client to interact with it.
    - A front-facing API ``/exchange``: Define the endpoint using the ``@bentoml.api`` decorator to handle currency exchange queries.
 
    .. code-block:: python
@@ -110,14 +110,13 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
           # Declare dependency on the Llama class
           llm = bentoml.depends(Llama)
 
-          def __init__(self):
-              # Setup HTTP client to interact with the LLM
-              httpx_client, base_url = _make_httpx_client(url=Llama.url, svc=Llama)
-              self.client = OpenAI(
-                    base_url=f"{base_url}/v1",
-                    http_client=httpx_client,
-                    api_key="API_TOKEN_NOT_NEEDED"
-              )
+	  def __init__(self):
+	      # Setup HTTP client to interact with the LLM
+	       self.client = OpenAI(
+	            base_url=f"{self.llm.client_url}/v1",
+	            http_client=self.llm.to_sync.client,
+	            api_key="API_TOKEN_NOT_NEEDED"
+	      )
               ...
 
           @bentoml.api

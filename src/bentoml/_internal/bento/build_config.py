@@ -962,7 +962,7 @@ class BentoPathSpec:
             dir_path = fs.path.dirname(file)
             with fs_.open(file) as f:
                 recurse_exclude_spec.append(
-                    (dir_path, PathSpec.from_lines("gitwildmatch", f))
+                    (dir_path.lstrip("/"), PathSpec.from_lines("gitwildmatch", f))
                 )
         return recurse_exclude_spec
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import typing as t
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -105,7 +104,6 @@ class TestServiceReloaderPlugin(TestCircus):
         call_mock = self.setup_call_mock(watcher_name="reloader")
         self.setup_watch_mock(watch_return={(Change(1), file)})
         plugin = self.make_plugin(ServiceReloaderPlugin, **self.plugin_kwargs)
-        Path(file).touch()
 
         with self.assertLogs("bentoml", level=logging.WARNING) as log:
             plugin.look_after()
@@ -120,9 +118,23 @@ class TestServiceReloaderPlugin(TestCircus):
         call_mock = self.setup_call_mock(watcher_name="reloader")
         self.setup_watch_mock(watch_return={(Change(3), file)})
         plugin = self.make_plugin(ServiceReloaderPlugin, **self.plugin_kwargs)
-        os.remove(file)
 
         with self.assertLogs("bentoml", level=logging.WARNING) as log:
             plugin.look_after()
             call_mock.assert_called_with("restart", name="*")
             self.assertIn("DELETED", log.output[0])
+
+    def test_not_trigger_restart_on_ignored_file(self) -> None:
+        from watchfiles.main import Change
+
+        file = self.reload_directory.joinpath("myrust.rs").__fspath__()
+        data_file = self.reload_directory.joinpath("fdir_one/data.temp").__fspath__()
+
+        call_mock = self.setup_call_mock(watcher_name="reloader")
+        self.setup_watch_mock(
+            watch_return={(Change.added, file), (Change.added, data_file)}
+        )
+        plugin = self.make_plugin(ServiceReloaderPlugin, **self.plugin_kwargs)
+
+        plugin.look_after()
+        call_mock.assert_not_called()

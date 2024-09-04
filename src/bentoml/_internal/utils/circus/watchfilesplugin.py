@@ -44,26 +44,24 @@ class ServiceReloaderPlugin(CircusPlugin):
 
         # a list of folders to watch for changes
         watch_dirs = [self.working_dir]
-        self._specs = [(self.working_dir, self.create_spec())]
+        self._specs = [(Path(self.working_dir).as_posix(), self.create_spec())]
 
         if not is_pypi_installed_bentoml():
             # bentoml src from this __file__
-            bentoml_src = os.path.dirname(t.cast(str, source_locations("bentoml")))
-            if os.path.exists(
-                os.path.join(os.path.dirname(bentoml_src), "pyproject.toml")
-            ):
+            bentoml_src = Path(source_locations("bentoml")).parent
+            if bentoml_src.with_name("pyproject.toml").exists():
                 logger.info(
                     "BentoML is installed via development mode, adding source root to 'watch_dirs'."
                 )
-                watch_dirs.append(bentoml_src)
+                watch_dirs.append(str(bentoml_src))
                 self._specs.append(
                     (
-                        bentoml_src,
+                        bentoml_src.as_posix(),
                         BentoPathSpec(
                             # only watch python files in bentoml src
                             ["*.py", "*.yaml"],
                             [],
-                            bentoml_src,
+                            bentoml_src.as_posix(),
                             recurse_ignore_filename=".gitignore",
                         ),
                     )
@@ -97,14 +95,12 @@ class ServiceReloaderPlugin(CircusPlugin):
             build_config.include, build_config.exclude, self.working_dir
         )
 
-    def should_include(self, path: str | Path) -> bool:
+    def should_include(self, path: Path) -> bool:
         # returns True if file with 'path' has changed, else False
-        if isinstance(path, Path):
-            path = path.__fspath__()
-
+        str_path = path.as_posix()
         for parent, spec in self._specs:
-            if fs.path.isparent(parent, path):
-                return spec.includes(fs.path.relativefrom(parent, path))
+            if fs.path.isparent(parent, str_path):
+                return spec.includes(fs.path.relativefrom(parent, str_path))
         return False
 
     def has_modification(self) -> bool:

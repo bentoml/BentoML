@@ -21,6 +21,12 @@ This section provides example projects for large language models.
 
         Deploy an AI agent capable of calling user-defined functions.
 
+    .. grid-item-card:: :doc:`/use-cases/large-language-models/rag`
+        :link: /use-cases/large-language-models/rag
+        :link-type: doc
+
+        Deploy a RAG application with custom open-source models.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
@@ -28,3 +34,4 @@ This section provides example projects for large language models.
 
     vllm
     function-calling
+    rag

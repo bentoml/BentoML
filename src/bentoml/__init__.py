@@ -95,6 +95,7 @@ if TYPE_CHECKING:
     # isort: on
     from _bentoml_impl.client import AsyncHTTPClient
     from _bentoml_impl.client import SyncHTTPClient
+    from _bentoml_sdk import IODescriptor
     from _bentoml_sdk import api
     from _bentoml_sdk import depends
     from _bentoml_sdk import get_current_service
@@ -198,6 +199,7 @@ else:
         "on_deployment",
         "mount_asgi_app",
         "get_current_service",
+        "IODescriptor",
     ]
     _NEW_CLIENTS = ["SyncHTTPClient", "AsyncHTTPClient"]
 
@@ -295,6 +297,7 @@ __all__ = [
     "on_shutdown",
     "on_deployment",
     "depends",
+    "IODescriptor",
     "validators",
     "Field",
     "get_current_service",

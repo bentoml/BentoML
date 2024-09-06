@@ -27,7 +27,7 @@ else:
 def raise_deployment_config_error(err: BentoMLException, action: str) -> t.NoReturn:
     if err.error_code == HTTPStatus.UNAUTHORIZED:
         raise BentoMLException(
-            f"{err}\n* BentoCloud API token is required for authorization. Run `bentoml cloud login` command to login first"
+            f"{err}\n* BentoCloud API token is required for authorization. Run `bentoml cloud login` command to login"
         ) from None
     raise BentoMLException(
         f"Failed to {action} deployment due to invalid configuration: {err}"
@@ -609,31 +609,32 @@ def list_command(  # type: ignore
     """List existing deployments on BentoCloud."""
     try:
         d_list = Deployment.list(cluster=cluster, search=search)
-        res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]
-        if output == "table":
-            table = Table(box=None, expand=True)
-            table.add_column("Deployment", overflow="fold")
-            table.add_column("created_at", overflow="fold")
-            table.add_column("Bento", overflow="fold")
-            table.add_column("Status", overflow="fold")
-            table.add_column("Region", overflow="fold")
-            for info in d_list:
-                table.add_row(
-                    info.name,
-                    info.created_at,
-                    info.get_bento(refetch=False),
-                    info.get_status(refetch=False).status,
-                    info.cluster,
-                )
-            console.print(table)
-        elif output == "json":
-            info = json.dumps(res, indent=2, default=str)
-            console.print_json(info)
-        else:
-            info = yaml.dump(res, indent=2, sort_keys=False)
-            console.print(Syntax(info, "yaml", background_color="default"))
     except BentoMLException as e:
         raise_deployment_config_error(e, "list")
+    res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]
+    if output == "table":
+        table = Table(box=None, expand=True)
+        table.add_column("Deployment", overflow="fold")
+        table.add_column("created_at", overflow="fold")
+        table.add_column("Bento", overflow="fold")
+        table.add_column("Status", overflow="fold")
+        table.add_column("Region", overflow="fold")
+        for info in d_list:
+            table.add_row(
+                info.name,
+                info.created_at,
+                info.get_bento(refetch=False),
+                info.get_status(refetch=False).status,
+                info.cluster,
+            )
+        console.print(table)
+    elif output == "json":
+        info = json.dumps(res, indent=2, default=str)
+        console.print_json(info)
+    else:
+        info = yaml.dump(res, indent=2, sort_keys=False)
+        console.print(Syntax(info, "yaml", background_color="default"))
+
 
 
 @deployment_command.command()
@@ -652,33 +653,33 @@ def list_instance_types(  # type: ignore
     """List existing instance types in cluster on BentoCloud."""
     try:
         d_list = Deployment.list_instance_types(cluster=cluster)
-        res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]
-        if output == "table":
-            table = Table(box=None, expand=True)
-            table.add_column("Name", overflow="fold")
-            table.add_column("Price", overflow="fold")
-            table.add_column("CPU", overflow="fold")
-            table.add_column("Memory", overflow="fold")
-            table.add_column("GPU", overflow="fold")
-            table.add_column("GPU Type", overflow="fold")
-            for info in d_list:
-                table.add_row(
-                    info.name,
-                    info.price,
-                    info.cpu,
-                    info.memory,
-                    info.gpu,
-                    info.gpu_type,
-                )
-            console.print(table)
-        elif output == "json":
-            info = json.dumps(res, indent=2, default=str)
-            console.print_json(info)
-        else:
-            info = yaml.dump(res, indent=2, sort_keys=False)
-            console.print(Syntax(info, "yaml", background_color="default"))
     except BentoMLException as e:
         raise_deployment_config_error(e, "list_instance_types")
+    res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]
+    if output == "table":
+        table = Table(box=None, expand=True)
+        table.add_column("Name", overflow="fold")
+        table.add_column("Price", overflow="fold")
+        table.add_column("CPU", overflow="fold")
+        table.add_column("Memory", overflow="fold")
+        table.add_column("GPU", overflow="fold")
+        table.add_column("GPU Type", overflow="fold")
+        for info in d_list:
+            table.add_row(
+                info.name,
+                info.price,
+                info.cpu,
+                info.memory,
+                info.gpu,
+                info.gpu_type,
+            )
+        console.print(table)
+    elif output == "json":
+        info = json.dumps(res, indent=2, default=str)
+        console.print_json(info)
+    else:
+        info = yaml.dump(res, indent=2, sort_keys=False)
+        console.print(Syntax(info, "yaml", background_color="default"))
 
 
 def create_deployment(

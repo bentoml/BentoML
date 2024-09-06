@@ -9,6 +9,7 @@ import typing as t
 from typing import ClassVar
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import RootModel
 from pydantic import create_model
@@ -18,6 +19,7 @@ from typing_extensions import get_args
 
 from bentoml._internal.service.openapi.specification import Schema
 
+from ._pydantic import BentoMLPydanticGenerateSchema
 from .typing_utils import is_image_type
 from .typing_utils import is_iterator_type
 from .typing_utils import is_list_type
@@ -77,6 +79,7 @@ class IterableResponse(Response):
 class IOMixin:
     multipart_fields: ClassVar[t.List[str]]
     media_type: ClassVar[t.Optional[str]] = None
+    model_config = ConfigDict(schema_generator=BentoMLPydanticGenerateSchema)
 
     @classmethod
     def openapi_components(cls, name: str) -> dict[str, Schema]:
@@ -357,6 +360,13 @@ class IODescriptor(IOMixin, BaseModel):
             ) from e
 
 
+RootModelRootType = t.TypeVar("RootModelRootType")
+
+
+class IORootModel(IOMixin, RootModel[RootModelRootType]):
+    pass
+
+
 def ensure_io_descriptor(typ_: type) -> type[IODescriptor]:
     from pydantic._internal._utils import lenient_issubclass
 
@@ -372,10 +382,4 @@ def ensure_io_descriptor(typ_: type) -> type[IODescriptor]:
                 ),
             )
         return typ_
-    return t.cast(
-        t.Type[IODescriptor],
-        create_model(
-            f"{type_name}IODescriptor",
-            __base__=(IOMixin, RootModel[typ_]),
-        ),
-    )
+    return IORootModel[typ_]

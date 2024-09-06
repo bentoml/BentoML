@@ -636,7 +636,6 @@ def list_command(  # type: ignore
         console.print(Syntax(info, "yaml", background_color="default"))
 
 
-
 @deployment_command.command()
 @click.option("--cluster", type=click.STRING, default=None, help="Name of the cluster.")
 @click.option(

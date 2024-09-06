@@ -376,10 +376,7 @@ def ensure_io_descriptor(typ_: type) -> type[IODescriptor]:
         if not issubclass(typ_, IODescriptor):
             return t.cast(
                 t.Type[IODescriptor],
-                create_model(
-                    f"{type_name}IODescriptor",
-                    __base__=(IOMixin, typ_),
-                ),
+                create_model(f"{type_name}IODescriptor", __base__=(IOMixin, typ_)),
             )
         return typ_
     return IORootModel[typ_]

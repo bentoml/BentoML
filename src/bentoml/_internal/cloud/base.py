@@ -42,7 +42,12 @@ class CallbackIOWrapper(t.IO[bytes]):
     end: int | None = None
 
     def __attrs_post_init__(self) -> None:
+        self.reset()
+
+    def reset(self) -> int:
+        read = self.tell() - (self.start or 0)
         self.file.seek(self.start or 0, 0)
+        return read
 
     def seek(self, offset: int, whence: int = 0) -> int:
         if whence == 2 and self.end is not None:

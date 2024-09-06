@@ -58,6 +58,9 @@ if t.TYPE_CHECKING:
     from .schemas.schemasv1 import ModelWithRepositoryListSchema
 
 
+UPLOAD_RETRY_COUNT = 3
+
+
 class BentoCloudClient(CloudClient):
     @inject
     def push_bento(
@@ -319,16 +322,24 @@ class BentoCloudClient(CloudClient):
                                     else None,
                                 )
 
-                                resp = httpx.put(
-                                    remote_bento.presigned_upload_url,
-                                    content=chunk_io,
-                                    timeout=36000,
-                                )
-                                if resp.status_code != 200:
-                                    return FinishUploadBentoSchema(
-                                        status=BentoUploadStatus.FAILED.value,
-                                        reason=resp.text,
+                                for i in range(UPLOAD_RETRY_COUNT):
+                                    resp = httpx.put(
+                                        remote_bento.presigned_upload_url,
+                                        content=chunk_io,
+                                        timeout=36000,
                                     )
+                                    if resp.status_code == 200:
+                                        break
+                                    if i == UPLOAD_RETRY_COUNT - 1:
+                                        return FinishUploadBentoSchema(
+                                            status=BentoUploadStatus.FAILED.value,
+                                            reason=resp.text,
+                                        )
+                                    else:  # retry and reset and update progress
+                                        read = chunk_io.reset()
+                                        self.spinner.transmission_progress.update(
+                                            upload_task_id, advance=-read
+                                        )
                                 return resp.headers["ETag"], chunk_number
 
                     futures_: list[
@@ -771,16 +782,24 @@ class BentoCloudClient(CloudClient):
                                     else None,
                                 )
 
-                                resp = httpx.put(
-                                    remote_model.presigned_upload_url,
-                                    content=chunk_io,
-                                    timeout=36000,
-                                )
-                                if resp.status_code != 200:
-                                    return FinishUploadModelSchema(
-                                        status=ModelUploadStatus.FAILED.value,
-                                        reason=resp.text,
+                                for i in range(UPLOAD_RETRY_COUNT):
+                                    resp = httpx.put(
+                                        remote_model.presigned_upload_url,
+                                        content=chunk_io,
+                                        timeout=36000,
                                     )
+                                    if resp.status_code == 200:
+                                        break
+                                    if i == UPLOAD_RETRY_COUNT - 1:
+                                        return FinishUploadModelSchema(
+                                            status=ModelUploadStatus.FAILED.value,
+                                            reason=resp.text,
+                                        )
+                                    else:  # retry and reset and update progress
+                                        read = chunk_io.reset()
+                                        self.spinner.transmission_progress.update(
+                                            upload_task_id, advance=-read
+                                        )
                                 return resp.headers["ETag"], chunk_number
 
                     futures_: list[

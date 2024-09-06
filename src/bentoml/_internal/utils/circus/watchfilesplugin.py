@@ -8,6 +8,7 @@ from threading import Event
 from threading import Thread
 from typing import TYPE_CHECKING
 
+import fs
 from circus.plugins import CircusPlugin
 from watchfiles import watch
 
@@ -39,36 +40,47 @@ class ServiceReloaderPlugin(CircusPlugin):
 
         # circus/plugins/__init__.py:282 -> converts all given configs to dict[str, str]
         self.name = self.config.get("name")
-        self.bentoml_home = self.config["bentoml_home"]
         self.working_dir = self.config["working_dir"]
 
         # a list of folders to watch for changes
-        watch_dirs = [self.working_dir, os.path.join(self.bentoml_home, "models")]
+        watch_dirs = [self.working_dir]
+        self._specs = [(Path(self.working_dir).as_posix(), self.create_spec())]
 
         if not is_pypi_installed_bentoml():
             # bentoml src from this __file__
-            logger.info(
-                "BentoML is installed via development mode, adding source root to 'watch_dirs'."
-            )
-            watch_dirs.append(t.cast(str, os.path.dirname(source_locations("bentoml"))))
+            bentoml_src = Path(source_locations("bentoml")).parent
+            if bentoml_src.with_name("pyproject.toml").exists():
+                logger.info(
+                    "BentoML is installed via development mode, adding source root to 'watch_dirs'."
+                )
+                watch_dirs.append(str(bentoml_src))
+                self._specs.append(
+                    (
+                        bentoml_src.as_posix(),
+                        BentoPathSpec(
+                            # only watch python files in bentoml src
+                            ["*.py", "*.yaml"],
+                            [],
+                            bentoml_src.as_posix(),
+                            recurse_ignore_filename=".gitignore",
+                        ),
+                    )
+                )
 
         logger.info("Watching directories: %s", watch_dirs)
-        self.watch_dirs = watch_dirs
-
-        self.create_spec()
 
         # a thread to restart circus
         self.exit_event = Event()
 
         self.file_changes = watch(
-            *self.watch_dirs,
+            *watch_dirs,
             watch_filter=None,
             yield_on_timeout=True,  # stop hanging on our tests, doesn't affect the behaviour
             stop_event=self.exit_event,
             rust_timeout=0,  # we should set timeout to zero for no timeout
         )
 
-    def create_spec(self) -> None:
+    def create_spec(self) -> BentoPathSpec:
         bentofile_path = os.path.join(self.working_dir, "bentofile.yaml")
         if not os.path.exists(bentofile_path):
             # if bentofile.yaml is not found, by default we will assume to watch all files
@@ -79,19 +91,17 @@ class ServiceReloaderPlugin(CircusPlugin):
             with open(bentofile_path, "r") as f:
                 build_config = BentoBuildConfig.from_yaml(f).with_defaults()
 
-        self.bento_spec = BentoPathSpec(build_config.include, build_config.exclude)  # type: ignore (unfinished converter type)
-
-    def should_include(self, path: str | Path) -> bool:
-        # returns True if file with 'path' has changed, else False
-        if isinstance(path, Path):
-            path = path.__fspath__()
-
-        return any(
-            self.bento_spec.includes(
-                path, recurse_exclude_spec=self.bento_spec.from_path(dirs)
-            )
-            for dirs in self.watch_dirs
+        return BentoPathSpec(
+            build_config.include, build_config.exclude, self.working_dir
         )
+
+    def should_include(self, path: Path) -> bool:
+        # returns True if file with 'path' has changed, else False
+        str_path = path.as_posix()
+        for parent, spec in self._specs:
+            if fs.path.isparent(parent, str_path):
+                return spec.includes(fs.path.relativefrom(parent, str_path))
+        return False
 
     def has_modification(self) -> bool:
         for changes in self.file_changes:

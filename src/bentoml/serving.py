@@ -204,7 +204,6 @@ def make_reload_plugin(working_dir: str, bentoml_home: str) -> dict[str, str]:
     return {
         "use": "bentoml._internal.utils.circus.watchfilesplugin.ServiceReloaderPlugin",
         "working_dir": working_dir,
-        "bentoml_home": bentoml_home,
     }
 
 

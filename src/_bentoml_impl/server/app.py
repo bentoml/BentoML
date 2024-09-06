@@ -273,6 +273,7 @@ class ServiceAppFactory(BaseAppFactory):
 
     async def create_instance(self) -> None:
         self._service_instance = self.service()
+        logger.info("Service %s initialized", self.service.name)
         set_current_service(self._service_instance)
         store_path = BentoMLContainer.result_store_file.get()
         self._result_store = Sqlite3Store(store_path)

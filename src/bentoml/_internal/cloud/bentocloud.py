@@ -206,6 +206,17 @@ class BentoCloudClient(CloudClient):
                     ),
                 )
         if bare:
+            with self.spinner.spin(
+                text="Submitting upload status to remote Bento store"
+            ):
+                rest_client.v1.finish_upload_bento(
+                    bento_repository_name=bento_repository.name,
+                    version=version,
+                    req=FinishUploadBentoSchema(
+                        status=BentoUploadStatus.SUCCESS.value,
+                        reason="bento for development",
+                    ),
+                )
             return
         transmission_strategy: TransmissionStrategy = "proxy"
         presigned_upload_url: str | None = None

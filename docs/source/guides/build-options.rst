@@ -262,6 +262,18 @@ When including Python packages from GitHub repositories, use the ``pack_git_pack
 
 Note that ``lock_packages`` controls whether the versions of all dependencies, not just those from Git, are pinned at the time of building the Bento. Disabling ``pack_git_packages`` will also disable package locking (``lock_packages``) unless explicitly set.
 
+.. note::
+
+  BentoML will always try to lock the package versions against Linux x86_64 platform to match the deployment target. If the bento contains dependencies or transitive dependencies with environment markers, they will be resolved against Linux x86_64 platform.
+
+  For example, if the bento requires ``torch``, ``nvidia-*`` packages will also be picked up into the final lock result although they are only required for Linux x86_64 platform.
+
+  If you want to build a bento for a different platform, you can pass ``--platform`` option to ``bentoml build`` command with the name of the target platform. For example:
+
+  .. code-block:: bash
+
+    $ bentoml build --platform macos
+
 Python wheels
 """""""""""""
 

@@ -6,7 +6,6 @@ import urllib.parse
 import webbrowser
 
 import click
-import click_option_group as cog
 import rich
 
 from bentoml._internal.cloud.client import RestApiClient
@@ -27,8 +26,7 @@ def cloud_command():
 
 
 @cloud_command.command()
-@cog.optgroup.group("Login", help="login options")
-@cog.optgroup.option(
+@click.option(
     "--endpoint",
     type=click.STRING,
     help="BentoCloud endpoint",
@@ -38,7 +36,7 @@ def cloud_command():
     show_envvar=True,
     required=False,
 )
-@cog.optgroup.option(
+@click.option(
     "--api-token",
     type=click.STRING,
     help="BentoCloud user API token",

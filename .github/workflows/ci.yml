@@ -133,7 +133,7 @@ jobs:
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.monitoring.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-monitoring-data
           path: .coverage.*

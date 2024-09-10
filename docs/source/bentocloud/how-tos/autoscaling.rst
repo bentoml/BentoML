@@ -22,12 +22,12 @@ The Deployment will automatically scale up from zero replicas when the Service r
 
 .. note::
 
-    To mannually trigger a scale-up from zero replicas, you can invoke the ``/readyz`` endpoint with an HTTP GET request.
+    To manually trigger a scale-up from zero replicas, you can invoke the ``/readyz`` endpoint with an HTTP GET request.
 
 Concurrency
 -----------
 
-To enable autoscaling, first configure ``concurrency`` for your BentoML Service. Concurrency refers to the number of concurrent requests of a BentoML Service is able to process simultaneously. Proper concurrency management ensures that a Service can handle varying loads efficiently, maximizing resource utilization while maintaining high-quality service (QoS).
+To enable autoscaling, first configure ``concurrency`` for your BentoML Service. Concurrency refers to the number of concurrent requests a BentoML Service is able to process simultaneously. Proper concurrency management ensures that a Service can handle varying loads efficiently, maximizing resource utilization while maintaining high-quality service (QoS).
 
 Use the ``@bentoml.service`` decorator to set concurrency:
 

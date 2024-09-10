@@ -135,7 +135,6 @@ git_describe_command = [
     "--long",
     "--first-parent",
 ]
-version_scheme = "post-release"
 fallback_version = "0.0.0"
 [tool.hatch.metadata]
 allow-direct-references = true

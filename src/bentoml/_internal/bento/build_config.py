@@ -580,7 +580,7 @@ class PythonOptions:
                 args.extend(pip_args)
             f.write(
                 self._jinja_environment.get_template("install.sh.j2").render(
-                    bentoml_version=clean_bentoml_version(BENTOML_VERSION),
+                    bentoml_version=clean_bentoml_version(),
                     pip_args=shlex.join(args),
                 )
             )

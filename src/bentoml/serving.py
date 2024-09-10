@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import contextlib
 import json
 import logging
@@ -683,8 +682,7 @@ def serve_grpc_production(
 
     close_child_stdin: bool = False if development_mode else True
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(on_service_deployment(svc))
+    on_service_deployment(svc)
 
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(

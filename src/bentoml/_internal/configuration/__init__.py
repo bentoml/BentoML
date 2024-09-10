@@ -56,10 +56,10 @@ def expand_env_var(env_var: str) -> str:
             env_var = interpolated
 
 
-def clean_bentoml_version(bentoml_version: str) -> str:
-    post_version = ".".join(bentoml_version.split(".")[:3])
+@lru_cache(maxsize=1)
+def clean_bentoml_version() -> str:
     try:
-        version = Version(post_version)
+        version = Version(BENTOML_VERSION).base_version
         return str(version)
     except ValueError:
         raise BentoMLException("Errors while parsing BentoML version.") from None

@@ -11,7 +11,7 @@ Single and distributed Services
 
 Using a single BentoML Service in ``service.py`` is typically sufficient for most use cases. This approach is straightforward, easy to manage, and works well when you only need to deploy a single model and the API logic is simple.
 
-In deployment, a BentoML Service run as processes in a container. If you define multiple Services, they run as processes in different containers. This distributed approach is useful when dealing with more complex scenarios, such as:
+In deployment, a BentoML Service runs as multiple processes in a container. If you define multiple Services, they run as processes in different containers. This distributed approach is useful when dealing with more complex scenarios, such as:
 
 - **Pipelining CPU and GPU processing for better throughput**: Distributing tasks between CPU and GPU can enhance throughput. Certain preprocessing or postprocessing tasks might be more efficiently handled by the CPU, while the GPU focuses on model inference.
 - **Optimizing resource utilization and scalability**: Distributed Services can run on different instances, allowing for independent scaling and efficient resource usage. This flexibility is important in handling varying loads and optimizing specific resource demands.
@@ -128,7 +128,7 @@ This is the ``service.py`` file:
             arr = np.concatenate([arr, arr, arr], axis=2)
             params_d = params.dict()
             prompt = params_d.pop("prompt")
-            # Invok a class level function of another Service
+            # Invoke a class level function of another Service
             res = await self.controlnet_service.generate(
                 prompt,
                 arr=arr,

@@ -2,7 +2,7 @@
 Stable Diffusion XL with LCM LoRAs
 ==================================
 
-`Latent Consistency Models (LCM) <https://huggingface.co/papers/2310.04378>`_ offer a new approach to enhancing the efficiency of the image generation workflow, particularly when applied to models like Stable Diffusion (SD) and Stable Diffusion XL (SDXL). To futher to deliver high-quality inference outcomes within a significantly reduced computational timeframe within just 2 to 8 steps, `LCM LoRA <https://arxiv.org/abs/2311.05556>`_ is proposed as a universal acceleration module for SD-based models.
+`Latent Consistency Models (LCM) <https://huggingface.co/papers/2310.04378>`_ offer a new approach to enhancing the efficiency of the image generation workflow, particularly when applied to models like Stable Diffusion (SD) and Stable Diffusion XL (SDXL). To deliver high-quality inference outcomes within a significantly reduced computational timeframe within just 2 to 8 steps, `LCM LoRA <https://arxiv.org/abs/2311.05556>`_ is proposed as a universal acceleration module for SD-based models.
 
 This document explains how to deploy `SDXL <https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0>`_ with `LCM LoRA weights <https://huggingface.co/latent-consistency/lcm-lora-sdxl>`_ using BentoML.
 

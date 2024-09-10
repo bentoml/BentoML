@@ -74,7 +74,7 @@ To configure other logs, use the `default Python logging configuration <https://
 Library logging
 ---------------
 
-When you BentoML as a library for your Python application, it does not configure any logs, without any specific handlers, formatters, or filters. This means that without additional configuration, the logging output from BentoML would follow the Python root logger’s settings, which by default logs messages at the WARNING level and higher (including ERROR and CRITICAL).
+When you use BentoML as a library for your Python application, it does not configure any logs, without any specific handlers, formatters, or filters. This means that without additional configuration, the logging output from BentoML would follow the Python root logger's settings, which by default logs messages at the WARNING level and higher (including ERROR and CRITICAL).
 
 To capture more detailed logs from BentoML, especially at the ``DEBUG`` or ``INFO`` levels, you must explicitly set up and register a log handler to the ``bentoml`` namespace. Here is a simple example of how to do this:
 

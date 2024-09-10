@@ -460,7 +460,7 @@ def containerize_command(  # type: ignore
     ``--image-tag`` flag.
 
     \b
-    You can also prefixing the tag with a hostname for the repository you wish to push to.
+    You can also prefix the tag with a hostname for the repository you wish to push to.
 
     .. code-block:: bash
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import typing as t
 from http import HTTPStatus
 
@@ -21,6 +22,7 @@ from bentoml._internal.cloud.schemas.modelschemas import DeploymentStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
 from bentoml._internal.utils import rich_console as console
 from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import CLIException
 from bentoml_cli.utils import BentoMLCommandGroup
 
 logger = logging.getLogger("bentoml.cli.deployment")
@@ -39,6 +41,23 @@ def raise_deployment_config_error(err: BentoMLException, action: str) -> t.NoRet
     raise BentoMLException(
         f"Failed to {action} deployment due to invalid configuration: {err}"
     ) from None
+
+
+def convert_env_to_dict(env: tuple[str] | None) -> list[dict[str, str]] | None:
+    if env is None:
+        return None
+    collected_envs: list[dict[str, str]] = []
+    if env:
+        for item in env:
+            if "=" in item:
+                name, value = item.split("=", 1)
+            else:
+                name = item
+                if name not in os.environ:
+                    raise CLIException(f"Environment variable {name} not found")
+                value = os.environ[name]
+            collected_envs.append({"name": name, "value": value})
+    return collected_envs
 
 
 @click.command(name="deploy")
@@ -88,7 +107,7 @@ def raise_deployment_config_error(err: BentoMLException, action: str) -> t.NoRet
 @click.option(
     "--env",
     type=click.STRING,
-    help="List of environment variables pass by --env key=value, --env ...",
+    help="List of environment variables pass by --env key[=value] --env ...",
     multiple=True,
 )
 @click.option(
@@ -202,10 +221,31 @@ def shared_decorator(
 @click.option(
     "--attach", help="Attach to the given deployment instead of creating a new one."
 )
+@click.option(
+    "--env",
+    type=click.STRING,
+    help="List of environment variables pass by --env key[=value] --env ...",
+    multiple=True,
+)
+@click.option(
+    "--secret",
+    type=click.STRING,
+    help="List of secret names pass by --secret name1, --secret name2, ...",
+    multiple=True,
+)
 @shared_decorator
-def develop_command(bento_dir: str, cluster: str | None, attach: str):
+def develop_command(
+    bento_dir: str,
+    cluster: str | None,
+    attach: str | None,
+    env: tuple[str] | None,
+    secret: tuple[str] | None,
+):
     """Create or attach to a development deployment and watch for local file changes"""
     import questionary
+
+    if attach and (env or secret):
+        raise CLIException("Cannot specify both --attach and --env or --secret")
 
     console = Console(highlight=False)
     if attach:
@@ -233,11 +273,20 @@ def develop_command(bento_dir: str, cluster: str | None, attach: str):
 
         if chosen == "new":
             deployment = create_deployment(
-                bento=bento_dir, cluster=cluster, dev=True, wait=False
+                bento=bento_dir,
+                cluster=cluster,
+                dev=True,
+                wait=False,
+                env=env,
+                secret=secret,
             )
         elif chosen is None:
             return
         else:
+            if env or secret:
+                rich.print(
+                    "[yellow]Warning:[/] --env and --secret are ignored when attaching to an existing deployment"
+                )
             deployment = t.cast(DeploymentInfo, chosen)
     deployment.watch(bento_dir)
 
@@ -289,7 +338,7 @@ def deployment_command():
 @click.option(
     "--env",
     type=click.STRING,
-    help="List of environment variables pass by --env key=value, --env ...",
+    help="List of environment variables pass by --env key[=value] --env ...",
     multiple=True,
 )
 @click.option(
@@ -343,12 +392,8 @@ def update(  # type: ignore
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
-        envs=(
-            [{"name": item.split("=")[0], "value": item.split("=")[1]} for item in env]
-            if env is not None
-            else None
-        ),
-        secrets=[item for item in secret] if secret is not None else None,
+        envs=convert_env_to_dict(env),
+        secrets=list(secret) if secret is not None else None,
         config_file=config_file,
         config_dict=cfg_dict,
         cli=True,
@@ -409,7 +454,7 @@ def update(  # type: ignore
 @click.option(
     "--env",
     type=click.STRING,
-    help="List of environment variables pass by --env key=value, --env ...",
+    help="List of environment variables pass by --env key[=value] --env ...",
     multiple=True,
 )
 @click.option(
@@ -468,12 +513,8 @@ def apply(  # type: ignore
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
-        envs=(
-            [{"key": item.split("=")[0], "value": item.split("=")[1]} for item in env]
-            if env is not None
-            else None
-        ),
-        secrets=[item for item in secret] if secret is not None else None,
+        envs=convert_env_to_dict(env),
+        secrets=list(secret) if secret is not None else None,
         config_file=config_file,
         config_dict=cfg_dict,
         cli=True,
@@ -534,7 +575,7 @@ def apply(  # type: ignore
 @click.option(
     "--env",
     type=click.STRING,
-    help="List of environment variables pass by --env key=value, --env ...",
+    help="List of environment variables pass by --env key[=value] --env ...",
     multiple=True,
 )
 @click.option(
@@ -773,6 +814,7 @@ def create_deployment(
     cfg_dict = None
     if config_dict is not None and config_dict != "":
         cfg_dict = json.loads(config_dict)
+
     config_params = DeploymentConfigParameters(
         name=name,
         bento=bento,
@@ -782,11 +824,7 @@ def create_deployment(
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
-        envs=(
-            [{"name": item.split("=")[0], "value": item.split("=")[1]} for item in env]
-            if env is not None
-            else None
-        ),
+        envs=convert_env_to_dict(env),
         secrets=list(secret) if secret is not None else None,
         config_file=config_file,
         config_dict=cfg_dict,

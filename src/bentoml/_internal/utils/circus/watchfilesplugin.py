@@ -14,7 +14,7 @@ from watchfiles import watch
 
 from ...bento.build_config import BentoBuildConfig
 from ...bento.build_config import BentoPathSpec
-from ...configuration import is_pypi_installed_bentoml
+from ...configuration import is_editable_bentoml
 from ...context import server_context
 from ...log import configure_server_logging
 from ...utils.pkg import source_locations
@@ -46,26 +46,25 @@ class ServiceReloaderPlugin(CircusPlugin):
         watch_dirs = [self.working_dir]
         self._specs = [(Path(self.working_dir).as_posix(), self.create_spec())]
 
-        if not is_pypi_installed_bentoml():
+        if is_editable_bentoml():
             # bentoml src from this __file__
             bentoml_src = Path(source_locations("bentoml")).parent
-            if bentoml_src.with_name("pyproject.toml").exists():
-                logger.info(
-                    "BentoML is installed via development mode, adding source root to 'watch_dirs'."
-                )
-                watch_dirs.append(str(bentoml_src))
-                self._specs.append(
-                    (
+            logger.info(
+                "BentoML is installed via development mode, adding source root to 'watch_dirs'."
+            )
+            watch_dirs.append(str(bentoml_src))
+            self._specs.append(
+                (
+                    bentoml_src.as_posix(),
+                    BentoPathSpec(
+                        # only watch python files in bentoml src
+                        ["*.py", "*.yaml"],
+                        [],
                         bentoml_src.as_posix(),
-                        BentoPathSpec(
-                            # only watch python files in bentoml src
-                            ["*.py", "*.yaml"],
-                            [],
-                            bentoml_src.as_posix(),
-                            recurse_ignore_filename=".gitignore",
-                        ),
-                    )
+                        recurse_ignore_filename=".gitignore",
+                    ),
                 )
+            )
 
         logger.info("Watching directories: %s", watch_dirs)
 

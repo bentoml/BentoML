@@ -19,11 +19,10 @@ from pathspec import PathSpec
 
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
-from ..configuration import BENTOML_VERSION
 from ..configuration import clean_bentoml_version
+from ..configuration import get_bentoml_requirement
 from ..configuration import get_debug_mode
 from ..configuration import get_quiet_mode
-from ..configuration import is_pypi_installed_bentoml
 from ..container import generate_containerfile
 from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
 from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
@@ -587,12 +586,12 @@ class PythonOptions:
 
         with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
             # Add the pinned BentoML requirement first if it's not a local version
-            if is_pypi_installed_bentoml():
+            if sdist_name is None and (bentoml_req := get_bentoml_requirement()):
                 logger.info(
                     "Adding current BentoML version to requirements.txt: %s",
-                    BENTOML_VERSION,
+                    bentoml_req,
                 )
-                f.write(f"bentoml=={BENTOML_VERSION}\n")
+                f.write(f"{bentoml_req}\n")
             elif sdist_name:
                 f.write(f"./wheels/{sdist_name}\n")
             if self.requirements_txt is not None:

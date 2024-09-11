@@ -54,10 +54,10 @@ class TestServiceReloaderPlugin(TestCircus):
 
     def mock_bentoml_install_from_source(self) -> MagicMock:
         patcher = patch(
-            "bentoml._internal.utils.circus.watchfilesplugin.is_pypi_installed_bentoml"
+            "bentoml._internal.utils.circus.watchfilesplugin.is_editable_bentoml"
         )
         mock = patcher.start()
-        mock.return_value = False
+        mock.return_value = True
         self.addCleanup(patcher.stop)
 
     def mock_bentoml_component_context(self) -> MagicMock:

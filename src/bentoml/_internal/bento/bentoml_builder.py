@@ -9,7 +9,7 @@ from pathlib import Path
 
 from ...exceptions import BentoMLException
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
-from ..configuration import is_pypi_installed_bentoml
+from ..configuration import is_editable_bentoml
 from ..utils.pkg import source_locations
 
 if sys.version_info >= (3, 11):
@@ -39,7 +39,7 @@ def build_bentoml_sdist(
     if os.environ.get(BENTOML_DEV_BUILD, "true").lower() == "false":
         return
 
-    if is_pypi_installed_bentoml():
+    if not is_editable_bentoml():
         # skip this entirely if BentoML is installed from PyPI
         return
 

@@ -1242,7 +1242,6 @@ REQUIREMENTS_TXT = "requirements.txt"
 
 
 def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
-    from bentoml._internal.configuration import BENTOML_VERSION
     from bentoml._internal.configuration import clean_bentoml_version
 
     filename = config.python.requirements_txt
@@ -1252,6 +1251,6 @@ def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
             content = f.read()
     for package in config.python.packages or []:
         content += f"{package}\n".encode()
-    bentoml_version = clean_bentoml_version(BENTOML_VERSION)
+    bentoml_version = clean_bentoml_version()
     content += f"bentoml=={bentoml_version}\n".encode()
     return content

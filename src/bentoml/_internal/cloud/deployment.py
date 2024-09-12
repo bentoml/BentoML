@@ -757,7 +757,7 @@ class DeploymentInfo:
         def watch_filter(change: watchfiles.Change, path: str) -> bool:
             if not default_filter(change, path):
                 return False
-            if os.path.relpath(path, bento_dir) == "bentofile.yaml":
+            if os.path.relpath(path, bento_dir) in ("bentofile.yaml", REQUIREMENTS_TXT):
                 return True
             return bento_spec.includes(path)
 
@@ -820,17 +820,21 @@ class DeploymentInfo:
                         build_config = get_bento_build_config(bento_dir)
                         upload_files: list[tuple[str, bytes]] = []
                         delete_files: list[str] = []
+                        affected_files: set[str] = set()
 
-                        for change, path in changes:
+                        for _, path in changes:
                             rel_path = os.path.relpath(path, bento_dir)
                             if rel_path == REQUIREMENTS_TXT:
                                 continue
-                            if change == watchfiles.Change.deleted:
-                                console.print(f" [red]Deleting[/] {rel_path}")
-                                delete_files.append(rel_path)
-                            else:
+                            if rel_path in affected_files:
+                                continue
+                            affected_files.add(rel_path)
+                            if os.path.exists(path):
                                 console.print(f" [green]Uploading[/] {rel_path}")
                                 upload_files.append((rel_path, open(path, "rb").read()))
+                            else:
+                                console.print(f" [red]Deleting[/] {rel_path}")
+                                delete_files.append(rel_path)
 
                         requirements_content = _build_requirements_txt(
                             bento_dir, build_config

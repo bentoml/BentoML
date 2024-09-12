@@ -585,15 +585,8 @@ class PythonOptions:
             )
 
         with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
-            # Add the pinned BentoML requirement first if it's not a local version
-            if sdist_name is None and (bentoml_req := get_bentoml_requirement()):
-                logger.info(
-                    "Adding current BentoML version to requirements.txt: %s",
-                    bentoml_req,
-                )
-                f.write(f"{bentoml_req}\n")
-            elif sdist_name:
-                f.write(f"./wheels/{sdist_name}\n")
+            has_bentoml_req = False
+
             if self.requirements_txt is not None:
                 from pip_requirements_parser import RequirementsFile
 
@@ -609,14 +602,33 @@ class PythonOptions:
                     option_line.options.pop("constraints", None)
                     option_line.options.pop("requirements", None)
 
+                if any(
+                    req.name and req.name.lower() == "bentoml"
+                    for req in requirements_txt.requirements
+                ):
+                    has_bentoml_req = True
+
                 f.write(requirements_txt.dumps(preserve_one_empty_line=True))
             elif self.packages is not None:
+                bentoml_req_regex = re.compile(r"^bentoml\b(?![-\._])", re.IGNORECASE)
+                if any(bentoml_req_regex.match(pkg) for pkg in self.packages):
+                    has_bentoml_req = True
                 f.write("\n".join(self.packages) + "\n")
-            else:
-                # Return early if no python packages were specified
-                return
 
-        if self.lock_packages and not self.is_empty():
+            if not has_bentoml_req:
+                # Add the pinned BentoML requirement first if it's not a local version
+                if sdist_name is None and (bentoml_req := get_bentoml_requirement()):
+                    logger.info(
+                        "Adding current BentoML version to requirements.txt: %s",
+                        bentoml_req,
+                    )
+                    f.write(f"{bentoml_req}\n")
+                elif sdist_name:
+                    f.write(f"./wheels/{sdist_name}\n")
+
+            is_empty = f.tell() == 0
+
+        if self.lock_packages and not is_empty:
             # Note: "--allow-unsafe" is required for including setuptools in the
             # generated requirements.lock.txt file, and setuptool is required by
             # pyfilesystem2. Once pyfilesystem2 drop setuptools as dependency, we can

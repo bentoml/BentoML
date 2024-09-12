@@ -1242,7 +1242,10 @@ REQUIREMENTS_TXT = "requirements.txt"
 
 
 def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
-    from bentoml._internal.configuration import clean_bentoml_version
+    import warnings
+
+    from bentoml._internal.configuration import BENTOML_VERSION
+    from bentoml._internal.configuration import get_bentoml_requirement
 
     filename = config.python.requirements_txt
     content = b""
@@ -1251,6 +1254,13 @@ def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
             content = f.read()
     for package in config.python.packages or []:
         content += f"{package}\n".encode()
-    bentoml_version = clean_bentoml_version()
-    content += f"bentoml=={bentoml_version}\n".encode()
+    bentoml_requirement = get_bentoml_requirement()
+    if bentoml_requirement is None:
+        warnings.warn(
+            "BentoML is installed in editable mode, the bentoml package will not be synced to remote",
+            UserWarning,
+            stacklevel=2,
+        )
+        bentoml_requirement = f"bentoml<{BENTOML_VERSION}"
+    content += f"{bentoml_requirement}\n".encode("utf8")
     return content

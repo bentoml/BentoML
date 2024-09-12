@@ -13,13 +13,16 @@ import yaml
 from rich.console import Console
 from rich.syntax import Syntax
 from rich.table import Table
+from simple_di import Provide
+from simple_di import inject
 
+import bentoml.deployment
 from bentoml._internal.cloud.base import Spinner
 from bentoml._internal.cloud.deployment import Deployment
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
-from bentoml._internal.cloud.deployment import DeploymentInfo
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
+from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.utils import rich_console as console
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import CLIException
@@ -28,6 +31,8 @@ from bentoml_cli.utils import BentoMLCommandGroup
 logger = logging.getLogger("bentoml.cli.deployment")
 
 if t.TYPE_CHECKING:
+    from bentoml._internal.cloud import BentoCloudClient
+
     TupleStrAny = tuple[str, ...]
 else:
     TupleStrAny = tuple
@@ -251,12 +256,12 @@ def develop_command(
 
     console = Console(highlight=False)
     if attach:
-        deployment = Deployment.get(attach)
+        deployment = bentoml.deployment.get(attach)
     else:
         with console.status("Fetching deployments..."):
             deployments = [
                 d
-                for d in Deployment.list(cluster=cluster)
+                for d in bentoml.deployment.list(cluster=cluster)
                 if d.is_dev
                 and d.get_status(False).status
                 in [
@@ -289,7 +294,7 @@ def develop_command(
                 rich.print(
                     "[yellow]Warning:[/] --env and --secret are ignored when attaching to an existing deployment"
                 )
-            deployment = t.cast(DeploymentInfo, chosen)
+            deployment = t.cast(Deployment, chosen)
     deployment.watch(bento_dir)
 
 
@@ -356,6 +361,7 @@ def deployment_command():
     help="Configuration json string",
     default=None,
 )
+@inject
 def update(  # type: ignore
     name: str | None,
     cluster: str | None,
@@ -368,6 +374,7 @@ def update(  # type: ignore
     env: tuple[str] | None,
     config_file: t.TextIO | None,
     config_dict: str | None,
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> None:
     """Update a deployment on BentoCloud.
 
@@ -396,7 +403,9 @@ def update(  # type: ignore
         config_params.verify()
     except BentoMLException as e:
         raise_deployment_config_error(e, "update")
-    deployment_info = Deployment.update(deployment_config_params=config_params)
+    deployment_info = _cloud_client.deployment.update(
+        deployment_config_params=config_params
+    )
 
     rich.print(f"Deployment [green]'{deployment_info.name}'[/] updated successfully.")
 
@@ -470,6 +479,7 @@ def update(  # type: ignore
     help="Configuration json string",
     default=None,
 )
+@inject
 def apply(  # type: ignore
     bento: str | None,
     name: str | None,
@@ -482,6 +492,7 @@ def apply(  # type: ignore
     env: tuple[str] | None,
     config_file: str | t.TextIO | None,
     config_dict: str | None,
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> None:
     """Apply a deployment on BentoCloud.
 
@@ -509,7 +520,9 @@ def apply(  # type: ignore
         config_params.verify()
     except BentoMLException as e:
         raise_deployment_config_error(e, "apply")
-    deployment_info = Deployment.apply(deployment_config_params=config_params)
+    deployment_info = _cloud_client.deployment.apply(
+        deployment_config_params=config_params
+    )
 
     rich.print(f"Deployment [green]'{deployment_info.name}'[/] applied successfully.")
 
@@ -649,7 +662,7 @@ def get(  # type: ignore
     output: t.Literal["json", "default"],
 ) -> None:
     """Get a deployment on BentoCloud."""
-    d = Deployment.get(name, cluster=cluster)
+    d = bentoml.deployment.get(name, cluster=cluster)
     if output == "json":
         info = json.dumps(d.to_dict(), indent=2, default=str)
         console.print_json(info)
@@ -669,7 +682,7 @@ def terminate(  # type: ignore
     name: str, cluster: str | None
 ) -> None:
     """Terminate a deployment on BentoCloud."""
-    Deployment.terminate(name, cluster=cluster)
+    bentoml.deployment.terminate(name, cluster=cluster)
     rich.print(f"Deployment [green]'{name}'[/] terminated successfully.")
 
 
@@ -684,7 +697,7 @@ def delete(  # type: ignore
     name: str, cluster: str | None
 ) -> None:
     """Delete a deployment on BentoCloud."""
-    Deployment.delete(name, cluster=cluster)
+    bentoml.deployment.delete(name, cluster=cluster)
     rich.print(f"Deployment [green]'{name}'[/] deleted successfully.")
 
 
@@ -706,7 +719,7 @@ def list_command(  # type: ignore
     output: t.Literal["json", "yaml", "table"],
 ) -> None:
     """List existing deployments on BentoCloud."""
-    d_list = Deployment.list(cluster=cluster, search=search)
+    d_list = bentoml.deployment.list(cluster=cluster, search=search)
     res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]
     if output == "table":
         table = Table(box=None, expand=True)
@@ -741,12 +754,14 @@ def list_command(  # type: ignore
     type=click.Choice(["json", "yaml", "table"]),
     default="table",
 )
+@inject
 def list_instance_types(  # type: ignore
     cluster: str | None,
     output: t.Literal["json", "yaml", "table"],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> None:
     """List existing instance types in cluster on BentoCloud."""
-    d_list = Deployment.list_instance_types(cluster=cluster)
+    d_list = _cloud_client.deployment.list_instance_types(cluster=cluster)
     res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]
     if output == "table":
         table = Table(box=None, expand=True)
@@ -774,6 +789,7 @@ def list_instance_types(  # type: ignore
         console.print(Syntax(info, "yaml", background_color="default"))
 
 
+@inject
 def create_deployment(
     bento: str | None = None,
     name: str | None = None,
@@ -790,7 +806,8 @@ def create_deployment(
     wait: bool = True,
     timeout: int = 3600,
     dev: bool = False,
-) -> DeploymentInfo:
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+) -> Deployment:
     cfg_dict = None
     if config_dict is not None and config_dict != "":
         cfg_dict = json.loads(config_dict)
@@ -820,7 +837,9 @@ def create_deployment(
     console = Console(highlight=False)
     with Spinner(console=console) as spinner:
         spinner.update("Creating deployment on BentoCloud")
-        deployment = Deployment.create(deployment_config_params=config_params)
+        deployment = _cloud_client.deployment.create(
+            deployment_config_params=config_params
+        )
         spinner.log(
             f'✅ Created deployment "{deployment.name}" in cluster "{deployment.cluster}"'
         )

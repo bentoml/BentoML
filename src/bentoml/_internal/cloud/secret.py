@@ -4,10 +4,7 @@ import typing as t
 
 import attr
 import yaml
-from simple_di import Provide
-from simple_di import inject
 
-from ..configuration.containers import BentoMLContainer
 from ..utils import bentoml_cattr
 from .schemas.schemasv1 import CreateSecretSchema
 from .schemas.schemasv1 import SecretContentSchema
@@ -20,7 +17,7 @@ if t.TYPE_CHECKING:
 
 
 @attr.define
-class SecretInfo(SecretSchema):
+class Secret(SecretSchema):
     created_by: str
 
     def to_dict(self) -> dict[str, t.Any]:
@@ -31,7 +28,7 @@ class SecretInfo(SecretSchema):
         return yaml.dump(dt, sort_keys=False)
 
     @classmethod
-    def from_secret_schema(cls, secret_schema: SecretSchema) -> SecretInfo:
+    def from_secret_schema(cls, secret_schema: SecretSchema) -> Secret:
         return cls(
             name=secret_schema.name,
             uid=secret_schema.uid,
@@ -48,28 +45,43 @@ class SecretInfo(SecretSchema):
 
 
 @attr.define
-class Secret:
-    @classmethod
-    @inject
-    def list(
-        cls,
-        search: str | None = None,
-        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
-    ) -> t.List[SecretInfo]:
-        secrets = cloud_rest_client.v1.list_secrets(search=search)
-        return [SecretInfo.from_secret_schema(secret) for secret in secrets.items]
+class SecretAPI:
+    _client: RestApiClient
 
-    @classmethod
-    @inject
+    def list(self, search: str | None = None) -> t.List[Secret]:
+        """
+        List all secrets.
+
+        Args:
+            search (str | None): Optional search string to filter secrets.
+
+        Returns:
+            List[SecretInfo]: A list of SecretInfo objects representing the secrets.
+        """
+        secrets = self._client.v1.list_secrets(search=search)
+        return [Secret.from_secret_schema(secret) for secret in secrets.items]
+
     def create(
-        cls,
+        self,
         name: str | None = None,
         description: str | None = None,
         type: str | None = None,
         path: str | None = None,
         key_vals: t.List[t.Tuple[str, str]] = [],
-        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
-    ) -> SecretInfo:
+    ) -> Secret:
+        """
+        Create a new secret.
+
+        Args:
+            name (str | None): Name of the secret.
+            description (str | None): Description of the secret.
+            type (str | None): Type of the secret.
+            path (str | None): Path of the secret.
+            key_vals (List[Tuple[str, str]]): List of key-value pairs for the secret content.
+
+        Returns:
+            SecretInfo: A SecretInfo object representing the created secret.
+        """
         secret_schema = CreateSecretSchema(
             name=name,
             description=description,
@@ -81,31 +93,44 @@ class Secret:
                 ],
             ),
         )
-        secret = cloud_rest_client.v1.create_secret(secret_schema)
-        return SecretInfo.from_secret_schema(secret)
+        secret = self._client.v1.create_secret(secret_schema)
+        return Secret.from_secret_schema(secret)
 
-    @classmethod
-    @inject
-    def delete(
-        cls,
-        name: str | None = None,
-        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
-    ):
+    def delete(self, name: str | None = None):
+        """
+        Delete a secret.
+
+        Args:
+            name (str | None): Name of the secret to delete.
+
+        Raises:
+            ValueError: If name is None.
+        """
         if name is None:
             raise ValueError("name is required")
-        cloud_rest_client.v1.delete_secret(name)
+        self._client.v1.delete_secret(name)
 
-    @classmethod
-    @inject
     def update(
-        cls,
+        self,
         name: str | None = None,
         description: str | None = None,
         type: str | None = None,
         path: str | None = None,
         key_vals: t.List[t.Tuple[str, str]] = [],
-        cloud_rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
-    ) -> SecretInfo:
+    ) -> Secret:
+        """
+        Update an existing secret.
+
+        Args:
+            name (str | None): Name of the secret to update.
+            description (str | None): New description of the secret.
+            type (str | None): New type of the secret.
+            path (str | None): New path of the secret.
+            key_vals (List[Tuple[str, str]]): New list of key-value pairs for the secret content.
+
+        Returns:
+            SecretInfo: A SecretInfo object representing the updated secret.
+        """
         secret_schema = UpdateSecretSchema(
             description=description,
             content=SecretContentSchema(
@@ -116,5 +141,5 @@ class Secret:
                 ],
             ),
         )
-        secret = cloud_rest_client.v1.update_secret(name, secret_schema)
-        return SecretInfo.from_secret_schema(secret)
+        secret = self._client.v1.update_secret(name, secret_schema)
+        return Secret.from_secret_schema(secret)

@@ -47,7 +47,7 @@ jobs:
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.unit.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-unit-data
           path: .coverage.*
@@ -95,7 +95,7 @@ jobs:
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.integrations.ubuntu-latest.3.9.${{ matrix.framework }}"
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-integrations-data
           path: .coverage.*
@@ -179,7 +179,7 @@ jobs:
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.e2e.${{ matrix.os }}.${{ matrix.python-version }}.${{ matrix.suite }}"
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-e2e-data
           path: .coverage.*

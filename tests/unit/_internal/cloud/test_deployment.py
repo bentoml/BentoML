@@ -7,7 +7,7 @@ import attr
 import pytest
 
 from bentoml._internal.cloud.client import RestApiClient
-from bentoml._internal.cloud.deployment import Deployment
+from bentoml._internal.cloud.deployment import DeploymentAPI
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
 from bentoml._internal.cloud.schemas.modelschemas import BentoImageBuildStatus
 from bentoml._internal.cloud.schemas.modelschemas import BentoUploadStatus
@@ -156,10 +156,8 @@ def dummy_generate_deployment_schema(
     )
 
 
-@pytest.fixture(autouse=True)
-def mock_rest_client() -> t.Generator[RestApiClient, None, None]:
-    from bentoml._internal.configuration.containers import BentoMLContainer
-
+@pytest.fixture
+def mock_rest_client() -> RestApiClient:
     def dummy_create_deployment(
         create_schema: CreateDeploymentSchemaV2, cluster: str | None = None
     ):
@@ -254,15 +252,16 @@ def mock_rest_client() -> t.Generator[RestApiClient, None, None]:
             )
         ],
     )  # type: ignore
-    try:
-        BentoMLContainer.rest_api_client.set(client)
-        yield client
-    finally:
-        BentoMLContainer.rest_api_client.reset()
+    return client
 
 
-def test_create_deployment():
-    deployment = Deployment.create(
+@pytest.fixture
+def deployment_api(mock_rest_client: RestApiClient) -> DeploymentAPI:
+    return DeploymentAPI(mock_rest_client)
+
+
+def test_create_deployment(deployment_api: DeploymentAPI):
+    deployment = deployment_api.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
                 "bento": "abc:123",
@@ -281,8 +280,8 @@ def test_create_deployment():
         )
 
 
-def test_create_deployment_custom_standalone():
-    deployment = Deployment.create(
+def test_create_deployment_custom_standalone(deployment_api: DeploymentAPI):
+    deployment = deployment_api.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
                 "bento": "abc:123",
@@ -313,8 +312,8 @@ def test_create_deployment_custom_standalone():
         assert service.deployment_strategy == "RollingUpdate"
 
 
-def test_create_deployment_scailing_only_min():
-    deployment = Deployment.create(
+def test_create_deployment_scailing_only_min(deployment_api: DeploymentAPI):
+    deployment = deployment_api.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
                 "bento": "abc:123",
@@ -338,8 +337,8 @@ def test_create_deployment_scailing_only_min():
         )
 
 
-def test_create_deployment_scailing_only_max():
-    deployment = Deployment.create(
+def test_create_deployment_scailing_only_max(deployment_api: DeploymentAPI):
+    deployment = deployment_api.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
                 "bento": "abc:123",
@@ -363,8 +362,8 @@ def test_create_deployment_scailing_only_max():
         )
 
 
-def test_create_deployment_config_dict():
-    deployment = Deployment.create(
+def test_create_deployment_config_dict(deployment_api: DeploymentAPI):
+    deployment = deployment_api.create(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
                 "bento": "abc:123",
@@ -402,8 +401,8 @@ def test_create_deployment_config_dict():
     }
 
 
-def test_update_deployment():
-    deployment = Deployment.update(
+def test_update_deployment(deployment_api: DeploymentAPI):
+    deployment = deployment_api.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
                 "name": "test",
@@ -433,8 +432,8 @@ def test_update_deployment():
         assert service.deployment_strategy == "Recreate"
 
 
-def test_update_deployment_scaling_only_min():
-    deployment = Deployment.update(
+def test_update_deployment_scaling_only_min(deployment_api: DeploymentAPI):
+    deployment = deployment_api.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
                 "name": "test",
@@ -460,8 +459,8 @@ def test_update_deployment_scaling_only_min():
         assert service.deployment_strategy == "RollingUpdate"
 
 
-def test_update_deployment_scaling_only_max():
-    deployment = Deployment.update(
+def test_update_deployment_scaling_only_max(deployment_api: DeploymentAPI):
+    deployment = deployment_api.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
                 "name": "test",
@@ -487,9 +486,9 @@ def test_update_deployment_scaling_only_max():
         assert service.deployment_strategy == "RollingUpdate"
 
 
-def test_update_deployment_scaling_too_big_min():
+def test_update_deployment_scaling_too_big_min(deployment_api: DeploymentAPI):
     try:
-        Deployment.update(
+        deployment_api.update(
             deployment_config_params=DeploymentConfigParameters(
                 cfg_dict={
                     "name": "test",
@@ -507,8 +506,8 @@ def test_update_deployment_scaling_too_big_min():
         )
 
 
-def test_update_deployment_distributed():
-    deployment = Deployment.update(
+def test_update_deployment_distributed(deployment_api: DeploymentAPI):
+    deployment = deployment_api.update(
         deployment_config_params=DeploymentConfigParameters(
             cfg_dict={
                 "name": "test-distributed",

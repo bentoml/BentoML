@@ -135,7 +135,7 @@ class BentoModel(Model[StoredModel]):
                     target_model_store=model_store,
                 )
             return stored
-        model = cloud_client.pull_model(self.tag, model_store=model_store)
+        model = cloud_client.model.pull(self.tag, model_store=model_store)
         assert model is not None, "non-bentoml model"
         return model
 

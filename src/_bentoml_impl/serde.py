@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import io
 import json
+import logging
 import pickle
 import posixpath
 import typing as t
@@ -27,6 +28,7 @@ if t.TYPE_CHECKING:
 
 
 T = t.TypeVar("T", bound="IODescriptor")
+logger = logging.getLogger("bentoml.io")
 
 
 @attrs.frozen
@@ -172,6 +174,8 @@ class MultipartSerde(JSONSerde):
         if isinstance(obj, UploadFile):
             return obj
         async with httpx.AsyncClient() as client:
+            obj = obj.strip("\"'")  # The url may be JSON encoded
+            logger.debug("Request with URL, downloading file from %s", obj)
             resp = await client.get(obj)
             body = io.BytesIO(await resp.aread())
             parsed = urlparse(obj)

@@ -311,13 +311,18 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 if isinstance(v, str) and not is_http_url(v):
                     v = pathlib.Path(v)
                 if is_image_type(type(v)):
+                    fp = getattr(v, "_fp", v.fp)
+                    fname = getattr(fp, "name", None)
+                    fmt = v.format.lower()
                     files.append(
                         (
                             name,
                             (
-                                None,
-                                getattr(v, "_fp", v.fp),
-                                f"image/{v.format.lower()}",
+                                pathlib.Path(fname).name
+                                if fname
+                                else f"upload-image.{fmt}",
+                                fp,
+                                f"image/{fmt}",
                             ),
                         )
                     )
@@ -329,14 +334,8 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     data.setdefault(name, []).append(v)
                 else:
                     assert isinstance(v, t.BinaryIO)
-                    filename = (
-                        pathlib.Path(fn).name
-                        if (fn := getattr(v, "name", None))
-                        else None
-                    )
-                    content_type = (
-                        mimetypes.guess_type(filename)[0] if filename else None
-                    )
+                    filename = pathlib.Path(getattr(v, "name", "upload-file")).name
+                    content_type = mimetypes.guess_type(filename)[0]
                     files.append((name, (filename, v, content_type)))
         headers.pop("content-type", None)
         return self.client.build_request(

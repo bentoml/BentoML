@@ -24,6 +24,7 @@ if t.TYPE_CHECKING:
     from rich.console import RenderResult
 
 FILE_CHUNK_SIZE = 100 * 1024 * 1024  # 100Mb
+UPLOAD_RETRY_COUNT = 3
 
 
 @attrs.define
@@ -168,9 +169,3 @@ class Spinner:
 
     def __exit__(self, *_: t.Any) -> None:
         self.stop()
-
-
-class CloudClient:
-    # Moved atrributes to __init__ because otherwise it will keep all the log when running SDK.
-    def __init__(self):
-        self.spinner = Spinner()

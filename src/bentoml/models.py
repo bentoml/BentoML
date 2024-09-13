@@ -220,7 +220,7 @@ def push(
     model_obj = BentoModel(tag)
     if model_obj.stored is None:
         raise BentoMLException(f"Model {tag} not found in local store")
-    _cloud_client.push_model(model_obj, force=force)
+    _cloud_client.model.push(model_obj, force=force)
 
 
 @inject
@@ -230,7 +230,7 @@ def pull(
     force: bool = False,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Model | None:
-    return _cloud_client.pull_model(tag, force=force)
+    return _cloud_client.model.pull(tag, force=force)
 
 
 if t.TYPE_CHECKING:

@@ -699,7 +699,7 @@ class Deployment:
             for fn in files:
                 full_path = os.path.join(root, fn)
                 rel_path = os.path.relpath(full_path, bento_dir)
-                if not bento_spec.includes(full_path) and rel_path != "bentofile.yaml":
+                if not bento_spec.includes(rel_path) and rel_path != "bentofile.yaml":
                     continue
                 if rel_path == REQUIREMENTS_TXT:
                     continue
@@ -735,9 +735,10 @@ class Deployment:
         def watch_filter(change: watchfiles.Change, path: str) -> bool:
             if not default_filter(change, path):
                 return False
-            if os.path.relpath(path, bento_dir) in ("bentofile.yaml", REQUIREMENTS_TXT):
+            rel_path = os.path.relpath(path, bento_dir)
+            if rel_path in ("bentofile.yaml", REQUIREMENTS_TXT):
                 return True
-            return bento_spec.includes(path)
+            return bento_spec.includes(rel_path)
 
         console = Console(highlight=False)
         bento_info = ensure_bento(
@@ -1169,19 +1170,32 @@ class DeploymentAPI:
         res = self._client.v2.get_deployment(name, cluster)
         return self._generate_deployment_info_(res, res.urls)
 
-    def terminate(self, name: str, cluster: str | None = None) -> Deployment:
+    def terminate(
+        self, name: str, cluster: str | None = None, wait: bool = False
+    ) -> Deployment:
         """
         Terminate a deployment.
 
         Args:
             name: The name of the deployment.
             cluster: The name of the cluster.
+            wait: Whether to wait for the deployment to be terminated.
 
         Returns:
             The DeploymentInfo object.
         """
         res = self._client.v2.terminate_deployment(name, cluster)
-        return self._generate_deployment_info_(res, res.urls)
+        deployment = self._generate_deployment_info_(res, res.urls)
+        if wait:
+            console = rich.get_console()
+            status = deployment.get_status(False).status
+            with console.status(
+                f"Waiting for deployment to terminate, current_status: [green]{status}[/]"
+            ):
+                while status != DeploymentStatus.Terminated.value:
+                    time.sleep(1)
+                    status = deployment.get_status(True).status
+        return deployment
 
     def delete(self, name: str, cluster: str | None = None) -> None:
         """

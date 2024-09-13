@@ -47,10 +47,11 @@ jobs:
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.unit.${{ matrix.os }}.${{ matrix.python-version }}"
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: coverage-unit-data
+          name: coverage-unit-data-${{ matrix.os }}-${{ matrix.python-version }}
           path: .coverage.*
+          include-hidden-files: true
   integrations:
     name: framework-integration-tests
     runs-on: ubuntu-latest
@@ -95,10 +96,11 @@ jobs:
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.integrations.ubuntu-latest.3.9.${{ matrix.framework }}"
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: coverage-integrations-data
+          name: coverage-integrations-data-${{ matrix.framework }}
           path: .coverage.*
+          include-hidden-files: true
   e2e-monitoring:
     strategy:
       fail-fast: false
@@ -135,8 +137,9 @@ jobs:
       - name: Upload coverage data
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-monitoring-data
+          name: coverage-monitoring-data-${{ matrix.os }}-${{ matrix.python-version }}
           path: .coverage.*
+          include-hidden-files: true
   e2e-test:
     strategy:
       fail-fast: false
@@ -179,10 +182,11 @@ jobs:
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.e2e.${{ matrix.os }}.${{ matrix.python-version }}.${{ matrix.suite }}"
       - name: Upload coverage data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: coverage-e2e-data
+          name: coverage-e2e-data-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.suite }}
           path: .coverage.*
+          include-hidden-files: true
   coverage:
     name: report-coverage
     runs-on: ubuntu-latest
@@ -204,19 +208,23 @@ jobs:
       - name: Download e2e coverage
         uses: actions/download-artifact@v4
         with:
-          name: coverage-e2e-data
+          pattern: coverage-e2e-data-*
+          merge-multiple: true
       - name: Download monitoring coverage
         uses: actions/download-artifact@v4
         with:
-          name: coverage-monitoring-data
+          pattern: coverage-monitoring-data-*
+          merge-multiple: true
       - name: Download integrations coverage
         uses: actions/download-artifact@v4
         with:
-          name: coverage-integrations-data
+          pattern: coverage-integrations-data-*
+          merge-multiple: true
       - name: Download unit coverage
         uses: actions/download-artifact@v4
         with:
-          name: coverage-unit-data
+          pattern: coverage-unit-data-*
+          merge-multiple: true
       - name: Install dependencies
         run: pipx install pdm && pipx install nox
       - name: Export coverage reports and generate summary

@@ -29,7 +29,7 @@ from pydantic import Field
 
 # BentoML built-in types
 from ._internal.bento import Bento
-from ._internal.cloud import YataiClient
+from ._internal.cloud import BentoCloudClient
 from ._internal.context import ServiceContext as Context
 from ._internal.context import server_context
 from ._internal.models import Model
@@ -244,7 +244,7 @@ __all__ = [
     "Runner",
     "Runnable",
     "monitoring",
-    "YataiClient",  # Yatai REST API Client
+    "BentoCloudClient",  # BentoCloud REST API Client
     # bento APIs
     "list",
     "get",

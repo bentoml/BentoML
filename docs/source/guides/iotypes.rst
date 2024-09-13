@@ -141,6 +141,15 @@ You can also use a Pydantic model directly at the top level for a BentoML Servic
 
 In the above code snippet, all the validated and parsed fields from the incoming request are passed into the ``generate`` method as keyword arguments stored in the ``params`` dictionary. You can access these parameters directly by their field names defined in ``AdsGenerationParams`` as keys in the dictionary.
 
+Pydantic's ``BaseModel`` only supports built-in types in Python as field types. You can use ``bentoml.IODescriptor`` instead of ``pydantic.BaseModel`` to gain support for types such as ``numpy.ndarray``, ``pandas.DataFrame``, and ``torch.Tensor``.
+
+.. code-block:: python
+
+    import bentoml
+
+    class MyInputParams(bentoml.IODescriptor):
+        data: np.ndarray[tuple[int], np.dtype[np.float16]]
+
 Files
 ^^^^^
 

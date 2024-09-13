@@ -1279,6 +1279,7 @@ def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
             UserWarning,
             stacklevel=2,
         )
-        bentoml_requirement = f"bentoml<{BENTOML_VERSION}"
+        version_without_local = BENTOML_VERSION.split("+")[0]
+        bentoml_requirement = f"bentoml~={version_without_local}"
     content += f"{bentoml_requirement}\n".encode("utf8")
     return content

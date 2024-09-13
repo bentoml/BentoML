@@ -49,7 +49,7 @@ jobs:
       - name: Upload coverage data
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-unit-data
+          name: coverage-unit-data-${{ matrix.os }}-${{ matrix.python-version }}
           path: .coverage.*
           include-hidden-files: true
   integrations:
@@ -98,7 +98,7 @@ jobs:
       - name: Upload coverage data
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-integrations-data
+          name: coverage-integrations-data-${{ matrix.framework }}
           path: .coverage.*
           include-hidden-files: true
   e2e-monitoring:
@@ -137,7 +137,7 @@ jobs:
       - name: Upload coverage data
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-monitoring-data
+          name: coverage-monitoring-data-${{ matrix.os }}-${{ matrix.python-version }}
           path: .coverage.*
           include-hidden-files: true
   e2e-test:
@@ -184,7 +184,7 @@ jobs:
       - name: Upload coverage data
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-e2e-data
+          name: coverage-e2e-data-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.suite }}
           path: .coverage.*
           include-hidden-files: true
   coverage:
@@ -208,19 +208,23 @@ jobs:
       - name: Download e2e coverage
         uses: actions/download-artifact@v4
         with:
-          name: coverage-e2e-data
+          pattern: coverage-e2e-data-*
+          merge-multiple: true
       - name: Download monitoring coverage
         uses: actions/download-artifact@v4
         with:
-          name: coverage-monitoring-data
+          pattern: coverage-monitoring-data-*
+          merge-multiple: true
       - name: Download integrations coverage
         uses: actions/download-artifact@v4
         with:
-          name: coverage-integrations-data
+          pattern: coverage-integrations-data-*
+          merge-multiple: true
       - name: Download unit coverage
         uses: actions/download-artifact@v4
         with:
-          name: coverage-unit-data
+          pattern: coverage-unit-data-*
+          merge-multiple: true
       - name: Install dependencies
         run: pipx install pdm && pipx install nox
       - name: Export coverage reports and generate summary

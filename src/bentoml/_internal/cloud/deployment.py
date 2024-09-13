@@ -1169,19 +1169,32 @@ class DeploymentAPI:
         res = self._client.v2.get_deployment(name, cluster)
         return self._generate_deployment_info_(res, res.urls)
 
-    def terminate(self, name: str, cluster: str | None = None) -> Deployment:
+    def terminate(
+        self, name: str, cluster: str | None = None, wait: bool = False
+    ) -> Deployment:
         """
         Terminate a deployment.
 
         Args:
             name: The name of the deployment.
             cluster: The name of the cluster.
+            wait: Whether to wait for the deployment to be terminated.
 
         Returns:
             The DeploymentInfo object.
         """
         res = self._client.v2.terminate_deployment(name, cluster)
-        return self._generate_deployment_info_(res, res.urls)
+        deployment = self._generate_deployment_info_(res, res.urls)
+        if wait:
+            console = rich.get_console()
+            status = deployment.get_status(False).status
+            with console.status(
+                f"Waiting for deployment to terminate, current_status: [green]{status}[/]"
+            ):
+                while status != DeploymentStatus.Terminated.value:
+                    time.sleep(1)
+                    status = deployment.get_status(True).status
+        return deployment
 
     def delete(self, name: str, cluster: str | None = None) -> None:
         """

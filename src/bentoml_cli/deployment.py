@@ -678,11 +678,12 @@ def get(  # type: ignore
     type=click.STRING,
     required=True,
 )
+@click.option("--wait", is_flag=True, help="Wait for the deployment to be terminated")
 def terminate(  # type: ignore
-    name: str, cluster: str | None
+    name: str, cluster: str | None, wait: bool
 ) -> None:
     """Terminate a deployment on BentoCloud."""
-    bentoml.deployment.terminate(name, cluster=cluster)
+    bentoml.deployment.terminate(name, cluster=cluster, wait=wait)
     rich.print(f"Deployment [green]'{name}'[/] terminated successfully.")
 
 

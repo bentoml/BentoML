@@ -300,7 +300,7 @@ def pull(
     if model_tag is not None:
         if ctx.get_parameter_source("bentofile") != ParameterSource.DEFAULT:
             rich.print("-f bentofile is ignored when model_tag is provided")
-        cloud_client.pull_model(model_tag, force=force)
+        cloud_client.model.pull(model_tag, force=force)
         return
 
     try:
@@ -316,7 +316,7 @@ def pull(
             "No model to pull, please provide a model tag or define models in bentofile.yaml"
         )
     for model_spec in build_config.models:
-        cloud_client.pull_model(
+        cloud_client.model.pull(
             model_spec.tag,
             force=force,
             query=model_spec.filter,
@@ -352,7 +352,7 @@ def push(
     model_obj = BentoModel(model_tag)
     if model_obj.stored is None:
         raise click.ClickException(f"Model {model_tag} not found in local store")
-    cloud_client.push_model(
+    cloud_client.model.push(
         model_obj,
         force=force,
         threads=threads,

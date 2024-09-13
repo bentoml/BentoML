@@ -7,8 +7,6 @@ import typing as t
 import uuid
 from queue import Empty
 from urllib.parse import urlencode
-from urllib.parse import urljoin
-from urllib.parse import urlparse
 
 import httpx
 from httpx_ws import WebSocketNetworkError
@@ -65,11 +63,11 @@ logger = logging.getLogger(__name__)
 
 
 class BaseRestApiClient:
-    def __init__(self, endpoint: str, session: httpx.Client) -> None:
-        self.endpoint = endpoint
+    def __init__(self, session: httpx.Client) -> None:
         self.session = session
 
-    def _is_not_found(self, resp: httpx.Response) -> bool:
+    @staticmethod
+    def _is_not_found(resp: httpx.Response) -> bool:
         # We used to return 400 for record not found, handle both cases
         return (
             resp.status_code == 404
@@ -77,7 +75,8 @@ class BaseRestApiClient:
             and "record not found" in resp.text
         )
 
-    def _check_resp(self, resp: httpx.Response) -> None:
+    @staticmethod
+    def _check_resp(resp: httpx.Response) -> None:
         if resp.status_code >= 500:
             if "x-trace-id" in resp.headers:
                 raise CloudRESTApiClientError(
@@ -97,7 +96,7 @@ class BaseRestApiClient:
 
 class RestApiClientV1(BaseRestApiClient):
     def get_current_user(self) -> UserSchema | None:
-        url = urljoin(self.endpoint, "/api/v1/auth/current")
+        url = "/api/v1/auth/current"
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
@@ -105,7 +104,7 @@ class RestApiClientV1(BaseRestApiClient):
         return schema_from_json(resp.text, UserSchema)
 
     def get_current_organization(self) -> OrganizationSchema | None:
-        url = urljoin(self.endpoint, "/api/v1/current_org")
+        url = "/api/v1/current_org"
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
@@ -115,9 +114,7 @@ class RestApiClientV1(BaseRestApiClient):
     def get_bento_repository(
         self, bento_repository_name: str
     ) -> BentoRepositorySchema | None:
-        url = urljoin(
-            self.endpoint, f"/api/v1/bento_repositories/{bento_repository_name}"
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}"
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
@@ -127,16 +124,13 @@ class RestApiClientV1(BaseRestApiClient):
     def create_bento_repository(
         self, req: CreateBentoRepositorySchema
     ) -> BentoRepositorySchema:
-        url = urljoin(self.endpoint, "/api/v1/bento_repositories")
+        url = "/api/v1/bento_repositories"
         resp = self.session.post(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoRepositorySchema)
 
     def get_bento(self, bento_repository_name: str, version: str) -> BentoSchema | None:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}",
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}"
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
@@ -146,16 +140,8 @@ class RestApiClientV1(BaseRestApiClient):
     def list_bentos(
         self, bento_repository_name: str, count: int = 1
     ) -> BentoListSchema | None:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos",
-        )
-        resp = self.session.get(
-            url,
-            params={
-                "count": count,
-            },
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos"
+        resp = self.session.get(url, params={"count": count})
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
@@ -164,9 +150,7 @@ class RestApiClientV1(BaseRestApiClient):
     def create_bento(
         self, bento_repository_name: str, req: CreateBentoSchema
     ) -> BentoSchema:
-        url = urljoin(
-            self.endpoint, f"/api/v1/bento_repositories/{bento_repository_name}/bentos"
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos"
         resp = self.session.post(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
@@ -174,10 +158,7 @@ class RestApiClientV1(BaseRestApiClient):
     def update_bento(
         self, bento_repository_name: str, version: str, req: UpdateBentoSchema
     ) -> BentoSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}",
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}"
         resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
@@ -185,10 +166,7 @@ class RestApiClientV1(BaseRestApiClient):
     def presign_bento_upload_url(
         self, bento_repository_name: str, version: str
     ) -> BentoSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/presign_upload_url",
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/presign_upload_url"
         resp = self.session.patch(url)
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
@@ -196,10 +174,7 @@ class RestApiClientV1(BaseRestApiClient):
     def presign_bento_download_url(
         self, bento_repository_name: str, version: str
     ) -> BentoSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/presign_download_url",
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/presign_download_url"
         resp = self.session.patch(url)
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
@@ -207,10 +182,7 @@ class RestApiClientV1(BaseRestApiClient):
     def start_bento_multipart_upload(
         self, bento_repository_name: str, version: str
     ) -> BentoSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/start_multipart_upload",
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/start_multipart_upload"
         resp = self.session.patch(url)
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
@@ -221,10 +193,7 @@ class RestApiClientV1(BaseRestApiClient):
         version: str,
         req: PreSignMultipartUploadUrlSchema,
     ) -> BentoSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/presign_multipart_upload_url",
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/presign_multipart_upload_url"
         resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
@@ -235,10 +204,7 @@ class RestApiClientV1(BaseRestApiClient):
         version: str,
         req: CompleteMultipartUploadSchema,
     ) -> BentoSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/complete_multipart_upload",
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/complete_multipart_upload"
         resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
@@ -246,10 +212,7 @@ class RestApiClientV1(BaseRestApiClient):
     def start_upload_bento(
         self, bento_repository_name: str, version: str
     ) -> BentoSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/start_upload",
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/start_upload"
         resp = self.session.patch(url)
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
@@ -257,10 +220,7 @@ class RestApiClientV1(BaseRestApiClient):
     def finish_upload_bento(
         self, bento_repository_name: str, version: str, req: FinishUploadBentoSchema
     ) -> BentoSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/finish_upload",
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/finish_upload"
         resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, BentoSchema)
@@ -268,10 +228,7 @@ class RestApiClientV1(BaseRestApiClient):
     def upload_bento(
         self, bento_repository_name: str, version: str, data: t.IO[bytes]
     ) -> None:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/upload",
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/upload"
         resp = self.session.put(
             url,
             content=data,
@@ -286,10 +243,7 @@ class RestApiClientV1(BaseRestApiClient):
     def download_bento(
         self, bento_repository_name: str, version: str
     ) -> t.Generator[httpx.Response, None, None]:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/download",
-        )
+        url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/download"
         with self.session.stream("GET", url) as resp:
             self._check_resp(resp)
             yield resp
@@ -297,9 +251,7 @@ class RestApiClientV1(BaseRestApiClient):
     def get_model_repository(
         self, model_repository_name: str
     ) -> ModelRepositorySchema | None:
-        url = urljoin(
-            self.endpoint, f"/api/v1/model_repositories/{model_repository_name}"
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}"
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
@@ -309,16 +261,13 @@ class RestApiClientV1(BaseRestApiClient):
     def create_model_repository(
         self, req: CreateModelRepositorySchema
     ) -> ModelRepositorySchema:
-        url = urljoin(self.endpoint, "/api/v1/model_repositories")
+        url = "/api/v1/model_repositories"
         resp = self.session.post(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelRepositorySchema)
 
     def get_model(self, model_repository_name: str, version: str) -> ModelSchema | None:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/model_repositories/{model_repository_name}/models/{version}",
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}"
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
@@ -328,9 +277,7 @@ class RestApiClientV1(BaseRestApiClient):
     def create_model(
         self, model_repository_name: str, req: CreateModelSchema
     ) -> ModelSchema:
-        url = urljoin(
-            self.endpoint, f"/api/v1/model_repositories/{model_repository_name}/models"
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models"
         resp = self.session.post(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
@@ -338,10 +285,7 @@ class RestApiClientV1(BaseRestApiClient):
     def presign_model_upload_url(
         self, model_repository_name: str, version: str
     ) -> ModelSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_upload_url",
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_upload_url"
         resp = self.session.patch(url)
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
@@ -349,10 +293,7 @@ class RestApiClientV1(BaseRestApiClient):
     def presign_model_download_url(
         self, model_repository_name: str, version: str
     ) -> ModelSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_download_url",
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_download_url"
         resp = self.session.patch(url)
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
@@ -360,10 +301,7 @@ class RestApiClientV1(BaseRestApiClient):
     def start_model_multipart_upload(
         self, model_repository_name: str, version: str
     ) -> ModelSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/start_multipart_upload",
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/start_multipart_upload"
         resp = self.session.patch(url)
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
@@ -374,10 +312,7 @@ class RestApiClientV1(BaseRestApiClient):
         version: str,
         req: PreSignMultipartUploadUrlSchema,
     ) -> ModelSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_multipart_upload_url",
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_multipart_upload_url"
         resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
@@ -388,10 +323,7 @@ class RestApiClientV1(BaseRestApiClient):
         version: str,
         req: CompleteMultipartUploadSchema,
     ) -> ModelSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/complete_multipart_upload",
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/complete_multipart_upload"
         resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
@@ -399,10 +331,7 @@ class RestApiClientV1(BaseRestApiClient):
     def start_upload_model(
         self, model_repository_name: str, version: str
     ) -> ModelSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/start_upload",
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/start_upload"
         resp = self.session.patch(url)
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
@@ -410,10 +339,7 @@ class RestApiClientV1(BaseRestApiClient):
     def finish_upload_model(
         self, model_repository_name: str, version: str, req: FinishUploadModelSchema
     ) -> ModelSchema:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/finish_upload",
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/finish_upload"
         resp = self.session.patch(url, content=schema_to_json(req))
         self._check_resp(resp)
         return schema_from_json(resp.text, ModelSchema)
@@ -421,10 +347,7 @@ class RestApiClientV1(BaseRestApiClient):
     def upload_model(
         self, model_repository_name: str, version: str, data: t.IO[bytes]
     ) -> None:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/upload",
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/upload"
         resp = self.session.put(
             url,
             content=data,
@@ -439,10 +362,7 @@ class RestApiClientV1(BaseRestApiClient):
     def download_model(
         self, model_repository_name: str, version: str
     ) -> t.Generator[httpx.Response, None, None]:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/model_repositories/{model_repository_name}/models/{version}/download",
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/download"
         with self.session.stream("GET", url) as resp:
             self._check_resp(resp)
             yield resp
@@ -450,7 +370,7 @@ class RestApiClientV1(BaseRestApiClient):
     def get_bento_repositories_list(
         self, bento_repository_name: str
     ) -> BentoWithRepositoryListSchema | None:
-        url = urljoin(self.endpoint, "/api/v1/bento_repositories")
+        url = "/api/v1/bento_repositories"
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
@@ -458,7 +378,7 @@ class RestApiClientV1(BaseRestApiClient):
         return schema_from_json(resp.text, BentoWithRepositoryListSchema)
 
     def get_bentos_list(self) -> BentoWithRepositoryListSchema | None:
-        url = urljoin(self.endpoint, "/api/v1/bentos")
+        url = "/api/v1/bentos"
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
@@ -466,7 +386,7 @@ class RestApiClientV1(BaseRestApiClient):
         return schema_from_json(resp.text, BentoWithRepositoryListSchema)
 
     def get_models_list(self) -> ModelWithRepositoryListSchema | None:
-        url = urljoin(self.endpoint, "/api/v1/models")
+        url = "/api/v1/models"
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
@@ -476,7 +396,7 @@ class RestApiClientV1(BaseRestApiClient):
     def get_cluster_deployment_list(
         self, cluster: str, **params: str | int | None
     ) -> DeploymentListSchema | None:
-        url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster}/deployments")
+        url = f"/api/v1/clusters/{cluster}/deployments"
         resp = self.session.get(url, params=params)
         if self._is_not_found(resp):
             return None
@@ -486,7 +406,7 @@ class RestApiClientV1(BaseRestApiClient):
     def get_organization_deployment_list(
         self, **params: str | int | None
     ) -> DeploymentListSchema | None:
-        url = urljoin(self.endpoint, "/api/v1/deployments")
+        url = "/api/v1/deployments"
         resp = self.session.get(url, params=params)
         if self._is_not_found(resp):
             return None
@@ -496,7 +416,7 @@ class RestApiClientV1(BaseRestApiClient):
     def create_deployment(
         self, cluster: str, create_schema: CreateDeploymentSchemaV1
     ) -> DeploymentFullSchema | None:
-        url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster}/deployments")
+        url = f"/api/v1/clusters/{cluster}/deployments"
         resp = self.session.post(url, content=schema_to_json(create_schema))
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentFullSchema)
@@ -504,9 +424,8 @@ class RestApiClientV1(BaseRestApiClient):
     def get_deployment(
         self, cluster: str, kube_namespace: str, name: str
     ) -> DeploymentFullSchema | None:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/clusters/{cluster}/namespaces/{kube_namespace}/deployments/{name}",
+        url = (
+            f"/api/v1/clusters/{cluster}/namespaces/{kube_namespace}/deployments/{name}"
         )
         resp = self.session.get(url)
         if self._is_not_found(resp):
@@ -521,9 +440,8 @@ class RestApiClientV1(BaseRestApiClient):
         name: str,
         update_schema: UpdateDeploymentSchema,
     ) -> DeploymentFullSchema | None:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/clusters/{cluster}/namespaces/{kube_namespace}/deployments/{name}",
+        url = (
+            f"/api/v1/clusters/{cluster}/namespaces/{kube_namespace}/deployments/{name}"
         )
         resp = self.session.patch(url, content=schema_to_json(update_schema))
         if self._is_not_found(resp):
@@ -534,10 +452,7 @@ class RestApiClientV1(BaseRestApiClient):
     def terminate_deployment(
         self, cluster: str, kube_namespace: str, name: str
     ) -> DeploymentFullSchema | None:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/clusters/{cluster}/namespaces/{kube_namespace}/deployments/{name}/terminate",
-        )
+        url = f"/api/v1/clusters/{cluster}/namespaces/{kube_namespace}/deployments/{name}/terminate"
         resp = self.session.post(url)
         if self._is_not_found(resp):
             return None
@@ -547,9 +462,8 @@ class RestApiClientV1(BaseRestApiClient):
     def delete_deployment(
         self, cluster: str, kube_namespace: str, name: str
     ) -> DeploymentFullSchema | None:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/clusters/{cluster}/namespaces/{kube_namespace}/deployments/{name}",
+        url = (
+            f"/api/v1/clusters/{cluster}/namespaces/{kube_namespace}/deployments/{name}"
         )
         resp = self.session.delete(url)
         if self._is_not_found(resp):
@@ -560,7 +474,7 @@ class RestApiClientV1(BaseRestApiClient):
     def get_cluster_list(
         self, params: dict[str, str | int] | None = None
     ) -> ClusterListSchema | None:
-        url = urljoin(self.endpoint, "/api/v1/clusters")
+        url = "/api/v1/clusters"
         resp = self.session.get(url, params=params)
         if self._is_not_found(resp):
             return None
@@ -568,7 +482,7 @@ class RestApiClientV1(BaseRestApiClient):
         return schema_from_json(resp.text, ClusterListSchema)
 
     def get_cluster(self, cluster: str) -> ClusterFullSchema | None:
-        url = urljoin(self.endpoint, f"/api/v1/clusters/{cluster}")
+        url = f"/api/v1/clusters/{cluster}"
         resp = self.session.get(url)
         if self._is_not_found(resp):
             return None
@@ -578,10 +492,7 @@ class RestApiClientV1(BaseRestApiClient):
     def get_latest_model(
         self, model_repository_name: str, query: str | None = None
     ) -> ModelSchema | None:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v1/model_repositories/{model_repository_name}/models",
-        )
+        url = f"/api/v1/model_repositories/{model_repository_name}/models"
         params = {"start": "0", "count": "10"}
         if query:
             params["q"] = query
@@ -597,7 +508,7 @@ class RestApiClientV1(BaseRestApiClient):
         search: str | None = None,
         start: int | None = None,
     ) -> SecretListSchema:
-        url = urljoin(self.endpoint, "/api/v1/org_secrets")
+        url = "/api/v1/org_secrets"
         if not count:
             count = 10
         if not start:
@@ -615,18 +526,18 @@ class RestApiClientV1(BaseRestApiClient):
         return schema_from_json(resp.text, SecretListSchema)
 
     def create_secret(self, secret: CreateSecretSchema) -> SecretSchema:
-        url = urljoin(self.endpoint, "/api/v1/org_secrets")
+        url = "/api/v1/org_secrets"
         resp = self.session.post(url, content=schema_to_json(secret))
         self._check_resp(resp)
         return schema_from_json(resp.text, SecretSchema)
 
     def delete_secret(self, name: str):
-        url = urljoin(self.endpoint, f"/api/v1/org_secrets/{name}")
+        url = f"/api/v1/org_secrets/{name}"
         resp = self.session.delete(url)
         self._check_resp(resp)
 
     def update_secret(self, name: str, secret: UpdateSecretSchema) -> SecretSchema:
-        url = urljoin(self.endpoint, f"/api/v1/org_secrets/{name}")
+        url = f"/api/v1/org_secrets/{name}"
         resp = self.session.patch(url, content=schema_to_json(secret))
         self._check_resp(resp)
         return schema_from_json(resp.text, SecretSchema)
@@ -638,7 +549,7 @@ class RestApiClientV2(BaseRestApiClient):
         create_schema: CreateDeploymentSchemaV2,
         cluster: str | None = None,
     ) -> DeploymentFullSchemaV2:
-        url = urljoin(self.endpoint, "/api/v2/deployments")
+        url = "/api/v2/deployments"
         resp = self.session.post(
             url, content=schema_to_json(create_schema), params={"cluster": cluster}
         )
@@ -651,10 +562,7 @@ class RestApiClientV2(BaseRestApiClient):
         update_schema: UpdateDeploymentSchemaV2,
         cluster: str | None = None,
     ) -> DeploymentFullSchemaV2:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v2/deployments/{name}",
-        )
+        url = f"/api/v2/deployments/{name}"
         data = schema_to_json(update_schema)
         resp = self.session.put(url, content=data, params={"cluster": cluster})
         if self._is_not_found(resp):
@@ -667,10 +575,7 @@ class RestApiClientV2(BaseRestApiClient):
         name: str,
         cluster: str | None = None,
     ) -> DeploymentFullSchemaV2:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v2/deployments/{name}",
-        )
+        url = f"/api/v2/deployments/{name}"
         resp = self.session.get(url, params={"cluster": cluster})
         if self._is_not_found(resp):
             raise NotFound(f"Deployment {name} is not found: {resp.text}")
@@ -687,7 +592,7 @@ class RestApiClientV2(BaseRestApiClient):
         search: str | None = None,
         start: int | None = None,
     ) -> DeploymentListSchemaV2:
-        url = urljoin(self.endpoint, "/api/v2/deployments")
+        url = "/api/v2/deployments"
         resp = self.session.get(
             url,
             params={
@@ -709,10 +614,7 @@ class RestApiClientV2(BaseRestApiClient):
         name: str,
         cluster: str | None = None,
     ) -> DeploymentFullSchemaV2:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v2/deployments/{name}/terminate",
-        )
+        url = f"/api/v2/deployments/{name}/terminate"
         resp = self.session.post(url, params={"cluster": cluster})
         if self._is_not_found(resp):
             raise NotFound(f"Deployment {name} is not found: {resp.text}")
@@ -724,10 +626,7 @@ class RestApiClientV2(BaseRestApiClient):
         name: str,
         cluster: str | None = None,
     ) -> DeploymentFullSchemaV2:
-        url = urljoin(
-            self.endpoint,
-            f"/api/v2/deployments/{name}",
-        )
+        url = f"/api/v2/deployments/{name}"
         resp = self.session.delete(url, params={"cluster": cluster})
         if self._is_not_found(resp):
             raise NotFound(f"Deployment {name} is not found: {resp.text}")
@@ -738,10 +637,7 @@ class RestApiClientV2(BaseRestApiClient):
         self,
         cluster: str | None = None,
     ) -> list[ResourceInstanceSchema]:
-        url = urljoin(
-            self.endpoint,
-            "/api/v1/instance_types",
-        )
+        url = "/api/v1/instance_types"
         resp = self.session.get(url, params={"cluster": cluster})
         self._check_resp(resp)
         return schema_from_json(resp.text, list[ResourceInstanceSchema])
@@ -772,11 +668,11 @@ class RestApiClientV2(BaseRestApiClient):
             raise NotFound(
                 f"Deployment {name} latest revision target bento is not found"
             )
-        url_ = urlparse(self.endpoint)
         scheme = "wss"
-        if url_.scheme == "http":
+        base_url = self.session.base_url
+        if base_url.scheme == "http":
             scheme = "ws"
-        endpoint = f"{scheme}://{url_.netloc}"
+        endpoint = f"{scheme}://{base_url.netloc.decode('utf-8')}"
         with connect_ws(
             url=f"{endpoint}/ws/v2/deployments/{name}/pods?{urlencode(dict(organization_name=deployment.cluster.organization_name, cluster=deployment.cluster.name))}",
             client=self.session,
@@ -795,11 +691,11 @@ class RestApiClientV2(BaseRestApiClient):
         container_name: str = "main",
         stop_event: threading.Event,
     ) -> t.Generator[str, None, None]:
-        url_ = urlparse(self.endpoint)
         scheme = "wss"
-        if url_.scheme == "http":
+        base_url = self.session.base_url
+        if base_url.scheme == "http":
             scheme = "ws"
-        endpoint = f"{scheme}://{url_.netloc}"
+        endpoint = f"{scheme}://{base_url.netloc.decode('utf-8')}"
 
         with connect_ws(
             url=f"{endpoint}/ws/v1/clusters/{cluster_name}/tail?{urlencode(dict(namespace=namespace, pod_name=pod_name, timestamps='false'))}",
@@ -854,7 +750,7 @@ class RestApiClientV2(BaseRestApiClient):
     def upload_files(
         self, name: str, files: UploadDeploymentFilesSchema, cluster: str | None = None
     ) -> None:
-        url = urljoin(self.endpoint, f"/api/v2/deployments/{name}/files")
+        url = f"/api/v2/deployments/{name}/files"
         resp = self.session.post(
             url, content=schema_to_json(files), params={"cluster": cluster}
         )
@@ -863,7 +759,7 @@ class RestApiClientV2(BaseRestApiClient):
     def delete_files(
         self, name: str, paths: DeleteDeploymentFilesSchema, cluster: str | None = None
     ) -> None:
-        url = urljoin(self.endpoint, f"/api/v2/deployments/{name}/files")
+        url = f"/api/v2/deployments/{name}/files"
         resp = self.session.request(
             "DELETE", url, content=schema_to_json(paths), params={"cluster": cluster}
         )
@@ -872,21 +768,20 @@ class RestApiClientV2(BaseRestApiClient):
     def list_files(
         self, name: str, cluster: str | None = None
     ) -> DeploymentFileListSchema:
-        url = urljoin(self.endpoint, f"/api/v2/deployments/{name}/files")
+        url = f"/api/v2/deployments/{name}/files"
         resp = self.session.get(url, params={"cluster": cluster})
         self._check_resp(resp)
         return schema_from_json(resp.text, DeploymentFileListSchema)
 
 
 class RestApiClient:
-    def __init__(self, endpoint: str, api_token: str) -> None:
-        self.session = httpx.Client(timeout=60)
-        self.session.headers.update(
-            {
-                "X-YATAI-API-TOKEN": api_token,
-                "Content-Type": "application/json",
-                "X-Bentoml-Version": BENTOML_VERSION,
-            }
-        )
-        self.v2 = RestApiClientV2(endpoint, self.session)
-        self.v1 = RestApiClientV1(endpoint, self.session)
+    def __init__(self, endpoint: str, api_token: str, timeout: int = 60) -> None:
+        self.endpoint = endpoint
+        headers = {
+            "X-YATAI-API-TOKEN": api_token,
+            "Content-Type": "application/json",
+            "X-Bentoml-Version": BENTOML_VERSION,
+        }
+        self.session = httpx.Client(base_url=endpoint, timeout=timeout, headers=headers)
+        self.v2 = RestApiClientV2(self.session)
+        self.v1 = RestApiClientV1(self.session)

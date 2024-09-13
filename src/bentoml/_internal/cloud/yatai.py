@@ -26,7 +26,7 @@ from ..tag import Tag
 from ..utils import calc_dir_size
 from .base import FILE_CHUNK_SIZE
 from .base import CallbackIOWrapper
-from .base import CloudClient
+from .base import Spinner
 from .config import get_rest_api_client
 from .schemas.modelschemas import BentoApiSchema
 from .schemas.modelschemas import BentoRunnerResourceSchema
@@ -54,7 +54,10 @@ if t.TYPE_CHECKING:
     from rich.progress import TaskID
 
 
-class YataiClient(CloudClient):
+class YataiClient:
+    def __init__(self) -> None:
+        self.spinner = Spinner()
+
     def push_bento(
         self,
         bento: Bento,

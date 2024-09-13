@@ -12,6 +12,7 @@ import pytest
 from pytest import MonkeyPatch
 
 import bentoml
+from bentoml._internal.cloud import BentoCloudClient
 from bentoml._internal.configuration import clean_bentoml_version
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.models import ModelContext
@@ -194,6 +195,7 @@ def _setup_test_directory() -> tuple[str, str]:
     BentoMLContainer.model_store_dir.set(models)
     BentoMLContainer.tmp_bento_store_dir.set(tmp_bentos)
     BentoMLContainer.prometheus_multiproc_dir.set(multiproc_dir)
+    BentoMLContainer.bentocloud_client.set(BentoCloudClient(""))
     return bentoml_home, multiproc_dir
 
 

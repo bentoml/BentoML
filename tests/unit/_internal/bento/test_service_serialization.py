@@ -116,7 +116,7 @@ def test_remote_bento_strategy_pull_yatai(build_bento: bentoml.Bento):
         if "simplebento" in sys.modules:
             del sys.modules["simplebento"]
 
-    mock_bentocloud_client.pull_bento.side_effect = pull_bento
+    mock_bentocloud_client.bento.pull.side_effect = pull_bento
 
     _bentocloud_client = BentoMLContainer.bentocloud_client.get()
     BentoMLContainer.bentocloud_client.set(mock_bentocloud_client)
@@ -126,7 +126,7 @@ def test_remote_bento_strategy_pull_yatai(build_bento: bentoml.Bento):
 
     del sys.modules["simplebento"]
     assert svc == cloudpickle.loads(serialized_svc)
-    mock_bentocloud_client.pull_bento.assert_called_once_with(
+    mock_bentocloud_client.bento.pull.assert_called_once_with(
         Tag("test.simplebento", "1.0"), bento_store=ANY
     )
 

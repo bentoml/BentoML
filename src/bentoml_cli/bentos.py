@@ -308,7 +308,7 @@ def bento_management_commands() -> click.Group:
         cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ) -> None:  # type: ignore (not accessed)
         """Pull Bento from a remote Bento store server."""
-        cloud_client.pull_bento(bento_tag, force=force)
+        cloud_client.bento.pull(bento_tag, force=force)
 
     @bentos.command()
     @click.argument("bento_tag", type=click.STRING)
@@ -337,7 +337,7 @@ def bento_management_commands() -> click.Group:
         bento_obj = bento_store.get(bento_tag)
         if not bento_obj:
             raise click.ClickException(f"Bento {bento_tag} not found in local store")
-        cloud_client.push_bento(bento_obj, force=force, threads=threads)
+        cloud_client.bento.push(bento_obj, force=force, threads=threads)
 
     @bentos.command()
     @click.argument("build_ctx", type=click.Path(), default=".")
@@ -462,7 +462,7 @@ def bento_management_commands() -> click.Group:
         if push:
             if not get_quiet_mode():
                 rich.print(f"\n[magenta]Pushing {bento} to BentoCloud...[/]")
-            _cloud_client.push_bento(bento, force=force, threads=threads)
+            _cloud_client.bento.push(bento, force=force, threads=threads)
         elif containerize:
             backend: DefaultBuilder = t.cast(
                 "DefaultBuilder", os.getenv("BENTOML_CONTAINERIZE_BACKEND", "docker")

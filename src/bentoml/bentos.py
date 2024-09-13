@@ -253,7 +253,7 @@ def push(
     bento = _bento_store.get(tag)
     if not bento:
         raise BentoMLException(f"Bento {tag} not found in local store")
-    _cloud_client.push_bento(bento, force=force)
+    _cloud_client.bento.push(bento, force=force)
 
 
 @inject
@@ -264,7 +264,7 @@ def pull(
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
-    _cloud_client.pull_bento(tag, force=force, bento_store=_bento_store)
+    _cloud_client.bento.pull(tag, force=force, bento_store=_bento_store)
 
 
 @inject

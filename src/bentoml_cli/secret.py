@@ -10,8 +10,10 @@ import rich
 import yaml
 from rich.syntax import Syntax
 from rich.table import Table
+from simple_di import Provide
+from simple_di import inject
 
-from bentoml._internal.cloud.secret import Secret
+from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.utils import resolve_user_filepath
 from bentoml._internal.utils import rich_console as console
 from bentoml.exceptions import BentoMLException
@@ -20,6 +22,8 @@ from bentoml_cli.utils import BentoMLCommandGroup
 if t.TYPE_CHECKING:
     from click import Context
     from click import Parameter
+
+    from bentoml._internal.cloud import BentoCloudClient
 
 
 @click.group(name="secret", cls=BentoMLCommandGroup)
@@ -38,12 +42,14 @@ def secret_command():
     type=click.Choice(["json", "yaml", "table"]),
     default="table",
 )
+@inject
 def list(
     search: str | None,
     output: t.Literal["json", "yaml", "table"],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     """List all secrets on BentoCloud."""
-    secrets = Secret.list(search=search)
+    secrets = _cloud_client.secret.list(search=search)
     if output == "table":
         table = Table(box=None, expand=True)
         table.add_column("Secret", overflow="fold")
@@ -198,6 +204,7 @@ def map_choice_to_type(ctx: Context, params: Parameter, value: t.Any):
     callback=parse_from_file_argument_callback,
     multiple=True,
 )
+@inject
 def create(
     name: str,
     description: str | None,
@@ -206,6 +213,7 @@ def create(
     key_vals: t.List[t.Tuple[str, str]],
     from_literal: t.List[t.Tuple[str, str]],
     from_file: t.List[t.Tuple[str, str]],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     """Create a secret on BentoCloud."""
     try:
@@ -224,7 +232,7 @@ def create(
 
         if type == "mountfile" and not path:
             path = "$BENTOML_HOME"
-        secret = Secret.create(
+        secret = _cloud_client.secret.create(
             name=name,
             description=description,
             type=type,
@@ -243,10 +251,14 @@ def create(
     type=click.STRING,
     required=True,
 )
-def delete(name: str):
+@inject
+def delete(
+    name: str,
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+):
     """Delete a secret on BentoCloud."""
     try:
-        Secret.delete(name=name)
+        _cloud_client.secret.delete(name=name)
         rich.print(f"Secret [green]{name}[/] deleted successfully")
     except Exception as e:
         raise_secret_error(e, "delete")
@@ -301,6 +313,7 @@ def delete(name: str):
     callback=parse_from_file_argument_callback,
     multiple=True,
 )
+@inject
 def apply(
     name: str,
     description: str | None,
@@ -309,6 +322,7 @@ def apply(
     key_vals: t.List[t.Tuple[str, str]],
     from_literal: t.List[t.Tuple[str, str]],
     from_file: t.List[t.Tuple[str, str]],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     """Apply a secret update on BentoCloud."""
     try:
@@ -327,7 +341,7 @@ def apply(
 
         if type == "mountfile" and not path:
             path = "$BENTOML_HOME"
-        secret = Secret.update(
+        secret = _cloud_client.secret.update(
             name=name,
             description=description,
             type=type,

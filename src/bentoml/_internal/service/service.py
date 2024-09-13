@@ -186,7 +186,7 @@ class Service:
                         return load_bento_dir(bento.path)
                     except NotFound:
                         cloud_client = BentoMLContainer.bentocloud_client.get()
-                        cloud_client.pull_bento(bento_tag, bento_store=tmp_bento_store)
+                        cloud_client.bento.pull(bento_tag, bento_store=tmp_bento_store)
                         return get_or_pull(bento_tag)
 
                 return (get_or_pull, (self.bento.tag,))

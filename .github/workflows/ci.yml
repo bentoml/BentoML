@@ -51,6 +51,7 @@ jobs:
         with:
           name: coverage-unit-data
           path: .coverage.*
+          include-hidden-files: true
   integrations:
     name: framework-integration-tests
     runs-on: ubuntu-latest
@@ -99,6 +100,7 @@ jobs:
         with:
           name: coverage-integrations-data
           path: .coverage.*
+          include-hidden-files: true
   e2e-monitoring:
     strategy:
       fail-fast: false
@@ -137,6 +139,7 @@ jobs:
         with:
           name: coverage-monitoring-data
           path: .coverage.*
+          include-hidden-files: true
   e2e-test:
     strategy:
       fail-fast: false
@@ -183,6 +186,7 @@ jobs:
         with:
           name: coverage-e2e-data
           path: .coverage.*
+          include-hidden-files: true
   coverage:
     name: report-coverage
     runs-on: ubuntu-latest

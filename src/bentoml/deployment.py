@@ -268,9 +268,10 @@ def get(
 def terminate(
     name: str,
     cluster: str | None = None,
+    wait: bool = False,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Deployment:
-    return _cloud_client.deployment.terminate(name=name, cluster=cluster)
+    return _cloud_client.deployment.terminate(name=name, cluster=cluster, wait=wait)
 
 
 @inject

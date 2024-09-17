@@ -70,7 +70,6 @@ dependencies = [
     "httpx-ws>=0.6.0",
     "aiosqlite>=0.20.0",
     "InquirerPy>=0.3.4",
-    "uv",
     "eval-type-backport>=0.2.0; python_version < \"3.9\"",
 ]
 dynamic = ["version"]

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import typing as t
 from datetime import datetime
 
@@ -58,14 +57,8 @@ cloud_converter.register_unstructure_hook(Tag, tag_encoder)
 cloud_converter.register_structure_hook(Tag, tag_decoder)
 
 
-def schema_from_json(json_content: str, cls: t.Type[T]) -> T:
-    dct = json.loads(json_content)
-    return cloud_converter.structure(dct, cls)
-
-
-def schema_to_json(obj: t.Any) -> str:
-    res = cloud_converter.unstructure(obj, obj.__class__)
-    return json.dumps(res)
+def schema_to_object(obj: t.Any) -> t.Any:
+    return cloud_converter.unstructure(obj, obj.__class__)
 
 
 def schema_from_object(obj: t.Any, cls: t.Type[T]) -> T:

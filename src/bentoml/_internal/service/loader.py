@@ -66,6 +66,8 @@ def import_service(
     """
     from bentoml import Service
 
+    from ..context import server_context
+
     service_types: list[type] = [Service]
     try:
         from _bentoml_sdk import Service as NewService
@@ -153,7 +155,12 @@ def import_service(
         try:
             module = importlib.import_module(module_name, package=working_dir)
         except ImportError as e:
-            raise ImportServiceError(f'Failed to import module "{module_name}": {e}')
+            message = f'Failed to import module "{module_name}": {e}'
+            if server_context.worker_index is None and not (e.name or "").startswith(
+                ("bentoml", "_bentoml_")
+            ):
+                message += "\nIf you are trying to import a runtime-only module, try wrapping it inside `with bentoml.importing():`"
+            raise ImportServiceError(message)
         if reload and needs_reload:
             importlib.reload(module)
         if not standalone_load:

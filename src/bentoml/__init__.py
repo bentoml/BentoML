@@ -62,6 +62,11 @@ if TYPE_CHECKING:
     from _bentoml_impl.frameworks import sklearn
     from _bentoml_impl.frameworks import xgboost
 
+    try:  # needs bentoml-unsloth package
+        from _bentoml_impl.frameworks import unsloth
+    except ModuleNotFoundError:
+        pass
+
     from . import diffusers_simple
     from . import ray
     from . import triton
@@ -106,7 +111,7 @@ if TYPE_CHECKING:
     from _bentoml_sdk import service
     from _bentoml_sdk import task
 else:
-    from _bentoml_impl.frameworks import FrameworkImporter
+    from _bentoml_impl.frameworks.importer import FrameworkImporter
 
     from ._internal.utils import LazyLoader as _LazyLoader
     from ._internal.utils.pkg import pkg_version_info
@@ -261,6 +266,7 @@ __all__ = [
     # Framework specific modules
     "catboost",
     "detectron",
+    "unsloth",
     "diffusers",
     "diffusers_simple",
     "easyocr",

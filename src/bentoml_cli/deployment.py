@@ -18,6 +18,7 @@ from simple_di import inject
 
 import bentoml.deployment
 from bentoml._internal.cloud.base import Spinner
+from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.cloud.deployment import Deployment
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStatus
@@ -239,12 +240,14 @@ def shared_decorator(
     multiple=True,
 )
 @shared_decorator
+@inject
 def develop_command(
     bento_dir: str,
     cluster: str | None,
     attach: str | None,
     env: tuple[str] | None,
     secret: tuple[str] | None,
+    _rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
 ):
     """Create or attach to a development deployment and watch for local file changes"""
     import questionary
@@ -257,10 +260,14 @@ def develop_command(
         deployment = bentoml.deployment.get(attach)
     else:
         with console.status("Fetching deployments..."):
+            current_user = _rest_client.v1.get_current_user()
+            if current_user is None:
+                raise CLIException("current user is not found")
             deployments = [
                 d
-                for d in bentoml.deployment.list(cluster=cluster)
+                for d in bentoml.deployment.list(cluster=cluster, dev=True)
                 if d.is_dev
+                and d.created_by == current_user.name
                 and d.get_status(False).status
                 in [
                     DeploymentStatus.Deploying.value,

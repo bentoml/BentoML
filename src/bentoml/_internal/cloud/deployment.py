@@ -990,9 +990,12 @@ class DeploymentAPI:
         self, res: DeploymentSchema, urls: list[str] | None = None
     ) -> Deployment:
         client = self._client
-        admin_console = f"{client.endpoint}/deployments/{res.name}"
+        route = "deployments"
+        if res.manifest and res.manifest.dev:
+            route = "developments"
+        admin_console = f"{client.endpoint}/{route}/{res.name}"
         if res.cluster.is_first is False:
-            admin_console = f"{client.endpoint}/deployments/{res.name}?cluster={res.cluster.name}&namespace={res.kube_namespace}"
+            admin_console = f"{admin_console}?cluster={res.cluster.name}&namespace={res.kube_namespace}"
         return Deployment(
             name=res.name,
             admin_console=admin_console,
@@ -1005,7 +1008,7 @@ class DeploymentAPI:
         )
 
     def list(
-        self, cluster: str | None = None, search: str | None = None
+        self, cluster: str | None = None, search: str | None = None, dev: bool = False
     ) -> list[Deployment]:
         """
         List all deployments in the cluster.
@@ -1022,8 +1025,9 @@ class DeploymentAPI:
             res_count = cloud_rest_client.v2.list_deployment(all=True, search=search)
             if res_count.total == 0:
                 return []
+            q = "is:dev" if dev else None
             res = cloud_rest_client.v2.list_deployment(
-                search=search, count=res_count.total, all=True
+                search=search, count=res_count.total, all=True, q=q
             )
         else:
             res_count = cloud_rest_client.v2.list_deployment(cluster, search=search)

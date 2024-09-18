@@ -6,9 +6,9 @@ Testing is important for ensuring your code behaves as expected under various co
 
 Testing provides multiple benefits, including:
 
-- **Reliability**: Ensure your BentoML Service behaves as expected, increasing confidence in the its stability.
-- **Regularity**: Facilitate regular and automated checking of the codebase for errors, helping catch issues early in the development cycle.
-- **Refactorability**: Make the codebase more maintainable and adaptable to change, as tests provide a safety net for modifications.
+- **Reliability**: Ensure your BentoML Service behaves as expected.
+- **Regularity**: Facilitate regular and automated checking of the codebase for errors.
+- **Refactorability**: Make the codebase more maintainable and adaptable to changes.
 
 This document explains how to design and run tests for BentoML Services. It uses the :doc:`Summarization Service in Quickstart </get-started/quickstart>` as an example for testing.
 

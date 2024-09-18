@@ -6,10 +6,6 @@ if (ver := pkg_version_info("pydantic")) < (2,):
         "Please upgrade it."
     )
 
-from ._pydantic import add_custom_preparers
-
-add_custom_preparers()
-del add_custom_preparers
 # ruff: noqa
 
 from .decorators import api, on_shutdown, mount_asgi_app, on_deployment, task

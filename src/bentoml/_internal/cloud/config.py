@@ -79,7 +79,7 @@ class CloudClientConfig:
             if ctx.name == context:
                 return ctx
         raise CloudRESTApiClientError(
-            f"BentoCloud API token for {context} cloud context is required.",
+            f"No cloud context {context} found",
             error_code=HTTPStatus.UNAUTHORIZED,
         )
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import contextlib
 import json
 import logging
@@ -204,7 +203,6 @@ def make_reload_plugin(working_dir: str, bentoml_home: str) -> dict[str, str]:
     return {
         "use": "bentoml._internal.utils.circus.watchfilesplugin.ServiceReloaderPlugin",
         "working_dir": working_dir,
-        "bentoml_home": bentoml_home,
     }
 
 
@@ -684,8 +682,7 @@ def serve_grpc_production(
 
     close_child_stdin: bool = False if development_mode else True
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(on_service_deployment(svc))
+    on_service_deployment(svc)
 
     with contextlib.ExitStack() as port_stack:
         api_port = port_stack.enter_context(

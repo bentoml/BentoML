@@ -35,6 +35,26 @@ BENTOML_FIGLET = """
 ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚══════╝
 """
 
+ALLOWED_PLATFORMS = [
+    "windows",
+    "linux",
+    "macos",
+    "x86_64-pc-windows-msvc",
+    "i686-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+    "aarch64-apple-darwin",
+    "x86_64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "aarch64-unknown-linux-musl",
+    "x86_64-unknown-linux-musl",
+    "x86_64-manylinux_2_17",
+    "x86_64-manylinux_2_28",
+    "x86_64-manylinux_2_31",
+    "aarch64-manylinux_2_17",
+    "aarch64-manylinux_2_28",
+    "aarch64-manylinux_2_31",
+]
+
 
 def parse_delete_targets_argument_callback(
     ctx: Context,
@@ -369,10 +389,14 @@ def bento_management_commands() -> click.Group:
         "--force", is_flag=True, default=False, help="Forced push to BentoCloud"
     )
     @click.option("--threads", default=10, help="Number of threads to use for upload")
-    @click.pass_context
+    @click.option(
+        "--platform",
+        default=None,
+        help="Platform to build for",
+        type=click.Choice(ALLOWED_PLATFORMS),
+    )
     @inject
     def build(  # type: ignore (not accessed)
-        ctx: click.Context,
         build_ctx: str,
         bentofile: str,
         version: str | None,
@@ -382,6 +406,7 @@ def bento_management_commands() -> click.Group:
         force: bool,
         threads: int,
         containerize: bool,
+        platform: str | None,
         _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ):
         """Build a new Bento from current directory."""
@@ -398,7 +423,11 @@ def bento_management_commands() -> click.Group:
             labels_dict[key] = label_value
 
         bento = build_bentofile(
-            bentofile, version=version, labels=labels_dict or None, build_ctx=build_ctx
+            bentofile,
+            version=version,
+            labels=labels_dict or None,
+            build_ctx=build_ctx,
+            platform=platform,
         )
 
         containerize_cmd = f"bentoml containerize {bento.tag}"

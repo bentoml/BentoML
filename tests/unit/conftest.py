@@ -28,9 +28,10 @@ def reload_directory(
     ./
     ├── models/  # mock default bentoml home models directory
     ├── [fdir, fdir_one, fdir_two]/
+    │   ├── .bentoignore
     │   ├── README.md
-        ├── subdir/
-        │   ├── README.md
+    │   ├── subdir/
+    │   │   ├── README.md
     │   │   └── app.py
     │   ├── somerust.rs
     │   └── app.py
@@ -67,17 +68,19 @@ def reload_directory(
     build_config = BentoBuildConfig(
         service="service.py:svc",
         description="A mock service",
-        exclude=["*.rs"],
     ).with_defaults()
     bentofile = root / "bentofile.yaml"
     bentofile.touch()
     with bentofile.open("w", encoding="utf-8") as f:
         yaml.safe_dump(bentoml_cattr.unstructure(build_config), f)
 
+    (root / ".bentoignore").write_text("*.rs\n")
+
     custom_library = ["fdir", "fdir_one", "fdir_two"]
     for app in custom_library:
         ap = root.joinpath(app)
         ap.mkdir()
+        (ap / ".bentoignore").write_text("*.temp\n")
         dir_files: list[tuple[str, list[t.Any]]] = [
             ("README.md", []),
             ("subdir", ["README.md", "app.py"]),

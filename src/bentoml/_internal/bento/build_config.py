@@ -19,11 +19,10 @@ from pathspec import PathSpec
 
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
-from ..configuration import BENTOML_VERSION
 from ..configuration import clean_bentoml_version
+from ..configuration import get_bentoml_requirement
 from ..configuration import get_debug_mode
 from ..configuration import get_quiet_mode
-from ..configuration import is_pypi_installed_bentoml
 from ..container import generate_containerfile
 from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
 from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
@@ -528,7 +527,11 @@ class PythonOptions:
         env.filters["bash_quote"] = shlex.quote
         return env
 
-    def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
+    def write_to_bento(
+        self, bento_fs: FS, build_ctx: str, platform_: str | None = None
+    ) -> None:
+        import platform
+
         from .bentoml_builder import build_bentoml_sdist
 
         py_folder = fs.path.join("env", "python")
@@ -576,21 +579,14 @@ class PythonOptions:
                 args.extend(pip_args)
             f.write(
                 self._jinja_environment.get_template("install.sh.j2").render(
-                    bentoml_version=clean_bentoml_version(BENTOML_VERSION),
+                    bentoml_version=clean_bentoml_version(),
                     pip_args=shlex.join(args),
                 )
             )
 
         with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
-            # Add the pinned BentoML requirement first if it's not a local version
-            if is_pypi_installed_bentoml():
-                logger.info(
-                    "Adding current BentoML version to requirements.txt: %s",
-                    BENTOML_VERSION,
-                )
-                f.write(f"bentoml=={BENTOML_VERSION}\n")
-            elif sdist_name:
-                f.write(f"./wheels/{sdist_name}\n")
+            has_bentoml_req = False
+
             if self.requirements_txt is not None:
                 from pip_requirements_parser import RequirementsFile
 
@@ -606,14 +602,33 @@ class PythonOptions:
                     option_line.options.pop("constraints", None)
                     option_line.options.pop("requirements", None)
 
+                if any(
+                    req.name and req.name.lower() == "bentoml"
+                    for req in requirements_txt.requirements
+                ):
+                    has_bentoml_req = True
+
                 f.write(requirements_txt.dumps(preserve_one_empty_line=True))
             elif self.packages is not None:
+                bentoml_req_regex = re.compile(r"^bentoml\b(?![-\._])", re.IGNORECASE)
+                if any(bentoml_req_regex.match(pkg) for pkg in self.packages):
+                    has_bentoml_req = True
                 f.write("\n".join(self.packages) + "\n")
-            else:
-                # Return early if no python packages were specified
-                return
 
-        if self.lock_packages and not self.is_empty():
+            if not has_bentoml_req:
+                # Add the pinned BentoML requirement first if it's not a local version
+                if sdist_name is None and (bentoml_req := get_bentoml_requirement()):
+                    logger.info(
+                        "Adding current BentoML version to requirements.txt: %s",
+                        bentoml_req,
+                    )
+                    f.write(f"{bentoml_req}\n")
+                elif sdist_name:
+                    f.write(f"./wheels/{sdist_name}\n")
+
+            is_empty = f.tell() == 0
+
+        if self.lock_packages and not is_empty:
             # Note: "--allow-unsafe" is required for including setuptools in the
             # generated requirements.lock.txt file, and setuptool is required by
             # pyfilesystem2. Once pyfilesystem2 drop setuptools as dependency, we can
@@ -645,6 +660,14 @@ class PythonOptions:
             else:
                 pip_compile_args.append("--quiet")
             logger.info("Locking PyPI package versions.")
+            if platform_:
+                pip_compile_args.extend(["--python-platform", platform_])
+            elif platform.system() != "Linux" or platform.machine() != "x86_64":
+                logger.info(
+                    "Locking packages for x86_64-unknown-linux-gnu. "
+                    "Pass `--platform` option to specify the platform."
+                )
+                pip_compile_args.extend(["--python-platform", "linux"])
             cmd = [sys.executable, "-m", "uv", "pip", "compile"]
             cmd.extend(pip_compile_args)
             try:
@@ -924,49 +947,50 @@ class BentoBuildConfig:
             raise
 
 
-@attr.define(frozen=True)
+@attr.frozen
 class BentoPathSpec:
-    _include: PathSpec = attr.field(
+    include: PathSpec = attr.field(
         converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
     )
-    _exclude: PathSpec = attr.field(
+    exclude: PathSpec = attr.field(
         converter=lambda x: PathSpec.from_lines("gitwildmatch", x)
     )
+    ctx_dir: str = attr.field(default=".")
+    recurse_ignore_filename: str = ".bentoignore"
+    recurse_exclude_spec: list[tuple[str, PathSpec]] = attr.field(init=False)
     # we want to ignore .git and venv folders in cases they are very large.
     extra: PathSpec = attr.field(
         default=PathSpec.from_lines("gitwildmatch", [".git/", ".venv/", "venv/"]),
         init=False,
     )
 
-    def includes(
-        self,
-        path: str,
-        *,
-        recurse_exclude_spec: t.Optional[t.Iterable[t.Tuple[str, PathSpec]]] = None,
-    ) -> bool:
-        # Determine whether a path is included or not.
+    @recurse_exclude_spec.default
+    def _default_recurse_exclude_spec(self) -> list[tuple[str, PathSpec]]:
         # recurse_exclude_spec is a list of (path, spec) pairs.
+        fs_ = fs.open_fs(encode_path_for_uri(self.ctx_dir))
+        recurse_exclude_spec: list[tuple[str, PathSpec]] = []
+        for file in fs_.walk.files(filter=[self.recurse_ignore_filename]):
+            dir_path = fs.path.dirname(file)
+            with fs_.open(file) as f:
+                recurse_exclude_spec.append(
+                    (dir_path.lstrip("/"), PathSpec.from_lines("gitwildmatch", f))
+                )
+        return recurse_exclude_spec
+
+    def includes(self, path: str) -> bool:
+        """Determine whether a path is included or not."""
         to_include = (
-            self._include.match_file(path)
-            and not self._exclude.match_file(path)
+            self.include.match_file(path)
+            and not self.exclude.match_file(path)
             and not self.extra.match_file(path)
         )
-        if to_include and recurse_exclude_spec is not None:
+        if to_include:
             return not any(
                 ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
-                for ignore_parent, ignore_spec in recurse_exclude_spec
+                for ignore_parent, ignore_spec in self.recurse_exclude_spec
                 if fs.path.isparent(ignore_parent, path)
             )
         return to_include
-
-    def from_path(self, path: str) -> t.Generator[t.Tuple[str, PathSpec], None, None]:
-        """
-        yield (parent, exclude_spec) from .bentoignore file of a given path
-        """
-        fs_ = fs.open_fs(encode_path_for_uri(path))
-        for file in fs_.walk.files(filter=[".bentoignore"]):
-            dir_path = fs.path.dirname(file)
-            yield dir_path, PathSpec.from_lines("gitwildmatch", fs_.open(file))
 
 
 class FilledBentoBuildConfig(BentoBuildConfig):

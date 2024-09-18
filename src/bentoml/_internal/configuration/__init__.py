@@ -56,48 +56,48 @@ def expand_env_var(env_var: str) -> str:
             env_var = interpolated
 
 
-def clean_bentoml_version(bentoml_version: str) -> str:
-    post_version = ".".join(bentoml_version.split(".")[:3])
+@lru_cache(maxsize=1)
+def clean_bentoml_version() -> str:
     try:
-        version = Version(post_version)
+        version = Version(BENTOML_VERSION).base_version
         return str(version)
     except ValueError:
         raise BentoMLException("Errors while parsing BentoML version.") from None
 
 
 @lru_cache(maxsize=1)
-def is_pypi_installed_bentoml() -> bool:
-    """Returns true if BentoML is installed via PyPI official release or installed from
-     source with a release tag, which should come with pre-built docker base image on
-     dockerhub.
+def is_editable_bentoml() -> bool:
+    """Returns true if BentoML is installed in editable mode."""
 
-    BentoML uses setuptools_scm to manage its versions, it looks at three things:
+    dist = importlib.metadata.distribution("bentoml")
+    direct_url_file = next(
+        (f for f in (dist.files or []) if f.name == "direct_url.json"), None
+    )
+    if direct_url_file is None:
+        return False
+    direct_url_data = json.loads(direct_url_file.read_text())
+    return direct_url_data.get("dir_info", {}).get("editable", False)
 
-    * the latest tag (with a version number)
-    * the distance to this tag (e.g. number of revisions since latest tag)
-    * workdir state (e.g. uncommitted changes since latest tag)
 
-    BentoML uses setuptools_scm with `version_scheme = "post-release"` option, which
-    uses roughly the following logic to render the version:
-
-    * no distance and clean: {tag}
-    * distance and clean: {tag}.post{distance}+{scm letter}{revision hash}
-    * no distance and not clean: {tag}+dYYYYMMDD
-    * distance and not clean: {tag}.post{distance}+{scm letter}{revision hash}.dYYYYMMDD
-
-    This function looks at the version str and decide if BentoML installation is
-    base on a recent official release.
-    """
-    # In a git repo with no tag, setuptools_scm generated version starts with "0.1."
-    try:
-        from ..._version import __version_tuple__
-    except ImportError:
-        __version_tuple__ = (0, 0, 0, "dirty")
-
-    is_tagged = not BENTOML_VERSION.startswith("0.1.")
-    is_clean = not str(__version_tuple__[-1]).split(".")[-1].startswith("d")
-    not_been_modified = BENTOML_VERSION == BENTOML_VERSION.split("+")[0]
-    return is_tagged and is_clean and not_been_modified
+@lru_cache(maxsize=1)
+def get_bentoml_requirement() -> str | None:
+    """Returns the requirement string for BentoML."""
+    dist = importlib.metadata.distribution("bentoml")
+    direct_url_file = next(
+        (f for f in (dist.files or []) if f.name == "direct_url.json"), None
+    )
+    if direct_url_file is None:
+        return f"bentoml=={BENTOML_VERSION}"
+    direct_url_data = json.loads(direct_url_file.read_text())
+    if direct_url_data.get("dir_info", {}).get("editable", False):
+        return None
+    if vcs_info := direct_url_data.get("vcs_info", None):
+        res = f"bentoml @ {vcs_info['vcs']}+{direct_url_data['url']}@{vcs_info['commit_id']}"
+    else:
+        res = f"bentoml @ {direct_url_data['url']}"
+    if subdirectory := direct_url_data.get("subdirectory", None):
+        res += f"#subdirectory={subdirectory}"
+    return res
 
 
 def get_bentoml_config_file_from_env() -> str | None:

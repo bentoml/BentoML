@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 
+from pydantic import GenerateSchema
 from pydantic._internal import _known_annotated_metadata
 
 from .typing_utils import get_args
@@ -182,22 +183,41 @@ def pathlib_prepare_pydantic_annotations(
     return source, [FileSchema(content_type=content_type), *remaining_annotations]
 
 
-def add_custom_preparers():
-    try:
-        from pydantic._internal import _std_types_schema
-    except ModuleNotFoundError:
-        return
-    _std_types_schema.PREPARE_METHODS = (
-        # pathlib
-        pathlib_prepare_pydantic_annotations,
-        # inherit from pydantic
-        *_std_types_schema.PREPARE_METHODS,
-        # tensors
-        numpy_prepare_pydantic_annotations,
-        torch_prepare_pydantic_annotations,
-        tf_prepare_pydantic_annotations,
-        # dataframe
-        pandas_prepare_pydantic_annotations,
-        # PIL image
-        pil_prepare_pydantic_annotations,
-    )
+CUSTOM_PREPARE_METHODS = [
+    # tensors
+    numpy_prepare_pydantic_annotations,
+    torch_prepare_pydantic_annotations,
+    tf_prepare_pydantic_annotations,
+    # dataframe
+    pandas_prepare_pydantic_annotations,
+    # PIL image
+    pil_prepare_pydantic_annotations,
+]
+
+
+class BentoMLPydanticGenerateSchema(GenerateSchema):
+    def _get_prepare_pydantic_annotations_for_known_type(
+        self, obj: t.Any, annotations: t.Iterable[t.Any]
+    ) -> tuple[t.Any, list[t.Any]] | None:
+        # Check for hashability
+        try:
+            hash(obj)
+        except TypeError:
+            # obj is definitely not a known type if this fails
+            return None
+        # try path preparer first to override the default one
+        res = pathlib_prepare_pydantic_annotations(
+            obj, annotations, self._config_wrapper.config_dict
+        )
+        if res is not None:
+            return res
+
+        res = super()._get_prepare_pydantic_annotations_for_known_type(obj, annotations)
+        if res is not None:
+            return res
+
+        for preparer in CUSTOM_PREPARE_METHODS:
+            res = preparer(obj, annotations, self._config_wrapper.config_dict)
+            if res is not None:
+                return res
+        return None

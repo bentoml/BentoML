@@ -15,9 +15,23 @@ This section provides example projects for large language models.
 
         Deploy an LLM application with vLLM and BentoML.
 
+    .. grid-item-card:: :doc:`/use-cases/large-language-models/function-calling`
+        :link: /use-cases/large-language-models/function-calling
+        :link-type: doc
+
+        Deploy an AI agent capable of calling user-defined functions.
+
+    .. grid-item-card:: :doc:`/use-cases/large-language-models/rag`
+        :link: /use-cases/large-language-models/rag
+        :link-type: doc
+
+        Deploy a RAG application with custom open-source models.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
     :hidden:
 
     vllm
+    function-calling
+    rag

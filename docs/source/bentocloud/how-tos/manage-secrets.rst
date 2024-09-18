@@ -9,6 +9,9 @@ This document explains how to create and use secrets on BentoCloud.
 Create a secret
 ---------------
 
+From BentoCloud console
+~~~~~~~~~~~~~~~~~~~~~~~
+
 1. Navigate to the **Secrets** page and click **Create**.
 2. Choose how to create your secret:
 
@@ -32,6 +35,16 @@ Create a secret
 4. Click **Add** to add another key-value pair for the secret if necessary.
 5. Click **Save** to store the secret.
 
+From BentoML CLI
+~~~~~~~~~~~~~~~~
+
+To create a secret from the BentoML command line interface, use the ``secret`` subcommand.
+
+.. code-block:: bash
+
+   bentoml secret create tmy-secret key1=value1 key2=value2
+
+
 Modify a secret
 ---------------
 
@@ -46,6 +59,9 @@ Modify a secret
 Use secrets for a Deployment
 ----------------------------
 
+From BentoCloud console
+~~~~~~~~~~~~~~~~~~~~~~~
+
 1. During the Deployment creation, select the required secret from the **Secrets** dropdown menu.
 2. Attach the desired secret to your Deployment. It will be integrated either as an environment variable or a file, based on the configuration set when the secret was created.
 
@@ -54,3 +70,40 @@ Use secrets for a Deployment
    .. warning::
 
       When mounting multiple secrets to a single Deployment, ensure that there are no conflicting key-value pairs across the secrets. For example, different secrets should not contain the same keys with different assigned values.
+
+From BentoML CLI
+~~~~~~~~~~~~~~~~
+
+To attach a secret to a deployment, use the ``--secret`` flag when creating a Deployment using the BentoML command line interface.
+
+.. code-block:: bash
+
+   bentoml deploy . --secret my-secret
+
+
+To attach a secret through a deployment YAML configuration file, add the secret name to the ``secrets`` field.
+
+.. code-block:: yaml
+
+   bento: bentovllm-llama3.1-8b-instruct-service:p34tavtlq25hkasc
+   name: bentovllm-llama-3-1-8-b-instruct-service-2qdl
+   access_authorization: false
+   secrets:
+      - my-secret
+   services:
+      bentovllm-llama3.1-8b-instruct-service:
+         instance_type: gpu.l4.1
+         envs: []
+         scaling:
+               min_replicas: 0
+               max_replicas: 1
+               policy:
+                  scale_up_behavior: fast
+                  scale_down_behavior: stable
+         config_overrides:
+               traffic:
+                  timeout: 300
+                  external_queue: false
+                  concurrency: 256
+         deployment_strategy: Recreate
+   cluster: gcp-us-central-1

@@ -22,7 +22,7 @@ python ./train.py
 2. Run the service:
 
 ```bash
-bentoml serve service.py:svc
+bentoml serve
 ```
 
 ## Test the endpoint
@@ -30,7 +30,7 @@ bentoml serve service.py:svc
 Open in browser http://0.0.0.0:3000 to predict forecast of 5 future values.
 
 ```bash
-curl -X 'POST' 'http://0.0.0.0:3000/predict' -H 'accept: application/json' -H 'Content-Type: application/json' -d '[5]'
+curl -X 'POST' 'http://0.0.0.0:3000/predict' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"data": [5]}'
 ```
 
 Sample result:

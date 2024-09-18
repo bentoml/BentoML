@@ -536,7 +536,7 @@ class BentoCloudClient(CloudClient):
                 with response_ctx as response:
                     if response.status_code != 200:
                         raise BentoMLException(
-                            f'Failed to download bento "{_tag}": {response.text}'
+                            f'Failed to download bento "{_tag}", status_code: {response.status_code}'
                         )
                     total_size_in_bytes = int(response.headers.get("content-length", 0))
                     block_size = 1024  # 1 Kibibyte

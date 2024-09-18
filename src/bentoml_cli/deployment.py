@@ -27,9 +27,7 @@ else:
 def raise_deployment_config_error(err: BentoMLException, action: str) -> t.NoReturn:
     if err.error_code == HTTPStatus.UNAUTHORIZED:
         raise BentoMLException(
-            f"{err}\n* BentoCloud sign up: https://cloud.bentoml.com/\n"
-            "* Login with your API token: "
-            "https://docs.bentoml.com/en/latest/bentocloud/how-tos/manage-access-token.html"
+            f"{err}\n* BentoCloud API token is required for authorization. Run `bentoml cloud login` command to login"
         ) from None
     raise BentoMLException(
         f"Failed to {action} deployment due to invalid configuration: {err}"
@@ -609,7 +607,10 @@ def list_command(  # type: ignore
     output: t.Literal["json", "yaml", "table"],
 ) -> None:
     """List existing deployments on BentoCloud."""
-    d_list = Deployment.list(cluster=cluster, search=search)
+    try:
+        d_list = Deployment.list(cluster=cluster, search=search)
+    except BentoMLException as e:
+        raise_deployment_config_error(e, "list")
     res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]
     if output == "table":
         table = Table(box=None, expand=True)
@@ -649,7 +650,10 @@ def list_instance_types(  # type: ignore
     output: t.Literal["json", "yaml", "table"],
 ) -> None:
     """List existing instance types in cluster on BentoCloud."""
-    d_list = Deployment.list_instance_types(cluster=cluster)
+    try:
+        d_list = Deployment.list_instance_types(cluster=cluster)
+    except BentoMLException as e:
+        raise_deployment_config_error(e, "list_instance_types")
     res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]
     if output == "table":
         table = Table(box=None, expand=True)

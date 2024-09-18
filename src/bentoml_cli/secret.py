@@ -43,7 +43,10 @@ def list(
     output: t.Literal["json", "yaml", "table"],
 ):
     """List all secrets on BentoCloud."""
-    secrets = Secret.list(search=search)
+    try:
+        secrets = Secret.list(search=search)
+    except BentoMLException as e:
+        raise_secret_error(e, "list")
     if output == "table":
         table = Table(box=None, expand=True)
         table.add_column("Secret", overflow="fold")
@@ -137,10 +140,8 @@ def parse_from_file_argument_callback(
 def raise_secret_error(err: BentoMLException, action: str) -> t.NoReturn:
     if err.error_code == HTTPStatus.UNAUTHORIZED:
         raise BentoMLException(
-            f"{err}\n* BentoCloud sign up: https://cloud.bentoml.com/\n"
-            "* Login with your API token: "
-            "https://docs.bentoml.com/en/latest/bentocloud/how-tos/manage-access-token.html"
-        )
+            f"{err}\n* BentoCloud API token is required for authorization. Run `bentoml cloud login` command to login"
+        ) from None
     raise BentoMLException(f"Failed to {action} secret due to: {err}")
 
 
@@ -232,7 +233,7 @@ def create(
             key_vals=key_vals,
         )
         rich.print(f"Secret [green]{secret.name}[/] created successfully")
-    except Exception as e:
+    except BentoMLException as e:
         raise_secret_error(e, "create")
 
 
@@ -248,7 +249,7 @@ def delete(name: str):
     try:
         Secret.delete(name=name)
         rich.print(f"Secret [green]{name}[/] deleted successfully")
-    except Exception as e:
+    except BentoMLException as e:
         raise_secret_error(e, "delete")
 
 
@@ -335,5 +336,5 @@ def apply(
             key_vals=key_vals,
         )
         rich.print(f"Secret [green]{secret.name}[/] applied successfully")
-    except Exception as e:
+    except BentoMLException as e:
         raise_secret_error(e, "apply")

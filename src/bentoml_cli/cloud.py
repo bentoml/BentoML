@@ -73,7 +73,7 @@ def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
             encodedCallback = urllib.parse.quote(callback_server.callback_url)
             authURL = f"{baseURL}?callback={encodedCallback}"
             if Confirm.ask(
-                f"Please Enter Y or N to open [blue]{authURL}[/] in your browser..."
+                f"Please Enter Y to open [blue]{authURL}[/] in your browser..."
             ):
                 if webbrowser.open_new_tab(authURL):
                     rich.print(f"✅ Opened [blue]{authURL}[/] in your web browser.")

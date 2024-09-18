@@ -93,6 +93,7 @@ io = [
 io-image = ["Pillow"]
 io-pandas = ["pandas>=1", "pyarrow"]
 triton = ["tritonclient>=2.29.0", "tritonclient[all]; sys_platform != 'darwin'"]
+unsloth = ["bentoml-unsloth>=0.1.0"]
 grpc = [
     "protobuf",
     "grpcio",

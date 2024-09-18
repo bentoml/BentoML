@@ -287,9 +287,10 @@ def delete(
 def list(
     cluster: str | None = None,
     search: str | None = None,
+    dev: bool = False,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> t.List[Deployment]:
-    return _cloud_client.deployment.list(cluster=cluster, search=search)
+    return _cloud_client.deployment.list(cluster=cluster, search=search, dev=dev)
 
 
 __all__ = ["create", "get", "update", "apply", "terminate", "delete", "list"]

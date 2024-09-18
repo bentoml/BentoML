@@ -100,6 +100,7 @@ if TYPE_CHECKING:
     # isort: on
     from _bentoml_impl.client import AsyncHTTPClient
     from _bentoml_impl.client import SyncHTTPClient
+    from _bentoml_impl.loader import importing
     from _bentoml_sdk import IODescriptor
     from _bentoml_sdk import api
     from _bentoml_sdk import depends
@@ -216,20 +217,24 @@ else:
     def __getattr__(name: str) -> Any:
         if name in ("HTTPServer", "GrpcServer"):
             return getattr(server, name)
-        if name not in _NEW_SDK_ATTRS + _NEW_CLIENTS:
-            raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
         if _bentoml_sdk is None:
             raise ImportError(
                 f"The new SDK runs on pydantic>=2.0.0, but the you have {'.'.join(map(str, ver))}. "
                 "Please upgrade it."
             )
+        if name == "importing":
+            from _bentoml_impl.loader import importing
 
-        if name in _NEW_CLIENTS:
+            return importing
+        elif name in _NEW_CLIENTS:
             import _bentoml_impl.client
 
             return getattr(_bentoml_impl.client, name)
-        else:
+        elif name in _NEW_SDK_ATTRS:
             return getattr(_bentoml_sdk, name)
+        else:
+            raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 __all__ = [
@@ -311,4 +316,5 @@ __all__ = [
     # new implementation
     "SyncHTTPClient",
     "AsyncHTTPClient",
+    "importing",
 ]

@@ -253,6 +253,8 @@ def main(
             t.cast(t.Dict[str, str], json.loads(runner_map))
         )
 
+    if worker_id is not None:
+        server_context.worker_index = worker_id
     service = import_service(bento_identifier)
 
     if service_name and service_name != service.name:
@@ -260,9 +262,6 @@ def main(
         server_context.service_type = "service"
     else:
         server_context.service_type = "entry_service"
-
-    if worker_id is not None:
-        server_context.worker_index = worker_id
 
     BentoMLContainer.development_mode.set(development_mode)
 

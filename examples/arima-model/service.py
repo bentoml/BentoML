@@ -1,5 +1,7 @@
 import numpy as np
+
 import bentoml
+
 
 @bentoml.service(
     resources={
@@ -22,7 +24,7 @@ class ArimaForecast:
         self.model = self.arima_model.load_model()
 
     @bentoml.api
-    def forecast(self, data: np.ndarray)-> np.ndarray:
+    def forecast(self, data: np.ndarray) -> np.ndarray:
         """
         Define API with input as number of forecasts to predict in the future
         """

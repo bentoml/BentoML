@@ -5,7 +5,7 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:a1b11ea55d9a61c529226e90f7a51f87f970342112b6ae886f81f1f92a7c2239"
+content_hash = "sha256:b17a403d776f10710966f6509a31976a278b0d02dda5b2ca341df88f701b7c46"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -2244,8 +2244,12 @@ requires_python = ">=3.9"
 summary = "Powerful data structures for data analysis, time series, and statistics"
 groups = ["all", "io", "io-pandas", "testing"]
 dependencies = [
-    "numpy>=1.23.5",
-    "types-pytz>=2022.1.1",
+    "numpy>=1.22.4; python_version < \"3.11\"",
+    "numpy>=1.23.2; python_version == \"3.11\"",
+    "numpy>=1.26.0; python_version >= \"3.12\"",
+    "python-dateutil>=2.8.2",
+    "pytz>=2020.1",
+    "tzdata>=2022.7",
 ]
 files = [
     {file = "pandas-2.2.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:90c6fca2acf139569e74e8781709dccb6fe25940488755716d1d354d6bc58bce"},
@@ -3364,10 +3368,13 @@ files = [
 name = "scikit-learn"
 version = "1.5.1"
 requires_python = ">=3.9"
-summary = "Fundamental algorithms for scientific computing in Python"
+summary = "A set of python modules for machine learning and data mining"
 groups = ["testing"]
 dependencies = [
-    "numpy<2.3,>=1.22.4",
+    "joblib>=1.2.0",
+    "numpy>=1.19.5",
+    "scipy>=1.6.0",
+    "threadpoolctl>=3.1.0",
 ]
 files = [
     {file = "scikit_learn-1.5.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:781586c414f8cc58e71da4f3d7af311e0505a683e112f2f62919e3019abd3745"},
@@ -3535,7 +3542,7 @@ files = [
 name = "sphinx"
 version = "7.4.7"
 requires_python = ">=3.9"
-summary = "Rebuild Sphinx documentation on changes, with hot reloading in the browser."
+summary = "Python documentation generator"
 groups = ["docs"]
 dependencies = [
     "Jinja2>=3.1",
@@ -3685,7 +3692,7 @@ files = [
 name = "sphinxcontrib-applehelp"
 version = "2.0.0"
 requires_python = ">=3.9"
-summary = "sphinxcontrib-devhelp is a sphinx extension which outputs Devhelp documents"
+summary = "sphinxcontrib-applehelp is a Sphinx extension which outputs Apple help books"
 groups = ["docs"]
 files = [
     {file = "sphinxcontrib_applehelp-2.0.0-py3-none-any.whl", hash = "sha256:4cd3f0ec4ac5dd9c17ec65e9ab272c9b867ea77425228e68ecf08d6b28ddbdb5"},
@@ -3752,7 +3759,7 @@ files = [
 name = "sphinxcontrib-qthelp"
 version = "2.0.0"
 requires_python = ">=3.9"
-summary = "sphinxcontrib-serializinghtml is a sphinx extension which outputs \"serialized\" HTML files (json and pickle)"
+summary = "sphinxcontrib-qthelp is a sphinx extension which outputs QtHelp documents"
 groups = ["docs"]
 files = [
     {file = "sphinxcontrib_qthelp-2.0.0-py3-none-any.whl", hash = "sha256:b18a828cdba941ccd6ee8445dbe72ffa3ef8cbe7505d8cd1fa0d42d3f2d5f3eb"},

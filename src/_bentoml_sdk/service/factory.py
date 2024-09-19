@@ -89,11 +89,11 @@ class Service(t.Generic[T]):
         for field in dir(self.inner):
             value = getattr(self.inner, field)
             if isinstance(value, Dependency):
-                self.dependencies[field] = t.cast(Dependency[t.Any], value)
+                self.dependencies[field] = value
             elif isinstance(value, StoredModel):
                 logger.warning(
                     "`bentoml.models.get()` as the class attribute is not recommended because it requires the model"
-                    f" to exist at import time. Use `{value._name} = BentoModel({str(value.tag)!r})` instead."
+                    f" to exist at import time. Use `{value._attr} = BentoModel({str(value.tag)!r})` instead."
                 )
                 self.models.append(BentoModel(value.tag))
             elif isinstance(value, Model):
@@ -141,9 +141,12 @@ class Service(t.Generic[T]):
                 return self.all_services()[attr_name]
             else:
                 raise ValueError(f"Service {attr_name} not found")
+        dependent = self.dependencies[attr_name]
+        if dependent.on is None:
+            raise ValueError(f"Service {attr_name} not found")
         if path:
-            return self.dependencies[attr_name].on.find_dependent(path)
-        return self.dependencies[attr_name].on
+            return dependent.on.find_dependent(path)
+        return dependent
 
     @property
     def url(self) -> str | None:
@@ -157,6 +160,8 @@ class Service(t.Generic[T]):
         """Get a map of the service and all recursive dependencies"""
         services: dict[str, Service[t.Any]] = {self.name: self}
         for dependency in self.dependencies.values():
+            if dependency.on is None:
+                continue
             dependents = dependency.on.all_services()
             conflict = next(
                 (

@@ -7,68 +7,155 @@ import attrs
 from simple_di import Provide
 from simple_di import inject
 
+from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml.exceptions import BentoMLException
 
 from .factory import Service
+
+if t.TYPE_CHECKING:
+    from _bentoml_impl.client.proxy import RemoteProxy
 
 T = t.TypeVar("T")
 
 
-_dependent_cache: dict[str, t.Any] = {}
+_dependencies: list[Dependency[t.Any]] = []
 
 
 async def cleanup() -> None:
-    from _bentoml_impl.client.proxy import RemoteProxy
-
-    coros: list[t.Coroutine[t.Any, t.Any, None]] = []
-    for svc in _dependent_cache.values():
-        if isinstance(svc, RemoteProxy):
-            coros.append(svc.close())
-    await asyncio.gather(*coros)
-    _dependent_cache.clear()
+    tasks = [dep.close() for dep in _dependencies]
+    await asyncio.gather(*tasks)
+    _dependencies.clear()
 
 
-@attrs.frozen
+@attrs.define
 class Dependency(t.Generic[T]):
-    on: Service[T]
+    on: Service[T] | None = None
+    deployment: str | None = None
+    cluster: str | None = None
+    url: str | None = None
+    _resolved: t.Any = attrs.field(default=None, init=False)
 
-    def cache_key(self) -> str:
-        return self.on.name
+    @t.overload
+    def get(self: Dependency[None]) -> RemoteProxy[t.Any]: ...
+
+    @t.overload
+    def get(self: Dependency[T]) -> T: ...
 
     @inject
     def get(
-        self,
+        self: Dependency[T],
+        *,
         runner_mapping: dict[str, str] = Provide[
             BentoMLContainer.remote_runner_mapping
         ],
-    ) -> T:
+        client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
+    ) -> T | RemoteProxy[t.Any]:
         from _bentoml_impl.client.proxy import RemoteProxy
 
-        key = self.on.name
-        if key not in _dependent_cache:
-            if key in runner_mapping:
-                inst = RemoteProxy(runner_mapping[key], service=self.on).as_service()
+        media_type = "application/json"
+        if self.deployment and self.url:
+            raise BentoMLException("Cannot specify both deployment and url")
+        if self.deployment:
+            deployment = client.v2.get_deployment(self.deployment, self.cluster)
+            try:
+                self.url = deployment.urls[0]
+            except IndexError:
+                raise BentoMLException(
+                    f"Deployment {self.deployment} does not have any URLs"
+                )
+        elif not self.url:
+            if self.on is None:
+                raise BentoMLException("Must specify one of on, deployment or url")
+            if (key := self.on.name) in runner_mapping:
+                self.url = runner_mapping[key]
+                media_type = "application/vnd.bentoml+pickle"
             else:
-                inst = self.on()
-            _dependent_cache[key] = inst
-        return _dependent_cache[key]
+                return self.on()
+
+        return RemoteProxy(
+            self.url, service=self.on, media_type=media_type
+        ).as_service()
 
     @t.overload
-    def __get__(self, instance: None, owner: t.Any) -> Dependency[T]: ...
+    def __get__(self, instance: None, owner: t.Any) -> t.Self: ...
 
     @t.overload
-    def __get__(self, instance: t.Any, owner: t.Any) -> T: ...
+    def __get__(
+        self: Dependency[None], instance: t.Any, owner: t.Any
+    ) -> RemoteProxy[t.Any]: ...
 
-    def __get__(self, instance: t.Any, owner: t.Any) -> Dependency[T] | T:
+    @t.overload
+    def __get__(self: Dependency[T], instance: t.Any, owner: t.Any) -> T: ...
+
+    def __get__(
+        self: Dependency[T], instance: t.Any, owner: t.Any
+    ) -> Dependency[T] | RemoteProxy[t.Any] | T:
         if instance is None:
             return self
-        return self.get()
+        if self._resolved is None:
+            self._resolved = self.get()
+            _dependencies.append(self)
+        return self._resolved
 
     def __getattr__(self, name: str) -> t.Any:
-        raise RuntimeError("Dependancy must be accessed as a class attribute")
+        raise AttributeError("Dependency must be accessed as a class attribute")
+
+    async def close(self) -> None:
+        if self._resolved is None:
+            return
+        await t.cast("RemoteProxy[t.Any]", self._resolved).close()
 
 
-def depends(on: Service[T]) -> Dependency[T]:
-    if not isinstance(on, Service):
+@t.overload
+def depends(
+    *,
+    url: str | None = ...,
+    deployment: str | None = ...,
+    cluster: str | None = ...,
+) -> Dependency[None]: ...
+
+
+@t.overload
+def depends(
+    on: Service[T],
+    *,
+    url: str | None = ...,
+    deployment: str | None = ...,
+    cluster: str | None = ...,
+) -> Dependency[T]: ...
+
+
+def depends(
+    on: Service[T] | None = None,
+    *,
+    url: str | None = None,
+    deployment: str | None = None,
+    cluster: str | None = None,
+) -> Dependency[T]:
+    """Create a dependency on other service or deployment
+
+    Args:
+        on: Service[T] | None: The service to depend on.
+        url: str | None: The URL of the service to depend on.
+        deployment: str | None: The deployment of the service to depend on.
+        cluster: str | None: The cluster of the service to depend on.
+
+    Examples:
+
+    .. code-block:: python
+
+        @bentoml.service
+        class MyService:
+            # depends on a service
+            svc_a = bentoml.depends(SVC_A)
+            # depends on a deployment
+            svc_b = bentoml.depends(deployment="ci-iris")
+            # depends on a remote service with url
+            svc_c = bentoml.depends(url="http://192.168.1.1:3000")
+            # For the latter two cases, the service can be given to provide more accurate types:
+            svc_d = bentoml.depends(url="http://192.168.1.1:3000", on=SVC_D)
+    """
+    if on is not None and not isinstance(on, Service):
         raise TypeError("depends() expects a class decorated with @bentoml.service()")
-    return Dependency(on)
+    return Dependency(on, url=url, deployment=deployment, cluster=cluster)

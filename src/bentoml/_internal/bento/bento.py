@@ -52,6 +52,7 @@ if TYPE_CHECKING:
 
     from _bentoml_sdk import Service as NewService
     from _bentoml_sdk.service import ServiceConfig
+    from _bentoml_sdk.service.dependency import Dependency
 
     from ..cloud.schemas.modelschemas import BentoManifestSchema
     from ..models import Model as StoredModel
@@ -606,11 +607,28 @@ class BentoModelInfo:
 
 
 @attr.frozen
+class BentoDependencyInfo:
+    service: t.Optional[str] = None
+    deployment: t.Optional[str] = None
+    cluster: t.Optional[str] = None
+    url: t.Optional[str] = None
+
+    @classmethod
+    def from_dependency(cls, d: Dependency[t.Any]) -> BentoDependencyInfo:
+        return cls(
+            service=d.on.name if d.on is not None else None,
+            deployment=d.deployment,
+            cluster=d.cluster,
+            url=d.url,
+        )
+
+
+@attr.frozen
 class BentoServiceInfo:
     name: str
     service: str
     models: t.List[BentoModelInfo] = attr.field(factory=list, eq=False)
-    dependencies: t.List[str] = attr.field(factory=list, eq=False)
+    dependencies: t.List[BentoDependencyInfo] = attr.field(factory=list, eq=False)
     config: ServiceConfig = attr.field(factory=dict, eq=False)
 
     @classmethod
@@ -619,7 +637,10 @@ class BentoServiceInfo:
             name=svc.name,
             service="",
             models=[m.to_info() for m in svc.models],
-            dependencies=[d.on.name for d in svc.dependencies.values()],
+            dependencies=[
+                BentoDependencyInfo.from_dependency(d)
+                for d in svc.dependencies.values()
+            ],
             config=svc.config,
         )
 
@@ -737,6 +758,31 @@ class BentoInfo:
         # Validate bento.yml file schema, content, bentoml version, etc
         ...
 
+
+bentoml_cattr.register_unstructure_hook(
+    BentoDependencyInfo,
+    make_dict_unstructure_fn(
+        BentoDependencyInfo,
+        bentoml_cattr,
+        service=override(omit_if_default=True),
+        deployment=override(omit_if_default=True),
+        cluster=override(omit_if_default=True),
+        url=override(omit_if_default=True),
+    ),
+)
+
+
+def _convert_bento_dependency_info(
+    data: str | dict[str, t.Any], typ: type[BentoDependencyInfo]
+) -> BentoDependencyInfo:
+    if isinstance(data, str):
+        return BentoDependencyInfo(service=data)
+    return BentoDependencyInfo(**data)
+
+
+bentoml_cattr.register_structure_hook(
+    BentoDependencyInfo, _convert_bento_dependency_info
+)
 
 bentoml_cattr.register_structure_hook_func(
     lambda cls: inspect.isclass(cls) and issubclass(cls, BentoInfo),

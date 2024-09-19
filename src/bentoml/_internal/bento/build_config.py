@@ -960,7 +960,9 @@ class BentoPathSpec:
     recurse_exclude_spec: list[tuple[str, PathSpec]] = attr.field(init=False)
     # we want to ignore .git and venv folders in cases they are very large.
     extra: PathSpec = attr.field(
-        default=PathSpec.from_lines("gitwildmatch", [".git/", ".venv/", "venv/"]),
+        default=PathSpec.from_lines(
+            "gitwildmatch", [".git/", ".venv/", "venv/", "__pycache__/"]
+        ),
         init=False,
     )
 

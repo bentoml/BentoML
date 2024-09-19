@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	pb "github.com/bentoml/bentoml/grpc/v1"
+	pb "github.com/bentoml/bentoml/grpc"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

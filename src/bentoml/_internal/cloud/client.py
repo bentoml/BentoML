@@ -55,9 +55,8 @@ from .schemas.schemasv2 import KubePodWSResponseSchema
 from .schemas.schemasv2 import LogWSResponseSchema
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 from .schemas.schemasv2 import UploadDeploymentFilesSchema
-from .schemas.utils import schema_from_json
 from .schemas.utils import schema_from_object
-from .schemas.utils import schema_to_json
+from .schemas.utils import schema_to_object
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +100,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, UserSchema)
+        return schema_from_object(resp.json(), UserSchema)
 
     def get_current_organization(self) -> OrganizationSchema | None:
         url = "/api/v1/current_org"
@@ -109,7 +108,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, OrganizationSchema)
+        return schema_from_object(resp.json(), OrganizationSchema)
 
     def get_bento_repository(
         self, bento_repository_name: str
@@ -119,15 +118,15 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoRepositorySchema)
+        return schema_from_object(resp.json(), BentoRepositorySchema)
 
     def create_bento_repository(
         self, req: CreateBentoRepositorySchema
     ) -> BentoRepositorySchema:
         url = "/api/v1/bento_repositories"
-        resp = self.session.post(url, content=schema_to_json(req))
+        resp = self.session.post(url, json=schema_to_object(req))
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoRepositorySchema)
+        return schema_from_object(resp.json(), BentoRepositorySchema)
 
     def get_bento(self, bento_repository_name: str, version: str) -> BentoSchema | None:
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}"
@@ -135,7 +134,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoSchema)
+        return schema_from_object(resp.json(), BentoSchema)
 
     def list_bentos(
         self, bento_repository_name: str, count: int = 1
@@ -145,23 +144,23 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoListSchema)
+        return schema_from_object(resp.json(), BentoListSchema)
 
     def create_bento(
         self, bento_repository_name: str, req: CreateBentoSchema
     ) -> BentoSchema:
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos"
-        resp = self.session.post(url, content=schema_to_json(req))
+        resp = self.session.post(url, json=schema_to_object(req))
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoSchema)
+        return schema_from_object(resp.json(), BentoSchema)
 
     def update_bento(
         self, bento_repository_name: str, version: str, req: UpdateBentoSchema
     ) -> BentoSchema:
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}"
-        resp = self.session.patch(url, content=schema_to_json(req))
+        resp = self.session.patch(url, json=schema_to_object(req))
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoSchema)
+        return schema_from_object(resp.json(), BentoSchema)
 
     def presign_bento_upload_url(
         self, bento_repository_name: str, version: str
@@ -169,7 +168,7 @@ class RestApiClientV1(BaseRestApiClient):
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/presign_upload_url"
         resp = self.session.patch(url)
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoSchema)
+        return schema_from_object(resp.json(), BentoSchema)
 
     def presign_bento_download_url(
         self, bento_repository_name: str, version: str
@@ -177,7 +176,7 @@ class RestApiClientV1(BaseRestApiClient):
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/presign_download_url"
         resp = self.session.patch(url)
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoSchema)
+        return schema_from_object(resp.json(), BentoSchema)
 
     def start_bento_multipart_upload(
         self, bento_repository_name: str, version: str
@@ -185,7 +184,7 @@ class RestApiClientV1(BaseRestApiClient):
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/start_multipart_upload"
         resp = self.session.patch(url)
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoSchema)
+        return schema_from_object(resp.json(), BentoSchema)
 
     def presign_bento_multipart_upload_url(
         self,
@@ -194,9 +193,9 @@ class RestApiClientV1(BaseRestApiClient):
         req: PreSignMultipartUploadUrlSchema,
     ) -> BentoSchema:
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/presign_multipart_upload_url"
-        resp = self.session.patch(url, content=schema_to_json(req))
+        resp = self.session.patch(url, json=schema_to_object(req))
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoSchema)
+        return schema_from_object(resp.json(), BentoSchema)
 
     def complete_bento_multipart_upload(
         self,
@@ -205,9 +204,9 @@ class RestApiClientV1(BaseRestApiClient):
         req: CompleteMultipartUploadSchema,
     ) -> BentoSchema:
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/complete_multipart_upload"
-        resp = self.session.patch(url, content=schema_to_json(req))
+        resp = self.session.patch(url, json=schema_to_object(req))
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoSchema)
+        return schema_from_object(resp.json(), BentoSchema)
 
     def start_upload_bento(
         self, bento_repository_name: str, version: str
@@ -215,15 +214,15 @@ class RestApiClientV1(BaseRestApiClient):
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/start_upload"
         resp = self.session.patch(url)
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoSchema)
+        return schema_from_object(resp.json(), BentoSchema)
 
     def finish_upload_bento(
         self, bento_repository_name: str, version: str, req: FinishUploadBentoSchema
     ) -> BentoSchema:
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/finish_upload"
-        resp = self.session.patch(url, content=schema_to_json(req))
+        resp = self.session.patch(url, json=schema_to_object(req))
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoSchema)
+        return schema_from_object(resp.json(), BentoSchema)
 
     def upload_bento(
         self, bento_repository_name: str, version: str, data: t.IO[bytes]
@@ -256,15 +255,15 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelRepositorySchema)
+        return schema_from_object(resp.json(), ModelRepositorySchema)
 
     def create_model_repository(
         self, req: CreateModelRepositorySchema
     ) -> ModelRepositorySchema:
         url = "/api/v1/model_repositories"
-        resp = self.session.post(url, content=schema_to_json(req))
+        resp = self.session.post(url, json=schema_to_object(req))
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelRepositorySchema)
+        return schema_from_object(resp.json(), ModelRepositorySchema)
 
     def get_model(self, model_repository_name: str, version: str) -> ModelSchema | None:
         url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}"
@@ -272,15 +271,15 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelSchema)
+        return schema_from_object(resp.json(), ModelSchema)
 
     def create_model(
         self, model_repository_name: str, req: CreateModelSchema
     ) -> ModelSchema:
         url = f"/api/v1/model_repositories/{model_repository_name}/models"
-        resp = self.session.post(url, content=schema_to_json(req))
+        resp = self.session.post(url, json=schema_to_object(req))
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelSchema)
+        return schema_from_object(resp.json(), ModelSchema)
 
     def presign_model_upload_url(
         self, model_repository_name: str, version: str
@@ -288,7 +287,7 @@ class RestApiClientV1(BaseRestApiClient):
         url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_upload_url"
         resp = self.session.patch(url)
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelSchema)
+        return schema_from_object(resp.json(), ModelSchema)
 
     def presign_model_download_url(
         self, model_repository_name: str, version: str
@@ -296,7 +295,7 @@ class RestApiClientV1(BaseRestApiClient):
         url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_download_url"
         resp = self.session.patch(url)
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelSchema)
+        return schema_from_object(resp.json(), ModelSchema)
 
     def start_model_multipart_upload(
         self, model_repository_name: str, version: str
@@ -304,7 +303,7 @@ class RestApiClientV1(BaseRestApiClient):
         url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/start_multipart_upload"
         resp = self.session.patch(url)
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelSchema)
+        return schema_from_object(resp.json(), ModelSchema)
 
     def presign_model_multipart_upload_url(
         self,
@@ -313,9 +312,9 @@ class RestApiClientV1(BaseRestApiClient):
         req: PreSignMultipartUploadUrlSchema,
     ) -> ModelSchema:
         url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/presign_multipart_upload_url"
-        resp = self.session.patch(url, content=schema_to_json(req))
+        resp = self.session.patch(url, json=schema_to_object(req))
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelSchema)
+        return schema_from_object(resp.json(), ModelSchema)
 
     def complete_model_multipart_upload(
         self,
@@ -324,9 +323,9 @@ class RestApiClientV1(BaseRestApiClient):
         req: CompleteMultipartUploadSchema,
     ) -> ModelSchema:
         url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/complete_multipart_upload"
-        resp = self.session.patch(url, content=schema_to_json(req))
+        resp = self.session.patch(url, json=schema_to_object(req))
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelSchema)
+        return schema_from_object(resp.json(), ModelSchema)
 
     def start_upload_model(
         self, model_repository_name: str, version: str
@@ -334,15 +333,15 @@ class RestApiClientV1(BaseRestApiClient):
         url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/start_upload"
         resp = self.session.patch(url)
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelSchema)
+        return schema_from_object(resp.json(), ModelSchema)
 
     def finish_upload_model(
         self, model_repository_name: str, version: str, req: FinishUploadModelSchema
     ) -> ModelSchema:
         url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/finish_upload"
-        resp = self.session.patch(url, content=schema_to_json(req))
+        resp = self.session.patch(url, json=schema_to_object(req))
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelSchema)
+        return schema_from_object(resp.json(), ModelSchema)
 
     def upload_model(
         self, model_repository_name: str, version: str, data: t.IO[bytes]
@@ -375,7 +374,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoWithRepositoryListSchema)
+        return schema_from_object(resp.json(), BentoWithRepositoryListSchema)
 
     def get_bentos_list(self) -> BentoWithRepositoryListSchema | None:
         url = "/api/v1/bentos"
@@ -383,7 +382,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, BentoWithRepositoryListSchema)
+        return schema_from_object(resp.json(), BentoWithRepositoryListSchema)
 
     def get_models_list(self) -> ModelWithRepositoryListSchema | None:
         url = "/api/v1/models"
@@ -391,7 +390,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, ModelWithRepositoryListSchema)
+        return schema_from_object(resp.json(), ModelWithRepositoryListSchema)
 
     def get_cluster_deployment_list(
         self, cluster: str, **params: str | int | None
@@ -401,7 +400,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentListSchema)
+        return schema_from_object(resp.json(), DeploymentListSchema)
 
     def get_organization_deployment_list(
         self, **params: str | int | None
@@ -411,15 +410,15 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentListSchema)
+        return schema_from_object(resp.json(), DeploymentListSchema)
 
     def create_deployment(
         self, cluster: str, create_schema: CreateDeploymentSchemaV1
     ) -> DeploymentFullSchema | None:
         url = f"/api/v1/clusters/{cluster}/deployments"
-        resp = self.session.post(url, content=schema_to_json(create_schema))
+        resp = self.session.post(url, json=schema_to_object(create_schema))
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchema)
+        return schema_from_object(resp.json(), DeploymentFullSchema)
 
     def get_deployment(
         self, cluster: str, kube_namespace: str, name: str
@@ -431,7 +430,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchema)
+        return schema_from_object(resp.json(), DeploymentFullSchema)
 
     def update_deployment(
         self,
@@ -443,11 +442,11 @@ class RestApiClientV1(BaseRestApiClient):
         url = (
             f"/api/v1/clusters/{cluster}/namespaces/{kube_namespace}/deployments/{name}"
         )
-        resp = self.session.patch(url, content=schema_to_json(update_schema))
+        resp = self.session.patch(url, json=schema_to_object(update_schema))
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchema)
+        return schema_from_object(resp.json(), DeploymentFullSchema)
 
     def terminate_deployment(
         self, cluster: str, kube_namespace: str, name: str
@@ -457,7 +456,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchema)
+        return schema_from_object(resp.json(), DeploymentFullSchema)
 
     def delete_deployment(
         self, cluster: str, kube_namespace: str, name: str
@@ -469,7 +468,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchema)
+        return schema_from_object(resp.json(), DeploymentFullSchema)
 
     def get_cluster_list(
         self, params: dict[str, str | int] | None = None
@@ -479,7 +478,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, ClusterListSchema)
+        return schema_from_object(resp.json(), ClusterListSchema)
 
     def get_cluster(self, cluster: str) -> ClusterFullSchema | None:
         url = f"/api/v1/clusters/{cluster}"
@@ -487,7 +486,7 @@ class RestApiClientV1(BaseRestApiClient):
         if self._is_not_found(resp):
             return None
         self._check_resp(resp)
-        return schema_from_json(resp.text, ClusterFullSchema)
+        return schema_from_object(resp.json(), ClusterFullSchema)
 
     def get_latest_model(
         self, model_repository_name: str, query: str | None = None
@@ -523,13 +522,13 @@ class RestApiClientV1(BaseRestApiClient):
             },
         )
         self._check_resp(resp)
-        return schema_from_json(resp.text, SecretListSchema)
+        return schema_from_object(resp.json(), SecretListSchema)
 
     def create_secret(self, secret: CreateSecretSchema) -> SecretSchema:
         url = "/api/v1/org_secrets"
-        resp = self.session.post(url, content=schema_to_json(secret))
+        resp = self.session.post(url, json=schema_to_object(secret))
         self._check_resp(resp)
-        return schema_from_json(resp.text, SecretSchema)
+        return schema_from_object(resp.json(), SecretSchema)
 
     def delete_secret(self, name: str):
         url = f"/api/v1/org_secrets/{name}"
@@ -538,9 +537,9 @@ class RestApiClientV1(BaseRestApiClient):
 
     def update_secret(self, name: str, secret: UpdateSecretSchema) -> SecretSchema:
         url = f"/api/v1/org_secrets/{name}"
-        resp = self.session.patch(url, content=schema_to_json(secret))
+        resp = self.session.patch(url, json=schema_to_object(secret))
         self._check_resp(resp)
-        return schema_from_json(resp.text, SecretSchema)
+        return schema_from_object(resp.json(), SecretSchema)
 
 
 class RestApiClientV2(BaseRestApiClient):
@@ -551,10 +550,10 @@ class RestApiClientV2(BaseRestApiClient):
     ) -> DeploymentFullSchemaV2:
         url = "/api/v2/deployments"
         resp = self.session.post(
-            url, content=schema_to_json(create_schema), params={"cluster": cluster}
+            url, json=schema_to_object(create_schema), params={"cluster": cluster}
         )
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchemaV2)
+        return schema_from_object(resp.json(), DeploymentFullSchemaV2)
 
     def update_deployment(
         self,
@@ -563,12 +562,13 @@ class RestApiClientV2(BaseRestApiClient):
         cluster: str | None = None,
     ) -> DeploymentFullSchemaV2:
         url = f"/api/v2/deployments/{name}"
-        data = schema_to_json(update_schema)
-        resp = self.session.put(url, content=data, params={"cluster": cluster})
+        resp = self.session.put(
+            url, json=schema_to_object(update_schema), params={"cluster": cluster}
+        )
         if self._is_not_found(resp):
             raise NotFound(f"Deployment {name} is not found: {resp.text}")
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchemaV2)
+        return schema_from_object(resp.json(), DeploymentFullSchemaV2)
 
     def get_deployment(
         self,
@@ -580,7 +580,7 @@ class RestApiClientV2(BaseRestApiClient):
         if self._is_not_found(resp):
             raise NotFound(f"Deployment {name} is not found: {resp.text}")
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchemaV2)
+        return schema_from_object(resp.json(), DeploymentFullSchemaV2)
 
     def list_deployment(
         self,
@@ -607,7 +607,7 @@ class RestApiClientV2(BaseRestApiClient):
         if self._is_not_found(resp):
             raise NotFound(f"Deployment not found: {resp.text}")
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentListSchemaV2)
+        return schema_from_object(resp.json(), DeploymentListSchemaV2)
 
     def terminate_deployment(
         self,
@@ -619,7 +619,7 @@ class RestApiClientV2(BaseRestApiClient):
         if self._is_not_found(resp):
             raise NotFound(f"Deployment {name} is not found: {resp.text}")
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchemaV2)
+        return schema_from_object(resp.json(), DeploymentFullSchemaV2)
 
     def delete_deployment(
         self,
@@ -631,7 +631,7 @@ class RestApiClientV2(BaseRestApiClient):
         if self._is_not_found(resp):
             raise NotFound(f"Deployment {name} is not found: {resp.text}")
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFullSchemaV2)
+        return schema_from_object(resp.json(), DeploymentFullSchemaV2)
 
     def list_instance_types(
         self,
@@ -640,7 +640,7 @@ class RestApiClientV2(BaseRestApiClient):
         url = "/api/v1/instance_types"
         resp = self.session.get(url, params={"cluster": cluster})
         self._check_resp(resp)
-        return schema_from_json(resp.text, list[ResourceInstanceSchema])
+        return schema_from_object(resp.json(), list[ResourceInstanceSchema])
 
     def get_deployment_image_builder_pod(
         self, name: str, cluster: str | None = None
@@ -752,7 +752,7 @@ class RestApiClientV2(BaseRestApiClient):
     ) -> None:
         url = f"/api/v2/deployments/{name}/files"
         resp = self.session.post(
-            url, content=schema_to_json(files), params={"cluster": cluster}
+            url, json=schema_to_object(files), params={"cluster": cluster}, timeout=600
         )
         self._check_resp(resp)
 
@@ -761,7 +761,7 @@ class RestApiClientV2(BaseRestApiClient):
     ) -> None:
         url = f"/api/v2/deployments/{name}/files"
         resp = self.session.request(
-            "DELETE", url, content=schema_to_json(paths), params={"cluster": cluster}
+            "DELETE", url, json=schema_to_object(paths), params={"cluster": cluster}
         )
         self._check_resp(resp)
 
@@ -771,17 +771,13 @@ class RestApiClientV2(BaseRestApiClient):
         url = f"/api/v2/deployments/{name}/files"
         resp = self.session.get(url, params={"cluster": cluster})
         self._check_resp(resp)
-        return schema_from_json(resp.text, DeploymentFileListSchema)
+        return schema_from_object(resp.json(), DeploymentFileListSchema)
 
 
 class RestApiClient:
     def __init__(self, endpoint: str, api_token: str, timeout: int = 60) -> None:
         self.endpoint = endpoint
-        headers = {
-            "X-YATAI-API-TOKEN": api_token,
-            "Content-Type": "application/json",
-            "X-Bentoml-Version": BENTOML_VERSION,
-        }
+        headers = {"X-YATAI-API-TOKEN": api_token, "X-Bentoml-Version": BENTOML_VERSION}
         self.session = httpx.Client(base_url=endpoint, timeout=timeout, headers=headers)
         self.v2 = RestApiClientV2(self.session)
         self.v1 = RestApiClientV1(self.session)

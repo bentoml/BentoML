@@ -7,20 +7,24 @@ import logging
 import os
 import time
 import typing as t
-from os import path
+from pathlib import Path
 from threading import Event
 from threading import Thread
 
 import attr
+import fs
 import rich
 import yaml
 from deepmerge.merger import Merger
+from pathspec import PathSpec
 from rich.console import Console
 from simple_di import Provide
 from simple_di import inject
 
 from ..bento.bento import Bento
 from ..bento.build_config import BentoBuildConfig
+from ..configuration import is_editable_bentoml
+from ..utils.pkg import source_locations
 
 if t.TYPE_CHECKING:
     from _bentoml_impl.client import AsyncHTTPClient
@@ -169,7 +173,7 @@ class DeploymentConfigParameters:
         bento_name = self.cfg_dict.get("bento")
         # determine if bento is a path or a name
         if bento_name:
-            if isinstance(bento_name, str) and path.exists(bento_name):
+            if isinstance(bento_name, str) and os.path.exists(bento_name):
                 # target is a path
                 if self.cli:
                     rich.print(f"building bento from [green]{bento_name}[/] ...")
@@ -635,23 +639,49 @@ class Deployment:
                 tail_thread.join()
         return 0
 
-    def upload_files(self, files: t.Iterable[tuple[str, bytes]]) -> None:
-        data = {
-            "files": [
-                {
-                    "path": path,
-                    "b64_encoded_content": base64.b64encode(content).decode("utf-8"),
-                }
-                for path, content in files
-            ]
-        }
-        self._client.v2.upload_files(
-            self.name,
-            bentoml_cattr.structure(data, UploadDeploymentFilesSchema),
-            cluster=self.cluster,
-        )
+    def upload_files(
+        self, files: t.Iterable[tuple[str, bytes]], *, console: Console | None = None
+    ) -> None:
+        console = console or rich.get_console()
+        all_files = [
+            {
+                "path": path,
+                "b64_encoded_content": base64.b64encode(content).decode("utf-8"),
+            }
+            for path, content in files
+        ]
+        max_chunk_size = 10 * 1024 * 1024  # 10 Mb
+        max_files_per_chunk = 20
+        current_size = 0
+        chunk: list[dict[str, t.Any]] = []
+        for file in all_files:
+            console.print(f" [green]Uploading[/] {file['path']}")
+            chunk.append(file)
+            current_size += len(file["b64_encoded_content"])
+            if len(chunk) >= max_files_per_chunk or current_size >= max_chunk_size:
+                self._client.v2.upload_files(
+                    self.name,
+                    bentoml_cattr.structure(
+                        {"files": chunk}, UploadDeploymentFilesSchema
+                    ),
+                    cluster=self.cluster,
+                )
+                chunk.clear()
+                current_size = 0
+        if chunk:
+            self._client.v2.upload_files(
+                self.name,
+                bentoml_cattr.structure({"files": chunk}, UploadDeploymentFilesSchema),
+                cluster=self.cluster,
+            )
 
-    def delete_files(self, paths: t.Iterable[str]) -> None:
+    def delete_files(
+        self, paths: t.Iterable[str], *, console: Console | None = None
+    ) -> None:
+        console = console or rich.get_console()
+        paths = list(paths)
+        for path in paths:
+            console.print(f" [red]Deleting[/] {path}")
         data = {"paths": paths}
         self._client.v2.delete_files(
             self.name,
@@ -698,22 +728,37 @@ class Deployment:
         for root, _, files in os.walk(bento_dir):
             for fn in files:
                 full_path = os.path.join(root, fn)
-                rel_path = os.path.relpath(full_path, bento_dir)
+                rel_path = os.path.relpath(full_path, bento_dir).replace(os.sep, "/")
                 if not bento_spec.includes(rel_path) and rel_path != "bentofile.yaml":
                     continue
                 if rel_path == REQUIREMENTS_TXT:
                     continue
                 file_content = open(full_path, "rb").read()
-                file_md5 = hashlib.md5(file_content).hexdigest()
-                if rel_path in pod_files and pod_files[rel_path] == file_md5:
+                if (
+                    rel_path in pod_files
+                    and pod_files[rel_path] == hashlib.md5(file_content).hexdigest()
+                ):
                     continue
-                console.print(f" [green]Uploading[/] {rel_path}")
                 upload_files.append((rel_path, file_content))
+        if is_editable_bentoml():
+            console.print(
+                "[yellow]BentoML is installed in editable mode, uploading source code...[/]"
+            )
+            bentoml_project = Path(source_locations("bentoml")).parent.parent
+            for path in EDITABLE_BENTOML_PATHSPEC.match_tree_files(bentoml_project):
+                rel_path = os.path.join(EDITABLE_BENTOML_DIR, path)
+                file_content = Path(bentoml_project, path).read_bytes()
+                if (
+                    rel_path in pod_files
+                    and pod_files[rel_path] == hashlib.md5(file_content).hexdigest()
+                ):
+                    continue
+                upload_files.append((rel_path, file_content))
+
         requirements_md5 = hashlib.md5(requirements_content).hexdigest()
         if requirements_md5 != pod_files.get(REQUIREMENTS_TXT, ""):
-            console.print(f" [green]Uploading[/] {REQUIREMENTS_TXT}")
             upload_files.append((REQUIREMENTS_TXT, requirements_content))
-        self.upload_files(upload_files)
+        self.upload_files(upload_files, console=console)
         return requirements_md5
 
     def watch(self, bento_dir: str) -> None:
@@ -731,14 +776,23 @@ class Deployment:
         requirements_hash: str | None = None
 
         default_filter = watchfiles.filters.DefaultFilter()
+        is_editable = is_editable_bentoml()
+        bentoml_project = str(Path(source_locations("bentoml")).parent.parent)
+        watch_dirs = [bento_dir]
+        if is_editable:
+            watch_dirs.append(bentoml_project)
 
         def watch_filter(change: watchfiles.Change, path: str) -> bool:
             if not default_filter(change, path):
                 return False
+            if is_editable and fs.path.isparent(bentoml_project, path):
+                rel_path = os.path.relpath(path, bentoml_project)
+                return EDITABLE_BENTOML_PATHSPEC.match_file(rel_path)
             rel_path = os.path.relpath(path, bento_dir)
-            if rel_path in ("bentofile.yaml", REQUIREMENTS_TXT):
-                return True
-            return bento_spec.includes(rel_path)
+            return rel_path in (
+                "bentofile.yaml",
+                REQUIREMENTS_TXT,
+            ) or bento_spec.includes(rel_path)
 
         console = Console(highlight=False)
         bento_info = ensure_bento(
@@ -784,23 +838,26 @@ class Deployment:
                 with self._tail_logs(spinner.console):
                     spinner.update("👀 Watching for changes")
                     for changes in watchfiles.watch(
-                        bento_dir, watch_filter=watch_filter
+                        *watch_dirs, watch_filter=watch_filter
                     ):
-                        bento_info = ensure_bento(
-                            bento_dir,
-                            bare=True,
-                            push=False,
-                            reload=True,
-                            _client=self._client,
-                        )
-                        assert isinstance(bento_info, Bento)
-                        if (
-                            target is None
-                            or target.bento is None
-                            or target.bento.manifest != bento_info.get_manifest()
+                        if not is_editable or any(
+                            fs.path.isparent(bento_dir, p) for _, p in changes
                         ):
-                            # stop log tail and reset the deployment
-                            break
+                            bento_info = ensure_bento(
+                                bento_dir,
+                                bare=True,
+                                push=False,
+                                reload=True,
+                                _client=self._client,
+                            )
+                            assert isinstance(bento_info, Bento)
+                            if (
+                                target is None
+                                or target.bento is None
+                                or target.bento.manifest != bento_info.get_manifest()
+                            ):
+                                # stop log tail and reset the deployment
+                                break
 
                         build_config = get_bento_build_config(bento_dir)
                         upload_files: list[tuple[str, bytes]] = []
@@ -808,17 +865,21 @@ class Deployment:
                         affected_files: set[str] = set()
 
                         for _, path in changes:
-                            rel_path = os.path.relpath(path, bento_dir)
-                            if rel_path == REQUIREMENTS_TXT:
-                                continue
+                            if is_editable and fs.path.isparent(bentoml_project, path):
+                                rel_path = os.path.join(
+                                    EDITABLE_BENTOML_DIR,
+                                    os.path.relpath(path, bentoml_project),
+                                )
+                            else:
+                                rel_path = os.path.relpath(path, bento_dir)
+                                if rel_path == REQUIREMENTS_TXT:
+                                    continue
                             if rel_path in affected_files:
                                 continue
                             affected_files.add(rel_path)
                             if os.path.exists(path):
-                                console.print(f" [green]Uploading[/] {rel_path}")
                                 upload_files.append((rel_path, open(path, "rb").read()))
                             else:
-                                console.print(f" [red]Deleting[/] {rel_path}")
                                 delete_files.append(rel_path)
 
                         requirements_content = _build_requirements_txt(
@@ -828,14 +889,13 @@ class Deployment:
                             new_hash := hashlib.md5(requirements_content).hexdigest()
                         ) != requirements_hash:
                             requirements_hash = new_hash
-                            console.print(f" [green]Uploading[/] {REQUIREMENTS_TXT}")
                             upload_files.append(
                                 (REQUIREMENTS_TXT, requirements_content)
                             )
                         if upload_files:
-                            self.upload_files(upload_files)
+                            self.upload_files(upload_files, console=console)
                         if delete_files:
-                            self.delete_files(delete_files)
+                            self.delete_files(delete_files, console=console)
                         if (status := self.get_status().status) in [
                             DeploymentStatus.Failed.value,
                             DeploymentStatus.ImageBuildFailed.value,
@@ -1275,12 +1335,21 @@ def get_bento_build_config(bento_dir: str) -> BentoBuildConfig:
 
 
 REQUIREMENTS_TXT = "requirements.txt"
+EDITABLE_BENTOML_DIR = "__editable_bentoml__"
+EDITABLE_BENTOML_PATHSPEC = PathSpec.from_lines(
+    "gitwildmatch",
+    [
+        "/src/",
+        "/pyproject.toml",
+        "/README.md",
+        "/LICENSE",
+        "!__pycache__/",
+        "!.DS_Store",
+    ],
+)
 
 
 def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
-    import warnings
-
-    from bentoml._internal.configuration import BENTOML_VERSION
     from bentoml._internal.configuration import get_bentoml_requirement
 
     filename = config.python.requirements_txt
@@ -1292,12 +1361,6 @@ def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
         content += f"{package}\n".encode()
     bentoml_requirement = get_bentoml_requirement()
     if bentoml_requirement is None:
-        warnings.warn(
-            "BentoML is installed in editable mode, the bentoml package will not be synced to remote",
-            UserWarning,
-            stacklevel=2,
-        )
-        version_without_local = BENTOML_VERSION.split("+")[0]
-        bentoml_requirement = f"bentoml<={version_without_local}"
+        bentoml_requirement = f"-e ./{EDITABLE_BENTOML_DIR}"
     content += f"{bentoml_requirement}\n".encode("utf8")
     return content

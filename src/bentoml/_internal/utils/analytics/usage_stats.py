@@ -174,7 +174,8 @@ def _track_serve_init(
                 seen.add(svc.name)
                 models = set(svc.models)
                 for dep in svc.dependencies.values():
-                    models.update(_get_models(dep.on, seen))
+                    if dep.on is not None:
+                        models.update(_get_models(dep.on, seen))
                 return models
 
             num_models = len(_get_models(svc, set()))
@@ -192,7 +193,7 @@ def _track_serve_init(
             runnable_types=(
                 [r.runnable_class.__name__ for r in svc.runners]
                 if is_legacy
-                else [d.on.name for d in svc.dependencies.values()]
+                else [d.on.name for d in svc.dependencies.values() if d.on is not None]
             ),
             api_input_types=(
                 [api.input.__class__.__name__ for api in svc.apis.values()]

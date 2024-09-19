@@ -210,6 +210,7 @@ def setup_cloud_client(ctx: Context, param: Parameter, value: str | None) -> str
 
     if value:
         BentoMLContainer.cloud_context.set(value)
+        os.environ["BENTOML_CLOUD_CONTEXT"] = value
     return value
 
 

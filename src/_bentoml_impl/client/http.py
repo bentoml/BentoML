@@ -209,7 +209,10 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         kwargs: dict[str, t.Any],
         headers: t.Mapping[str, str],
     ) -> httpx.Request:
+        from opentelemetry import propagate
+
         headers = httpx.Headers({"Content-Type": self.media_type, **headers})
+        propagate.inject(headers)
         if endpoint.input_spec is not None:
             model = endpoint.input_spec.from_inputs(*args, **kwargs)
             if model.multipart_fields and self.media_type == "application/json":

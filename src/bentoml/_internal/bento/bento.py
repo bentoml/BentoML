@@ -465,6 +465,8 @@ class Bento(StoreItem):
         total_size = self.file_size
         local_model_store = self._model_store
         for model in self.info.all_models:
+            if model.registry == "huggingface":
+                continue
             if local_model_store is not None:
                 try:
                     local_model_store.get(model.tag)

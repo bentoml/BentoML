@@ -78,6 +78,11 @@ class BaseRestApiClient:
     def _check_resp(resp: httpx.Response) -> None:
         if resp.status_code >= 500:
             if "x-trace-id" in resp.headers:
+                logger.error(
+                    "request failed with status code %d: %s\n\n",
+                    resp.status_code,
+                    resp.text,
+                )
                 raise CloudRESTApiClientError(
                     f"Oops, something went wrong with BentoCloud. Please report to us with trace ID <{resp.headers['x-trace-id']}>: https://bentoml.com/support"
                 )

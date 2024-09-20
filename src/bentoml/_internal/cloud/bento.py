@@ -111,20 +111,20 @@ class BentoAPI:
                 if model.stored is not None:
                     models_to_push.append(model)
         model_api = ModelAPI(self._client, self.spinner)
+
+        def push_model(model: Model[t.Any]) -> None:
+            model_upload_task_id = self.spinner.transmission_progress.add_task(
+                f'Pushing model "{model}"', start=False, visible=False
+            )
+            model_api._do_push_model(
+                model,
+                model_upload_task_id,
+                force=force,
+                threads=threads,
+            )
+
         with ThreadPoolExecutor(max_workers=max(len(models_to_push), 1)) as executor:
-
-            def push_model(model: Model[t.Any]) -> None:
-                model_upload_task_id = self.spinner.transmission_progress.add_task(
-                    f'Pushing model "{model}"', start=False, visible=False
-                )
-                model_api._do_push_model(
-                    model,
-                    model_upload_task_id,
-                    force=force,
-                    threads=threads,
-                )
-
-            executor.map(push_model, models_to_push)
+            list(executor.map(push_model, models_to_push))
 
         with self.spinner.spin(text=f'Fetching Bento repository "{name}"'):
             bento_repository = rest_client.v1.get_bento_repository(

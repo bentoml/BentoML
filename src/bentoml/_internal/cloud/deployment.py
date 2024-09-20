@@ -650,15 +650,14 @@ class Deployment:
             }
             for path, content in files
         ]
-        max_chunk_size = 10 * 1024 * 1024  # 10 Mb
-        max_files_per_chunk = 20
+        max_chunk_size = 64 * 1024 * 1024  # 64 Mb
         current_size = 0
         chunk: list[dict[str, t.Any]] = []
         for file in all_files:
             console.print(f" [green]Uploading[/] {file['path']}")
             chunk.append(file)
             current_size += len(file["b64_encoded_content"])
-            if len(chunk) >= max_files_per_chunk or current_size >= max_chunk_size:
+            if current_size >= max_chunk_size:
                 self._client.v2.upload_files(
                     self.name,
                     bentoml_cattr.structure(
@@ -693,18 +692,27 @@ class Deployment:
         return self._client.v2.list_files(self.name, cluster=self.cluster)
 
     def _init_deployment_files(
-        self,
-        bento_dir: str,
-        console: Console | None = None,
-        timeout: int = 600,
+        self, bento_dir: str, spinner: Spinner, timeout: int = 600
     ) -> str:
         from ..bento.build_config import BentoPathSpec
 
         check_interval = 5
         start_time = time.time()
-        if console is None:
-            console = rich.get_console()
+        console = spinner.console
+        spinner_text = "🔄 Preparing development environment - status: [green]{}[/]"
+        status = self.get_status(False).status
         while time.time() - start_time < timeout:
+            spinner.update(spinner_text.format(status))
+            if status in [
+                DeploymentStatus.Failed.value,
+                DeploymentStatus.Terminated.value,
+                DeploymentStatus.Terminating.value,
+                DeploymentStatus.Unhealthy.value,
+            ]:
+                raise BentoMLException(
+                    f"Deployment {self.name} aborted. Current status: {status}"
+                )
+
             pods = self._client.v2.list_deployment_pods(self.name, self.cluster)
             if any(
                 pod.labels.get("yatai.ai/bento-function-component-type") == "api-server"
@@ -714,6 +722,7 @@ class Deployment:
             ):
                 break
             time.sleep(check_interval)
+            status = self.get_status(True).status
         else:
             raise TimeoutError("Timeout waiting for API server pod to be ready")
 
@@ -828,12 +837,11 @@ class Deployment:
                     self = deployment_api.update(update_config)
                     target = self._refetch_target(False)
                     requirements_hash = self._init_deployment_files(
-                        bento_dir, console=spinner.console
+                        bento_dir, spinner=spinner
                     )
                 elif not requirements_hash:
-                    spinner.update("🔄 Initializing deployment files")
                     requirements_hash = self._init_deployment_files(
-                        bento_dir, console=spinner.console
+                        bento_dir, spinner=spinner
                     )
                 with self._tail_logs(spinner.console):
                     spinner.update("👀 Watching for changes")
@@ -898,13 +906,12 @@ class Deployment:
                             self.delete_files(delete_files, console=console)
                         if (status := self.get_status().status) in [
                             DeploymentStatus.Failed.value,
-                            DeploymentStatus.ImageBuildFailed.value,
                             DeploymentStatus.Terminated.value,
                             DeploymentStatus.Terminating.value,
                             DeploymentStatus.Unhealthy.value,
                         ]:
                             console.print(
-                                f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status}"[/]'
+                                f'🚨 [bold red]Deployment "{self.name}" aborted. Current status: "{status}"[/]'
                             )
                             return
         except KeyboardInterrupt:
@@ -956,9 +963,9 @@ class Deployment:
                     if i == len(chunk.split("\n")) - 1:
                         current = line
                         break
-                    console.print(f"[{color}]\[{pod.runner_name}][/] {line}")
+                    console.print(f"[{color}]\\[{pod.runner_name}][/] {line}")
             if current:
-                console.print(f"[{color}]\[{pod.runner_name}][/] {current}")
+                console.print(f"[{color}]\\[{pod.runner_name}][/] {current}")
 
         try:
             for pod in pods:

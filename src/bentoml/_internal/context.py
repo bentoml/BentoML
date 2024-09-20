@@ -102,6 +102,9 @@ class ServiceContext:
         self, request: starlette.requests.Request
     ) -> t.Generator[ServiceContext, None, None]:
         request.metadata = request.headers  # type: ignore[attr-defined]
+        request.scope.update(
+            request_id=trace_context.request_id, trace_id=trace_context.trace_id
+        )
         request_token = _request_var.set(request)
         response_token = _response_var.set(ServiceContext.ResponseContext())
         try:

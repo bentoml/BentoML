@@ -292,7 +292,7 @@ def update(  # type: ignore
             if env is not None
             else None
         ),
-        secrets= [item for item in secret] if secret is not None else None,
+        secrets=[item for item in secret] if secret is not None else None,
         config_file=config_file,
         config_dict=cfg_dict,
         cli=True,

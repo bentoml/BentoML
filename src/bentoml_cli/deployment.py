@@ -237,6 +237,12 @@ def deployment_command():
     multiple=True,
 )
 @click.option(
+    "--secret",
+    type=click.STRING,
+    help="List of secret names pass by --secret name1, --secret name2, ...",
+    multiple=True,
+)
+@click.option(
     "-f",
     "--config-file",
     type=click.File(),
@@ -259,6 +265,7 @@ def update(  # type: ignore
     instance_type: str | None,
     strategy: str | None,
     env: tuple[str] | None,
+    secret: tuple[str] | None,
     config_file: t.TextIO | None,
     config_dict: str | None,
 ) -> None:
@@ -285,6 +292,7 @@ def update(  # type: ignore
             if env is not None
             else None
         ),
+        secrets=[item for item in secret] if secret is not None else None,
         config_file=config_file,
         config_dict=cfg_dict,
         cli=True,
@@ -349,6 +357,12 @@ def update(  # type: ignore
     multiple=True,
 )
 @click.option(
+    "--secret",
+    type=click.STRING,
+    help="List of secret names pass by --secret name1, --secret name2, ...",
+    multiple=True,
+)
+@click.option(
     "-f",
     "--config-file",
     type=click.File(),
@@ -377,6 +391,7 @@ def apply(  # type: ignore
     instance_type: str | None,
     strategy: str | None,
     env: tuple[str] | None,
+    secret: tuple[str] | None,
     config_file: str | t.TextIO | None,
     config_dict: str | None,
 ) -> None:
@@ -402,6 +417,7 @@ def apply(  # type: ignore
             if env is not None
             else None
         ),
+        secrets=[item for item in secret] if secret is not None else None,
         config_file=config_file,
         config_dict=cfg_dict,
         cli=True,
@@ -714,7 +730,7 @@ def create_deployment(
             if env is not None
             else None
         ),
-        secrets=secret,
+        secrets=[item for item in secret] if secret is not None else None,
         config_file=config_file,
         config_dict=cfg_dict,
         cli=True,

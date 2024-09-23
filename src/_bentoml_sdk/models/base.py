@@ -9,7 +9,6 @@ from simple_di import Provide
 from simple_di import inject
 
 from bentoml._internal.bento.bento import BentoModelInfo
-from bentoml._internal.cloud import BentoCloudClient
 from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.cloud.schemas.modelschemas import LabelItemSchema
 from bentoml._internal.cloud.schemas.modelschemas import ModelManifestSchema
@@ -120,7 +119,6 @@ class BentoModel(Model[StoredModel]):
         self,
         base_path: t.Union[PathType, FS, None] = None,
         global_model_store: ModelStore = Provide[BentoMLContainer.model_store],
-        cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ) -> StoredModel:
         stored = self.stored
         if base_path is not None:
@@ -135,6 +133,7 @@ class BentoModel(Model[StoredModel]):
                     target_model_store=model_store,
                 )
             return stored
+        cloud_client = BentoMLContainer.bentocloud_client.get()
         model = cloud_client.model.pull(self.tag, model_store=model_store)
         assert model is not None, "non-bentoml model"
         return model

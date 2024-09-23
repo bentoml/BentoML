@@ -60,7 +60,7 @@ You can define the serving logic of the model in a ``service.py`` file by creati
 
 In BentoML, a :doc:`Service </guides/services>` is a deployable and scalable unit, defined as a Python class with the ``@bentoml.service`` decorator. It can manage states and their lifecycle, and expose one or multiple APIs accessible through HTTP. Each API within the Service is defined using the ``@bentoml.api`` decorator, specifying it as a Python function.
 
-The ``bentoml.importing()`` context manager is used to handle import statements for dependencies that are required during serving but may not be available during other situations.
+The ``bentoml.importing()`` context manager is used to handle import statements for dependencies that are required during serving but may not be available in other situations.
 
 In the ``Summarization`` class, the Service retrieves a pre-trained model (``sshleifer/distilbart-cnn-12-6``) from the Hugging Face hub and initializes a pipeline for text summarization. The ``summarize`` method serves as the API endpoint. In this example, it accepts a string input with a sample provided, processes it through the pipeline, and returns the summarized text.
 

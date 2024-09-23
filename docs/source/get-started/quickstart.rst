@@ -37,7 +37,9 @@ You can define the serving logic of the model in a ``service.py`` file by creati
 
     from __future__ import annotations
     import bentoml
-    from transformers import pipeline
+
+    with bentoml.importing():
+        from transformers import pipeline
 
 
     EXAMPLE_INPUT = "Breaking News: In an astonishing turn of events, the small town of Willow Creek has been taken by storm as local resident Jerry Thompson's cat, Whiskers, performed what witnesses are calling a 'miraculous and gravity-defying leap.' Eyewitnesses report that Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly. The event, which took place in Thompson's backyard, is now being investigated by scientists for potential breaches in the laws of physics. Local authorities are considering a town festival to celebrate what is being hailed as 'The Leap of the Century."
@@ -57,6 +59,8 @@ You can define the serving logic of the model in a ``service.py`` file by creati
             return result[0]['summary_text']
 
 In BentoML, a :doc:`Service </guides/services>` is a deployable and scalable unit, defined as a Python class with the ``@bentoml.service`` decorator. It can manage states and their lifecycle, and expose one or multiple APIs accessible through HTTP. Each API within the Service is defined using the ``@bentoml.api`` decorator, specifying it as a Python function.
+
+The ``bentoml.importing()`` context manager is used to handle import statements for dependencies that are required during serving but may not be available during other situations.
 
 In the ``Summarization`` class, the Service retrieves a pre-trained model (``sshleifer/distilbart-cnn-12-6``) from the Hugging Face hub and initializes a pipeline for text summarization. The ``summarize`` method serves as the API endpoint. In this example, it accepts a string input with a sample provided, processes it through the pipeline, and returns the summarized text.
 

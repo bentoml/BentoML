@@ -270,7 +270,7 @@ This example runs two independent models concurrently to generate different type
 Inference graph
 """""""""""""""
 
-The following is a complex example of model composition within BentoML, including both parallel and sequential processing steps to for an advanced inference workflow.
+The following is a complex example of model composition within BentoML, including both parallel and sequential processing steps for an advanced inference workflow.
 
 .. code-block:: python
 

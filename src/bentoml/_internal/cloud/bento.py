@@ -27,14 +27,14 @@ from .model import ModelAPI
 from .schemas.modelschemas import BentoApiSchema
 from .schemas.modelschemas import BentoRunnerResourceSchema
 from .schemas.modelschemas import BentoRunnerSchema
-from .schemas.modelschemas import BentoUploadStatus
+from .schemas.modelschemas import UploadStatus
 from .schemas.schemasv1 import BentoManifestSchema
 from .schemas.schemasv1 import BentoSchema
 from .schemas.schemasv1 import CompleteMultipartUploadSchema
 from .schemas.schemasv1 import CompletePartSchema
 from .schemas.schemasv1 import CreateBentoRepositorySchema
 from .schemas.schemasv1 import CreateBentoSchema
-from .schemas.schemasv1 import FinishUploadBentoSchema
+from .schemas.schemasv1 import FinishUploadSchema
 from .schemas.schemasv1 import LabelItemSchema
 from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
 from .schemas.schemasv1 import TransmissionStrategy
@@ -146,7 +146,7 @@ class BentoAPI:
         if (
             not force
             and remote_bento
-            and remote_bento.upload_status == BentoUploadStatus.SUCCESS.value
+            and remote_bento.upload_status == UploadStatus.SUCCESS.value
         ):
             self.spinner.log(
                 f'[bold blue]Push skipped: Bento "{bento.tag}" already exists in remote Bento store'
@@ -218,8 +218,8 @@ class BentoAPI:
                 rest_client.v1.finish_upload_bento(
                     bento_repository_name=bento_repository.name,
                     version=version,
-                    req=FinishUploadBentoSchema(
-                        status=BentoUploadStatus.SUCCESS.value,
+                    req=FinishUploadSchema(
+                        status=UploadStatus.SUCCESS.value,
                         reason="bento for development",
                     ),
                 )
@@ -286,8 +286,8 @@ class BentoAPI:
                     raise e
                 self.spinner.log(f'[bold green]Successfully pushed bento "{bento.tag}"')
                 return
-            finish_req = FinishUploadBentoSchema(
-                status=BentoUploadStatus.SUCCESS.value, reason=""
+            finish_req = FinishUploadSchema(
+                status=UploadStatus.SUCCESS.value, reason=""
             )
             try:
                 if presigned_upload_url is not None:
@@ -295,8 +295,8 @@ class BentoAPI:
                         presigned_upload_url, content=io_with_cb, timeout=36000
                     )
                     if resp.status_code != 200:
-                        finish_req = FinishUploadBentoSchema(
-                            status=BentoUploadStatus.FAILED.value,
+                        finish_req = FinishUploadSchema(
+                            status=UploadStatus.FAILED.value,
                             reason=resp.text,
                         )
                 else:
@@ -319,7 +319,7 @@ class BentoAPI:
 
                     def chunk_upload(
                         upload_id: str, chunk_number: int
-                    ) -> FinishUploadBentoSchema | tuple[str, int]:
+                    ) -> FinishUploadSchema | tuple[str, int]:
                         with self.spinner.spin(
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of Bento "{bento.tag}"...'
                         ):
@@ -355,8 +355,8 @@ class BentoAPI:
                                     if resp.status_code == 200:
                                         break
                                     if i == UPLOAD_RETRY_COUNT - 1:
-                                        return FinishUploadBentoSchema(
-                                            status=BentoUploadStatus.FAILED.value,
+                                        return FinishUploadSchema(
+                                            status=UploadStatus.FAILED.value,
                                             reason=resp.text,
                                         )
                                     else:  # retry and reset and update progress
@@ -366,9 +366,7 @@ class BentoAPI:
                                         )
                                 return resp.headers["ETag"], chunk_number
 
-                    futures_: list[
-                        Future[FinishUploadBentoSchema | tuple[str, int]]
-                    ] = []
+                    futures_: list[Future[FinishUploadSchema | tuple[str, int]]] = []
 
                     with ThreadPoolExecutor(
                         max_workers=min(max(chunks_count, 1), threads)
@@ -385,7 +383,7 @@ class BentoAPI:
 
                     for future in futures_:
                         result = future.result()
-                        if isinstance(result, FinishUploadBentoSchema):
+                        if isinstance(result, FinishUploadSchema):
                             finish_req = result
                             break
                         else:
@@ -410,11 +408,11 @@ class BentoAPI:
                         )
 
             except Exception as e:  # pylint: disable=broad-except
-                finish_req = FinishUploadBentoSchema(
-                    status=BentoUploadStatus.FAILED.value,
+                finish_req = FinishUploadSchema(
+                    status=UploadStatus.FAILED.value,
                     reason=str(e),
                 )
-            if finish_req.status == BentoUploadStatus.FAILED.value:
+            if finish_req.status == UploadStatus.FAILED.value:
                 self.spinner.log(f'[bold red]Failed to upload Bento "{bento.tag}"')
             with self.spinner.spin(
                 text="Submitting upload status to remote Bento store"
@@ -424,7 +422,7 @@ class BentoAPI:
                     version=version,
                     req=finish_req,
                 )
-            if finish_req.status != BentoUploadStatus.SUCCESS.value:
+            if finish_req.status != UploadStatus.SUCCESS.value:
                 self.spinner.log(
                     f'[bold red]Failed pushing Bento "{bento.tag}": {finish_req.reason}'
                 )

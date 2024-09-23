@@ -31,8 +31,7 @@ from .config import get_rest_api_client
 from .schemas.modelschemas import BentoApiSchema
 from .schemas.modelschemas import BentoRunnerResourceSchema
 from .schemas.modelschemas import BentoRunnerSchema
-from .schemas.modelschemas import BentoUploadStatus
-from .schemas.modelschemas import ModelUploadStatus
+from .schemas.modelschemas import UploadStatus
 from .schemas.schemasv1 import BentoManifestSchema
 from .schemas.schemasv1 import CompleteMultipartUploadSchema
 from .schemas.schemasv1 import CompletePartSchema
@@ -40,8 +39,7 @@ from .schemas.schemasv1 import CreateBentoRepositorySchema
 from .schemas.schemasv1 import CreateBentoSchema
 from .schemas.schemasv1 import CreateModelRepositorySchema
 from .schemas.schemasv1 import CreateModelSchema
-from .schemas.schemasv1 import FinishUploadBentoSchema
-from .schemas.schemasv1 import FinishUploadModelSchema
+from .schemas.schemasv1 import FinishUploadSchema
 from .schemas.schemasv1 import LabelItemSchema
 from .schemas.schemasv1 import ModelManifestSchema
 from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
@@ -129,7 +127,7 @@ class YataiClient:
         if (
             not force
             and remote_bento
-            and remote_bento.upload_status == BentoUploadStatus.SUCCESS
+            and remote_bento.upload_status == UploadStatus.SUCCESS
         ):
             self.spinner.log(
                 f'[bold blue]Push failed: Bento "{bento.tag}" already exists in Yatai'
@@ -258,16 +256,16 @@ class YataiClient:
                     raise e
                 self.spinner.log(f'[bold green]Successfully pushed bento "{bento.tag}"')
                 return
-            finish_req = FinishUploadBentoSchema(
-                status=BentoUploadStatus.SUCCESS,
+            finish_req = FinishUploadSchema(
+                status=UploadStatus.SUCCESS,
                 reason="",
             )
             try:
                 if presigned_upload_url is not None:
                     resp = httpx.put(presigned_upload_url, data=tar_io)
                     if resp.status_code != 200:
-                        finish_req = FinishUploadBentoSchema(
-                            status=BentoUploadStatus.FAILED,
+                        finish_req = FinishUploadSchema(
+                            status=UploadStatus.FAILED,
                             reason=resp.text,
                         )
                 else:
@@ -289,7 +287,7 @@ class YataiClient:
 
                     def chunk_upload(
                         upload_id: str, chunk_number: int
-                    ) -> FinishUploadBentoSchema | tuple[str, int]:
+                    ) -> FinishUploadSchema | tuple[str, int]:
                         with self.spinner.spin(
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of Bento "{bento.tag}"...'
                         ):
@@ -322,15 +320,13 @@ class YataiClient:
                                     remote_bento.presigned_upload_url, data=chunk_io
                                 )
                                 if resp.status_code != 200:
-                                    return FinishUploadBentoSchema(
-                                        status=BentoUploadStatus.FAILED,
+                                    return FinishUploadSchema(
+                                        status=UploadStatus.FAILED,
                                         reason=resp.text,
                                     )
                                 return resp.headers["ETag"], chunk_number
 
-                    futures_: list[
-                        Future[FinishUploadBentoSchema | tuple[str, int]]
-                    ] = []
+                    futures_: list[Future[FinishUploadSchema | tuple[str, int]]] = []
 
                     with ThreadPoolExecutor(
                         max_workers=min(max(chunks_count, 1), threads)
@@ -347,7 +343,7 @@ class YataiClient:
 
                     for future in futures_:
                         result = future.result()
-                        if isinstance(result, FinishUploadBentoSchema):
+                        if isinstance(result, FinishUploadSchema):
                             finish_req = result
                             break
                         else:
@@ -374,11 +370,11 @@ class YataiClient:
                         )
 
             except Exception as e:  # pylint: disable=broad-except
-                finish_req = FinishUploadBentoSchema(
-                    status=BentoUploadStatus.FAILED,
+                finish_req = FinishUploadSchema(
+                    status=UploadStatus.FAILED,
                     reason=str(e),
                 )
-            if finish_req.status is BentoUploadStatus.FAILED:
+            if finish_req.status is UploadStatus.FAILED:
                 self.spinner.log(f'[bold red]Failed to upload Bento "{bento.tag}"')
             with self.spinner.spin(text="Submitting upload status to Yatai"):
                 yatai_rest_client.finish_upload_bento(
@@ -386,7 +382,7 @@ class YataiClient:
                     version=version,
                     req=finish_req,
                 )
-            if finish_req.status != BentoUploadStatus.SUCCESS:
+            if finish_req.status != UploadStatus.SUCCESS:
                 self.spinner.log(
                     f'[bold red]Failed pushing Bento "{bento.tag}": {finish_req.reason}'
                 )
@@ -606,7 +602,7 @@ class YataiClient:
         if (
             not force
             and remote_model
-            and remote_model.upload_status == ModelUploadStatus.SUCCESS
+            and remote_model.upload_status == UploadStatus.SUCCESS
         ):
             self.spinner.log(
                 f'[bold blue]Model "{model.tag}" already exists in Yatai, skipping'
@@ -693,16 +689,16 @@ class YataiClient:
                     raise e
                 self.spinner.log(f'[bold green]Successfully pushed model "{model.tag}"')
                 return
-            finish_req = FinishUploadModelSchema(
-                status=ModelUploadStatus.SUCCESS,
+            finish_req = FinishUploadSchema(
+                status=UploadStatus.SUCCESS,
                 reason="",
             )
             try:
                 if presigned_upload_url is not None:
                     resp = httpx.put(presigned_upload_url, data=tar_io)
                     if resp.status_code != 200:
-                        finish_req = FinishUploadModelSchema(
-                            status=ModelUploadStatus.FAILED,
+                        finish_req = FinishUploadSchema(
+                            status=UploadStatus.FAILED,
                             reason=resp.text,
                         )
                 else:
@@ -724,7 +720,7 @@ class YataiClient:
 
                     def chunk_upload(
                         upload_id: str, chunk_number: int
-                    ) -> FinishUploadModelSchema | tuple[str, int]:
+                    ) -> FinishUploadSchema | tuple[str, int]:
                         with self.spinner.spin(
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of model "{model.tag}"...'
                         ):
@@ -758,15 +754,13 @@ class YataiClient:
                                     remote_model.presigned_upload_url, content=chunk_io
                                 )
                                 if resp.status_code != 200:
-                                    return FinishUploadModelSchema(
-                                        status=ModelUploadStatus.FAILED,
+                                    return FinishUploadSchema(
+                                        status=UploadStatus.FAILED,
                                         reason=resp.text,
                                     )
                                 return resp.headers["ETag"], chunk_number
 
-                    futures_: list[
-                        Future[FinishUploadModelSchema | tuple[str, int]]
-                    ] = []
+                    futures_: list[Future[FinishUploadSchema | tuple[str, int]]] = []
 
                     with ThreadPoolExecutor(
                         max_workers=min(max(chunks_count, 1), threads)
@@ -783,7 +777,7 @@ class YataiClient:
 
                     for future in futures_:
                         result = future.result()
-                        if isinstance(result, FinishUploadModelSchema):
+                        if isinstance(result, FinishUploadSchema):
                             finish_req = result
                             break
                         else:
@@ -810,11 +804,11 @@ class YataiClient:
                         )
 
             except Exception as e:  # pylint: disable=broad-except
-                finish_req = FinishUploadModelSchema(
-                    status=ModelUploadStatus.FAILED,
+                finish_req = FinishUploadSchema(
+                    status=UploadStatus.FAILED,
                     reason=str(e),
                 )
-            if finish_req.status is ModelUploadStatus.FAILED:
+            if finish_req.status is UploadStatus.FAILED:
                 self.spinner.log(f'[bold red]Failed to upload model "{model.tag}"')
             with self.spinner.spin(text="Submitting upload status to Yatai"):
                 yatai_rest_client.finish_upload_model(
@@ -822,7 +816,7 @@ class YataiClient:
                     version=version,
                     req=finish_req,
                 )
-            if finish_req.status != ModelUploadStatus.SUCCESS:
+            if finish_req.status != UploadStatus.SUCCESS:
                 self.spinner.log(
                     f'[bold red]Failed pushing model "{model.tag}" : {finish_req.reason}'
                 )

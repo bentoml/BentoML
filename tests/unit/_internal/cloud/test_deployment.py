@@ -10,13 +10,13 @@ from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.cloud.deployment import DeploymentAPI
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
 from bentoml._internal.cloud.schemas.modelschemas import BentoImageBuildStatus
-from bentoml._internal.cloud.schemas.modelschemas import BentoUploadStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentRevisionStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentServiceConfig
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentTargetHPAConf
 from bentoml._internal.cloud.schemas.modelschemas import EnvItemSchema
 from bentoml._internal.cloud.schemas.modelschemas import ResourceType
+from bentoml._internal.cloud.schemas.modelschemas import UploadStatus
 from bentoml._internal.cloud.schemas.schemasv1 import BentoFullSchema
 from bentoml._internal.cloud.schemas.schemasv1 import BentoManifestSchema
 from bentoml._internal.cloud.schemas.schemasv1 import BentoRepositorySchema
@@ -76,7 +76,7 @@ def dummy_generate_deployment_schema(
         description="",
         version=bento_version,
         image_build_status=BentoImageBuildStatus.PENDING,
-        upload_status=BentoUploadStatus.SUCCESS,
+        upload_status=UploadStatus.SUCCESS,
         upload_finished_reason="",
         presigned_upload_url="",
         presigned_download_url="",

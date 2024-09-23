@@ -509,7 +509,7 @@ class Deployment:
 
     def wait_until_ready(
         self,
-        spinner: Spinner,
+        spinner: Spinner | None = None,
         timeout: int = 3600,
         check_interval: int = 10,
     ) -> int:
@@ -517,6 +517,8 @@ class Deployment:
 
         start_time = time.time()
         stop_tail_event = Event()
+        if spinner is None:
+            spinner = Spinner()
         console = spinner.console
 
         def tail_image_builder_logs() -> None:

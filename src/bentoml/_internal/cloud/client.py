@@ -31,8 +31,7 @@ from .schemas.schemasv1 import CreateModelSchema
 from .schemas.schemasv1 import CreateSecretSchema
 from .schemas.schemasv1 import DeploymentFullSchema
 from .schemas.schemasv1 import DeploymentListSchema
-from .schemas.schemasv1 import FinishUploadBentoSchema
-from .schemas.schemasv1 import FinishUploadModelSchema
+from .schemas.schemasv1 import FinishUploadSchema
 from .schemas.schemasv1 import ModelRepositorySchema
 from .schemas.schemasv1 import ModelSchema
 from .schemas.schemasv1 import ModelWithRepositoryListSchema
@@ -222,7 +221,7 @@ class RestApiClientV1(BaseRestApiClient):
         return schema_from_object(resp.json(), BentoSchema)
 
     def finish_upload_bento(
-        self, bento_repository_name: str, version: str, req: FinishUploadBentoSchema
+        self, bento_repository_name: str, version: str, req: FinishUploadSchema
     ) -> BentoSchema:
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/finish_upload"
         resp = self.session.patch(url, json=schema_to_object(req))
@@ -341,7 +340,7 @@ class RestApiClientV1(BaseRestApiClient):
         return schema_from_object(resp.json(), ModelSchema)
 
     def finish_upload_model(
-        self, model_repository_name: str, version: str, req: FinishUploadModelSchema
+        self, model_repository_name: str, version: str, req: FinishUploadSchema
     ) -> ModelSchema:
         url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/finish_upload"
         resp = self.session.patch(url, json=schema_to_object(req))

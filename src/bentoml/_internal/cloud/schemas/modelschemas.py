@@ -41,7 +41,7 @@ class BentoImageBuildStatus(Enum):
     FAILED = "failed"
 
 
-class BentoUploadStatus(Enum):
+class UploadStatus(Enum):
     PENDING = "pending"
     BUILDING = "uploading"
     SUCCESS = "success"
@@ -95,13 +95,6 @@ if TYPE_CHECKING:
     TransmissionStrategy = t.Literal["presigned_url", "proxy"]
 else:
     TransmissionStrategy = str
-
-
-class ModelUploadStatus(Enum):
-    PENDING = "pending"
-    BUILDING = "uploading"
-    SUCCESS = "success"
-    FAILED = "failed"
 
 
 @attr.define

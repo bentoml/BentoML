@@ -156,7 +156,7 @@ class CompleteMultipartUploadSchema:
 
 
 @attr.define
-class FinishUploadBentoSchema:
+class FinishUploadSchema:
     status: t.Optional[str]
     reason: t.Optional[str]
 
@@ -209,12 +209,6 @@ class CreateModelSchema:
     manifest: ModelManifestSchema
     build_at: datetime = attr.field(factory=datetime.now)
     labels: t.List[LabelItemSchema] = attr.field(factory=list)
-
-
-@attr.define
-class FinishUploadModelSchema:
-    status: t.Optional[str]
-    reason: t.Optional[str]
 
 
 @attr.define

@@ -24,11 +24,11 @@ from .base import FILE_CHUNK_SIZE
 from .base import UPLOAD_RETRY_COUNT
 from .base import CallbackIOWrapper
 from .base import Spinner
-from .schemas.modelschemas import ModelUploadStatus
+from .schemas.modelschemas import UploadStatus
 from .schemas.schemasv1 import CompleteMultipartUploadSchema
 from .schemas.schemasv1 import CompletePartSchema
 from .schemas.schemasv1 import CreateModelRepositorySchema
-from .schemas.schemasv1 import FinishUploadModelSchema
+from .schemas.schemasv1 import FinishUploadSchema
 from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
 from .schemas.schemasv1 import TransmissionStrategy
 
@@ -108,7 +108,7 @@ class ModelAPI:
         if (
             not force
             and remote_model
-            and remote_model.upload_status == ModelUploadStatus.SUCCESS.value
+            and remote_model.upload_status == UploadStatus.SUCCESS.value
         ):
             self.spinner.log(
                 f'[bold blue]Model "{model}" already exists in remote model store, skipping'
@@ -179,8 +179,8 @@ class ModelAPI:
                     raise e
                 self.spinner.log(f'[bold green]Successfully pushed model "{model.tag}"')
                 return
-            finish_req = FinishUploadModelSchema(
-                status=ModelUploadStatus.SUCCESS.value, reason=""
+            finish_req = FinishUploadSchema(
+                status=UploadStatus.SUCCESS.value, reason=""
             )
             try:
                 if presigned_upload_url is not None:
@@ -188,8 +188,8 @@ class ModelAPI:
                         presigned_upload_url, content=io_with_cb, timeout=36000
                     )
                     if resp.status_code != 200:
-                        finish_req = FinishUploadModelSchema(
-                            status=ModelUploadStatus.FAILED.value,
+                        finish_req = FinishUploadSchema(
+                            status=UploadStatus.FAILED.value,
                             reason=resp.text,
                         )
                 else:
@@ -212,7 +212,7 @@ class ModelAPI:
 
                     def chunk_upload(
                         upload_id: str, chunk_number: int
-                    ) -> FinishUploadModelSchema | tuple[str, int]:
+                    ) -> FinishUploadSchema | tuple[str, int]:
                         with self.spinner.spin(
                             text=f'({chunk_number}/{chunks_count}) Presign multipart upload url of model "{model.tag}"...'
                         ):
@@ -249,8 +249,8 @@ class ModelAPI:
                                     if resp.status_code == 200:
                                         break
                                     if i == UPLOAD_RETRY_COUNT - 1:
-                                        return FinishUploadModelSchema(
-                                            status=ModelUploadStatus.FAILED.value,
+                                        return FinishUploadSchema(
+                                            status=UploadStatus.FAILED.value,
                                             reason=resp.text,
                                         )
                                     else:  # retry and reset and update progress
@@ -260,9 +260,7 @@ class ModelAPI:
                                         )
                                 return resp.headers["ETag"], chunk_number
 
-                    futures_: list[
-                        Future[FinishUploadModelSchema | tuple[str, int]]
-                    ] = []
+                    futures_: list[Future[FinishUploadSchema | tuple[str, int]]] = []
 
                     with ThreadPoolExecutor(
                         max_workers=min(max(chunks_count, 1), threads)
@@ -279,7 +277,7 @@ class ModelAPI:
 
                     for future in futures_:
                         result = future.result()
-                        if isinstance(result, FinishUploadModelSchema):
+                        if isinstance(result, FinishUploadSchema):
                             finish_req = result
                             break
                         else:
@@ -304,11 +302,11 @@ class ModelAPI:
                         )
 
             except Exception as e:  # pylint: disable=broad-except
-                finish_req = FinishUploadModelSchema(
-                    status=ModelUploadStatus.FAILED.value,
+                finish_req = FinishUploadSchema(
+                    status=UploadStatus.FAILED.value,
                     reason=str(e),
                 )
-            if finish_req.status == ModelUploadStatus.FAILED.value:
+            if finish_req.status == UploadStatus.FAILED.value:
                 self.spinner.log(f'[bold red]Failed to upload model "{model.tag}"')
             with self.spinner.spin(
                 text="Submitting upload status to remote model store"
@@ -319,7 +317,7 @@ class ModelAPI:
                     req=finish_req,
                 )
 
-            if finish_req.status != ModelUploadStatus.SUCCESS.value:
+            if finish_req.status != UploadStatus.SUCCESS.value:
                 self.spinner.log(
                     f'[bold red]Failed pushing model "{model.tag}" : {finish_req.reason}'
                 )

@@ -80,11 +80,11 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
       @bentoml.service(
         resources={
             "memory": "4Gi",
-            "gpu": 1, 
+            "gpu": 1,
             "gpu_type": "nvidia-tesla-t4"
         },
         traffic={
-            "concurrency": 5, 
+            "concurrency": 5,
             "timeout": 300
         }
       )
@@ -98,10 +98,10 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
         # Return the probability score
 
 3. Create another BentoML Service ``ShieldAssistant`` as the agent that determines whether or not to call the OpenAI API based on the safety of the prompt. It contains two main components:
-    
+
    - ``bentoml.depends()`` calls the ``Gemma`` Service as a dependency. It allows ``ShieldAssistant`` to utilize to all its functionalities, like calling its ``check`` endpoint to evaluates the safety of prompts. For more information, see :doc:`Distributed Services </guides/distributed-services>`.
    - The ``generate`` API endpoint is the front-facing part of this Service. It first checks the safety of the prompt using the ``Gemma`` Service. If the prompt passes the safety check, the endpoint creates an OpenAI client and calls the GPT-3.5 Turbo model to generate a response. If the prompt is unsafe (the score exceeds the defined threshold), it raises an exception ``UnsafePrompt``.
-   
+
    .. code-block:: python
 
       from openai import AsyncOpenAI
@@ -128,11 +128,11 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
           self, prompt: str = "Create 20 paraphrases of I love you", threshhold: float = 0.6
         ) -> AssistantResponse:
           gated = await self.shield.check(prompt)
-            
+
           # If the safety score exceeds the threshold, raise an exception
           if gated.score > threshhold:
             raise UnsafePrompt(f"Prompt is unsafe: '{gated.prompt}' ({gated.score})")
-            
+
           # Otherwise, generate a response using the OpenAI client
           messages = [{"role": "user", "content": prompt}]
           response = await self.client.chat.completions.create(model="gpt-3.5-turbo", messages=messages)

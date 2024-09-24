@@ -132,6 +132,9 @@ else:
     lightgbm = _LazyLoader(
         "bentoml.lightgbm", globals(), "_bentoml_impl.frameworks.lightgbm"
     )
+    unsloth = _LazyLoader(
+        "bentoml.unsloth", globals(), "_bentoml_impl.frameworks.unsloth"
+    )
     mlflow = _LazyLoader("bentoml.mlflow", globals(), "_bentoml_impl.frameworks.mlflow")
     detectron = _LazyLoader(
         "bentoml.detectron", globals(), "bentoml._internal.frameworks.detectron"

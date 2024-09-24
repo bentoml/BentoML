@@ -1382,9 +1382,9 @@ def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
 def _is_bento_manifest_equal(
     source: BentoManifestSchema, target: BentoManifestSchema
 ) -> bool:
-    source_data = bentoml_cattr.structure(source, BentoManifestSchema)
-    target_data = bentoml_cattr.structure(target, BentoManifestSchema)
+    source_data = bentoml_cattr.unstructure(source)
+    target_data = bentoml_cattr.unstructure(target)
 
     config_merger.merge(source_data, target_data)
-    new_source = bentoml_cattr.unstructure(source_data, BentoManifestSchema)
+    new_source = bentoml_cattr.structure(source_data, BentoManifestSchema)
     return new_source == source

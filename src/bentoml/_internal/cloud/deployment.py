@@ -822,7 +822,9 @@ class Deployment:
                 if (
                     target is None
                     or target.bento is None
-                    or target.bento.manifest != bento_info.get_manifest()
+                    or not _is_bento_manifest_equal(
+                        target.bento.manifest, bento_info.get_manifest()
+                    )
                 ):
                     console.print("✨ [green bold]Bento change detected[/]")
                     spinner.update("🔄 Pushing Bento to BentoCloud")
@@ -864,7 +866,9 @@ class Deployment:
                             if (
                                 target is None
                                 or target.bento is None
-                                or target.bento.manifest != bento_info.get_manifest()
+                                or not _is_bento_manifest_equal(
+                                    target.bento.manifest, bento_info.get_manifest()
+                                )
                             ):
                                 # stop log tail and reset the deployment
                                 break
@@ -1373,3 +1377,14 @@ def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
         bentoml_requirement = f"-e ./{EDITABLE_BENTOML_DIR}"
     content += f"{bentoml_requirement}\n".encode("utf8")
     return content
+
+
+def _is_bento_manifest_equal(
+    source: BentoManifestSchema, target: BentoManifestSchema
+) -> bool:
+    source_data = bentoml_cattr.structure(source, BentoManifestSchema)
+    target_data = bentoml_cattr.structure(target, BentoManifestSchema)
+
+    config_merger.merge(source_data, target_data)
+    new_source = bentoml_cattr.unstructure(source_data, BentoManifestSchema)
+    return new_source == source

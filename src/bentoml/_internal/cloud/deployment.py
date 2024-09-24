@@ -778,6 +778,7 @@ class Deployment:
         from ..bento.build_config import BentoPathSpec
         from .bento import BentoAPI
 
+        bento_dir = os.path.abspath(bento_dir)
         build_config = get_bento_build_config(bento_dir)
         deployment_api = DeploymentAPI(self._client)
         bento_api = BentoAPI(self._client)
@@ -812,18 +813,32 @@ class Deployment:
         assert isinstance(bento_info, Bento)
         target = self._refetch_target(False)
 
+        def is_bento_changed(bento_info: Bento) -> bool:
+            if target is None or target.bento is None:
+                return True
+            bento_manifest = bento_info.get_manifest()
+            if target.bento.manifest == bento_manifest:
+                return False
+            try:
+                from deepdiff import DeepDiff
+            except ModuleNotFoundError:
+                pass
+            else:
+                diff = DeepDiff(
+                    target.bento.manifest, bento_manifest, ignore_order=True
+                )
+                console.print(f"[blue]{diff.pretty()}[/]")
+            return True
+
         spinner = Spinner(console=console)
+        needs_update = is_bento_changed(bento_info)
         try:
             spinner.start()
             upload_id = spinner.transmission_progress.add_task(
                 "Dummy upload task", visible=False
             )
             while True:
-                if (
-                    target is None
-                    or target.bento is None
-                    or target.bento.manifest != bento_info.get_manifest()
-                ):
+                if needs_update:
                     console.print("✨ [green bold]Bento change detected[/]")
                     spinner.update("🔄 Pushing Bento to BentoCloud")
                     bento_api._do_push_bento(bento_info, upload_id, bare=True)  # type: ignore
@@ -841,6 +856,7 @@ class Deployment:
                     requirements_hash = self._init_deployment_files(
                         bento_dir, spinner=spinner
                     )
+                    needs_update = False
                 elif not requirements_hash:
                     requirements_hash = self._init_deployment_files(
                         bento_dir, spinner=spinner
@@ -861,12 +877,9 @@ class Deployment:
                                 _client=self._client,
                             )
                             assert isinstance(bento_info, Bento)
-                            if (
-                                target is None
-                                or target.bento is None
-                                or target.bento.manifest != bento_info.get_manifest()
-                            ):
+                            if is_bento_changed(bento_info):
                                 # stop log tail and reset the deployment
+                                needs_update = True
                                 break
 
                         build_config = get_bento_build_config(bento_dir)

@@ -790,6 +790,13 @@ def _model_spec_structure_hook(
     return cls.from_item(d)
 
 
+@attr.define(eq=True)
+class BentoEnvSchema:
+    __forbid_extra_keys__ = False
+    name: str
+    value: str = ""
+
+
 bentoml_cattr.register_structure_hook(ModelSpec, _model_spec_structure_hook)
 
 
@@ -829,7 +836,7 @@ class BentoBuildConfig:
     models: t.List[ModelSpec] = attr.field(
         factory=list, converter=convert_models_config
     )
-    envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
+    envs: t.List[BentoEnvSchema] = attr.field(factory=list)
 
     if t.TYPE_CHECKING:
         # NOTE: This is to ensure that BentoBuildConfig __init__

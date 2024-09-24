@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import attr
 
 from ...bento.bento import BentoServiceInfo
+from ...bento.build_config import BentoEnvSchema
 from ...cloud.schemas.utils import dict_options_converter
 from ...tag import Tag
 
@@ -82,7 +83,7 @@ class BentoManifestSchema:
     models: t.List[str] = attr.field(factory=list, eq=False)
     runners: t.Optional[t.List[BentoRunnerSchema]] = attr.field(factory=list)
     services: t.List[BentoServiceInfo] = attr.field(factory=dict)
-    envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
+    envs: t.List[BentoEnvSchema] = attr.field(factory=list)
     schema: t.Dict[str, t.Any] = attr.field(factory=dict)
     version: t.Optional[str] = attr.field(default=None, eq=False)
 

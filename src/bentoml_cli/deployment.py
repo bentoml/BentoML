@@ -218,7 +218,8 @@ def shared_decorator(
         return decorate
 
 
-@click.command(name="develop")
+# FIXME: remove hidden flag when ready for GA
+@click.command(name="develop", hidden=True)
 @click.argument(
     "bento_dir",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True),

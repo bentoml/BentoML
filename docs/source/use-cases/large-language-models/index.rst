@@ -21,6 +21,12 @@ This section provides example projects for large language models.
 
         Deploy an AI agent capable of calling user-defined functions.
 
+    .. grid-item-card:: :doc:`/use-cases/large-language-models/shieldgemma`
+        :link: /use-cases/large-language-models/shieldgemma
+        :link-type: doc
+
+        Deploy an AI assistant using ShieldGemma to filter out harmful input before they are processed further.
+
     .. grid-item-card:: :doc:`/use-cases/large-language-models/rag`
         :link: /use-cases/large-language-models/rag
         :link-type: doc
@@ -34,4 +40,5 @@ This section provides example projects for large language models.
 
     vllm
     function-calling
+    shieldgemma
     rag

@@ -210,7 +210,7 @@ class DockerOptions:
                 )
 
     def with_defaults(
-        self, default_envs: list[dict[str, str]] | None = None
+        self, default_envs: list[BentoEnvSchema] | None = None
     ) -> DockerOptions:
         # Convert from user provided options to actual build options with default values
         defaults: t.Dict[str, t.Any] = {}
@@ -223,7 +223,7 @@ class DockerOptions:
                 defaults["python_version"] = python_version
 
         if self.env is None and default_envs:
-            defaults["env"] = {e["name"]: e.get("value", "") for e in default_envs}
+            defaults["env"] = {e.name: e.value for e in default_envs}
 
         return attr.evolve(self, **defaults)
 

@@ -9,6 +9,7 @@ import click
 import rich
 
 from bentoml._internal.cloud.client import RestApiClient
+from bentoml._internal.cloud.config import DEFAULT_ENDPOINT
 from bentoml._internal.cloud.config import CloudClientConfig
 from bentoml._internal.cloud.config import CloudClientContext
 from bentoml._internal.configuration.containers import BentoMLContainer
@@ -30,7 +31,7 @@ def cloud_command():
     "--endpoint",
     type=click.STRING,
     help="BentoCloud endpoint",
-    default="https://cloud.bentoml.com",
+    default=DEFAULT_ENDPOINT,
     envvar="BENTO_CLOUD_API_ENDPOINT",
     show_default=True,
     show_envvar=True,

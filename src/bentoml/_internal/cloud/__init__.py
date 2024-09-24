@@ -5,13 +5,12 @@ import attrs
 from bentoml._internal.cloud.client import RestApiClient
 
 from .bento import BentoAPI
+from .config import DEFAULT_ENDPOINT
 from .config import CloudClientConfig
 from .deployment import DeploymentAPI
 from .model import ModelAPI
 from .secret import SecretAPI
 from .yatai import YataiClient as YataiClient
-
-DEFAULT_ENDPOINT = "https://cloud.bentoml.com"
 
 
 @attrs.frozen
@@ -22,6 +21,7 @@ class BentoCloudClient:
     Args:
         api_key: The API key to use for the client. env: BENTO_CLOUD_API_KEY
         endpoint: The endpoint to use for the client. env: BENTO_CLOUD_ENDPOINT
+        timeout: The timeout to use for the client. Defaults to 60 seconds.
 
     Attributes:
         bento: Bento API
@@ -36,7 +36,10 @@ class BentoCloudClient:
     secret: SecretAPI
 
     def __init__(
-        self, api_key: str | None = None, endpoint: str = DEFAULT_ENDPOINT
+        self,
+        api_key: str | None = None,
+        endpoint: str = DEFAULT_ENDPOINT,
+        timeout: int = 60,
     ) -> None:
         if api_key is None:
             from ..configuration.containers import BentoMLContainer
@@ -46,7 +49,7 @@ class BentoCloudClient:
             api_key = ctx.api_token
             endpoint = ctx.endpoint
 
-        client = RestApiClient(endpoint, api_key)
+        client = RestApiClient(endpoint, api_key, timeout)
         bento = BentoAPI(client)
         model = ModelAPI(client)
         deployment = DeploymentAPI(client)

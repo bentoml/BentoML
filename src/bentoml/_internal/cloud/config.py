@@ -59,6 +59,9 @@ class CloudClientContext:
         config.to_yaml_file()
 
 
+DEFAULT_ENDPOINT = "https://cloud.bentoml.com"
+
+
 @attr.define
 class CloudClientConfig:
     contexts: t.List[CloudClientContext] = attr.field(factory=list)
@@ -67,10 +70,10 @@ class CloudClientConfig:
     def get_context(self, context: t.Optional[str] = None) -> CloudClientContext:
         from os import environ
 
-        if "BENTO_CLOUD_API_KEY" in environ and "BENTO_CLOUD_API_ENDPOINT" in environ:
+        if "BENTO_CLOUD_API_KEY" in environ:
             return CloudClientContext(
                 name="__env__",
-                endpoint=environ["BENTO_CLOUD_API_ENDPOINT"],
+                endpoint=environ.get("BENTO_CLOUD_API_ENDPOINT", DEFAULT_ENDPOINT),
                 api_token=environ["BENTO_CLOUD_API_KEY"],
             )
         if context is None:

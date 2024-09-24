@@ -40,14 +40,9 @@ class HuggingFaceModel(Model[str]):
 
     @cached_property
     def commit_hash(self) -> str:
-        from huggingface_hub import get_hf_file_metadata
-        from huggingface_hub import hf_hub_url
+        from huggingface_hub import model_info
 
-        url = hf_hub_url(
-            self.model_id, CONFIG_FILE, revision=self.revision, endpoint=self.endpoint
-        )
-        metadata = get_hf_file_metadata(url)
-        return metadata.commit_hash or self.revision
+        return model_info(self.model_id, revision=self.revision).sha or self.revision
 
     def resolve(self, base_path: t.Union[PathType, FS, None] = None) -> str:
         from huggingface_hub import snapshot_download

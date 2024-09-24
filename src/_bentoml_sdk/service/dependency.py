@@ -7,7 +7,6 @@ import attrs
 from simple_di import Provide
 from simple_di import inject
 
-from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 
@@ -49,7 +48,6 @@ class Dependency(t.Generic[T]):
         runner_mapping: dict[str, str] = Provide[
             BentoMLContainer.remote_runner_mapping
         ],
-        client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
     ) -> T | RemoteProxy[t.Any]:
         from _bentoml_impl.client.proxy import RemoteProxy
 
@@ -57,6 +55,7 @@ class Dependency(t.Generic[T]):
         if self.deployment and self.url:
             raise BentoMLException("Cannot specify both deployment and url")
         if self.deployment:
+            client = BentoMLContainer.rest_api_client.get()
             deployment = client.v2.get_deployment(self.deployment, self.cluster)
             try:
                 self.url = deployment.urls[0]

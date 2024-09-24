@@ -42,6 +42,7 @@ from ..utils import copy_file_to_fs_folder
 from ..utils import encode_path_for_uri
 from ..utils import normalize_labels_value
 from .build_config import BentoBuildConfig
+from .build_config import BentoEnvSchema
 from .build_config import BentoPathSpec
 from .build_config import CondaOptions
 from .build_config import DockerOptions
@@ -680,7 +681,7 @@ class BentoInfo:
     # for BentoML 1.2+ SDK
     entry_service: str = attr.field(factory=str)
     services: t.List[BentoServiceInfo] = attr.field(factory=list)
-    envs: t.List[t.Dict[str, str]] = attr.field(factory=list)
+    envs: t.List[BentoEnvSchema] = attr.field(factory=list)
     schema: t.Dict[str, t.Any] = attr.field(factory=dict)
 
     apis: t.List[BentoApiInfo] = attr.field(factory=list)

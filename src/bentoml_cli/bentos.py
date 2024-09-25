@@ -395,7 +395,6 @@ def bento_management_commands() -> click.Group:
         help="Platform to build for",
         type=click.Choice(ALLOWED_PLATFORMS),
     )
-    @inject
     def build(  # type: ignore (not accessed)
         build_ctx: str,
         bentofile: str,
@@ -407,7 +406,6 @@ def bento_management_commands() -> click.Group:
         threads: int,
         containerize: bool,
         platform: str | None,
-        _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ):
         """Build a new Bento from current directory."""
         from bentoml._internal.configuration import set_quiet_mode
@@ -462,7 +460,8 @@ def bento_management_commands() -> click.Group:
         if push:
             if not get_quiet_mode():
                 rich.print(f"\n[magenta]Pushing {bento} to BentoCloud...[/]")
-            _cloud_client.bento.push(bento, force=force, threads=threads)
+            cloud_client = BentoMLContainer.bentocloud_client.get()
+            cloud_client.bento.push(bento, force=force, threads=threads)
         elif containerize:
             backend: DefaultBuilder = t.cast(
                 "DefaultBuilder", os.getenv("BENTOML_CONTAINERIZE_BACKEND", "docker")

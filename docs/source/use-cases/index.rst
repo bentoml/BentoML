@@ -1,6 +1,6 @@
-=========
-Use cases
-=========
+========
+Examples
+========
 
 This section provides a variety of example projects for you to learn how BentoML can be used for different scenarios.
 

@@ -8,8 +8,8 @@ Unified Model Serving Framework
 
 `BentoML <https://github.com/bentoml/BentoML>`_ is a Python library for building online serving systems optimized for AI applications and model inference.
 
-Featured use cases
-------------------
+Featured examples
+-----------------
 
 .. grid:: 1 2 2 2
     :gutter: 3
@@ -28,29 +28,29 @@ Featured use cases
 
         Deploy a ControlNet application to influence image composition, adjust specific elements, and ensure spatial consistency.
 
+    .. grid-item-card:: :doc:`/use-cases/large-language-models/function-calling`
+        :link: /use-cases/large-language-models/function-calling
+        :link-type: doc
+
+        Deploy an AI agent capable of calling user-defined functions.
+
+    .. grid-item-card:: :doc:`/use-cases/large-language-models/shieldgemma`
+        :link: /use-cases/large-language-models/shieldgemma
+        :link-type: doc
+
+        Deploy an AI assistant using ShieldGemma to filter out harmful input before they are processed further.
+
     .. grid-item-card:: :doc:`/use-cases/diffusion-models/sdxl-turbo`
         :link: /use-cases/diffusion-models/sdxl-turbo
         :link-type: doc
 
         Deploy an image generation application capable of creating high-quality visuals with just a single inference step.
 
-    .. grid-item-card:: :doc:`/use-cases/embeddings/clip-embeddings`
-        :link: /use-cases/embeddings/clip-embeddings
-        :link-type: doc
-
-        Deploy a CLIP application to convert images and text into embeddings.
-
     .. grid-item-card:: :doc:`/use-cases/audio/whisperx`
         :link: /use-cases/audio/whisperx
         :link-type: doc
 
         Deploy a speech recognition application.
-
-    .. grid-item-card:: :doc:`/use-cases/multimodality/blip`
-        :link: /use-cases/multimodality/blip
-        :link-type: doc
-
-        Deploy an image captioning application.
 
 Start your BentoML journey
 --------------------------
@@ -108,7 +108,6 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    use-cases/index
    guides/index
    reference/index
-   Examples <https://github.com/bentoml/BentoML/tree/main/examples>
 
 .. toctree::
    :caption: BentoCloud

@@ -1,5 +1,5 @@
 =======================
-ShieldGemma: LLM safety
+LLM safety: ShieldGemma
 =======================
 
 LLM safety involves measures and techniques to ensure that large language models (LLMs) operate within ethical guidelines and do not generate harmful content. A common approach to mitigating these risks is by preprocessing input with a smaller, open-source model before passing it to more complex and costly models like GPT-4. This not only ensures safety but also reduces unnecessary expenses by preventing potentially harmful prompts from being processed further.

@@ -869,18 +869,24 @@ class Deployment:
                         if not is_editable or any(
                             fs.path.isparent(bento_dir, p) for _, p in changes
                         ):
-                            bento_info = ensure_bento(
-                                bento_dir,
-                                bare=True,
-                                push=False,
-                                reload=True,
-                                _client=self._client,
-                            )
-                            assert isinstance(bento_info, Bento)
-                            if is_bento_changed(bento_info):
-                                # stop log tail and reset the deployment
-                                needs_update = True
-                                break
+                            try:
+                                bento_info = ensure_bento(
+                                    bento_dir,
+                                    bare=True,
+                                    push=False,
+                                    reload=True,
+                                    _client=self._client,
+                                )
+                            except Exception as e:
+                                spinner.console.print(
+                                    f"🚨 [bold red]Failed to build Bento: {e}[/]"
+                                )
+                            else:
+                                assert isinstance(bento_info, Bento)
+                                if is_bento_changed(bento_info):
+                                    # stop log tail and reset the deployment
+                                    needs_update = True
+                                    break
 
                         build_config = get_bento_build_config(bento_dir)
                         upload_files: list[tuple[str, bytes]] = []

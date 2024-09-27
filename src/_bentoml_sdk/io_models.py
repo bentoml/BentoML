@@ -173,6 +173,7 @@ class IOMixin:
     @classmethod
     async def to_http_response(cls, obj: t.Any, serde: Serde) -> Response:
         """Convert a output value to HTTP response"""
+        import itertools
         import mimetypes
 
         from pydantic import RootModel
@@ -183,10 +184,24 @@ class IOMixin:
         from _bentoml_impl.serde import JSONSerde
 
         if inspect.isasyncgen(obj):
+            try:
+                # try if there is any error before the first yield
+                # if so, the error can be surfaced in the response
+                first_chunk = await obj.__anext__()
+            except StopAsyncIteration:
+                pre_chunks = []
+            else:
+                pre_chunks = [first_chunk]
+
+            async def gen() -> t.AsyncGenerator[t.Any, None]:
+                for chunk in pre_chunks:
+                    yield chunk
+                async for chunk in obj:
+                    yield chunk
 
             async def async_stream() -> t.AsyncGenerator[str | bytes, None]:
                 try:
-                    async for item in obj:
+                    async for item in gen():
                         if isinstance(item, (str, bytes)):
                             yield item
                         else:
@@ -201,6 +216,11 @@ class IOMixin:
             return StreamingResponse(async_stream(), media_type=cls.mime_type())
 
         elif inspect.isgenerator(obj):
+            trial, obj = itertools.tee(obj)
+            try:
+                next(trial)  # try if there is any error before the first yield
+            except StopIteration:
+                pass
 
             def content_stream() -> t.Generator[str | bytes, None, None]:
                 try:

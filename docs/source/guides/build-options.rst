@@ -162,7 +162,7 @@ BentoML will lock the versions of all Python packages for the current platform a
         - "numpy"
         - "matplotlib==3.5.1"
         - "package>=0.2,<0.3"
-        - "torchvision==0.9.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cpu"
+        - "torchvision==0.9.2"
         - "git+https://github.com/username/mylib.git@main"
 
 .. note::

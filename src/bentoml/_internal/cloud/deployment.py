@@ -832,6 +832,8 @@ class Deployment:
 
         spinner = Spinner(console=console)
         needs_update = is_bento_changed(bento_info)
+        spinner.log(f"💻 View Dashboard: {self.admin_console}")
+        endpoint_url: str | None = None
         try:
             spinner.start()
             upload_id = spinner.transmission_progress.add_task(
@@ -861,6 +863,9 @@ class Deployment:
                     requirements_hash = self._init_deployment_files(
                         bento_dir, spinner=spinner
                     )
+                if endpoint_url is None:
+                    endpoint_url = self.get_endpoint_urls(False)[0]
+                    spinner.log(f"🌐 Endpoint: {endpoint_url}")
                 with self._tail_logs(spinner.console):
                     spinner.update("👀 Watching for changes")
                     for changes in watchfiles.watch(
@@ -937,13 +942,11 @@ class Deployment:
                             return
         except KeyboardInterrupt:
             spinner.log(
-                "The deployment is still running, view the dashboard:\n"
-                f"    [blue]{self.admin_console}[/]\n\n"
-                "Next steps:\n"
-                "* Push the bento to BentoCloud:\n"
-                "    [blue]$ bentoml build --push[/]\n\n"
+                "\nWatcher stopped. Next steps:\n"
                 "* Attach to this deployment again:\n"
                 f"    [blue]$ bentoml develop --attach {self.name} --cluster {self.cluster}[/]\n\n"
+                "* Push the bento to BentoCloud:\n"
+                "    [blue]$ bentoml build --push[/]\n\n"
                 "* Terminate the deployment:\n"
                 f"    [blue]$ bentoml deployment terminate {self.name} --cluster {self.cluster}[/]"
             )

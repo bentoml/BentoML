@@ -526,6 +526,8 @@ The following table provides a full list of available configurations for the ``d
 +---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | python_version      | The Python version on the Docker image [``3.7``, ``3.8``, ``3.9``, ``3.10``]. It defaults to the Python version in the build environment.      |
 +---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+| cuda_version        | The CUDA version on the Docker image for running models that require GPUs. See :doc:`/guides/gpu-inference` for more information.              |
++---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | system_packages     | The system packages that will be installed in the container.                                                                                   |
 +---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | setup_script        | A Python or Shell script that will be executed during the Docker build process.                                                                |
@@ -534,6 +536,23 @@ The following table provides a full list of available configurations for the ``d
 +---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | dockerfile_template | Customize the generated Dockerfile by providing a Jinja2 template that extends the default Dockerfile.                                         |
 +---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+
+.. note::
+
+    When using PyTorch or TensorFlow to run models on GPUs, you don't need to specify ``cuda_version`` in your ``bentofile.yaml`` to install the CUDA Toolkit separately.
+
+    - For PyTorch, the required CUDA version will be installed automatically with PyTorch.
+    - For TensorFlow, install it together with the necessary CUDA version by running:
+        
+      .. code-block:: bash
+
+         pip install 'tensorflow[and-cuda]'
+        
+      Add the following to your ``requirements.txt`` file. This ensures the corresponding CUDA version is installed with TensorFlow when the Bento is built.
+
+      .. code-block:: bash
+
+         tensorflow[and-cuda]
 
 Build a Bento
 -------------

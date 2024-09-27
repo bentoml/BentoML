@@ -81,11 +81,11 @@ When using PyTorch or TensorFlow to run models on GPUs, you don't need to specif
 
 - For PyTorch, the required CUDA version will be installed automatically with PyTorch.
 - For TensorFlow, install it together with the necessary CUDA version by running:
-    
+
   .. code-block:: bash
 
      pip install 'tensorflow[and-cuda]'
-    
+
   Add the following to your ``requirements.txt`` file. This ensures the corresponding CUDA version is installed with TensorFlow when the Bento is built.
 
   .. code-block:: bash

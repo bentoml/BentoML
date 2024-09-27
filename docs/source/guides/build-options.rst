@@ -405,15 +405,26 @@ The following ``docker`` field contains some basic Docker configurations:
         - liblapack-dev
         - gfortran
 
+BentoML uses `BuildKit <https://github.com/moby/buildkit>`_, a cache-efficient builder toolkit, to containerize Bentos. BuildKit comes with `Docker 18.09 <https://docs.docker.com/develop/develop-images/build_enhancements/>`_. This means if you are using Docker via Docker Desktop, BuildKit will be available by default. If you are using a standalone version of Docker, you can install BuildKit by following the instructions `here <https://github.com/docker/buildx#installing>`_.
+
 .. note::
 
-   BentoML uses `BuildKit <https://github.com/moby/buildkit>`_, a cache-efficient builder toolkit, to containerize Bentos.
+    When using PyTorch or TensorFlow to run models on GPUs, you don't need to specify ``cuda_version`` in your ``bentofile.yaml`` to install the CUDA Toolkit separately.
 
-   BuildKit comes with `Docker 18.09 <https://docs.docker.com/develop/develop-images/build_enhancements/>`_. This means
-   if you are using Docker via Docker Desktop, BuildKit will be available by default. If you are using a standalone version of Docker,
-   you can install BuildKit by following the instructions `here <https://github.com/docker/buildx#installing>`_.
+    - For PyTorch, the required CUDA version will be installed automatically with PyTorch.
+    - For TensorFlow, install it together with the necessary CUDA version by running:
 
-The following sections provide detailed explanations of available Docker configurations.
+      .. code-block:: bash
+
+         pip install 'tensorflow[and-cuda]'
+
+      Add the following to your ``requirements.txt`` file. This ensures the corresponding CUDA version is installed with TensorFlow when the Bento is built.
+
+      .. code-block:: bash
+
+         tensorflow[and-cuda]
+
+The following sections provide detailed explanations of certain Docker configurations.
 
 OS distros
 """"""""""
@@ -536,23 +547,6 @@ The following table provides a full list of available configurations for the ``d
 +---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
 | dockerfile_template | Customize the generated Dockerfile by providing a Jinja2 template that extends the default Dockerfile.                                         |
 +---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-
-.. note::
-
-    When using PyTorch or TensorFlow to run models on GPUs, you don't need to specify ``cuda_version`` in your ``bentofile.yaml`` to install the CUDA Toolkit separately.
-
-    - For PyTorch, the required CUDA version will be installed automatically with PyTorch.
-    - For TensorFlow, install it together with the necessary CUDA version by running:
-        
-      .. code-block:: bash
-
-         pip install 'tensorflow[and-cuda]'
-        
-      Add the following to your ``requirements.txt`` file. This ensures the corresponding CUDA version is installed with TensorFlow when the Bento is built.
-
-      .. code-block:: bash
-
-         tensorflow[and-cuda]
 
 Build a Bento
 -------------

@@ -3,7 +3,7 @@ from __future__ import annotations  # I001
 import bentoml
 
 
-@bentoml.service(resources={"cpu": "4"})
+@bentoml.service(resources={"cpu": "1"})
 class Summarization:
     def __init__(self) -> None:
         import torch

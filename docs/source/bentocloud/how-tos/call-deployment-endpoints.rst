@@ -17,7 +17,7 @@ Choose one of the following ways to obtain the endpoint URL.
 
         .. code-block:: bash
 
-            bentoml deployment get <your_deployment_name> -o json | jq ."endpoint_url"
+            bentoml deployment get <your_deployment_name> -o json | jq ."endpoint_urls"
 
     .. tab-item:: Python API
 
@@ -26,7 +26,7 @@ Choose one of the following ways to obtain the endpoint URL.
             import bentoml
 
             deployment_info = bentoml.deployment.get('your_deployment_name')
-            print(deployment_info.endpoint_url)
+            print(deployment_info.get_endpoint_urls())
 
     .. tab-item:: BentoCloud console
 
@@ -48,7 +48,7 @@ Choose one of the following ways to access your Deployment with the endpoint URL
         .. code-block:: bash
 
             curl -X 'POST' \
-                'http://<deployment_endpoint_url>/summarize' \
+                'https://<deployment_endpoint_url>/summarize' \
                 -H 'accept: text/plain' \
                 -H 'Content-Type: application/json' \
                 -d '{

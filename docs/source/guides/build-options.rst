@@ -514,10 +514,6 @@ Docker options table
 The following table provides a full list of available configurations for the ``docker`` field.
 
 .. list-table::
-   :widths: 20 80
-   :header-rows: 1
-
-.. list-table::
    :header-rows: 1
 
    * - Field

@@ -48,7 +48,7 @@ Choose one of the following ways to access your Deployment with the endpoint URL
         .. code-block:: bash
 
             curl -X 'POST' \
-                'http://<deployment_endpoint_url>/summarize' \
+                'https://<deployment_endpoint_url>/summarize' \
                 -H 'accept: text/plain' \
                 -H 'Content-Type: application/json' \
                 -d '{

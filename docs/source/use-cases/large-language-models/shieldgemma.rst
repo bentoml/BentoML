@@ -228,7 +228,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
        .. code-block:: bash
 
           curl -X 'POST' \
-            'http://<your_deployment_endpoint_url>/generate' \
+            'https://<your_deployment_endpoint_url>/generate' \
             -H 'Accept: application/json' \
             -H 'Content-Type: application/json' \
             -d '{

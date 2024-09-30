@@ -91,7 +91,7 @@ To install PyTorch or TensorFlow with the appropriate CUDA version using ``pip``
 
 This means when building your Bento, you DO NOT need to specify ``cuda_version`` again in your ``bentofile.yaml`` to install the CUDA toolkit separately. Simply add PyTorch and TensorFlow under ``packages`` (or they are in the separate ``requirements.txt`` file).
 
-.. code-block:: bash
+.. code-block:: yaml
 
     python:
       packages:

@@ -49,7 +49,8 @@ To retrieve details about a specific Deployment:
         name: summarization
         bento: summarization:ghfvclwp2kwm5e56
         cluster: aws-ca-1
-        endpoint_url: https://summarization-test--aws-ca-1.mt1.bentoml.ai
+        endpoint_urls:
+        - https://summarization-test--aws-ca-1.mt1.bentoml.ai
         admin_console: https://test.cloud.bentoml.com/deployments/summarization/access?cluster=aws-ca-1&namespace=test--aws-ca-1
         created_at: '2024-02-20 09:27:52'
         created_by: bentoml-user
@@ -92,7 +93,9 @@ To retrieve details about a specific Deployment:
         "name": "deploy-1",
         "bento": "summarization:5vsa3ywqsoefgl7l",
         "cluster": "aws-ca-1",
-        "endpoint_url": "https://deploy-1-test--aws-ca-1.mt1.bentoml.ai",
+        "endpoint_urls": [
+          "https://deploy-1-test--aws-ca-1.mt1.bentoml.ai"
+        ],
         "admin_console": "https://test.cloud.bentoml.com/deployments/deploy-1/access?cluster=aws-ca-1&namespace=test--aws-ca-1",
         "created_at": "2024-03-01 05:00:19",
         "created_by": "bentoml-user",

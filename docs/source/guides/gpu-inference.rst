@@ -77,20 +77,26 @@ To make sure a Bento is using GPUs during deployment, configure its required CUD
 
 If the desired CUDA version is not natively supported by BentoML, you can customize the installation of CUDA driver and libraries via ``system_packages``, ``setup_script``, or ``base_image`` options under the :ref:`docker-configuration` field.
 
-When using PyTorch or TensorFlow to run models on GPUs, you don't need to specify ``cuda_version`` in your ``bentofile.yaml`` to install the CUDA Toolkit separately.
+When using PyTorch or TensorFlow to run models on GPUs, we recommend you directly install them along with their respective CUDA dependencies, via ``pip``. This ensures:
 
-- For PyTorch, the required CUDA version will be installed automatically with PyTorch.
-- For TensorFlow, install it together with the necessary CUDA version by running:
+- **Minimal package size** since only the required components are installed.
+- **Better compatibility** as the correct CUDA version is automatically installed alongside the frameworks.
 
-  .. code-block:: bash
+To install PyTorch or TensorFlow with the appropriate CUDA version using ``pip``, use the following commands:
 
-     pip install 'tensorflow[and-cuda]'
+.. code-block:: bash
 
-  Add the following to your ``requirements.txt`` file. This ensures the corresponding CUDA version is installed with TensorFlow when the Bento is built.
+    pip install torch
+    pip install tensorflow[and-cuda]
 
-  .. code-block:: bash
+This means when building your Bento, you DO NOT need to specify ``cuda_version`` again in your ``bentofile.yaml`` to install the CUDA toolkit separately. Simply add PyTorch and TensorFlow under ``packages`` (or they are in the separate ``requirements.txt`` file).
 
-     tensorflow[and-cuda]
+.. code-block:: bash
+
+    python:
+      packages:
+        - torch
+        - tensorflow[and-cuda]
 
 BentoCloud
 ^^^^^^^^^^

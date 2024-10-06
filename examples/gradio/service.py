@@ -1,7 +1,8 @@
 from __future__ import annotations  # I001
 
-import bentoml
 import gradio as gr
+
+import bentoml
 
 with bentoml.importing():
     import torch
@@ -16,23 +17,24 @@ place in Thompson's backyard, is now being investigated by scientists for potent
 breaches in the laws of physics. Local authorities are considering a town festival \
 to celebrate what is being hailed as 'The Leap of the Century."
 
+
 def summarize_text(text: str) -> str:
     svc_instance = bentoml.get_current_service()
     return svc_instance.summarize([text])[0]
+
 
 io = gr.Interface(
     fn=summarize_text,
     inputs=[gr.Textbox(lines=5, label="Enter Text", value=EXAMPLE_INPUT)],
     outputs=[gr.Textbox(label="Summary Text")],
     title="Summarization",
-    description="Enter text to get summarized text."
+    description="Enter text to get summarized text.",
 )
 
 
 @bentoml.service(resources={"cpu": "4"})
 @bentoml.gradio.mount_gradio_app(io, path="/ui")
 class Summarization:
-
     def __init__(self) -> None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.pipeline = pipeline("summarization", device=device)

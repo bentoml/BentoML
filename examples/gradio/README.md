@@ -1,6 +1,6 @@
 # Quickstart
 
-This quickstart demonstrates how to add Gradio web UI to a BentoML service. 
+This quickstart demonstrates how to add Gradio web UI to a BentoML service.
 
 ## Prerequisites
 
@@ -23,4 +23,3 @@ Perform the following steps to run this project and deploy it to BentoCloud.
    ```
 
 3. Visit http://localhost:3000/ui for gradio UI. BentoML APIs can be found at http://localhost:3000
-

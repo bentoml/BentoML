@@ -167,3 +167,6 @@ mlruns/
 .pdm-python
 .python-version
 .pdm-build/
+
+# gradio flag
+flagged/

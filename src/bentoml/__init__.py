@@ -68,6 +68,7 @@ if TYPE_CHECKING:
         pass
 
     from . import diffusers_simple
+    from . import gradio
     from . import ray
     from . import triton
     from ._internal.frameworks import detectron
@@ -183,6 +184,7 @@ else:
     # Integrations
     triton = _LazyLoader("bentoml.triton", globals(), "bentoml.triton")
     ray = _LazyLoader("bentoml.ray", globals(), "bentoml.ray")
+    gradio = _LazyLoader("bentoml.gradio", globals(), "bentoml.gradio")
 
     io = _LazyLoader("bentoml.io", globals(), "bentoml.io")
     batch = _LazyLoader("bentoml.batch", globals(), "bentoml.batch")
@@ -294,6 +296,7 @@ __all__ = [
     "xgboost",
     # integrations
     "ray",
+    "gradio",
     "cloud",
     "deployment",
     "triton",

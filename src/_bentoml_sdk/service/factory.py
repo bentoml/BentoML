@@ -115,6 +115,11 @@ class Service(t.Generic[T]):
             self.mount_apps.extend(pre_mount_apps)
             delattr(self.inner, "__bentoml_mounted_apps__")
 
+        gradio_apps = getattr(self.inner, "__bentoml_gradio_apps__", [])
+        if gradio_apps:
+            for gradio_app, path, name in gradio_apps:
+                self.mount_asgi_app(gradio_app, path=path, name=name)
+
     def __hash__(self):
         return hash(self.name)
 
@@ -266,6 +271,14 @@ class Service(t.Generic[T]):
         self, middleware_cls: type[ext.AsgiMiddleware], **options: t.Any
     ) -> None:
         self.middlewares.append((middleware_cls, options))
+
+    def gradio_app_startup_hook(self, max_concurrency: int):
+        gradio_apps = getattr(self.inner, "__bentoml_gradio_apps__", [])
+        if gradio_apps:
+            for gradio_app, path, name in gradio_apps:
+                logger.info(f"Initializing gradio app at: {path or '/'}")
+                gradio_app.get_blocks().queue(default_concurrency_limit=max_concurrency)
+                gradio_app.get_blocks().startup_events()
 
     def __call__(self) -> T:
         try:

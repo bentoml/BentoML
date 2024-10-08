@@ -46,12 +46,6 @@ Featured examples
 
         Deploy an image generation application capable of creating high-quality visuals with just a single inference step.
 
-    .. grid-item-card:: :doc:`/use-cases/audio/whisperx`
-        :link: /use-cases/audio/whisperx
-        :link-type: doc
-
-        Deploy a speech recognition application.
-
 Start your BentoML journey
 --------------------------
 

@@ -15,18 +15,6 @@ This section provides example projects for image and video generation use cases.
 
         Deploy an image generation server with Stable Diffusion XL Turbo and BentoML.
 
-    .. grid-item-card:: :doc:`/use-cases/diffusion-models/sdxl-lcm-lora`
-        :link: /use-cases/diffusion-models/sdxl-lcm-lora
-        :link-type: doc
-
-        Deploy an image generation server with Stable Diffusion XL and Latent Consistency Model (LCM) LoRAs.
-
-    .. grid-item-card:: :doc:`/use-cases/diffusion-models/svd`
-        :link: /use-cases/diffusion-models/svd
-        :link-type: doc
-
-        Deploy a video generation server with Stable Video Diffusion and BentoML.
-
     .. grid-item-card:: :doc:`/use-cases/diffusion-models/controlnet`
         :link: /use-cases/diffusion-models/controlnet
         :link-type: doc
@@ -39,6 +27,4 @@ This section provides example projects for image and video generation use cases.
     :hidden:
 
     sdxl-turbo
-    sdxl-lcm-lora
-    svd
     controlnet

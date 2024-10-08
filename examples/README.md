@@ -34,3 +34,6 @@ You can also try the following example projects.
 - [BentoMoirai](https://github.com/bentoml/BentoMoirai/) - Create a forecasting inference API for time-series data.
 - [BentoResnet](https://github.com/bentoml/BentoResnet) - Build an image classification inference API server with ResNet.
 - [BentoFunctionCalling](https://github.com/bentoml/BentoFunctionCalling/) - Build LLM function calling capabilities with BentoML.
+- [BentoShield](https://github.com/bentoml/BentoShield/) - Build an AI assistant using BentoML and ShieldGemma to evaluate the safety of prompts and filter out harmful content.
+- [BentoLangGraph](https://github.com/bentoml/BentoLangGraph) - Deploy a LangGraph AI agent application with BentoML.
+- [BentoCrewAI](https://github.com/bentoml/BentoCrewAI) - Deploy a CrewAI multi-agent application with BentoML.

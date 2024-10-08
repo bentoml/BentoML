@@ -399,21 +399,15 @@ The following ``docker`` field contains some basic Docker configurations:
     docker:
       distro: debian
       python_version: "3.11"
-      cuda_version: "11.6.2"
+      cuda_version: "11.6.2" # Deprecated
       system_packages:
         - libblas-dev
         - liblapack-dev
         - gfortran
 
-.. note::
+BentoML uses `BuildKit <https://github.com/moby/buildkit>`_, a cache-efficient builder toolkit, to containerize Bentos. BuildKit comes with `Docker 18.09 <https://docs.docker.com/develop/develop-images/build_enhancements/>`_. This means if you are using Docker via Docker Desktop, BuildKit will be available by default. If you are using a standalone version of Docker, you can install BuildKit by following the instructions `here <https://github.com/docker/buildx#installing>`_.
 
-   BentoML uses `BuildKit <https://github.com/moby/buildkit>`_, a cache-efficient builder toolkit, to containerize Bentos.
-
-   BuildKit comes with `Docker 18.09 <https://docs.docker.com/develop/develop-images/build_enhancements/>`_. This means
-   if you are using Docker via Docker Desktop, BuildKit will be available by default. If you are using a standalone version of Docker,
-   you can install BuildKit by following the instructions `here <https://github.com/docker/buildx#installing>`_.
-
-The following sections provide detailed explanations of available Docker configurations.
+The following sections provide detailed explanations of certain Docker configurations.
 
 OS distros
 """"""""""
@@ -519,21 +513,25 @@ Docker options table
 
 The following table provides a full list of available configurations for the ``docker`` field.
 
-+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| Field               | Description                                                                                                                                    |
-+=====================+================================================================================================================================================+
-| distro              | The OS distribution on the Docker image. It defaults to ``debian``.                                                                            |
-+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| python_version      | The Python version on the Docker image [``3.7``, ``3.8``, ``3.9``, ``3.10``]. It defaults to the Python version in the build environment.      |
-+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| system_packages     | The system packages that will be installed in the container.                                                                                   |
-+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| setup_script        | A Python or Shell script that will be executed during the Docker build process.                                                                |
-+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| base_image          | A user-provided Docker base image. This will override all other custom attributes of the image.                                                |
-+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
-| dockerfile_template | Customize the generated Dockerfile by providing a Jinja2 template that extends the default Dockerfile.                                         |
-+---------------------+------------------------------------------------------------------------------------------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Field
+     - Description
+   * - distro
+     - The OS distribution on the Docker image. It defaults to ``debian``.
+   * - python_version
+     - The Python version on the Docker image. It defaults to the Python version in the build environment.
+   * - cuda_version
+     - Deprecated. The CUDA version on the Docker image for running models that require GPUs. When using PyTorch or TensorFlow to run models on GPUs, we recommend you directly install them along with their respective CUDA dependencies, using ``pip``. This means you don't need to configure ``cuda_version`` separately. See :doc:`/guides/gpu-inference` for more information.
+   * - system_packages
+     - The system packages that will be installed in the container.
+   * - setup_script
+     - A Python or Shell script that will be executed during the Docker build process.
+   * - base_image
+     - A user-provided Docker base image. This will override all other custom attributes of the image.
+   * - dockerfile_template
+     - Customize the generated Dockerfile by providing a Jinja2 template that extends the default Dockerfile.
 
 Build a Bento
 -------------

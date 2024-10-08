@@ -21,29 +21,17 @@ This section provides a variety of example projects for you to learn how BentoML
 
         Deploy diffusion models with BentoML.
 
-    .. grid-item-card:: :doc:`/use-cases/embeddings/index`
-        :link: /use-cases/embeddings/index
-        :link-type: doc
-
-        Deploy embedding applications with BentoML.
-
-    .. grid-item-card:: :doc:`/use-cases/audio/index`
-        :link: /use-cases/audio/index
-        :link-type: doc
-
-        Deploy audio applications with BentoML.
-
-    .. grid-item-card:: :doc:`/use-cases/multimodality/index`
-        :link: /use-cases/multimodality/index
-        :link-type: doc
-
-        Deploy multimodal applications with BentoML.
-
     .. grid-item-card:: :doc:`/use-cases/custom-models/index`
         :link: /use-cases/custom-models/index
         :link-type: doc
 
         Deploy custom models with BentoML.
+
+    .. grid-item-card:: :doc:`/use-cases/more-examples/index`
+        :link: /use-cases/more-examples/index
+        :link-type: doc
+
+        More example projects to explore BentoML.
 
 
 .. toctree::
@@ -53,7 +41,5 @@ This section provides a variety of example projects for you to learn how BentoML
 
     large-language-models/index
     diffusion-models/index
-    embeddings/index
-    audio/index
-    multimodality/index
     custom-models/index
+    more-examples/index

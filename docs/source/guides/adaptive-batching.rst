@@ -95,9 +95,11 @@ Available parameters for adaptive batching:
 - ``max_batch_size``: The upper limit for the number of requests that can be grouped into a single batch. It's crucial to set this parameter based on the available system resources, like memory or GPU, to avoid overloading the system.
 - ``max_latency_ms``: The maximum time in milliseconds that a batch will wait to accumulate more requests before processing. Setting the maximum latency is essential to balance between throughput and the latency requirements of your Service.
 
+When you specify ``max_batch_size`` and ``max_latency_ms`` parameters, BentoML ensures that these constraints are respected, even as it dynamically adjusts batch sizes and processing intervals based on the adaptive batching algorithm. The algorithm's primary goal is to optimize both throughput (by batching requests together) and latency (by ensuring requests are processed within an acceptable time frame). However, it operates within the bounds set by these parameters.
+
 .. note::
 
-    When you specify ``max_batch_size`` and ``max_latency_ms`` parameters, BentoML ensures that these constraints are respected, even as it dynamically adjusts batch sizes and processing intervals based on the adaptive batching algorithm. The algorithm's primary goal is to optimize both throughput (by batching requests together) and latency (by ensuring requests are processed within an acceptable time frame). However, it operates within the bounds set by these parameters.
+    When using a synchronous endpoint in one Service to call a batchable endpoint in another Service, it sends only one request at a time and waits for a response before sending the next. This is due to the default concurrency of 1 for synchronous endpoints. To enable concurrent requests and allow batching, set the ``threads=N`` parameter in the ``@bentoml.service`` decorator.
 
 Below is a practical example of a Service that uses adaptive batching to encode sentences. It uses the SentenceTransformer model to generate sentence embeddings. With adaptive batching, it processes a list of sentences more efficiently.
 

@@ -27,8 +27,8 @@ This section provides a variety of example projects for you to learn how BentoML
 
         Deploy custom models with BentoML.
 
-    .. grid-item-card:: :doc:`/use-cases/more-examples/index`
-        :link: /use-cases/more-examples/index
+    .. grid-item-card:: :doc:`/use-cases/more-examples`
+        :link: /use-cases/more-examples
         :link-type: doc
 
         More example projects to explore BentoML.
@@ -42,4 +42,4 @@ This section provides a variety of example projects for you to learn how BentoML
     large-language-models/index
     diffusion-models/index
     custom-models/index
-    more-examples/index
+    more-examples

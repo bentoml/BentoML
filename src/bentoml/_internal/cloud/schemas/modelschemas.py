@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import attr
 
 from ...bento.bento import BentoServiceInfo
+from ...bento.bento import ImageInfo
 from ...bento.build_config import BentoEnvSchema
 from ...cloud.schemas.utils import dict_options_converter
 from ...tag import Tag
@@ -77,8 +78,8 @@ class BentoManifestSchema:
     service: str
     bentoml_version: str = attr.field(eq=False)
     size_bytes: int = attr.field(eq=False)
-    entry_service: str = attr.field(default="")
-    name: t.Optional[str] = attr.field(default=None)
+    entry_service: str = ""
+    name: t.Optional[str] = None
     apis: t.Dict[str, BentoApiSchema] = attr.field(factory=dict)
     models: t.List[str] = attr.field(factory=list, eq=False)
     runners: t.Optional[t.List[BentoRunnerSchema]] = attr.field(factory=list)
@@ -87,6 +88,7 @@ class BentoManifestSchema:
     schema: t.Dict[str, t.Any] = attr.field(factory=dict)
     version: t.Optional[str] = attr.field(default=None, eq=False)
     dev: bool = attr.field(default=False, eq=False)
+    image: t.Optional[ImageInfo] = None
 
     @property
     def tag(self) -> Tag:

@@ -145,6 +145,7 @@ def construct_containerfile(
     from _bentoml_sdk.models import BentoModel
     from _bentoml_sdk.models import HuggingFaceModel
 
+    from ..bento.bento import BaseBentoInfo
     from ..bento.bento import BentoInfo
     from ..bento.build_config import DockerOptions
 
@@ -154,7 +155,8 @@ def construct_containerfile(
     with fs.open_fs("temp://") as temp_fs:
         tempdir = temp_fs.getsyspath("/")
         with open(bento.path_of("bento.yaml"), "rb") as bento_yaml:
-            options = BentoInfo.from_yaml_file(bento_yaml)
+            options = BaseBentoInfo.from_yaml_file(bento_yaml)
+        assert isinstance(options, BentoInfo), "only v1 bento is supported"
         # tmpdir is our new build context.
         fs.mirror.mirror(bento._fs, temp_fs, copy_if_newer=True)
 

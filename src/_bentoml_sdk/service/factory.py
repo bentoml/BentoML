@@ -27,6 +27,7 @@ from bentoml._internal.utils import dict_filter_none
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
 
+from ..images import Image
 from ..method import APIMethod
 from ..models import BentoModel
 from ..models import HuggingFaceModel
@@ -67,6 +68,7 @@ class Service(t.Generic[T]):
 
     config: Config
     inner: type[T]
+    image: t.Optional[Image] = None
 
     bento: t.Optional[Bento] = attrs.field(init=False, default=None)
     models: list[Model[t.Any]] = attrs.field(factory=list)
@@ -406,10 +408,18 @@ def service(inner: type[T], /) -> Service[T]: ...
 
 
 @t.overload
-def service(inner: None = ..., /, **kwargs: Unpack[Config]) -> _ServiceDecorator: ...
+def service(
+    inner: None = ..., /, *, image: Image | None = None, **kwargs: Unpack[Config]
+) -> _ServiceDecorator: ...
 
 
-def service(inner: type[T] | None = None, /, **kwargs: Unpack[Config]) -> t.Any:
+def service(
+    inner: type[T] | None = None,
+    /,
+    *,
+    image: Image | None = None,
+    **kwargs: Unpack[Config],
+) -> t.Any:
     """Mark a class as a BentoML service.
 
     Example:
@@ -425,7 +435,7 @@ def service(inner: type[T] | None = None, /, **kwargs: Unpack[Config]) -> t.Any:
     def decorator(inner: type[T]) -> Service[T]:
         if isinstance(inner, Service):
             raise TypeError("service() decorator can only be applied once")
-        return Service(config=config, inner=inner)
+        return Service(config=config, inner=inner, image=image)
 
     return decorator(inner) if inner is not None else decorator
 

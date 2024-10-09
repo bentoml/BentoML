@@ -13,6 +13,7 @@ import pytest
 from bentoml import Tag
 from bentoml import bentos
 from bentoml._internal.bento import Bento
+from bentoml._internal.bento.bento import BaseBentoInfo
 from bentoml._internal.bento.bento import BentoApiInfo
 from bentoml._internal.bento.bento import BentoInfo
 from bentoml._internal.bento.bento import BentoModelInfo
@@ -146,7 +147,7 @@ conda:
         )
 
     with open(bento_yaml_b_filename, encoding="utf-8") as bento_yaml_b:
-        bentoinfo_b_from_yaml = BentoInfo.from_yaml_file(bento_yaml_b)
+        bentoinfo_b_from_yaml = BaseBentoInfo.from_yaml_file(bento_yaml_b)
 
         assert bentoinfo_b_from_yaml == bentoinfo_b
 

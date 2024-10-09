@@ -143,7 +143,7 @@ class Bento(StoreItem):
     _tag: Tag = attr.field()
     __fs: FS = attr.field()
 
-    _info: BentoInfo
+    _info: BaseBentoInfo
 
     _model_store: ModelStore | None = None
     _doc: str | None = None
@@ -176,7 +176,7 @@ class Bento(StoreItem):
         return self.__fs
 
     @property
-    def info(self) -> BentoInfo:
+    def info(self) -> BaseBentoInfo:
         return self._info
 
     @property
@@ -190,23 +190,28 @@ class Bento(StoreItem):
 
         info = self.info
         models = [str(m.tag) for m in info.all_models]
-        runners = [
-            BentoRunnerSchema(
-                name=r.name,
-                runnable_type=r.runnable_type,
-                models=r.models,
-                resource_config=(
-                    BentoRunnerResourceSchema(
-                        cpu=r.resource_config.get("cpu"),
-                        nvidia_gpu=r.resource_config.get("nvidia.com/gpu"),
-                        custom_resources=r.resource_config.get("custom_resources"),
-                    )
-                    if r.resource_config
-                    else None
-                ),
-            )
-            for r in info.runners
-        ]
+        if isinstance(info, BentoInfo):
+            runners = [
+                BentoRunnerSchema(
+                    name=r.name,
+                    runnable_type=r.runnable_type,
+                    models=r.models,
+                    resource_config=(
+                        BentoRunnerResourceSchema(
+                            cpu=r.resource_config.get("cpu"),
+                            nvidia_gpu=r.resource_config.get("nvidia.com/gpu"),
+                            custom_resources=r.resource_config.get("custom_resources"),
+                        )
+                        if r.resource_config
+                        else None
+                    ),
+                )
+                for r in info.runners
+            ]
+            image: ImageInfo | None = None
+        else:
+            image = t.cast(ImageInfo, info.image)
+            runners = []
         return BentoManifestSchema(
             name=info.name,
             entry_service=info.entry_service,
@@ -220,6 +225,7 @@ class Bento(StoreItem):
             envs=info.envs,
             schema=info.schema,
             version=info.version,
+            image=image,
         )
 
     @classmethod
@@ -407,7 +413,7 @@ class Bento(StoreItem):
     def from_fs(cls, item_fs: FS) -> Bento:
         try:
             with item_fs.open(BENTO_YAML_FILENAME, "r", encoding="utf-8") as bento_yaml:
-                info = BentoInfo.from_yaml_file(bento_yaml)
+                info = BaseBentoInfo.from_yaml_file(bento_yaml)
         except fs.errors.ResourceNotFound:
             raise BentoMLException(
                 f"Failed to load bento because it does not contain a '{BENTO_YAML_FILENAME}'"
@@ -659,7 +665,7 @@ def get_service_import_str(svc: Service | NewService[t.Any] | str) -> str:
 
 
 @attr.frozen(repr=False)
-class BentoInfo:
+class BaseBentoInfo:
     # for backward compatibility in case new fields are added to BentoInfo.
     __forbid_extra_keys__ = False
     # omit field in yaml file if it is not provided by the user.
@@ -677,17 +683,11 @@ class BentoInfo:
         factory=dict, converter=normalize_labels_value
     )
     models: t.List[BentoModelInfo] = attr.field(factory=list)
-    runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
     # for BentoML 1.2+ SDK
     entry_service: str = attr.field(factory=str)
     services: t.List[BentoServiceInfo] = attr.field(factory=list)
     envs: t.List[BentoEnvSchema] = attr.field(factory=list)
     schema: t.Dict[str, t.Any] = attr.field(factory=dict)
-
-    apis: t.List[BentoApiInfo] = attr.field(factory=list)
-    docker: DockerOptions = attr.field(factory=lambda: DockerOptions().with_defaults())
-    python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())
-    conda: CondaOptions = attr.field(factory=lambda: CondaOptions().with_defaults())
 
     @property
     def all_models(self) -> t.List[BentoModelInfo]:
@@ -715,7 +715,7 @@ class BentoInfo:
         return yaml.safe_dump(self.to_dict(), stream, sort_keys=False)
 
     @classmethod
-    def from_yaml_file(cls, stream: t.IO[t.Any]) -> BentoInfo:
+    def from_yaml_file(cls, stream: t.IO[t.Any]) -> BaseBentoInfo:
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -752,14 +752,42 @@ class BentoInfo:
                         models,
                     )
                 )
+        if yaml_content.get("spec", 1) == 2:
+            klass = BentoInfoV2
+        else:
+            klass = BentoInfo
         try:
-            return bentoml_cattr.structure(yaml_content, cls)
+            return bentoml_cattr.structure(yaml_content, klass)
         except KeyError as e:
             raise BentoMLException(f"Missing field {e} in {BENTO_YAML_FILENAME}")
 
     def validate(self):
         # Validate bento.yml file schema, content, bentoml version, etc
         ...
+
+
+@attr.frozen(repr=False)
+class BentoInfo(BaseBentoInfo):
+    spec: int = attr.field(default=1, init=False)
+    runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
+    apis: t.List[BentoApiInfo] = attr.field(factory=list)
+    docker: DockerOptions = attr.field(factory=lambda: DockerOptions().with_defaults())
+    python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())
+    conda: CondaOptions = attr.field(factory=lambda: CondaOptions().with_defaults())
+
+
+@attr.frozen(repr=False)
+class ImageInfo:
+    base_image: str = ""
+    python_version: str = ""
+    commands: t.List[str] = attr.field(factory=list)
+    python_requirements: str = ""
+
+
+@attr.frozen(repr=False)
+class BentoInfoV2(BaseBentoInfo):
+    spec: int = attr.field(default=2, init=False)
+    image: ImageInfo = attr.field(factory=ImageInfo)
 
 
 bentoml_cattr.register_unstructure_hook(
@@ -788,9 +816,9 @@ bentoml_cattr.register_structure_hook(
 )
 
 bentoml_cattr.register_structure_hook_func(
-    lambda cls: inspect.isclass(cls) and issubclass(cls, BentoInfo),
+    lambda cls: inspect.isclass(cls) and issubclass(cls, BaseBentoInfo),
     make_dict_structure_fn(
-        BentoInfo,
+        BaseBentoInfo,
         bentoml_cattr,
         name=override(omit=True),
         version=override(omit=True),
@@ -807,7 +835,7 @@ bentoml_cattr.register_unstructure_hook(
     ),
 )
 bentoml_cattr.register_unstructure_hook(
-    BentoInfo,
+    BaseBentoInfo,
     # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(BentoInfo, bentoml_cattr, tag=override(omit=True)),
+    make_dict_unstructure_fn(BaseBentoInfo, bentoml_cattr, tag=override(omit=True)),
 )

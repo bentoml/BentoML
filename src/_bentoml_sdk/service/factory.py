@@ -277,8 +277,14 @@ class Service(t.Generic[T]):
         if gradio_apps:
             for gradio_app, path, name in gradio_apps:
                 logger.info(f"Initializing gradio app at: {path or '/'}")
-                gradio_app.get_blocks().queue(default_concurrency_limit=max_concurrency)
-                gradio_app.get_blocks().startup_events()
+                blocks = gradio_app.get_blocks()
+                blocks.queue(default_concurrency_limit=max_concurrency)
+                if hasattr(blocks, "startup_events"):
+                    # gradio < 5.0
+                    blocks.startup_events()
+                else:
+                    # gradio >= 5.0
+                    blocks.run_startup_events()
 
     def __call__(self) -> T:
         try:

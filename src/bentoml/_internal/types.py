@@ -14,6 +14,8 @@ from types import TracebackType
 from typing import get_args
 from typing import get_origin
 
+from starlette.applications import Starlette
+
 __all__ = [
     "MetadataType",
     "MetadataDict",
@@ -75,7 +77,7 @@ else:
     # NOTE: remove this when registering hook for MetadataType
     MetadataDict = dict
 
-LifecycleHook = t.Callable[[], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]
+LifecycleHook = t.Callable[[Starlette], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]
 
 T = t.TypeVar("T")
 

@@ -70,7 +70,7 @@ class AccessLogMiddleware:
             return
 
         start = default_timer()
-        client = scope["client"]
+        client = scope.get("client")
         scheme = scope["scheme"]
         method = scope["method"]
         path = scope["path"]

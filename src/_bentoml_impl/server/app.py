@@ -5,8 +5,8 @@ import functools
 import inspect
 import logging
 import math
+import os
 import typing as t
-from http import HTTPStatus
 from pathlib import Path
 
 import anyio
@@ -271,9 +271,20 @@ class ServiceAppFactory(BaseAppFactory):
         middlewares.append(Middleware(ContextMiddleware, context=self.service.context))
         return middlewares
 
-    async def create_instance(self) -> None:
+    async def create_instance(self, app: Starlette) -> None:
+        from ..client import RemoteProxy
+
         self._service_instance = self.service()
         logger.info("Service %s initialized", self.service.name)
+        if deployment_url := os.getenv("BENTOCLOUD_DEPLOYMENT_URL"):
+            proxy = RemoteProxy(
+                deployment_url, service=self.service, media_type="application/json"
+            )
+        else:
+            proxy = RemoteProxy("http://localhost:3000", service=self.service, app=app)
+        self._service_instance.__self_proxy__ = proxy  # type: ignore[attr-defined]
+        self._service_instance.to_async = proxy.to_async  # type: ignore[attr-defined]
+        self._service_instance.to_sync = proxy.to_sync  # type: ignore[attr-defined]
         set_current_service(self._service_instance)
         store_path = BentoMLContainer.result_store_file.get()
         self._result_store = Sqlite3Store(store_path)
@@ -300,8 +311,10 @@ class ServiceAppFactory(BaseAppFactory):
                 trace_context.trace_id, logging_format["trace_id"]
             )
 
-    async def destroy_instance(self) -> None:
+    async def destroy_instance(self, _: Starlette) -> None:
         from _bentoml_sdk.service.dependency import cleanup
+
+        from ..client import RemoteProxy
 
         # Call on_shutdown hook with optional ctx or context parameter
         for name, member in vars(self.service.inner).items():
@@ -313,6 +326,9 @@ class ServiceAppFactory(BaseAppFactory):
                     await result
 
         await cleanup()
+        own_proxy = getattr(self._service_instance, "__self_proxy__", None)
+        if isinstance(own_proxy, RemoteProxy):
+            await own_proxy.close()
         self._service_instance = None
         set_current_service(None)
         await self._result_store.__aexit__(None, None, None)
@@ -512,7 +528,7 @@ class ServiceAppFactory(BaseAppFactory):
         self, name: str, input_args: tuple[t.Any, ...], input_kwargs: dict[str, t.Any]
     ) -> t.Any:
         method = self.service.apis[name]
-        func = getattr(self._service_instance, name)
+        func = getattr(self._service_instance, name).local
 
         async def inner_infer(
             batches: t.Sequence[t.Any], **kwargs: t.Any
@@ -608,15 +624,9 @@ class ServiceAppFactory(BaseAppFactory):
 
         media_type = request.headers.get("Content-Type", "application/json")
         media_type = media_type.split(";")[0].strip()
-        if self.is_main and media_type == "application/vnd.bentoml+pickle":
-            # Disallow pickle media type for main service for security reasons
-            raise BentoMLException(
-                "Pickle media type is not allowed for main service",
-                error_code=HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
-            )
 
         method = self.service.apis[name]
-        func = getattr(self._service_instance, name)
+        func = getattr(self._service_instance, name).local
         ctx = self.service.context
         serde = ALL_SERDE[media_type]()
         input_data = await method.input_spec.from_http_request(request, serde)

@@ -1,0 +1,5 @@
+bentoml
+torch
+transformers
+gradio
+fastapi

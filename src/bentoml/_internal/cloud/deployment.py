@@ -769,8 +769,8 @@ class Deployment:
         requirements_md5 = hashlib.md5(requirements_content).hexdigest()
         if requirements_md5 != pod_files.get(REQUIREMENTS_TXT, ""):
             upload_files.append((REQUIREMENTS_TXT, requirements_content))
-        if setup_script := _build_setup_script(bento_dir, build_config):
-            upload_files.append(("setup.sh", setup_script))
+        setup_script = _build_setup_script(bento_dir, build_config)
+        upload_files.append(("setup.sh", setup_script))
         self.upload_files(upload_files, console=console)
         return requirements_md5
 

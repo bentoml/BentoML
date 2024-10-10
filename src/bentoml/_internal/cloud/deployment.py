@@ -742,7 +742,7 @@ class Deployment:
                 rel_path = os.path.relpath(full_path, bento_dir).replace(os.sep, "/")
                 if not bento_spec.includes(rel_path) and rel_path != "bentofile.yaml":
                     continue
-                if rel_path == REQUIREMENTS_TXT:
+                if rel_path in (REQUIREMENTS_TXT, "setup.sh"):
                     continue
                 file_content = open(full_path, "rb").read()
                 if (
@@ -769,6 +769,8 @@ class Deployment:
         requirements_md5 = hashlib.md5(requirements_content).hexdigest()
         if requirements_md5 != pod_files.get(REQUIREMENTS_TXT, ""):
             upload_files.append((REQUIREMENTS_TXT, requirements_content))
+        if setup_script := _build_setup_script(bento_dir, build_config):
+            upload_files.append(("setup.sh", setup_script))
         self.upload_files(upload_files, console=console)
         return requirements_md5
 
@@ -1394,4 +1396,16 @@ def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
     if bentoml_requirement is None:
         bentoml_requirement = f"-e ./{EDITABLE_BENTOML_DIR}"
     content += f"{bentoml_requirement}\n".encode("utf8")
+    return content
+
+
+def _build_setup_script(bento_dir: str, config: BentoBuildConfig) -> bytes:
+    content = b""
+    if config.docker.system_packages:
+        content += f'apt-get update && apt-get install -y {" ".join(config.docker.system_packages)} || exit 1\n'.encode()
+    if config.docker.setup_script and os.path.exists(
+        fullpath := os.path.join(bento_dir, config.docker.setup_script)
+    ):
+        with open(fullpath, "rb") as f:
+            content += f.read()
     return content

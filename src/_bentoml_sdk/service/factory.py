@@ -11,7 +11,6 @@ import typing as t
 from functools import lru_cache
 from functools import partial
 
-import anyio.from_thread
 import anyio.to_thread
 import attrs
 from simple_di import Provide

@@ -21,6 +21,7 @@ from ...grpc.utils import load_from_file
 from ..configuration.containers import BentoMLContainer
 from ..context import ServiceContext as Context
 from ..utils import LazyLoader
+from ..utils import with_app_arg
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +31,11 @@ if TYPE_CHECKING:
     from grpc_health.v1 import health
     from grpc_health.v1 import health_pb2 as pb_health
     from grpc_health.v1 import health_pb2_grpc as services_health
+    from starlette.applications import Starlette
 
     from ...grpc.types import Interceptors
     from ..service import Service
     from ..types import LifecycleHook
-
 else:
     grpc, aio = import_grpc()
     health_exception_msg = "'grpcio-health-checking' is required for using health checking endpoints. Install with 'pip install grpcio-health-checking'."
@@ -129,6 +130,7 @@ class Server(aio._server.Server):
     @inject
     async def wait_for_runner_ready(
         self,
+        _: Starlette,
         *,
         check_interval: int = Provide[
             BentoMLContainer.api_server_config.runner_probe.period
@@ -267,18 +269,20 @@ class Server(aio._server.Server):
     @property
     def on_startup(self) -> list[LifecycleHook]:
         on_startup = [
-            *self.bento_service.startup_hooks,
-            self.bento_service.on_grpc_server_startup,
+            *map(with_app_arg, self.bento_service.startup_hooks),
+            with_app_arg(self.bento_service.on_grpc_server_startup),
         ]
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
-                on_startup.append(partial(runner.init_local, quiet=True))
+                on_startup.append(with_app_arg(partial(runner.init_local, quiet=True)))
         else:
             for runner in self.bento_service.runners:
                 if runner.embedded:
-                    on_startup.append(partial(runner.init_local, quiet=True))
+                    on_startup.append(
+                        with_app_arg(partial(runner.init_local, quiet=True))
+                    )
                 else:
-                    on_startup.append(runner.init_client)
+                    on_startup.append(with_app_arg(runner.init_client))
 
         on_startup.append(self.wait_for_runner_ready)
         return on_startup
@@ -290,7 +294,7 @@ class Server(aio._server.Server):
 
         # Running on_startup callback.
         for handler in self.on_startup:
-            out = handler()
+            out = handler(None)
             if inspect.isawaitable(out):
                 await out
 
@@ -340,18 +344,18 @@ class Server(aio._server.Server):
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
         on_shutdown = [
-            *self.bento_service.shutdown_hooks,
-            self.bento_service.on_grpc_server_shutdown,
+            *map(with_app_arg, self.bento_service.shutdown_hooks),
+            with_app_arg(self.bento_service.on_grpc_server_shutdown),
         ]
         for runner in self.bento_service.runners:
-            on_shutdown.append(runner.destroy)
+            on_shutdown.append(with_app_arg(runner.destroy))
 
         return on_shutdown
 
     async def shutdown(self):
         # Running on_shutdown callback.
         for handler in self.on_shutdown:
-            out = handler()
+            out = handler(None)
             if inspect.isawaitable(out):
                 await out
 

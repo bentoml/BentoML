@@ -38,11 +38,11 @@ if t.TYPE_CHECKING:
     from ...grpc.v1 import service_pb2_grpc as services
     from .. import external_typing as ext
     from ..bento import Bento
-    from ..types import LifecycleHook
     from .openapi.specification import OpenAPISpecification
 
+    Hook = t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]
     ContextFunc = t.Callable[[Context], None | t.Coroutine[t.Any, t.Any, None]]
-    HookF = t.TypeVar("HookF", bound=LifecycleHook)
+    HookF = t.TypeVar("HookF", bound=Hook)
     HookF_ctx = t.TypeVar("HookF_ctx", bound=ContextFunc)
 
     class _inference_api_wrapper(t.Generic[IOType]):
@@ -127,9 +127,9 @@ class Service:
     context: Context = attr.field(init=False, factory=Context)
 
     # hooks
-    startup_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
-    shutdown_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
-    deployment_hooks: list[LifecycleHook] = attr.field(init=False, factory=list)
+    startup_hooks: list[Hook] = attr.field(init=False, factory=list)
+    shutdown_hooks: list[Hook] = attr.field(init=False, factory=list)
+    deployment_hooks: list[Hook] = attr.field(init=False, factory=list)
 
     def __reduce__(self):
         """
@@ -431,8 +431,7 @@ class Service:
     def mount_wsgi_app(
         self, app: ext.WSGIApp, path: str = "/", name: t.Optional[str] = None
     ) -> None:
-        # TODO: Migrate to a2wsgi
-        from starlette.middleware.wsgi import WSGIMiddleware
+        from a2wsgi import WSGIMiddleware
 
         self.mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 

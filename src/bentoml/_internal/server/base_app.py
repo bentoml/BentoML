@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
+import inspect
 import logging
 import typing as t
 from typing import TYPE_CHECKING
@@ -10,7 +11,7 @@ from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.responses import PlainTextResponse
 
-from ..utils import is_async_callable
+from ..utils import with_app_arg
 
 if TYPE_CHECKING:
     from starlette.applications import Starlette
@@ -45,9 +46,9 @@ class BaseAppFactory(abc.ABC):
     def on_shutdown(self) -> list[LifecycleHook]:
         from ..context import request_tempdir_pool
 
-        return [request_tempdir_pool.cleanup]
+        return [with_app_arg(request_tempdir_pool.cleanup)]
 
-    def mark_as_ready(self) -> None:
+    def mark_as_ready(self, _: Starlette) -> None:
         self._is_ready = True
 
     async def livez(self, _: Request) -> Response:
@@ -68,18 +69,16 @@ class BaseAppFactory(abc.ABC):
         from ..configuration import get_debug_mode
 
         @contextlib.asynccontextmanager
-        async def lifespan(_: Starlette) -> t.AsyncGenerator[None, None]:
+        async def lifespan(app: Starlette) -> t.AsyncGenerator[None, None]:
             for on_startup in self.on_startup:
-                if is_async_callable(on_startup):
-                    await on_startup()
-                else:
-                    on_startup()
+                ret = on_startup(app)
+                if inspect.isawaitable(ret):
+                    await ret
             yield
             for on_shutdown in self.on_shutdown:
-                if is_async_callable(on_shutdown):
-                    await on_shutdown()
-                else:
-                    on_shutdown()
+                ret = on_shutdown(app)
+                if inspect.isawaitable(ret):
+                    await ret
 
         return Starlette(
             debug=get_debug_mode(),

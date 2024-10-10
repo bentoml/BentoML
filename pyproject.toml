@@ -70,6 +70,7 @@ dependencies = [
     "aiosqlite>=0.20.0",
     "uv",
     "questionary>=2.0.1",
+    "a2wsgi>=1.10.7",
 ]
 dynamic = ["version"]
 [project.urls]

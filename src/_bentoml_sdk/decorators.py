@@ -90,8 +90,6 @@ def api(
         }
         if route is not None:
             params["route"] = route
-        if name is not None:
-            params["name"] = name
         if input_spec is not None:
             params["input_spec"] = input_spec
         if output_spec is not None:
@@ -192,8 +190,6 @@ def task(
         }
         if route is not None:
             params["route"] = route
-        if name is not None:
-            params["name"] = name
         if input_spec is not None:
             params["input_spec"] = input_spec
         if output_spec is not None:

@@ -39,12 +39,12 @@ if t.TYPE_CHECKING:
     from httpx._types import RequestFiles
 
     from _bentoml_sdk import Service
+    from bentoml._internal.external_typing import ASGIApp
 
     from ..serde import Serde
 
     T = t.TypeVar("T", bound="HTTPClient[t.Any]")
     A = t.TypeVar("A")
-
 C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
 AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
 logger = logging.getLogger("bentoml.io")
@@ -72,6 +72,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
     media_type: str = "application/json"
     timeout: float = 30
     default_headers: dict[str, str] = attr.field(factory=dict)
+    app: ASGIApp | None = None
 
     _opened_files: list[io.BufferedReader] = attr.field(init=False, factory=list)
     _temp_dir: tempfile.TemporaryDirectory[str] = attr.field(init=False)
@@ -82,6 +83,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         url: str,
         headers: t.Mapping[str, str],
         timeout: float,
+        app: ASGIApp | None = None,
     ) -> AnyClient:
         parsed = urlparse(url)
         transport = None
@@ -94,6 +96,13 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             url = "http://127.0.0.1:3000"
         elif parsed.scheme == "tcp":
             url = f"http://{parsed.netloc}"
+        elif app is not None:
+            if client_cls is httpx.Client:
+                from a2wsgi import ASGIMiddleware
+
+                transport = httpx.WSGITransport(app=ASGIMiddleware(app))
+            else:
+                transport = httpx.ASGITransport(app=app)
         return client_cls(
             base_url=url,
             transport=transport,  # type: ignore
@@ -115,6 +124,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         server_ready_timeout: float | None = None,
         token: str | None = None,
         timeout: float = 30,
+        app: ASGIApp | None = None,
     ) -> None:
         """Create a client instance from a URL.
 
@@ -165,14 +175,15 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             media_type=media_type,
             default_headers=default_headers,
             timeout=timeout,
+            app=app,
         )
-        if server_ready_timeout is None or server_ready_timeout > 0:
+        if app is None and (server_ready_timeout is None or server_ready_timeout > 0):
             self.wait_until_server_ready(server_ready_timeout)
         if service is None:
             schema_url = urljoin(url, "/schema.json")
 
             with self._make_client(
-                httpx.Client, url, default_headers, timeout
+                httpx.Client, url, default_headers, timeout, app=app
             ) as client:
                 resp = client.get("/schema.json")
 
@@ -193,7 +204,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
     @cached_property
     def client(self) -> C:
         return self._make_client(
-            self.client_cls, self.url, self.default_headers, self.timeout
+            self.client_cls, self.url, self.default_headers, self.timeout, self.app
         )
 
     @cached_property

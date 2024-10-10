@@ -46,9 +46,9 @@ def main(fd: int, backlog: int):
 
     import psutil
     import uvicorn
+    from a2wsgi import WSGIMiddleware
     from starlette.applications import Starlette
     from starlette.middleware import Middleware
-    from starlette.middleware.wsgi import WSGIMiddleware  # TODO: a2wsgi
 
     from bentoml._internal.configuration import get_debug_mode
     from bentoml._internal.configuration.containers import BentoMLContainer

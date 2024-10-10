@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 import logging
 import math
@@ -10,6 +11,7 @@ import typing as t
 from functools import lru_cache
 from functools import partial
 
+import anyio.to_thread
 import attrs
 from simple_di import Provide
 from simple_di import inject
@@ -256,8 +258,7 @@ class Service(t.Generic[T]):
     def mount_wsgi_app(
         self, app: ext.WSGIApp, path: str = "/", name: str | None = None
     ) -> None:
-        # TODO: Migrate to a2wsgi
-        from starlette.middleware.wsgi import WSGIMiddleware
+        from a2wsgi import WSGIMiddleware
 
         self.mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
@@ -270,6 +271,7 @@ class Service(t.Generic[T]):
         try:
             instance = self.inner()
             instance.to_async = _AsyncWrapper(instance, self.apis.keys())
+            instance.to_sync = _SyncWrapper(instance, self.apis.keys())
             return instance
         except Exception:
             logger.exception("Initializing service error")
@@ -469,26 +471,27 @@ def runner_service(runner: Runner, **kwargs: Unpack[Config]) -> Service[t.Any]:
     )
 
 
-class _AsyncWrapper:
+class _Wrapper:
     def __init__(self, wrapped: t.Any, apis: t.Iterable[str]) -> None:
         self.__call = None
         for name in apis:
             if name == "__call__":
-                self.__call = self.__make_method(wrapped, name)
+                self.__call = self._make_method(wrapped, name)
             else:
-                setattr(self, name, self.__make_method(wrapped, name))
+                setattr(self, name, self._make_method(wrapped, name))
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         if self.__call is None:
             raise TypeError("This service is not callable.")
         return self.__call(*args, **kwargs)
 
-    def __make_method(self, inner: t.Any, name: str) -> t.Any:
-        import asyncio
+    def _make_method(self, instance: t.Any, name: str) -> t.Any:
+        raise NotImplementedError
 
-        import anyio.to_thread
 
-        original_func = func = getattr(inner, name)
+class _AsyncWrapper(_Wrapper):
+    def _make_method(self, instance: t.Any, name: str) -> t.Any:
+        original_func = func = getattr(instance, name).local
         while hasattr(original_func, "func"):
             original_func = original_func.func
         is_async_func = (
@@ -524,5 +527,44 @@ class _AsyncWrapper:
 
             async def wrapped(*args: P.args, **kwargs: P.kwargs) -> t.Any:
                 return await anyio.to_thread.run_sync(partial(func, **kwargs), *args)
+
+            return wrapped
+
+
+class _SyncWrapper(_Wrapper):
+    def _make_method(self, instance: t.Any, name: str) -> t.Any:
+        original_func = func = getattr(instance, name).local
+        while hasattr(original_func, "func"):
+            original_func = original_func.func
+        is_async_func = (
+            asyncio.iscoroutinefunction(original_func)
+            or (
+                callable(original_func)
+                and asyncio.iscoroutinefunction(original_func.__call__)  # type: ignore
+            )
+            or inspect.isasyncgenfunction(original_func)
+        )
+        if not is_async_func:
+            return func
+
+        if inspect.isasyncgenfunction(original_func):
+
+            def wrapped_gen(
+                *args: t.Any, **kwargs: t.Any
+            ) -> t.Generator[t.Any, None, None]:
+                agen = func(*args, **kwargs)
+                loop = asyncio.get_event_loop()
+                while True:
+                    try:
+                        yield loop.run_until_complete(agen.__anext__())
+                    except StopAsyncIteration:
+                        break
+
+            return wrapped_gen
+        else:
+
+            def wrapped(*args: P.args, **kwargs: P.kwargs) -> t.Any:
+                loop = asyncio.get_event_loop()
+                return loop.run_until_complete(func(*args, **kwargs))
 
             return wrapped

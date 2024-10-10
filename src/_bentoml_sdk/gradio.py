@@ -22,7 +22,7 @@ def mount_gradio_app(
     name: str = "gradio_ui",
 ):
     from _bentoml_sdk.service import Service
-    from bentoml._internal import server
+    from _bentoml_impl import server
 
     favicon_path = (
         Path(server.__file__).parent / "static_content" / "favicon-light-32x32.png"

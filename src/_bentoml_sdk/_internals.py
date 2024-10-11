@@ -25,6 +25,8 @@ def make_fastapi_class_views(cls: type[Any], app: FastAPI) -> None:
         if isinstance(route, (APIRoute, APIWebSocketRoute))
         and route.endpoint in class_methods
     ]
+    if not api_routes:
+        return
     # Modify these routes and mount it to a new APIRouter.
     # We need to to this (instead of modifying in place) because we want to use
     # the app.include_router to re-run the dependency analysis for each routes.

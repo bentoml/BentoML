@@ -5,6 +5,8 @@ from pathlib import Path
 
 from bentoml.exceptions import MissingDependencyException
 
+from .decorators import mount_asgi_app
+
 R = t.TypeVar("R")
 
 try:
@@ -16,11 +18,27 @@ except ImportError:  # pragma: no cover
     )
 
 
-def mount_gradio_app(
-    blocks: Blocks,
-    path: str,
-    name: str = "gradio_ui",
-):
+def mount_gradio_app(blocks: Blocks, path: str, name: str = "gradio_ui"):
+    """Mount a Gradio app to a BentoML service.
+
+    Args:
+        blocks: The Gradio blocks to be mounted.
+        path: The URL path to mount the Gradio app.
+        name: The name of the Gradio app.
+
+    Example:
+
+    Both of the following examples are allowed::
+
+        @bentoml.gradio.mount_gradio_app(blocks)
+        @bentoml.service()
+        class MyService: ...
+
+        @bentoml.service()
+        @bentoml.gradio.mount_gradio_app(blocks)
+        class MyService: ...
+
+    """
     from _bentoml_impl import server
     from _bentoml_sdk.service import Service
 
@@ -37,6 +55,7 @@ def mount_gradio_app(
         blocks.root_path = path
         blocks.favicon_path = favicon_path
         gradio_app = gr.routes.App.create_app(blocks, app_kwargs={"root_path": path})
+        mount_asgi_app(gradio_app, path=path, name=name)(obj)
 
         # @bentoml.service() decorator returns a wrapper instead of the original class
         # Check if the object is an instance of Service
@@ -49,7 +68,6 @@ def mount_gradio_app(
             #
             # If the Service instance is already created, mount the ASGI app immediately
             target = obj.inner
-            obj.mount_asgi_app(gradio_app, path=path, name=name)
         else:
             # For scenario:
             #

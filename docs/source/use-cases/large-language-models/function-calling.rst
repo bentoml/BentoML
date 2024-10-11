@@ -221,7 +221,7 @@ Here is an example file:
      requirements_txt: './requirements.txt'
      lock_packages: false
    docker:
-     python_version: 3.11
+     python_version: "3.11"
 
 Try it out
 ----------

@@ -5,10 +5,24 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:b17a403d776f10710966f6509a31976a278b0d02dda5b2ca341df88f701b7c46"
+content_hash = "sha256:f6b631c837f69b66563c61b24913bf86075a0d2a05f1182d051721d5aad51d9a"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
+
+[[package]]
+name = "a2wsgi"
+version = "1.10.7"
+requires_python = ">=3.8.0"
+summary = "Convert WSGI app to ASGI app or ASGI app to WSGI app."
+groups = ["default"]
+dependencies = [
+    "typing-extensions; python_version < \"3.11\"",
+]
+files = [
+    {file = "a2wsgi-1.10.7-py3-none-any.whl", hash = "sha256:6d7c602fb1f9cc6afc6c6d0558d3354f3c7aa281e73e6dc9e001dbfc1d9e80cf"},
+    {file = "a2wsgi-1.10.7.tar.gz", hash = "sha256:ce462ff7e1daac0bc57183c6f800f09a71c2a7a98ddd5cdeca149e3eabf3338e"},
+]
 
 [[package]]
 name = "aiohappyeyeballs"

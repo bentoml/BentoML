@@ -17,6 +17,7 @@ from ..configuration.containers import BentoMLContainer
 from ..context import trace_context
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
+from ..utils import with_app_arg
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
@@ -27,8 +28,7 @@ if t.TYPE_CHECKING:
     from starlette.routing import BaseRoute
 
     from ..service.inference_api import InferenceAPI
-
-    LifecycleHook = t.Callable[[], None | t.Coroutine[t.Any, t.Any, None]]
+    from ..types import LifecycleHook
 
 
 logger = logging.getLogger(__name__)
@@ -264,18 +264,22 @@ class HTTPAppFactory(BaseAppFactory):
     @property
     def on_startup(self) -> list[LifecycleHook]:
         on_startup = [
-            *self.bento_service.startup_hooks,
-            self.bento_service.on_asgi_app_startup,
+            *map(with_app_arg, self.bento_service.startup_hooks),
+            with_app_arg(self.bento_service.on_asgi_app_startup),
         ]
         if BentoMLContainer.development_mode.get():
             for runner in self.bento_service.runners:
-                on_startup.append(functools.partial(runner.init_local, quiet=True))
+                on_startup.append(
+                    with_app_arg(functools.partial(runner.init_local, quiet=True))
+                )
         else:
             for runner in self.bento_service.runners:
                 if runner.embedded:
-                    on_startup.append(functools.partial(runner.init_local, quiet=True))
+                    on_startup.append(
+                        with_app_arg(functools.partial(runner.init_local, quiet=True))
+                    )
                 else:
-                    on_startup.append(runner.init_client)
+                    on_startup.append(with_app_arg(runner.init_client))
         on_startup.extend(super().on_startup)
         return on_startup
 
@@ -294,11 +298,11 @@ class HTTPAppFactory(BaseAppFactory):
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
         on_shutdown = [
-            *self.bento_service.shutdown_hooks,
-            self.bento_service.on_asgi_app_shutdown,
+            *map(with_app_arg, self.bento_service.shutdown_hooks),
+            with_app_arg(self.bento_service.on_asgi_app_shutdown),
         ]
         for runner in self.bento_service.runners:
-            on_shutdown.append(runner.destroy)
+            on_shutdown.append(with_app_arg(runner.destroy))
         on_shutdown.extend(super().on_shutdown)
         return on_shutdown
 

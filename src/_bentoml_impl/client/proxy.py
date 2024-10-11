@@ -16,7 +16,7 @@ from .http import SyncHTTPClient
 
 if t.TYPE_CHECKING:
     from _bentoml_sdk.service import ServiceConfig
-
+    from bentoml._internal.external_typing import ASGIApp
 T = t.TypeVar("T")
 logger = logging.getLogger("bentoml.impl")
 
@@ -30,6 +30,7 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
         *,
         service: Service[T] | None = None,
         media_type: str = "application/vnd.bentoml+pickle",
+        app: ASGIApp | None = None,
     ) -> None:
         from bentoml.container import BentoMLContainer
 
@@ -48,6 +49,7 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
             service=service,
             timeout=timeout,
             server_ready_timeout=0,
+            app=app,
         )
         self._async = AsyncHTTPClient(
             url,
@@ -55,6 +57,7 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
             service=service,
             timeout=timeout,
             server_ready_timeout=0,
+            app=app,
         )
         if service is not None:
             self._inner = service.inner

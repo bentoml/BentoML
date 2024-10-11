@@ -31,6 +31,7 @@ from .uri import encode_path_for_uri
 
 if TYPE_CHECKING:
     from fs.base import FS
+    from starlette.applications import Starlette
     from typing_extensions import Self
 
     from ..types import MetadataDict
@@ -579,3 +580,11 @@ CONTROL_CODES = re.compile(
 
 def filter_control_codes(line: str) -> str:
     return CONTROL_CODES.sub("", line)
+
+
+def with_app_arg(func: t.Callable[[], T]) -> t.Callable[[Starlette], T]:
+    @functools.wraps(func)
+    def wrapper(app: Starlette) -> T:
+        return func()
+
+    return wrapper

@@ -45,7 +45,7 @@ def _io_descriptor_converter(it: t.Any) -> type[IODescriptor]:
 class APIMethod(t.Generic[P, R]):
     func: t.Callable[t.Concatenate[t.Any, P], R]
     route: str = attrs.field()
-    name: str = attrs.field()
+    name: str = attrs.field(init=False)
     input_spec: type[IODescriptor] = attrs.field(converter=_io_descriptor_converter)
     output_spec: type[IODescriptor] = attrs.field(converter=_io_descriptor_converter)
     batchable: bool = False
@@ -107,11 +107,21 @@ class APIMethod(t.Generic[P, R]):
     def __get__(self, instance: object, owner: type) -> t.Callable[P, R]: ...
 
     def __get__(self: T, instance: t.Any, owner: type) -> t.Callable[P, R] | T:
-        from pydantic.fields import FieldInfo
-        from pydantic_core import PydanticUndefined
-
         if instance is None:
             return self
+
+        local_caller = self._local_call(instance)
+
+        if proxy := getattr(instance, "__self_proxy__", None):
+            func = getattr(proxy, self.name)
+        else:
+            func = local_caller
+        func.local = local_caller  # type: ignore[attr-defined]
+        return func
+
+    def _local_call(self, instance: t.Any) -> t.Callable[P, R]:
+        from pydantic.fields import FieldInfo
+        from pydantic_core import PydanticUndefined
 
         func_sig = inspect.signature(self.func)
         # skip the `self` parameter

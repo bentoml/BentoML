@@ -163,7 +163,7 @@ Here is an example file:
      - name: OPENAI_API_KEY
      - name: OPENAI_BASE_URL
    docker:
-     python_version: 3.11
+     python_version: "3.11"
 
 Try it out
 ----------

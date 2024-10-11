@@ -88,7 +88,7 @@ python:
     - torch
     - transformers
 docker:
-  python_version: 3.11
+  python_version: "3.11"
 ```
 
 Then, choose one of the following ways for deployment:

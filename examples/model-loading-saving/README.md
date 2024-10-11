@@ -6,7 +6,7 @@ In this example, we will use LoRA and StableDiffusion to demonstrate how to load
 ```bash
 python -m venv model-load-store-lora
 source model-load-store-lora/bin/activate
-pip install -r requirement.txt
+pip install -r requirements.txt
 ```
 
 ## Import Models

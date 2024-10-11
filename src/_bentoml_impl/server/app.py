@@ -275,6 +275,7 @@ class ServiceAppFactory(BaseAppFactory):
         from ..client import RemoteProxy
 
         self._service_instance = self.service()
+        self.service.gradio_app_startup_hook(max_concurrency=self.max_concurrency)
         logger.info("Service %s initialized", self.service.name)
         if deployment_url := os.getenv("BENTOCLOUD_DEPLOYMENT_URL"):
             proxy = RemoteProxy(

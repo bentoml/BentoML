@@ -1085,7 +1085,7 @@ class DeploymentAPI:
         client = self._client
         route = "deployments"
         if res.manifest and res.manifest.dev:
-            route = "developments"
+            route = "codespaces"
         admin_console = f"{client.endpoint}/{route}/{res.name}"
         if res.cluster.is_first is False:
             admin_console = f"{admin_console}?cluster={res.cluster.name}&namespace={res.kube_namespace}"

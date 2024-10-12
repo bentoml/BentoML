@@ -250,7 +250,7 @@ def develop_command(
     secret: tuple[str] | None,
     _rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
 ):
-    """Create or attach to a development deployment and watch for local file changes"""
+    """Create or attach to a codespace and watch for local file changes"""
     import questionary
 
     if attach and (env or secret):

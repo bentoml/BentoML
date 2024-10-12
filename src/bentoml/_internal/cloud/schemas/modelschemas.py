@@ -86,6 +86,7 @@ class BentoManifestSchema:
     envs: t.List[BentoEnvSchema] = attr.field(factory=list)
     schema: t.Dict[str, t.Any] = attr.field(factory=dict)
     version: t.Optional[str] = attr.field(default=None, eq=False)
+    dev: bool = attr.field(default=False, eq=False)
 
     @property
     def tag(self) -> Tag:

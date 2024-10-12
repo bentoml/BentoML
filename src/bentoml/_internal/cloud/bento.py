@@ -186,6 +186,7 @@ class BentoAPI:
             services=info.services,
             envs=info.envs,
             schema=info.schema,
+            dev=bare,
         )
         if not remote_bento:
             with self.spinner.spin(

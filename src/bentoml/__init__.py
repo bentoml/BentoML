@@ -138,47 +138,89 @@ else:
     )
     mlflow = _LazyLoader("bentoml.mlflow", globals(), "_bentoml_impl.frameworks.mlflow")
     detectron = _LazyLoader(
-        "bentoml.detectron", globals(), "bentoml._internal.frameworks.detectron"
+        "bentoml.detectron",
+        globals(),
+        "bentoml._internal.frameworks.detectron",
+        warning="`bentoml.detectron` is deprecated since v1.4 and will be removed in a future version.",
     )
     diffusers = _LazyLoader(
-        "bentoml.diffusers", globals(), "bentoml._internal.frameworks.diffusers"
+        "bentoml.diffusers",
+        globals(),
+        "bentoml._internal.frameworks.diffusers",
+        warning="`bentoml.diffusers` is deprecated since v1.4 and will be removed in a future version.",
     )
     diffusers_simple = _LazyLoader(
-        "bentoml.diffusers_simple", globals(), "bentoml.diffusers_simple"
+        "bentoml.diffusers_simple",
+        globals(),
+        "bentoml.diffusers_simple",
+        warning="`bentoml.diffusers_simple` is deprecated since v1.4 and will be removed in a future version.",
     )
     easyocr = _LazyLoader(
-        "bentoml.easyocr", globals(), "bentoml._internal.frameworks.easyocr"
+        "bentoml.easyocr",
+        globals(),
+        "bentoml._internal.frameworks.easyocr",
+        warning="`bentoml.easyocr` is deprecated since v1.4 and will be removed in a future version.",
     )
-    flax = _LazyLoader("bentoml.flax", globals(), "bentoml._internal.frameworks.flax")
+    flax = _LazyLoader(
+        "bentoml.flax",
+        globals(),
+        "bentoml._internal.frameworks.flax",
+        warning="`bentoml.flax` is deprecated since v1.4 and will be removed in a future version.",
+    )
     fastai = _LazyLoader(
-        "bentoml.fastai", globals(), "bentoml._internal.frameworks.fastai"
+        "bentoml.fastai",
+        globals(),
+        "bentoml._internal.frameworks.fastai",
+        warning="`bentoml.fastai` is deprecated since v1.4 and will be removed in a future version.",
     )
 
-    onnx = _LazyLoader("bentoml.onnx", globals(), "bentoml._internal.frameworks.onnx")
+    onnx = _LazyLoader(
+        "bentoml.onnx",
+        globals(),
+        "bentoml._internal.frameworks.onnx",
+        warning="`bentoml.onnx` is deprecated since v1.4 and will be removed in a future version.",
+    )
     keras = _LazyLoader(
-        "bentoml.keras", globals(), "bentoml._internal.frameworks.keras"
+        "bentoml.keras",
+        globals(),
+        "bentoml._internal.frameworks.keras",
+        warning="`bentoml.keras` is deprecated since v1.4 and will be removed in a future version.",
     )
     pytorch = _LazyLoader(
-        "bentoml.pytorch", globals(), "bentoml._internal.frameworks.pytorch"
+        "bentoml.pytorch",
+        globals(),
+        "bentoml._internal.frameworks.pytorch",
+        warning="`bentoml.pytorch` is deprecated since v1.4 and will be removed in a future version.",
     )
     pytorch_lightning = _LazyLoader(
         "bentoml.pytorch_lightning",
         globals(),
         "bentoml._internal.frameworks.pytorch_lightning",
+        warning="`bentoml.pytorch_lightning` is deprecated since v1.4 and will be removed in a future version.",
     )
     picklable_model = _LazyLoader(
         "bentoml.picklable_model",
         globals(),
         "bentoml._internal.frameworks.picklable_model",
+        warning="`bentoml.picklable_model` is deprecated since v1.4 and will be removed in a future version.",
     )
     tensorflow = _LazyLoader(
-        "bentoml.tensorflow", globals(), "bentoml._internal.frameworks.tensorflow"
+        "bentoml.tensorflow",
+        globals(),
+        "bentoml._internal.frameworks.tensorflow",
+        warning="`bentoml.tensorflow` is deprecated since v1.4 and will be removed in a future version.",
     )
     torchscript = _LazyLoader(
-        "bentoml.torchscript", globals(), "bentoml._internal.frameworks.torchscript"
+        "bentoml.torchscript",
+        globals(),
+        "bentoml._internal.frameworks.torchscript",
+        warning="`bentoml.torchscript` is deprecated since v1.4 and will be removed in a future version.",
     )
     transformers = _LazyLoader(
-        "bentoml.transformers", globals(), "bentoml._internal.frameworks.transformers"
+        "bentoml.transformers",
+        globals(),
+        "bentoml._internal.frameworks.transformers",
+        warning="`bentoml.transformers` is deprecated since v1.4 and will be removed in a future version.",
     )
 
     # Integrations

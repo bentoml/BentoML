@@ -1,4 +1,13 @@
+# ruff: noqa: E402
+
 from __future__ import annotations
+
+from bentoml._internal.utils import warn_deprecated
+
+warn_deprecated(
+    "`bentoml.io` is deprecated since BentoML v1.4 and will be removed in a future version. Please upgrade to new style IO types instead.",
+    stacklevel=1,
+)
 
 from ._internal.io_descriptors import from_spec
 from ._internal.io_descriptors.base import IODescriptor

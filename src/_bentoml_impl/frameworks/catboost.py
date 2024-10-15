@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING
 
 import attr
 import numpy as np
-from typing_extensions import deprecated
 
 import bentoml
 from bentoml import Tag
 from bentoml._internal.models.model import ModelContext
+from bentoml._internal.utils import deprecated
 from bentoml._internal.utils.pkg import get_pkg_version
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import InvalidArgument
@@ -199,7 +199,7 @@ def save_model(
         return bento_model
 
 
-@deprecated("`get_runnable` is a legacy API, use `get_service` instead.")
+@deprecated(suggestion="Use `get_service` instead.")
 def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.

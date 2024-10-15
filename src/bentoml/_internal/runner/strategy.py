@@ -7,6 +7,7 @@ import typing as t
 
 from ..resource import get_resource
 from ..resource import system_resources
+from ..utils import deprecated
 
 if t.TYPE_CHECKING:
     from .runnable import Runnable
@@ -14,6 +15,7 @@ if t.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@deprecated()
 class Strategy(abc.ABC):
     @classmethod
     @abc.abstractmethod

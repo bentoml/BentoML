@@ -23,6 +23,7 @@ from ..models import Model
 from ..runner.runner import AbstractRunner
 from ..runner.runner import Runner
 from ..tag import Tag
+from ..utils import deprecated
 from ..utils import first_not_none
 from .inference_api import InferenceAPI
 
@@ -78,6 +79,7 @@ def get_valid_service_name(user_provided_svc_name: str) -> str:
     return lower_name
 
 
+@deprecated("bentoml.Service", suggestion="Please upgrade to @bentoml.service().")
 @attr.define(frozen=False, init=False)
 class Service:
     """The service definition is the manifestation of the Service Oriented Architecture

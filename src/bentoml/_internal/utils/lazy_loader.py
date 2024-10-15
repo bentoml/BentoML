@@ -43,6 +43,8 @@ class LazyLoader(types.ModuleType):
 
     def _load(self) -> types.ModuleType:
         """Load the module and insert it into the parent's globals."""
+        from . import warn_deprecated
+
         # Import the target module and insert it into the parent's namespace
         try:
             module = importlib.import_module(self.__name__)
@@ -54,7 +56,7 @@ class LazyLoader(types.ModuleType):
 
         # Emit a warning if one was specified
         if self._warning:
-            logger.warning(self._warning)
+            warn_deprecated(self._warning, stacklevel=3)
             # Make sure to only warn once.
             self._warning = None
 

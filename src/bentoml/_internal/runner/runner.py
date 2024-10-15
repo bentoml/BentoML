@@ -13,6 +13,7 @@ from ...exceptions import StateException
 from ..configuration.containers import BentoMLContainer
 from ..models.model import Model
 from ..tag import validate_tag_str
+from ..utils import deprecated
 from ..utils import first_not_none
 from .runnable import Runnable
 from .runner_handle import DummyRunnerHandle
@@ -114,6 +115,7 @@ class AbstractRunner(ABC):
         """
 
 
+@deprecated(suggestion="Please upgrade to new style services.")
 @attr.define(slots=False, frozen=True, eq=False, init=False)
 class Runner(AbstractRunner):
     if t.TYPE_CHECKING:

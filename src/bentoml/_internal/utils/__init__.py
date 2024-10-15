@@ -10,6 +10,7 @@ import random
 import re
 import socket
 import typing as t
+import warnings
 from datetime import date
 from datetime import datetime
 from datetime import time
@@ -588,3 +589,46 @@ def with_app_arg(func: t.Callable[[], T]) -> t.Callable[[Starlette], T]:
         return func()
 
     return wrapper
+
+
+class BentoMLDeprecationWarning(DeprecationWarning):
+    pass
+
+
+warnings.simplefilter("default", BentoMLDeprecationWarning)
+
+
+def warn_deprecated(message: str, stacklevel: int = 2) -> None:
+    warnings.warn(
+        message, category=BentoMLDeprecationWarning, stacklevel=stacklevel + 1
+    )
+
+
+def deprecated(
+    name: str = "", deprecated_since: str = "1.4", suggestion: str = ""
+) -> t.Callable[[t.Callable[P, T]], t.Callable[P, T]]:
+    def decorator(func: t.Callable[P, T]) -> t.Callable[P, T]:
+        obj_name = name or func.__name__
+
+        class _DeprecatedMixin:
+            def __init__(self, *args: P.args, **kwargs: P.kwargs) -> None:
+                warn_deprecated(
+                    f"`{obj_name}` is deprecated since BentoML v{deprecated_since} and will be removed in a future version."
+                    + (f" {suggestion}" if suggestion else "")
+                )
+                super().__init__(*args, **kwargs)
+
+        if inspect.isclass(func):
+            return type(func.__name__, (_DeprecatedMixin, func), {})
+
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            warn_deprecated(
+                f"`{obj_name}` is deprecated since BentoML v{deprecated_since} and will be removed in a future version."
+                + (f" {suggestion}" if suggestion else "")
+            )
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

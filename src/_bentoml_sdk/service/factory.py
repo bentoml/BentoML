@@ -22,6 +22,7 @@ from bentoml._internal.bento.bento import Bento
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
 from bentoml._internal.models import Model as StoredModel
+from bentoml._internal.utils import deprecated
 from bentoml._internal.utils import dict_filter_none
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
@@ -422,6 +423,7 @@ def service(inner: type[T] | None = None, /, **kwargs: Unpack[Config]) -> t.Any:
     return decorator(inner) if inner is not None else decorator
 
 
+@deprecated()
 def runner_service(runner: Runner, **kwargs: Unpack[Config]) -> Service[t.Any]:
     """Make a service from a legacy Runner"""
     if not isinstance(runner, Runner):  # type: ignore

@@ -4,6 +4,8 @@ import importlib.util
 from importlib.abc import MetaPathFinder
 from typing import TYPE_CHECKING
 
+from bentoml._internal.utils import warn_deprecated
+
 if TYPE_CHECKING:
     from importlib.machinery import ModuleSpec
     from types import ModuleType
@@ -21,6 +23,9 @@ class FrameworkImporter(MetaPathFinder):
             return None
         spec = importlib.util.find_spec(f"_bentoml_impl.frameworks.{framework}")
         if spec is None:
+            warn_deprecated(
+                f"`bentoml.{framework}` is deprecated since BentoML v1.4 and will be removed in a future version.",
+            )
             spec = importlib.util.find_spec(f"bentoml._internal.frameworks.{framework}")
         return spec
 

@@ -136,20 +136,27 @@ class Service(t.Generic[T]):
         return f"<{self.__class__.__name__} name={self.name!r}>"
 
     @lru_cache
-    def find_dependent(self, name_or_path: str) -> Service[t.Any]:
-        """Find a service by name or path"""
-        attr_name, _, path = name_or_path.partition(".")
+    def find_dependent_by_path(self, path: str) -> Service[t.Any]:
+        """Find a service by path"""
+        attr_name, _, path = path.partition(".")
         if attr_name not in self.dependencies:
             if attr_name in self.all_services():
                 return self.all_services()[attr_name]
             else:
-                raise ValueError(f"Service {attr_name} not found")
+                raise BentoMLException(f"Service {attr_name} not found")
         dependent = self.dependencies[attr_name]
         if dependent.on is None:
-            raise ValueError(f"Service {attr_name} not found")
+            raise BentoMLException(f"Service {attr_name} not found")
         if path:
-            return dependent.on.find_dependent(path)
+            return dependent.on.find_dependent_by_path(path)
         return dependent
+
+    def find_dependent_by_name(self, name: str) -> Service[t.Any]:
+        """Find a service by name"""
+        try:
+            return self.all_services()[name]
+        except KeyError:
+            raise BentoMLException(f"Service {name} not found") from None
 
     @property
     def url(self) -> str | None:

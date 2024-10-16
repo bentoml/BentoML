@@ -207,8 +207,8 @@ def serve_http(
     allocator = ResourceAllocator()
     if dependency_map is None:
         dependency_map = {}
-    if service_name:
-        svc = svc.find_dependent(service_name)
+    if service_name and service_name != svc.name:
+        svc = svc.find_dependent_by_name(service_name)
     num_workers, worker_envs = allocator.get_worker_env(svc)
     server_on_deployment(svc)
     uds_path = tempfile.mkdtemp(prefix="bentoml-uds-")

@@ -840,43 +840,46 @@ class Deployment:
         needs_update = False
         spinner.log(f"💻 View Dashboard: {self.admin_console}")
         endpoint_url: str | None = None
+        stop_event = Event()
         try:
             spinner.start()
             upload_id = spinner.transmission_progress.add_task(
                 "Dummy upload task", visible=False
             )
             while True:
+                stop_event.clear()
                 if needs_update or bento_changed:
                     if bento_changed:
                         console.print("✨ [green bold]Bento change detected[/]")
                         spinner.update("🔄 Pushing Bento to BentoCloud")
                         bento_api._do_push_bento(bento_info, upload_id, bare=True)  # type: ignore
-                    spinner.update("🔄 Updating deployment with new configuration")
-                    update_config = DeploymentConfigParameters(
-                        bento=str(bento_info.tag),
-                        name=self.name,
-                        cluster=self.cluster,
-                        cli=False,
-                        dev=True,
-                    )
-                    update_config.verify()
-                    self = deployment_api.update(update_config)
-                    target = self._refetch_target(False)
-                    requirements_hash, setup_md5 = self._init_deployment_files(
-                        bento_dir, spinner=spinner
-                    )
+                        spinner.update("🔄 Updating deployment with new configuration")
+                        update_config = DeploymentConfigParameters(
+                            bento=str(bento_info.tag)
+                            if bento_changed
+                            else self.get_bento(False),
+                            name=self.name,
+                            cluster=self.cluster,
+                            cli=False,
+                            dev=True,
+                        )
+                        update_config.verify()
+                        self = deployment_api.update(update_config)
+                        target = self._refetch_target(False)
+                    else:
+                        spinner.update("🔄 Resetting deployment")
+                        self = deployment_api.void_update(self.name, self.cluster)
                     needs_update = bento_changed = False
-                elif not requirements_hash or not setup_md5:
-                    requirements_hash, setup_md5 = self._init_deployment_files(
-                        bento_dir, spinner=spinner
-                    )
+                requirements_hash, setup_md5 = self._init_deployment_files(
+                    bento_dir, spinner=spinner
+                )
                 if endpoint_url is None:
                     endpoint_url = self.get_endpoint_urls(False)[0]
                     spinner.log(f"🌐 Endpoint: {endpoint_url}")
-                with self._tail_logs(spinner.console):
+                with self._tail_logs(spinner.console, stop_event):
                     spinner.update("👀 Watching for changes")
                     for changes in watchfiles.watch(
-                        *watch_dirs, watch_filter=watch_filter
+                        *watch_dirs, watch_filter=watch_filter, stop_event=stop_event
                     ):
                         if not is_editable or any(
                             fs.path.isparent(bento_dir, p) for _, p in changes
@@ -968,12 +971,13 @@ class Deployment:
             spinner.stop()
 
     @contextlib.contextmanager
-    def _tail_logs(self, console: Console) -> t.Generator[None, None, None]:
+    def _tail_logs(
+        self, console: Console, stop_event: Event
+    ) -> t.Generator[None, None, None]:
         import itertools
         from collections import defaultdict
 
         pods = self._client.v2.list_deployment_pods(self.name, self.cluster)
-        stop_event = Event()
         workers: list[Thread] = []
 
         colors = itertools.cycle(["cyan", "yellow", "blue", "magenta", "green"])
@@ -1002,6 +1006,11 @@ class Deployment:
                         current = line
                         break
                     console.print(f"[{color}]\\[{pod.runner_name}][/] {line}")
+                    if (
+                        "BentoMLDevSupervisor has been shut down" in line
+                        and not stop_event.is_set()
+                    ):
+                        stop_event.set()
             if current:
                 console.print(f"[{color}]\\[{pod.runner_name}][/] {current}")
 
@@ -1212,6 +1221,10 @@ class DeploymentAPI:
             update_schema=config_struct,
         )
         logger.debug("Deployment Schema: %s", config_struct)
+        return self._generate_deployment_info_(res, res.urls)
+
+    def void_update(self, name: str, cluster: str | None) -> Deployment:
+        res = self._client.v2.void_update_deployment(name, cluster)
         return self._generate_deployment_info_(res, res.urls)
 
     def apply(

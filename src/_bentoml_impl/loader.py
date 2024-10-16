@@ -178,7 +178,7 @@ def import_service(
         if not depend_path:
             svc = root_service
         else:
-            svc = root_service.find_dependent(depend_path)
+            svc = root_service.find_dependent_by_path(depend_path)
         if bento is not None:
             svc.on_load_bento(bento)
         return svc

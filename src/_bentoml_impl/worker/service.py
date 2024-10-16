@@ -262,7 +262,7 @@ def main(
     service = import_service(bento_identifier)
 
     if service_name and service_name != service.name:
-        service = service.find_dependent(service_name)
+        service = service.find_dependent_by_name(service_name)
         server_context.service_type = "service"
     else:
         server_context.service_type = "entry_service"

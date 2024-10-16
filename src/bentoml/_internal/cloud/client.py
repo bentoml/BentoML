@@ -574,6 +574,16 @@ class RestApiClientV2(BaseRestApiClient):
         self._check_resp(resp)
         return schema_from_object(resp.json(), DeploymentFullSchemaV2)
 
+    def void_update_deployment(
+        self, name: str, cluster: str | None
+    ) -> DeploymentFullSchemaV2:
+        url = f"/api/v2/deployments/{name}/void_update"
+        resp = self.session.put(url, params={"cluster": cluster})
+        if self._is_not_found(resp):
+            raise NotFound(f"Deployment {name} is not found: {resp.text}")
+        self._check_resp(resp)
+        return schema_from_object(resp.json(), DeploymentFullSchemaV2)
+
     def get_deployment(
         self,
         name: str,

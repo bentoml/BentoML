@@ -695,7 +695,7 @@ class Deployment:
 
     def _init_deployment_files(
         self, bento_dir: str, spinner: Spinner, timeout: int = 600
-    ) -> str:
+    ) -> tuple[str, str]:
         from ..bento.build_config import BentoPathSpec
 
         check_interval = 5
@@ -770,9 +770,11 @@ class Deployment:
         if requirements_md5 != pod_files.get(REQUIREMENTS_TXT, ""):
             upload_files.append((REQUIREMENTS_TXT, requirements_content))
         setup_script = _build_setup_script(bento_dir, build_config)
-        upload_files.append(("setup.sh", setup_script))
+        setup_md5 = hashlib.md5(setup_script).hexdigest()
+        if setup_md5 != pod_files.get("setup.sh", ""):
+            upload_files.append(("setup.sh", setup_script))
         self.upload_files(upload_files, console=console)
-        return requirements_md5
+        return requirements_md5, setup_md5
 
     def watch(self, bento_dir: str) -> None:
         import watchfiles
@@ -788,7 +790,7 @@ class Deployment:
             build_config.include, build_config.exclude, bento_dir
         )
         requirements_hash: str | None = None
-
+        setup_md5: str | None = None
         default_filter = watchfiles.filters.DefaultFilter()
         is_editable = is_editable_bentoml()
         bentoml_project = str(Path(source_locations("bentoml")).parent.parent)
@@ -806,6 +808,7 @@ class Deployment:
             return rel_path in (
                 "bentofile.yaml",
                 REQUIREMENTS_TXT,
+                "setup.sh",
             ) or bento_spec.includes(rel_path)
 
         console = Console(highlight=False)
@@ -833,7 +836,8 @@ class Deployment:
             return True
 
         spinner = Spinner(console=console)
-        needs_update = is_bento_changed(bento_info)
+        bento_changed = is_bento_changed(bento_info)
+        needs_update = False
         spinner.log(f"💻 View Dashboard: {self.admin_console}")
         endpoint_url: str | None = None
         try:
@@ -842,10 +846,11 @@ class Deployment:
                 "Dummy upload task", visible=False
             )
             while True:
-                if needs_update:
-                    console.print("✨ [green bold]Bento change detected[/]")
-                    spinner.update("🔄 Pushing Bento to BentoCloud")
-                    bento_api._do_push_bento(bento_info, upload_id, bare=True)  # type: ignore
+                if needs_update or bento_changed:
+                    if bento_changed:
+                        console.print("✨ [green bold]Bento change detected[/]")
+                        spinner.update("🔄 Pushing Bento to BentoCloud")
+                        bento_api._do_push_bento(bento_info, upload_id, bare=True)  # type: ignore
                     spinner.update("🔄 Updating deployment with new configuration")
                     update_config = DeploymentConfigParameters(
                         bento=str(bento_info.tag),
@@ -857,12 +862,12 @@ class Deployment:
                     update_config.verify()
                     self = deployment_api.update(update_config)
                     target = self._refetch_target(False)
-                    requirements_hash = self._init_deployment_files(
+                    requirements_hash, setup_md5 = self._init_deployment_files(
                         bento_dir, spinner=spinner
                     )
-                    needs_update = False
-                elif not requirements_hash:
-                    requirements_hash = self._init_deployment_files(
+                    needs_update = bento_changed = False
+                elif not requirements_hash or not setup_md5:
+                    requirements_hash, setup_md5 = self._init_deployment_files(
                         bento_dir, spinner=spinner
                     )
                 if endpoint_url is None:
@@ -892,7 +897,7 @@ class Deployment:
                                 assert isinstance(bento_info, Bento)
                                 if is_bento_changed(bento_info):
                                     # stop log tail and reset the deployment
-                                    needs_update = True
+                                    bento_changed = True
                                     break
 
                         build_config = get_bento_build_config(bento_dir)
@@ -917,7 +922,14 @@ class Deployment:
                                 upload_files.append((rel_path, open(path, "rb").read()))
                             else:
                                 delete_files.append(rel_path)
-
+                        setup_script = _build_setup_script(bento_dir, build_config)
+                        if (
+                            new_hash := hashlib.md5(setup_script).hexdigest()
+                            != setup_md5
+                        ):
+                            setup_md5 = new_hash
+                            needs_update = True
+                            break
                         requirements_content = _build_requirements_txt(
                             bento_dir, build_config
                         )

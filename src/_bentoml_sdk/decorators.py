@@ -82,6 +82,8 @@ def api(
     """
 
     def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
+        if func.__name__.startswith("__"):
+            raise ValueError("API methods cannot start with '__'")
         params: dict[str, t.Any] = {
             "batchable": batchable,
             "batch_dim": batch_dim,
@@ -182,6 +184,8 @@ def task(
     """
 
     def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
+        if func.__name__.startswith("__"):
+            raise ValueError("API methods cannot start with '__'")
         params: dict[str, t.Any] = {
             "batchable": batchable,
             "batch_dim": batch_dim,

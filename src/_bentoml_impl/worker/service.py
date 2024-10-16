@@ -14,7 +14,11 @@ def patch_safetensor():
     import os
     import subprocess
 
-    import safetensors.torch
+    try:
+        import safetensors.torch
+    except ImportError:
+        logger.info("safetensors not installed, skipping model preheat")
+        return
 
     logger.info(
         "Patching safetensors.torch.safe_open to preheat model loading in parallel"

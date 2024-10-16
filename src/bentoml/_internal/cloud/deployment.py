@@ -866,7 +866,7 @@ class Deployment:
                         bento_dir, spinner=spinner
                     )
                 if endpoint_url is None:
-                    endpoint_url = self.get_endpoint_urls(False)[0]
+                    endpoint_url = self.get_endpoint_urls(True)[0]
                     spinner.log(f"🌐 Endpoint: {endpoint_url}")
                 with self._tail_logs(spinner.console):
                     spinner.update("👀 Watching for changes")

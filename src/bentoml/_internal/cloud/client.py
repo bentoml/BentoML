@@ -728,7 +728,7 @@ class RestApiClientV2(BaseRestApiClient):
                 }
             )
 
-            def heartbeat():
+            def heartbeat() -> None:
                 while True:
                     try:
                         ws.send_json({"type": "heartbeat"})
@@ -751,6 +751,8 @@ class RestApiClientV2(BaseRestApiClient):
                     jsn = schema_from_object(data, LogWSResponseSchema)
                     if jsn.type == "error":
                         raise CloudRESTApiClientError(jsn.message or "Unknown error")
+                    if jsn.type == "success" and jsn.message == "EOF":
+                        break
                     if jsn.type == "heartbeat" or jsn.payload is None:
                         continue
                     for line in jsn.payload.items:

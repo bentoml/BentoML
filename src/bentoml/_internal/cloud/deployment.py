@@ -701,7 +701,7 @@ class Deployment:
         check_interval = 5
         start_time = time.time()
         console = spinner.console
-        spinner_text = "🔄 Preparing development environment - status: [green]{}[/]"
+        spinner_text = "🔄 Preparing codespace - status: [green]{}[/]"
         status = self.get_status(False).status
         while time.time() - start_time < timeout:
             spinner.update(spinner_text.format(status))
@@ -855,7 +855,7 @@ class Deployment:
                         console.print("✨ [green bold]Bento change detected[/]")
                         spinner.update("🔄 Pushing Bento to BentoCloud")
                         bento_api._do_push_bento(bento_info, upload_id, bare=True)  # type: ignore
-                        spinner.update("🔄 Updating deployment with new configuration")
+                        spinner.update("🔄 Updating codespace with new configuration")
                         update_config = DeploymentConfigParameters(
                             bento=str(bento_info.tag)
                             if bento_changed
@@ -869,7 +869,7 @@ class Deployment:
                         self = deployment_api.update(update_config)
                         target = self._refetch_target(False)
                     else:
-                        spinner.update("🔄 Resetting deployment")
+                        spinner.update("🔄 Resetting codespace")
                         self = deployment_api.void_update(self.name, self.cluster)
                     needs_update = bento_changed = False
                 requirements_hash, setup_md5 = self._init_deployment_files(
@@ -878,8 +878,7 @@ class Deployment:
                 if endpoint_url is None:
                     endpoint_url = self.get_endpoint_urls(True)[0]
                     spinner.log(f"🌐 Endpoint: {endpoint_url}")
-                with self._tail_logs(spinner.console, stop_event):
-                    spinner.update("👀 Watching for changes")
+                with self._tail_logs(spinner, stop_event):
                     for changes in watchfiles.watch(
                         *watch_dirs, watch_filter=watch_filter, stop_event=stop_event
                     ):
@@ -956,17 +955,17 @@ class Deployment:
                             DeploymentStatus.Unhealthy.value,
                         ]:
                             console.print(
-                                f'🚨 [bold red]Deployment "{self.name}" aborted. Current status: "{status}"[/]'
+                                f'🚨 [bold red]Codespace "{self.name}" aborted. Current status: "{status}"[/]'
                             )
                             return
         except KeyboardInterrupt:
             spinner.log(
                 "\nWatcher stopped. Next steps:\n"
-                "* Attach to this deployment again:\n"
-                f"    [blue]$ bentoml develop --attach {self.name} --cluster {self.cluster}[/]\n\n"
+                "* Attach to this codespace again:\n"
+                f"    [blue]$ bentoml code --attach {self.name} --cluster {self.cluster}[/]\n\n"
                 "* Push the bento to BentoCloud:\n"
                 "    [blue]$ bentoml build --push[/]\n\n"
-                "* Terminate the deployment:\n"
+                "* Shut down the codespace:\n"
                 f"    [blue]$ bentoml deployment terminate {self.name} --cluster {self.cluster}[/]"
             )
         finally:
@@ -974,16 +973,48 @@ class Deployment:
 
     @contextlib.contextmanager
     def _tail_logs(
-        self, console: Console, stop_event: Event
+        self, spinner: Spinner, stop_event: Event
     ) -> t.Generator[None, None, None]:
         import itertools
         from collections import defaultdict
+
+        spinner.update("🟡 👀 Watching for changes")
+        server_ready = False
+        console = spinner.console
+
+        def set_server_ready(is_ready: bool) -> None:
+            nonlocal server_ready
+            if is_ready is server_ready:
+                return
+            spinner.update(
+                "🟢 👀 Watching for changes"
+                if is_ready
+                else "🟡 👀 Watching for changes"
+            )
+            server_ready = is_ready
 
         pods = self._client.v2.list_deployment_pods(self.name, self.cluster)
         workers: list[Thread] = []
 
         colors = itertools.cycle(["cyan", "yellow", "blue", "magenta", "green"])
         runner_color: dict[str, str] = defaultdict(lambda: next(colors))
+
+        def heartbeat(event: Event, check_interval: float = 5.0) -> None:
+            from httpx import NetworkError
+            from httpx import TimeoutException
+
+            endpoint_url = self.get_endpoint_urls(False)[0]
+            while not event.is_set():
+                try:
+                    resp = self._client.session.get(f"{endpoint_url}/readyz", timeout=5)
+                except (TimeoutException, NetworkError):
+                    set_server_ready(False)
+                else:
+                    if resp.is_success:
+                        set_server_ready(True)
+                    else:
+                        set_server_ready(False)
+                event.wait(check_interval)
 
         def pod_log_worker(pod: KubePodSchema, stop_event: Event) -> None:
             current = ""
@@ -1008,14 +1039,12 @@ class Deployment:
                         current = line
                         break
                     console.print(f"[{color}]\\[{pod.runner_name}][/] {line}")
-                    if (
-                        "BentoMLDevSupervisor has been shut down" in line
-                        and not stop_event.is_set()
-                    ):
-                        stop_event.set()
             if current:
                 console.print(f"[{color}]\\[{pod.runner_name}][/] {current}")
 
+        heartbeat_thread = Thread(target=heartbeat, args=(stop_event,))
+        heartbeat_thread.start()
+        workers.append(heartbeat_thread)
         try:
             for pod in pods:
                 if pod.labels.get("yatai.ai/is-bento-image-builder") == "true":

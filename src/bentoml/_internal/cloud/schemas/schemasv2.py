@@ -123,8 +123,8 @@ class KubePodSchema:
 @attr.define
 class LogSchema:
     __forbid_extra_keys__ = False
-    items: t.List[str]
-    type: str
+    items: t.List[str] = attr.field(factory=list)
+    type: str = "append"
 
 
 @attr.define

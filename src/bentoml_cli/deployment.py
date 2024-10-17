@@ -268,7 +268,7 @@ def develop_command(
     if attach:
         deployment = bentoml.deployment.get(attach)
     else:
-        with console.status("Fetching deployments..."):
+        with console.status("Fetching codespaces..."):
             current_user = _rest_client.v1.get_current_user()
             if current_user is None:
                 raise CLIException("current user is not found")
@@ -287,9 +287,9 @@ def develop_command(
             ]
 
         chosen = questionary.select(
-            message="Select a deployment to attach to or create a new one",
+            message="Select a codespace to attach to or create a new one",
             choices=[{"name": d.name, "value": d} for d in deployments]
-            + [{"name": "Create a new deployment", "value": "new"}],
+            + [{"name": "Create a new codespace", "value": "new"}],
         ).ask()
 
         if chosen == "new":
@@ -306,7 +306,7 @@ def develop_command(
         else:
             if env or secret:
                 rich.print(
-                    "[yellow]Warning:[/] --env and --secret are ignored when attaching to an existing deployment"
+                    "[yellow]Warning:[/] --env and --secret are ignored when attaching to an existing codespace"
                 )
             deployment = t.cast(Deployment, chosen)
     deployment.watch(bento_dir)

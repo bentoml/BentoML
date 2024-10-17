@@ -774,6 +774,8 @@ class Deployment:
         if setup_md5 != pod_files.get("setup.sh", ""):
             upload_files.append(("setup.sh", setup_script))
         self.upload_files(upload_files, console=console)
+        # Upload a ready flag file after all files are uploaded
+        self.upload_files([(".project_ready", b"")], console=console)
         return requirements_md5, setup_md5
 
     def watch(self, bento_dir: str) -> None:

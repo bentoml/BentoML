@@ -218,8 +218,7 @@ def shared_decorator(
         return decorate
 
 
-# FIXME: remove hidden flag when ready for GA
-@click.command(name="develop", hidden=True)
+@click.command(name="code")
 @click.argument(
     "bento_dir",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True),
@@ -250,7 +249,16 @@ def develop_command(
     secret: tuple[str] | None,
     _rest_client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
 ):
-    """Create or attach to a codespace and watch for local file changes"""
+    """Create or attach to a codespace.
+
+    Create a new codespace:
+
+        $ bentoml code
+
+    Attach to an existing codespace:
+
+        $ bentoml code --attach <codespace-name>
+    """
     import questionary
 
     if attach and (env or secret):

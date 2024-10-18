@@ -195,7 +195,7 @@ def update(
         config_file=config_file,
     )
     try:
-        config_params.verify()
+        config_params.verify(create=False)
     except BentoMLException as e:
         raise BentoMLException(
             f"Failed to create deployment due to invalid configuration: {e}"
@@ -246,7 +246,7 @@ def apply(
         config_file=config_file,
     )
     try:
-        config_params.verify()
+        config_params.verify(create=False)
     except BentoMLException as e:
         raise BentoMLException(
             f"Failed to create deployment due to invalid configuration: {e}"

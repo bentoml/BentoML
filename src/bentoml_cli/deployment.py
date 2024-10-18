@@ -422,7 +422,7 @@ def update(  # type: ignore
         cli=True,
     )
     try:
-        config_params.verify()
+        config_params.verify(create=False)
     except BentoMLException as e:
         raise_deployment_config_error(e, "update")
     deployment_info = _cloud_client.deployment.update(
@@ -547,7 +547,7 @@ def apply(  # type: ignore
         cli=True,
     )
     try:
-        config_params.verify()
+        config_params.verify(create=False)
     except BentoMLException as e:
         raise_deployment_config_error(e, "apply")
     deployment_info = _cloud_client.deployment.apply(

@@ -87,7 +87,7 @@ class DeploymentConfigParameters:
     cfg_dict: dict[str, t.Any] | None = None
     _param_config: dict[str, t.Any] | None = None
 
-    def verify(self):
+    def verify(self, create: bool = True):
         deploy_by_param = (
             self.name
             or self.bento
@@ -186,6 +186,22 @@ class DeploymentConfigParameters:
                 if self.cli:
                     rich.print(f"using bento [green]{bento_name}[/]...")
                 bento_info = ensure_bento(bento=str(bento_name), cli=self.cli)
+            if create:
+                manifest = (
+                    bento_info.get_manifest()
+                    if isinstance(bento_info, Bento)
+                    else bento_info
+                )
+                required_envs = [env.name for env in manifest.envs if not env.value]
+                missing_envs = [
+                    env["name"]
+                    for env in (self.envs or [])
+                    if env["name"] not in required_envs
+                ]
+                if missing_envs:
+                    raise BentoMLException(
+                        f"Environment variables must be provided for bento but missing: {missing_envs}"
+                    )
             self.cfg_dict["bento"] = str(bento_info.tag)
             if self.service_name is None:
                 self.service_name = bento_info.entry_service
@@ -838,8 +854,7 @@ class Deployment:
             return True
 
         spinner = Spinner(console=console)
-        bento_changed = is_bento_changed(bento_info)
-        needs_update = False
+        needs_update = is_bento_changed(bento_info)
         spinner.log(f"💻 View Dashboard: {self.admin_console}")
         endpoint_url: str | None = None
         stop_event = Event()
@@ -850,28 +865,22 @@ class Deployment:
             )
             while True:
                 stop_event.clear()
-                if needs_update or bento_changed:
-                    if bento_changed:
-                        console.print("✨ [green bold]Bento change detected[/]")
-                        spinner.update("🔄 Pushing Bento to BentoCloud")
-                        bento_api._do_push_bento(bento_info, upload_id, bare=True)  # type: ignore
-                        spinner.update("🔄 Updating codespace with new configuration")
-                        update_config = DeploymentConfigParameters(
-                            bento=str(bento_info.tag)
-                            if bento_changed
-                            else self.get_bento(False),
-                            name=self.name,
-                            cluster=self.cluster,
-                            cli=False,
-                            dev=True,
-                        )
-                        update_config.verify()
-                        self = deployment_api.update(update_config)
-                        target = self._refetch_target(False)
-                    else:
-                        spinner.update("🔄 Resetting codespace")
-                        self = deployment_api.void_update(self.name, self.cluster)
-                    needs_update = bento_changed = False
+                if needs_update:
+                    console.print("✨ [green bold]Bento change detected[/]")
+                    spinner.update("🔄 Pushing Bento to BentoCloud")
+                    bento_api._do_push_bento(bento_info, upload_id, bare=True)  # type: ignore
+                    spinner.update("🔄 Updating codespace with new configuration")
+                    update_config = DeploymentConfigParameters(
+                        bento=str(bento_info.tag),
+                        name=self.name,
+                        cluster=self.cluster,
+                        cli=False,
+                        dev=True,
+                    )
+                    update_config.verify(create=False)
+                    self = deployment_api.update(update_config)
+                    target = self._refetch_target(False)
+                    needs_update = False
                 requirements_hash, setup_md5 = self._init_deployment_files(
                     bento_dir, spinner=spinner
                 )
@@ -901,7 +910,7 @@ class Deployment:
                                 assert isinstance(bento_info, Bento)
                                 if is_bento_changed(bento_info):
                                     # stop log tail and reset the deployment
-                                    bento_changed = True
+                                    needs_update = True
                                     break
 
                         build_config = get_bento_build_config(bento_dir)
@@ -932,6 +941,8 @@ class Deployment:
                             != setup_md5
                         ):
                             setup_md5 = new_hash
+                            bento_info.tag.version = None
+                            bento_info._tag = bento_info.tag.make_new_version()
                             needs_update = True
                             break
                         requirements_content = _build_requirements_txt(

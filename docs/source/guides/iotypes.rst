@@ -476,35 +476,40 @@ Output types
      - Output annotation
      - HTTP content yype
      - Example output HTTP body
+   * - Plain
+     - * ``-> str``
+       * ``-> bytes``
+     - ``text/plain``
+     - string
    * - JSON
-     - Standard Python types, such as:
-
-       * ``→ dict``
-       * ``→ str``
-       * ``→ int``
+     - * ``-> int``
+       * ``-> float``
+       * ``-> dict``
+       * ``-> list``
      - ``application/json``
-     - * ``{}``
-       * ``""``
-       * ``3``
+     - * ``3``
+       * ``1.1``
+       * ``{}``
+       * ``[]``
    * - Tensors
-     - * ``→ torch.Tensor``
-       * ``→ numpy.ndarray``
-       * ``→ tensorflow.Tensor``
+     - * ``-> torch.Tensor``
+       * ``-> numpy.ndarray``
+       * ``-> tensorflow.Tensor``
      - ``application/json``
      - ``[[1, 1, 1, 1], [2, 2, 2, 2]]``
    * - Tabular data
-     - ``→ pandas.DataFrame``
+     - ``-> pandas.DataFrame``
      - ``application/json``
      - ``[{ "col1": 1, "col2": 2 }, { "col1": 1, "col2": 2 }]``
    * - Image
-     - ``→ PIL.Image.Image``
+     - ``-> PIL.Image.Image``
      - ``image/<auto MIME type>``
      - Binary body
    * - File
-     - ``→ pathlib.Path``
+     - ``-> pathlib.Path``
      - ``<auto MIME type>``
      - Binary body
    * - Custom file
-     - ``→ Annotated[pathlib.Path, ContentType("custom-type")]``
+     - ``-> Annotated[pathlib.Path, ContentType("custom-type")]``
      - ``custom-type``
      - Binary body

@@ -13,7 +13,7 @@ Supported input and output types in BentoML include:
 
 - **Standard Python types**: Basic types like ``str``, ``int``, ``float``, ``boolean``, ``list``, and ``dict``.
 - **Pydantic field types**: BentoML extends its type support to `Pydantic field types <https://field-idempotency--pydantic-docs.netlify.app/usage/types/>`_, offering a more structured and validated approach to handling complex data schemas.
-- **ML specific types**: To meet the requirements of different ML use cases, BentoML supports types like ``numpy.ndarray``, ``torch.Tensor``, and ``tf.Tensor`` for handling tensor data, ``pd.DataFrame`` for working with tabular data, ``PIL.Image.Image`` for image data, and ``pathlib.Path`` for file path references.
+- **ML specific types**: To meet the requirements of different ML use cases, BentoML supports types like ``numpy.ndarray``, ``torch.Tensor``, and ``tensorflow.Tensor`` for handling tensor data, ``pandas.DataFrame`` for working with tabular data, ``PIL.Image.Image`` for image data, and ``pathlib.Path`` for file path references.
 
 You use Python's type annotations to define the expected input and output types for each API endpoint. This not only helps validate the data against the specified schema but also enhances the clarity and readability of the code. The type annotations play an important role in generating the API, BentoML :doc:`client </guides/clients>`, and UI components, ensuring a consistent and predictable interaction with the Service.
 
@@ -211,7 +211,7 @@ If you don't want to save temporary files to disk, you can return the data as ``
 Tensors
 ^^^^^^^
 
-BentoML supports various tensor types such as ``numpy.ndarray``, ``torch.Tensor``, and ``tf.Tensor``. Additionally, you can use :ref:`reference/sdk:bentoml.validators` like ``bentoml.Shape`` and ``bentoml.DType`` to enforce specific shapes and data types for tensor input. Here is an example:
+BentoML supports various tensor types such as ``numpy.ndarray``, ``torch.Tensor``, and ``tensorflow.Tensor``. Additionally, you can use :ref:`reference/sdk:bentoml.validators` like ``bentoml.Shape`` and ``bentoml.DType`` to enforce specific shapes and data types for tensor input. Here is an example:
 
 .. code-block:: python
 
@@ -409,10 +409,10 @@ The following table includes the additional input and output types supported by 
    * - ``torch.Tensor``
      - Tensor type in PyTorch for representing tensor data.
      - ``bentoml.validators.Shape``, ``bentoml.validators.DType``
-   * - ``tf.Tensor``
+   * - ``tensorflow.Tensor``
      - Tensor type in TensorFlow for representing tensor data.
      - ``bentoml.validators.Shape``, ``bentoml.validators.DType``
-   * - ``pd.DataFrame``
+   * - ``pandas.DataFrame``
      - Data structure for tabular data, commonly used in data analysis.
      - ``bentoml.validators.DataframeSchema``
    * - ``PIL.Image.Image``
@@ -421,3 +421,95 @@ The following table includes the additional input and output types supported by 
    * - ``pathlib.Path``
      - File paths, used for file inputs and outputs.
      - ``bentoml.validators.ContentType``
+
+BentoML also supports all Pydantic annotated types for validation. See `the Pydantic documentation <https://docs.pydantic.dev/latest/concepts/types/>`_ for more information.
+
+Appendix
+--------
+
+This section provides the tables summarizing the supported input and output types in BentoML Services.
+
+Input types
+^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 30 25 30
+
+   * - Type
+     - Input annotation
+     - HTTP content type
+     - Example input HTTP body
+   * - JSON
+     - ``predict(self, input1: str, input2: int)``
+     - ``application/json``
+     - ``curl -XPOST -d '{ "input1": "input_value", "input2": 2 }'``
+   * - Tensors
+     - * ``predict(self, input1: torch.Tensor)``
+       * ``predict(self, input1: numpy.ndarray)``
+       * ``predict(self, input1: tensorflow.Tensor)``
+     - ``application/json``
+     - ``curl -XPOST -d '{ "input1": [[1, 1, 1, 1], [2, 2, 2, 2]] }'``
+   * - Tabular data
+     - ``predict(self, input1: pandas.DataFrame)``
+     - ``application/json``
+     - ``curl -XPOST -d '{ "input1": [{"col1": 1, "col2": 2}, {"col1": 1, "col2": 2}] }'``
+   * - Image
+     - ``predict(self, input1: str, input2: PIL.Image.Image)``
+     - ``multipart/form-data``
+     - * Path: ``curl -XPOST -F input1="enter_your_prompt_here" -F input2="image=@/path/to/image.jpg"``
+       * URL: ``curl -XPOST -F input1="enter_your_prompt_here" -F input2="http://domain/path/to/image.jpg"``
+   * - File
+     - ``predict(self, input1: str, input2: pathlib.Path)``
+     - ``multipart/form-data``
+     - * Path: ``curl -XPOST -F input1="enter_your_prompt_here" -F input2="image=@/path/to/image.jpg"``
+       * URL: ``curl -XPOST -F input1="enter_your_prompt_here" -F input2="http://domain/path/to/file.mp3"``
+
+Output types
+^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 30 25 30
+
+   * - Type
+     - Output annotation
+     - HTTP content yype
+     - Example output HTTP body
+   * - Plain
+     - * ``-> str``
+       * ``-> bytes``
+     - ``text/plain``
+     - string
+   * - JSON
+     - * ``-> int``
+       * ``-> float``
+       * ``-> dict``
+       * ``-> list``
+     - ``application/json``
+     - * ``3``
+       * ``1.1``
+       * ``{}``
+       * ``[]``
+   * - Tensors
+     - * ``-> torch.Tensor``
+       * ``-> numpy.ndarray``
+       * ``-> tensorflow.Tensor``
+     - ``application/json``
+     - ``[[1, 1, 1, 1], [2, 2, 2, 2]]``
+   * - Tabular data
+     - ``-> pandas.DataFrame``
+     - ``application/json``
+     - ``[{ "col1": 1, "col2": 2 }, { "col1": 1, "col2": 2 }]``
+   * - Image
+     - ``-> PIL.Image.Image``
+     - ``image/<auto MIME type>``
+     - Binary body
+   * - File
+     - ``-> pathlib.Path``
+     - ``<auto MIME type>``
+     - Binary body
+   * - Custom file
+     - ``-> Annotated[pathlib.Path, ContentType("custom-type")]``
+     - ``custom-type``
+     - Binary body

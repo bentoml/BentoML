@@ -87,7 +87,7 @@ class DeploymentConfigParameters:
     cfg_dict: dict[str, t.Any] | None = None
     _param_config: dict[str, t.Any] | None = None
 
-    def verify(self):
+    def verify(self, create: bool = True):
         deploy_by_param = (
             self.name
             or self.bento
@@ -186,6 +186,22 @@ class DeploymentConfigParameters:
                 if self.cli:
                     rich.print(f"using bento [green]{bento_name}[/]...")
                 bento_info = ensure_bento(bento=str(bento_name), cli=self.cli)
+            if create:
+                manifest = (
+                    bento_info.get_manifest()
+                    if isinstance(bento_info, Bento)
+                    else bento_info
+                )
+                required_envs = [env.name for env in manifest.envs if not env.value]
+                missing_envs = [
+                    env["name"]
+                    for env in (self.envs or [])
+                    if env["name"] not in required_envs
+                ]
+                if missing_envs:
+                    raise BentoMLException(
+                        f"Environment variables must be provided for bento but missing: {missing_envs}"
+                    )
             self.cfg_dict["bento"] = str(bento_info.tag)
             if self.service_name is None:
                 self.service_name = bento_info.entry_service
@@ -865,7 +881,7 @@ class Deployment:
                             cli=False,
                             dev=True,
                         )
-                        update_config.verify()
+                        update_config.verify(create=False)
                         self = deployment_api.update(update_config)
                         target = self._refetch_target(False)
                     else:

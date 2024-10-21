@@ -143,3 +143,10 @@ class SecretAPI:
         )
         secret = self._client.v1.update_secret(name, secret_schema)
         return Secret.from_secret_schema(secret)
+
+    def get(self, name: str) -> Secret:
+        """
+        Get a secret by name.
+        """
+        secret = self._client.v1.get_secret(name)
+        return Secret.from_secret_schema(secret)

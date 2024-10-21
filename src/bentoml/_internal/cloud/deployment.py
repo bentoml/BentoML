@@ -88,6 +88,10 @@ class DeploymentConfigParameters:
     _param_config: dict[str, t.Any] | None = None
 
     def verify(self, create: bool = True):
+        from bentoml._internal.configuration.containers import BentoMLContainer
+
+        from .secret import SecretAPI
+
         deploy_by_param = (
             self.name
             or self.bento
@@ -193,10 +197,18 @@ class DeploymentConfigParameters:
                     else bento_info
                 )
                 required_envs = [env.name for env in manifest.envs if not env.value]
+                provided_envs: list[str] = [env["name"] for env in (self.envs or [])]
+                if self.secrets:
+                    secret_api = SecretAPI(BentoMLContainer.rest_api_client.get())
+                    for secret_name in self.secrets:
+                        secret = secret_api.get(secret_name)
+                        if secret.content.type == "env":
+                            provided_envs.extend(
+                                item.key for item in secret.content.items
+                            )
+
                 missing_envs = [
-                    env["name"]
-                    for env in (self.envs or [])
-                    if env["name"] not in required_envs
+                    env for env in required_envs if env not in provided_envs
                 ]
                 if missing_envs:
                     raise BentoMLException(

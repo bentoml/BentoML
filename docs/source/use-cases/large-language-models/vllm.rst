@@ -247,33 +247,40 @@ Deploy to BentoCloud
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $10 in free credits.
 
-First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project:
+1. First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project:
 
-.. code-block:: yaml
-    :caption: `bentofile.yaml`
+   .. code-block:: yaml
+        :caption: `bentofile.yaml`
 
-    service: "service:VLLM"
-    labels:
-      owner: bentoml-team
-      stage: demo
-    include:
-      - "*.py"
-      - "bentovllm_openai/*.py"
-    python:
-      requirements_txt: "./requirements.txt"
-    envs:
-      - name: HF_TOKEN
+        service: "service:VLLM"
+        labels:
+          owner: bentoml-team
+          stage: demo
+        include:
+          - "*.py"
+          - "bentovllm_openai/*.py"
+        python:
+          requirements_txt: "./requirements.txt"
+        envs:
+          - name: HF_TOKEN
 
-:ref:`Log in to BentoCloud <bentocloud/how-tos/manage-access-token:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, set the environment variable for your Hugging Face token, then run the following command to deploy the project.
+2. :ref:`Log in to BentoCloud <bentocloud/how-tos/manage-access-token:Log in to BentoCloud using the BentoML CLI>`.
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    bentoml deploy .
+        bentoml cloud login
 
-Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
+3. Create a BentoCloud :doc:`secret </bentocloud/how-tos/manage-secrets>` to store the required environment variable and reference it during deployment.
 
-.. image:: ../../_static/img/use-cases/large-language-models/vllm/vllm-bentocloud.png
+   .. code-block:: bash
 
-.. note::
+        bentoml secret create huggingface HF_TOKEN=<your_hf_token>
+        bentoml deploy . --secret huggingface
 
-   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image</guides/containerization>`.
+4. Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
+
+   .. image:: ../../_static/img/use-cases/large-language-models/vllm/vllm-bentocloud.png
+
+   .. note::
+
+       For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image</guides/containerization>`.

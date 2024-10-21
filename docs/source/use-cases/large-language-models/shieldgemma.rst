@@ -188,21 +188,24 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
       pip install bentoml
       bentoml cloud login
 
-2. Clone the repository and deploy the project to BentoCloud.
+2. Clone the repository.
 
    .. code-block:: bash
 
       git clone https://github.com/bentoml/BentoShield.git
       cd BentoShield
-      bentoml deploy .
 
-   You may also use the ``—-env`` flags to set the required environment variables:
+3. Create BentoCloud :doc:`secrets </bentocloud/how-tos/manage-secrets>` to store the required environment variables and reference them during deployment.
 
    .. code-block:: bash
 
-      bentoml deploy . --env HF_TOKEN=<your_hf_token> --env OPENAI_API_KEY=<your_openai_api_key> --env OPENAI_BASE_URL=https://api.openai.com/v1
+      bentoml secret create huggingface HF_TOKEN=<your_hf_token>
+      bentoml secret create openaikey OPENAI_API_KEY=<your_openai_api_key>
+      bentoml secret create openaibaseurl OPENAI_BASE_URL=https://api.openai.com/v1
 
-3. Once it is up and running on BentoCloud, you can call the endpoint in the following ways:
+      bentoml deploy . --secret huggingface --secret openaikey --secret openaibaseurl
+
+4. Once it is up and running on BentoCloud, you can call the endpoint in the following ways:
 
    .. tab-set::
 

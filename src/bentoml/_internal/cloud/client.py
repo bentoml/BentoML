@@ -534,7 +534,13 @@ class RestApiClientV1(BaseRestApiClient):
         self._check_resp(resp)
         return schema_from_object(resp.json(), SecretSchema)
 
-    def delete_secret(self, name: str):
+    def get_secret(self, name: str) -> SecretSchema:
+        url = f"/api/v1/org_secrets/{name}"
+        resp = self.session.get(url)
+        self._check_resp(resp)
+        return schema_from_object(resp.json(), SecretSchema)
+
+    def delete_secret(self, name: str) -> None:
         url = f"/api/v1/org_secrets/{name}"
         resp = self.session.delete(url)
         self._check_resp(resp)

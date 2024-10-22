@@ -12,7 +12,8 @@ Manage Bentos
 .. autofunction:: bentoml.delete
 .. autofunction:: bentoml.export_bento
 .. autofunction:: bentoml.import_bento
-
+.. autofunction:: bentoml.build
+.. autofunction:: bentoml.bentos.build_bentofile
 
 Manage models
 -------------

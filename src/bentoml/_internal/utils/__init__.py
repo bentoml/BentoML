@@ -606,7 +606,7 @@ def warn_deprecated(message: str, stacklevel: int = 2) -> None:
 
 def deprecated(
     name: str = "", deprecated_since: str = "1.4", suggestion: str = ""
-) -> t.Callable[[t.Callable[P, T]], t.Callable[P, T]]:
+) -> t.Callable[[C], C]:
     def decorator(func: t.Callable[P, T]) -> t.Callable[P, T]:
         obj_name = name or func.__name__
 

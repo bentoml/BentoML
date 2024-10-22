@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 import json
 import logging
 import os
@@ -239,6 +238,8 @@ class Bento(StoreItem):
         bare: bool = False,
         reload: bool = False,
     ) -> Bento:
+        from _bentoml_sdk.images import Image
+        from _bentoml_sdk.images import get_image_from_build_config
         from _bentoml_sdk.models import BentoModel
 
         from ..service import Service
@@ -264,7 +265,7 @@ class Bento(StoreItem):
         )
         is_legacy = isinstance(svc, Service)
         # Apply default build options
-        build_config = build_config.with_defaults()
+        image: Image | None = None
 
         if isinstance(svc, Service):
             # for < 1.2
@@ -279,6 +280,10 @@ class Bento(StoreItem):
                 if build_config.name is not None
                 else to_snake_case(svc.name)
             )
+            image = svc.image
+        if image is None:
+            image = get_image_from_build_config(build_config)
+        build_config = build_config.with_defaults()
         tag = Tag(bento_name, version)
         if version is None:
             tag = tag.make_new_version()
@@ -335,12 +340,16 @@ class Bento(StoreItem):
                             logger.warn("File size is larger than 10MiB: %s", path)
                         target_fs.makedirs(dir_path, recreate=True)
                         copy_file(ctx_fs, path, target_fs, path)
-
-            # NOTE: we need to generate both Python and Conda
-            # first to make sure we can generate the Dockerfile correctly.
-            build_config.python.write_to_bento(bento_fs, build_ctx, platform_=platform)
-            build_config.conda.write_to_bento(bento_fs, build_ctx)
-            build_config.docker.write_to_bento(bento_fs, build_ctx, build_config.conda)
+            if image is None:
+                # NOTE: we need to generate both Python and Conda
+                # first to make sure we can generate the Dockerfile correctly.
+                build_config.python.write_to_bento(
+                    bento_fs, build_ctx, platform_=platform
+                )
+                build_config.conda.write_to_bento(bento_fs, build_ctx)
+                build_config.docker.write_to_bento(
+                    bento_fs, build_ctx, build_config.conda
+                )
 
             # Create `readme.md` file
             if build_config.description is None:
@@ -364,10 +373,8 @@ class Bento(StoreItem):
                 with bento_fs.open(fs.path.combine("apis", "schema.json"), "w") as f:
                     json.dump(svc.schema(), f, indent=2)
 
-        res = Bento(
-            tag,
-            bento_fs,
-            BentoInfo(
+        if image is None:
+            bento_info = BentoInfo(
                 tag=tag,
                 service=svc,  # type: ignore # attrs converters do not typecheck
                 entry_service=svc.name,
@@ -396,8 +403,28 @@ class Bento(StoreItem):
                 conda=build_config.conda,
                 envs=build_config.envs,
                 schema=svc.schema() if not is_legacy else {},
-            ),
-        )
+            )
+        else:
+            bento_info = BentoInfoV2(
+                tag=tag,
+                service=svc,  # type: ignore # attrs converters do not typecheck
+                entry_service=svc.name,
+                labels=build_config.labels,
+                models=models,
+                services=(
+                    [
+                        BentoServiceInfo.from_service(s)
+                        for s in svc.all_services().values()
+                    ]
+                    if not is_legacy
+                    else []
+                ),
+                envs=build_config.envs,
+                schema=svc.schema() if not is_legacy else {},
+                image=image.freeze(platform),
+            )
+
+        res = Bento(tag, bento_fs, bento_info)
         if bare:
             return res
         # Create bento.yaml
@@ -494,6 +521,7 @@ class Bento(StoreItem):
 
     def flush_info(self):
         with self._fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
+            breakpoint()
             self.info.dump(bento_yaml)
 
     @property
@@ -752,7 +780,7 @@ class BaseBentoInfo:
                         models,
                     )
                 )
-        if yaml_content.get("spec", 1) == 2:
+        if yaml_content.pop("spec", 1) == 2:
             klass = BentoInfoV2
         else:
             klass = BentoInfo
@@ -815,15 +843,6 @@ bentoml_cattr.register_structure_hook(
     BentoDependencyInfo, _convert_bento_dependency_info
 )
 
-bentoml_cattr.register_structure_hook_func(
-    lambda cls: inspect.isclass(cls) and issubclass(cls, BaseBentoInfo),
-    make_dict_structure_fn(
-        BaseBentoInfo,
-        bentoml_cattr,
-        name=override(omit=True),
-        version=override(omit=True),
-    ),
-)
 bentoml_cattr.register_unstructure_hook(
     BentoModelInfo,
     make_dict_unstructure_fn(
@@ -834,8 +853,17 @@ bentoml_cattr.register_unstructure_hook(
         metadata=override(omit_if_default=True),
     ),
 )
-bentoml_cattr.register_unstructure_hook(
-    BaseBentoInfo,
+bentoml_cattr.register_structure_hook_factory(
+    lambda cls: issubclass(cls, BaseBentoInfo),
+    lambda cls: make_dict_structure_fn(
+        cls,
+        bentoml_cattr,
+        name=override(omit=True),
+        version=override(omit=True),
+    ),
+)
+bentoml_cattr.register_unstructure_hook_factory(
+    lambda cls: issubclass(cls, BaseBentoInfo),
     # Ignore tag, tag is saved via the name and version field
-    make_dict_unstructure_fn(BaseBentoInfo, bentoml_cattr, tag=override(omit=True)),
+    lambda cls: make_dict_unstructure_fn(cls, bentoml_cattr, tag=override(omit=True)),
 )

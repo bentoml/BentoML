@@ -175,9 +175,13 @@ class ModelAPI:
                         data=io_with_cb,
                     )
                 except Exception as e:  # pylint: disable=broad-except
-                    self.spinner.log(f'[bold red]Failed to upload model "{model.tag}"')
+                    self.spinner.log(
+                        f'[bold red]🚨 Failed to upload model "{model.tag}"'
+                    )
                     raise e
-                self.spinner.log(f'[bold green]Successfully pushed model "{model.tag}"')
+                self.spinner.log(
+                    f'[bold green]✅ Successfully pushed model "{model.tag}"'
+                )
                 return
             finish_req = FinishUploadSchema(
                 status=UploadStatus.SUCCESS.value, reason=""

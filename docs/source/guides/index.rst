@@ -123,6 +123,12 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Define custom error handling logic for your BentoML Service.
 
+    .. grid-item-card:: :doc:`/guides/gradio`
+        :link: /guides/gradio
+        :link-type: doc
+
+        Integrate Gradio to set up a user interface for your BentoML Service.
+
 .. toctree::
     :hidden:
 
@@ -145,3 +151,4 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     configurations
     lifecycle-hooks
     error-handling
+    gradio

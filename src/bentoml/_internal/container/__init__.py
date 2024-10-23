@@ -219,6 +219,7 @@ def construct_containerfile(
                 temp_fs,
                 enable_buildkit=enable_buildkit,
                 add_header=add_header,
+                envs=options.envs,
             )
             instruction.append(dockerfile)
         temp_fs.writetext(dockerfile_path, "\n".join(instruction))

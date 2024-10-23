@@ -1013,4 +1013,4 @@ class FilledBentoBuildConfig(BentoBuildConfig):
     python: PythonOptions
     conda: CondaOptions
     models: t.List[ModelSpec]
-    envs: t.List[t.Dict[str, str]]
+    envs: t.List[BentoEnvSchema]

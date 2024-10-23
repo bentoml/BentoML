@@ -94,6 +94,11 @@ models:
   module: model_b_module
   creation_time: '{model_creation_time}'
   alias: model_b_alias
+entry_service: ''
+services: []
+envs: []
+schema: {{}}
+spec: 1
 runners:
 - name: runner_a
   runnable_type: test_runnable_a
@@ -102,10 +107,6 @@ runners:
   - runner_a_model
   resource_config:
     cpu: 2
-entry_service: ''
-services: []
-envs: []
-schema: {{}}
 apis:
 - name: predict
   input_type: NumpyNdarray

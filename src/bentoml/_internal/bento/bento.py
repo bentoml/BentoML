@@ -237,6 +237,7 @@ class Bento(StoreItem):
         platform: t.Optional[str] = None,
         bare: bool = False,
         reload: bool = False,
+        enabled_features: list[str] = Provide[BentoMLContainer.enabled_features],
     ) -> Bento:
         from _bentoml_sdk.images import Image
         from _bentoml_sdk.images import get_image_from_build_config
@@ -250,6 +251,7 @@ class Bento(StoreItem):
             if build_ctx is None
             else os.path.realpath(os.path.expanduser(build_ctx))
         )
+        enable_image = "bento_image" in enabled_features
         if not os.path.isdir(build_ctx):
             raise InvalidArgument(
                 f"Bento build context {build_ctx} does not exist or is not a directory."
@@ -280,8 +282,10 @@ class Bento(StoreItem):
                 if build_config.name is not None
                 else to_snake_case(svc.name)
             )
-            image = svc.image
-        if image is None:
+            build_config.envs.extend(svc.envs)
+            if enable_image:
+                image = svc.image
+        if image is None and enable_image:
             image = get_image_from_build_config(build_config)
         build_config = build_config.with_defaults()
         tag = Tag(bento_name, version)
@@ -423,7 +427,7 @@ class Bento(StoreItem):
                 schema=svc.schema() if not is_legacy else {},
                 image=image.freeze(platform),
             )
-            bento_info.image.write_to_bento(bento_fs, build_ctx)
+            bento_info.image.write_to_bento(bento_fs, build_config.envs)
 
         res = Bento(tag, bento_fs, bento_info)
         if bare:
@@ -811,7 +815,7 @@ class ImageInfo:
     commands: t.List[str] = attr.field(factory=list)
     python_requirements: str = ""
 
-    def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
+    def write_to_bento(self, bento_fs: FS, envs: list[BentoEnvSchema]) -> None:
         from importlib import resources
 
         from _bentoml_impl.docker import generate_dockerfile
@@ -825,7 +829,8 @@ class ImageInfo:
         bento_fs.makedirs(docker_folder, recreate=True)
         dockerfile_path = fs.path.join(docker_folder, "Dockerfile")
         bento_fs.writetext(
-            dockerfile_path, generate_dockerfile(self, bento_fs, enable_buildkit=False)
+            dockerfile_path,
+            generate_dockerfile(self, bento_fs, enable_buildkit=False, envs=envs),
         )
 
         with resources.path(

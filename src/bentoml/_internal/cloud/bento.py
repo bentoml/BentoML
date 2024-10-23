@@ -24,11 +24,7 @@ from .base import UPLOAD_RETRY_COUNT
 from .base import CallbackIOWrapper
 from .base import Spinner
 from .model import ModelAPI
-from .schemas.modelschemas import BentoApiSchema
-from .schemas.modelschemas import BentoRunnerResourceSchema
-from .schemas.modelschemas import BentoRunnerSchema
 from .schemas.modelschemas import UploadStatus
-from .schemas.schemasv1 import BentoManifestSchema
 from .schemas.schemasv1 import BentoSchema
 from .schemas.schemasv1 import CompleteMultipartUploadSchema
 from .schemas.schemasv1 import CompletePartSchema
@@ -155,39 +151,7 @@ class BentoAPI:
         labels: list[LabelItemSchema] = [
             LabelItemSchema(key=key, value=value) for key, value in info.labels.items()
         ]
-        apis: dict[str, BentoApiSchema] = {}
-        models = [str(m.tag) for m in info.all_models]
-        runners = [
-            BentoRunnerSchema(
-                name=r.name,
-                runnable_type=r.runnable_type,
-                models=r.models,
-                resource_config=(
-                    BentoRunnerResourceSchema(
-                        cpu=r.resource_config.get("cpu"),
-                        nvidia_gpu=r.resource_config.get("nvidia.com/gpu"),
-                        custom_resources=r.resource_config.get("custom_resources"),
-                    )
-                    if r.resource_config
-                    else None
-                ),
-            )
-            for r in info.runners
-        ]
-        manifest = BentoManifestSchema(
-            name=info.name,
-            entry_service=info.entry_service,
-            service=info.service,
-            bentoml_version=info.bentoml_version,
-            apis=apis,
-            models=models,
-            runners=runners,
-            size_bytes=bento.total_size(),
-            services=info.services,
-            envs=info.envs,
-            schema=info.schema,
-            dev=bare,
-        )
+        manifest = bento.get_manifest()
         if not remote_bento:
             with self.spinner.spin(
                 text=f'Registering Bento "{bento.tag}" with remote Bento store..'

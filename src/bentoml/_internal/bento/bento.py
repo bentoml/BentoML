@@ -423,6 +423,7 @@ class Bento(StoreItem):
                 schema=svc.schema() if not is_legacy else {},
                 image=image.freeze(platform),
             )
+            bento_info.image.write_to_bento(bento_fs, build_ctx)
 
         res = Bento(tag, bento_fs, bento_info)
         if bare:
@@ -521,7 +522,6 @@ class Bento(StoreItem):
 
     def flush_info(self):
         with self._fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
-            breakpoint()
             self.info.dump(bento_yaml)
 
     @property
@@ -810,6 +810,28 @@ class ImageInfo:
     python_version: str = ""
     commands: t.List[str] = attr.field(factory=list)
     python_requirements: str = ""
+
+    def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
+        from importlib import resources
+
+        from _bentoml_impl.docker import generate_dockerfile
+
+        py_folder = fs.path.join("env", "python")
+        bento_fs.makedirs(py_folder, recreate=True)
+        reqs_txt = fs.path.join(py_folder, "requirements.txt")
+        bento_fs.writetext(reqs_txt, self.python_requirements)
+
+        docker_folder = fs.path.join("env", "docker")
+        bento_fs.makedirs(docker_folder, recreate=True)
+        dockerfile_path = fs.path.join(docker_folder, "Dockerfile")
+        bento_fs.writetext(
+            dockerfile_path, generate_dockerfile(self, bento_fs, enable_buildkit=False)
+        )
+
+        with resources.path(
+            "bentoml._internal.container.frontend.dockerfile", "entrypoint.sh"
+        ) as entrypoint_path:
+            copy_file_to_fs_folder(str(entrypoint_path), bento_fs, docker_folder)
 
 
 @attr.frozen(repr=False)

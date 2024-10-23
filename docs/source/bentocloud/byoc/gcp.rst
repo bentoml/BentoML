@@ -4,6 +4,40 @@ BentoCloud BYOC Setup Guide for GCP
 
 As part of our commitment to ensuring a smooth and efficient onboarding process, we have prepared this setup guide to help your DevOps team integrate BentoCloud into your GCP account.
 
+Request quotas
+--------------
+
+To ensure there are no delays in your cluster setup, please make sure you have enough service quotas in your GCP account prior to starting the setup. If not, please request increased quotas in the project and region where you will deploy BentoCloud.
+
+To request quotas:
+
+1. Visit the `GCP Quotas page <https://console.cloud.google.com/iam-admin/quotas>`_.
+2. `Request quotas <https://cloud.google.com/compute/resource-usage#vm_instance_quota>`_ in the correct project and region as per your deployment plan. See the table below for quota details:
+
+   .. list-table::
+      :widths: 10 35 25 30
+      :header-rows: 1
+
+      * - Type
+        - Quota name
+        - Required quantity
+        - Purpose
+      * - CPU
+        - ``CPUS``
+        - 32
+        - Run infrastructure workloads, image builder Pods, and serving instances.
+      * - GPU
+        - Depending on needs:
+
+          - T4: ``NVIDIA_T4_GPUS``
+          - L4: ``NVIDIA_L4_GPUS``
+          - A100 40GB: ``NVIDIA_A100_GPUS``
+          - A100 80GB: ``NVIDIA_A100_80GB_GPUS``
+          - H100 (Committed usage only): ``COMMITTED_NVIDIA_H100_GPUS``
+
+        - Based on needs
+        - Run your workloads that require GPUs.
+
 Setup
 -----
 

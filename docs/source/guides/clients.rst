@@ -152,7 +152,7 @@ You can easily handle JSONable data input and JSON output with BentoML's HTTP cl
 
 For input, when you send data that can be serialized to JSON (for example, dictionaries, lists, strings, and numbers), you simply pass it as arguments to the client method corresponding to your Service API.
 
-The following code comes from the Service ``SentenceEmbedding`` of the :doc:`/use-cases/embeddings/sentence-transformer` use case, which accepts JSONable input (lists in this case).
+The following code comes from the Service ``SentenceEmbedding`` of `this example project <https://github.com/bentoml/BentoSentenceTransformers>`_, which accepts JSONable input (lists in this case).
 
 .. code-block:: python
 
@@ -193,7 +193,7 @@ To create a client to handle JSONable input for Services like ``SentenceEmbeddin
 
 For output, when a BentoML Service returns JSON data, the client automatically deserializes this JSON into a Python data structure (like a dictionary or a list, depending on the JSON structure).
 
-The following code comes from the Service ``WhisperX`` of the :doc:`/use-cases/audio/whisperx` use case, which returns JSONable output (dictionaries in this case).
+The following code comes from the Service ``WhisperX`` of this `example project <https://github.com/bentoml/BentoWhisperX>`_, which returns JSONable output (dictionaries in this case).
 
 .. code-block:: python
 

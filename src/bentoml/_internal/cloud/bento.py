@@ -80,7 +80,6 @@ class BentoAPI:
             self._do_push_bento(
                 bento, upload_task_id, force=force, threads=threads, bare=bare
             )
-            self.spinner.log(f'✅ Pushed Bento "{bento.tag}"')
 
     @inject
     def _do_push_bento(
@@ -283,9 +282,13 @@ class BentoAPI:
                         data=io_with_cb,
                     )
                 except Exception as e:  # pylint: disable=broad-except
-                    self.spinner.log(f'[bold red]Failed to upload bento "{bento.tag}"')
+                    self.spinner.log(
+                        f'[bold red]🚨 Failed to upload bento "{bento.tag}"'
+                    )
                     raise e
-                self.spinner.log(f'[bold green]Successfully pushed bento "{bento.tag}"')
+                self.spinner.log(
+                    f'[bold green]✅ Successfully pushed bento "{bento.tag}"'
+                )
                 return
             finish_req = FinishUploadSchema(
                 status=UploadStatus.SUCCESS.value, reason=""

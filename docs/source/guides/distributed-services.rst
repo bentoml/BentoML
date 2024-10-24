@@ -151,6 +151,65 @@ Once a dependency is declared, invoking methods on the dependent Service is simi
 
 Using ``bentoml.depends()`` is a recommended way for creating a BentoML project with distributed Services. It enhances modularity as you can develop reusable, loosely coupled Services that can be maintained and scaled independently.
 
+Depend on an external deployment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+BentoML also allows you to set an external deployment as a dependency for a Service. This means the Service can call a remote model and its exposed API endpoints. To specify an external deployment, use the ``bentoml.depends()`` function, either by providing the deployment name on BentoCloud or the URL if it's already running.
+
+.. tab-set::
+
+   .. tab-item:: Specify the Deployment name on BentoCloud
+
+      You can also pass the ``cluster`` parameter to specify the cluster where your Deployment is running.
+
+      .. code-block:: python
+
+         import bentoml
+
+         @bentoml.service
+         class MyService:
+             # `cluster` is optional if your Deployment is in a non-default cluster
+             iris = bentoml.depends(deployment="iris_classifier_x6dewa", cluster="my_cluster_name")
+
+             @bentoml.api
+             def predict(self, input: np.ndarray) -> int:
+                 # Call the predict function from the remote Deployment
+                 return int(self.iris.predict(input)[0][0])
+
+   .. tab-item:: Specify the URL
+
+      If the external deployment is already running and its API is exposed via a public URL, you can reference it by specifying the ``url`` parameter. Note that ``url`` and ``deployment``/``cluster`` are mutually exclusive.
+
+      .. code-block:: python
+
+         import bentoml
+
+         @bentoml.service
+         class MyService:
+             # Call the model deployed on BentoCloud by specifying its URL
+             iris = bentoml.depends(url="https://<iris.example-url.bentoml.ai>")
+
+             # Call the model served elsewhere
+             # iris = bentoml.depends(url="http://192.168.1.1:3000")
+
+             @bentoml.api
+             def predict(self, input: np.ndarray) -> int:
+                 # Make a request to the external service hosted at the specified URL
+                 return int(self.iris.predict(input)[0][0])
+
+.. tip::
+
+   We recommend you specify the class of the external Service when using ``bentoml.depends()``. This makes it easier to validate the types and methods available on the remote Service.
+
+   .. code-block:: python
+
+      import bentoml
+
+      @bentoml.service
+      class MyService:
+          # Specify the external Service class for type-safe integration
+          iris = bentoml.depends(IrisClassifier, deployment="iris_classifier_x6dewa", cluster="my_cluster")
+
 ``bentofile.yaml``
 ------------------
 

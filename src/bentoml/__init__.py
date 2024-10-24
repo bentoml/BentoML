@@ -106,6 +106,7 @@ if TYPE_CHECKING:
     from _bentoml_sdk import api
     from _bentoml_sdk import depends
     from _bentoml_sdk import get_current_service
+    from _bentoml_sdk import images
     from _bentoml_sdk import mount_asgi_app
     from _bentoml_sdk import on_deployment
     from _bentoml_sdk import on_shutdown
@@ -233,6 +234,7 @@ else:
     models = _LazyLoader("bentoml.models", globals(), "bentoml.models")
     metrics = _LazyLoader("bentoml.metrics", globals(), "bentoml.metrics")
     container = _LazyLoader("bentoml.container", globals(), "bentoml.container")
+    images = _LazyLoader("bentoml.images", globals(), "bentoml.images")
     client = _LazyLoader("bentoml.client", globals(), "bentoml.client")
     server = _LazyLoader("bentoml.server", globals(), "bentoml.server")
     exceptions = _LazyLoader("bentoml.exceptions", globals(), "bentoml.exceptions")
@@ -353,6 +355,7 @@ __all__ = [
     "runner_service",
     "api",
     "task",
+    "images",
     "on_shutdown",
     "on_deployment",
     "depends",

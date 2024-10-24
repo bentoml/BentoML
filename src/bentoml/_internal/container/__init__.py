@@ -145,7 +145,9 @@ def construct_containerfile(
     from _bentoml_sdk.models import BentoModel
     from _bentoml_sdk.models import HuggingFaceModel
 
+    from ..bento.bento import BaseBentoInfo
     from ..bento.bento import BentoInfo
+    from ..bento.bento import BentoInfoV2
     from ..bento.build_config import DockerOptions
 
     dockerfile_path = "env/docker/Dockerfile"
@@ -154,7 +156,7 @@ def construct_containerfile(
     with fs.open_fs("temp://") as temp_fs:
         tempdir = temp_fs.getsyspath("/")
         with open(bento.path_of("bento.yaml"), "rb") as bento_yaml:
-            options = BentoInfo.from_yaml_file(bento_yaml)
+            options = BaseBentoInfo.from_yaml_file(bento_yaml)
         # tmpdir is our new build context.
         fs.mirror.mirror(bento._fs, temp_fs, copy_if_newer=True)
 
@@ -173,37 +175,53 @@ def construct_containerfile(
         # Dockerfile inside bento, and it is not relevant to
         # construct_containerfile. Hence it is safe to set it to None here.
         # See https://github.com/bentoml/BentoML/issues/3399.
-        docker_attrs = bentoml_cattr.unstructure(options.docker)
-        if (
-            "dockerfile_template" in docker_attrs
-            and docker_attrs["dockerfile_template"] is not None
-        ):
-            # NOTE: if users specify a dockerfile_template, we will
-            # save it to /env/docker/Dockerfile.template. This is necessary
-            # for the reconstruction of the Dockerfile.
-            docker_attrs["dockerfile_template"] = "env/docker/Dockerfile.template"
+        if isinstance(options, BentoInfo):
+            docker_attrs = bentoml_cattr.unstructure(options.docker)
+            if (
+                "dockerfile_template" in docker_attrs
+                and docker_attrs["dockerfile_template"] is not None
+            ):
+                # NOTE: if users specify a dockerfile_template, we will
+                # save it to /env/docker/Dockerfile.template. This is necessary
+                # for the reconstruction of the Dockerfile.
+                docker_attrs["dockerfile_template"] = "env/docker/Dockerfile.template"
 
-        dockerfile = generate_containerfile(
-            docker=DockerOptions(**docker_attrs),
-            build_ctx=tempdir,
-            conda=options.conda,
-            bento_fs=temp_fs,
-            enable_buildkit=enable_buildkit,
-            add_header=add_header,
-        )
-        instruction.append(dockerfile)
-        if features is not None:
-            diff = set(features).difference(FEATURES)
-            if len(diff) > 0:
-                raise InvalidArgument(
-                    f"Available features are: {FEATURES}. Invalid fields from provided: {diff}"
+            dockerfile = generate_containerfile(
+                docker=DockerOptions(**docker_attrs),
+                build_ctx=tempdir,
+                conda=options.conda,
+                bento_fs=temp_fs,
+                enable_buildkit=enable_buildkit,
+                add_header=add_header,
+            )
+            instruction.append(dockerfile)
+            if features is not None:
+                diff = set(features).difference(FEATURES)
+                if len(diff) > 0:
+                    raise InvalidArgument(
+                        f"Available features are: {FEATURES}. Invalid fields from provided: {diff}"
+                    )
+                PIP_CACHE_MOUNT = (
+                    "--mount=type=cache,target=/root/.cache/pip "
+                    if enable_buildkit
+                    else ""
                 )
-            PIP_CACHE_MOUNT = (
-                "--mount=type=cache,target=/root/.cache/pip " if enable_buildkit else ""
+                instruction.append(
+                    "RUN %spip install bentoml[%s]"
+                    % (PIP_CACHE_MOUNT, ",".join(features))
+                )
+        else:
+            from _bentoml_impl.docker import generate_dockerfile
+
+            assert isinstance(options, BentoInfoV2)
+            dockerfile = generate_dockerfile(
+                options.image,
+                temp_fs,
+                enable_buildkit=enable_buildkit,
+                add_header=add_header,
+                envs=options.envs,
             )
-            instruction.append(
-                "RUN %spip install bentoml[%s]" % (PIP_CACHE_MOUNT, ",".join(features))
-            )
+            instruction.append(dockerfile)
         temp_fs.writetext(dockerfile_path, "\n".join(instruction))
         yield tempdir, temp_fs.getsyspath(dockerfile_path)
 

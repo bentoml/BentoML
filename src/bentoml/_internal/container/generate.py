@@ -32,6 +32,16 @@ BENTO_HOME = f"/home/{BENTO_USER}/"
 BENTO_PATH = f"{BENTO_HOME}bento"
 # 1.2.1 is the current docker frontend that both buildkitd and kaniko supports.
 BENTO_BUILDKIT_FRONTEND = "docker/dockerfile:1.2.1"
+PREHEAT_PIP_PACKAGES = ["torch", "vllm"]
+DEFAULT_BENTO_ENVS = {
+    "uid_gid": BENTO_UID_GID,
+    "user": BENTO_USER,
+    "home": BENTO_HOME,
+    "path": BENTO_PATH,
+    "add_header": True,
+    "buildkit_frontend": BENTO_BUILDKIT_FRONTEND,
+    "enable_buildkit": True,
+}
 
 
 def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
@@ -79,7 +89,7 @@ def get_templates_variables(
         spec = DistroSpec.from_options(docker, conda)
         python_version = docker.python_version
         assert docker.distro is not None and python_version is not None
-        if docker.distro in ("ubi8"):
+        if docker.distro in ("ubi8",):
             # ubi8 base images uses "py38" instead of "py3.8" in its image tag
             python_version = python_version.replace(".", "")
         base_image = spec.image.format(spec_version=python_version)
@@ -87,19 +97,7 @@ def get_templates_variables(
             base_image = spec.image.format(spec_version=docker.cuda_version)
 
     # bento__env
-    default_env = {
-        "uid_gid": BENTO_UID_GID,
-        "user": BENTO_USER,
-        "home": BENTO_HOME,
-        "path": BENTO_PATH,
-        "add_header": True,
-        "buildkit_frontend": BENTO_BUILDKIT_FRONTEND,
-        "enable_buildkit": True,
-    }
-    if bento_env:
-        default_env.update(bento_env)
-
-    PREHEAT_PIP_PACKAGES = ["torch", "vllm"]
+    default_env = {**DEFAULT_BENTO_ENVS, **bento_env}
 
     return {
         **{to_options_field(k): v for k, v in docker.to_dict().items()},
@@ -204,7 +202,7 @@ def generate_containerfile(
     if not os.path.exists(requirement_file):
         requirement_file = bento_fs.getsyspath("env/python/requirements.txt")
     if os.path.exists(requirement_file):
-        python_packages = _resolve_package_versions(requirement_file)
+        python_packages = resolve_package_versions(requirement_file)
     else:
         python_packages = {}
 
@@ -220,7 +218,7 @@ def generate_containerfile(
     )
 
 
-def _resolve_package_versions(requirement: str) -> dict[str, str]:
+def resolve_package_versions(requirement: str) -> dict[str, str]:
     from pip_requirements_parser import RequirementsFile
 
     requirements_txt = RequirementsFile.from_file(

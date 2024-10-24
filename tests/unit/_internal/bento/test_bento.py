@@ -13,6 +13,7 @@ import pytest
 from bentoml import Tag
 from bentoml import bentos
 from bentoml._internal.bento import Bento
+from bentoml._internal.bento.bento import BaseBentoInfo
 from bentoml._internal.bento.bento import BentoApiInfo
 from bentoml._internal.bento.bento import BentoInfo
 from bentoml._internal.bento.bento import BentoModelInfo
@@ -93,6 +94,11 @@ models:
   module: model_b_module
   creation_time: '{model_creation_time}'
   alias: model_b_alias
+entry_service: ''
+services: []
+envs: []
+schema: {{}}
+spec: 1
 runners:
 - name: runner_a
   runnable_type: test_runnable_a
@@ -101,10 +107,6 @@ runners:
   - runner_a_model
   resource_config:
     cpu: 2
-entry_service: ''
-services: []
-envs: []
-schema: {{}}
 apis:
 - name: predict
   input_type: NumpyNdarray
@@ -146,7 +148,7 @@ conda:
         )
 
     with open(bento_yaml_b_filename, encoding="utf-8") as bento_yaml_b:
-        bentoinfo_b_from_yaml = BentoInfo.from_yaml_file(bento_yaml_b)
+        bentoinfo_b_from_yaml = BaseBentoInfo.from_yaml_file(bento_yaml_b)
 
         assert bentoinfo_b_from_yaml == bentoinfo_b
 

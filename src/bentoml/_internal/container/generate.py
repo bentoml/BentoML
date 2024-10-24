@@ -89,7 +89,7 @@ def get_templates_variables(
         spec = DistroSpec.from_options(docker, conda)
         python_version = docker.python_version
         assert docker.distro is not None and python_version is not None
-        if docker.distro in ("ubi8"):
+        if docker.distro in ("ubi8",):
             # ubi8 base images uses "py38" instead of "py3.8" in its image tag
             python_version = python_version.replace(".", "")
         base_image = spec.image.format(spec_version=python_version)

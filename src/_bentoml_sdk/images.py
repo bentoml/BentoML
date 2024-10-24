@@ -153,9 +153,11 @@ class PythonImage(Image):
                 raise BentoMLConfigException(
                     f"Unsupported distro: {self.distro}, expected one of {CONTAINER_SUPPORTED_DISTROS}"
                 )
-
+            python_version = self.python_version
+            if self.distro in ("ubi8",):
+                python_version = python_version.replace(".", "")
             self.base_image = CONTAINER_METADATA[self.distro]["python"]["image"].format(
-                spec_version=self.python_version
+                spec_version=python_version
             )
 
     def system_packages(self, *packages: str) -> t.Self:

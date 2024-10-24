@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 # Python supported versions
-SUPPORTED_PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 # CUDA supported versions
 SUPPORTED_CUDA_VERSIONS = [
     "12.0.0",
@@ -75,7 +75,7 @@ CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
         "install_command": "yum update && yum install -y {packages}",
     },
     "ubi8": {
-        "supported_python_versions": ["3.8", "3.9"],
+        "supported_python_versions": SUPPORTED_PYTHON_VERSIONS,
         "supported_cuda_versions": SUPPORTED_CUDA_VERSIONS,
         "python": {
             "image": "registry.access.redhat.com/ubi8/python-{spec_version}:1",

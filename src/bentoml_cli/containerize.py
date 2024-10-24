@@ -143,7 +143,7 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
         msg = attrs.pop("help", None)
         assert msg is not None, "'help' is required."
         attrs.setdefault("help", " ".join([prepend_msg, msg, append_msg]))
-        attrs.setdefault("expose_value", True)
+        attrs.setdefault("expose_value", False)
         attrs.setdefault("callback", obsolete_callback)
         return factory.option(*param_decls, **attrs)(f)
 
@@ -419,6 +419,7 @@ def buildx_options_group(f: F[t.Any]):
     multiple=True,
     callback=opt_callback,
     metavar="ARG=VALUE[,ARG=VALUE]",
+    expose_value=False,
 )
 @click.option(
     "--run-as-root",
@@ -442,7 +443,6 @@ def containerize_command(  # type: ignore
     enable_features: tuple[str] | None,
     run_as_root: bool,
     _memoized: dict[str, t.Any],
-    **kwargs: t.Any,  # pylint: disable=unused-argument
 ) -> None:
     """Containerizes given Bento into an OCI-compliant container, with any given OCI builder.
 

@@ -19,8 +19,7 @@ def test_load_service_from_directory():
 @pytest.mark.usefixtures("change_test_dir", "model_store")
 def test_load_service_from_bento():
     sys.modules.pop("service", None)
-    with open("./bento_with_models/bentofile.yaml") as f:
-        build_config = BentoBuildConfig.from_yaml(f)
+    build_config = BentoBuildConfig.from_file("./bento_with_models/bentofile.yaml")
     bento = Bento.create(
         build_config=build_config, version="1.0", build_ctx="./bento_with_models"
     ).save()

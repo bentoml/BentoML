@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import typing as t
 from pathlib import Path
 from threading import Event
@@ -80,16 +79,7 @@ class ServiceReloaderPlugin(CircusPlugin):
         )
 
     def create_spec(self) -> BentoPathSpec:
-        bentofile_path = os.path.join(self.working_dir, "bentofile.yaml")
-        if not os.path.exists(bentofile_path):
-            # if bentofile.yaml is not found, by default we will assume to watch all files
-            # via BentoBuildConfig.with_defaults()
-            build_config = BentoBuildConfig(service="").with_defaults()
-        else:
-            # respect bentofile.yaml include and exclude
-            with open(bentofile_path, "r") as f:
-                build_config = BentoBuildConfig.from_yaml(f).with_defaults()
-
+        build_config = BentoBuildConfig.from_bento_dir(self.working_dir)
         return BentoPathSpec(
             build_config.include, build_config.exclude, self.working_dir
         )

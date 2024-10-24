@@ -82,7 +82,6 @@ def parse_delete_targets_argument_callback(
 def bento_management_commands() -> click.Group:
     import bentoml
     from bentoml import Tag
-    from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
     from bentoml._internal.configuration import get_quiet_mode
     from bentoml._internal.configuration.containers import BentoMLContainer
     from bentoml._internal.utils import human_readable_size
@@ -342,11 +341,7 @@ def bento_management_commands() -> click.Group:
     @bentos.command()
     @click.argument("build_ctx", type=click.Path(), default=".")
     @click.option(
-        "-f",
-        "--bentofile",
-        type=click.STRING,
-        default=DEFAULT_BENTO_BUILD_FILE,
-        help="Path to bentofile. Default to 'bentofile.yaml'",
+        "-f", "--bentofile", help="Path to bentofile. Default to 'bentofile.yaml'"
     )
     @click.option(
         "--version",
@@ -397,7 +392,7 @@ def bento_management_commands() -> click.Group:
     )
     def build(  # type: ignore (not accessed)
         build_ctx: str,
-        bentofile: str,
+        bentofile: str | None,
         version: str | None,
         labels: tuple[str, ...],
         output: t.Literal["tag", "default"],

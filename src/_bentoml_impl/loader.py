@@ -10,13 +10,18 @@ import typing as t
 
 import yaml
 
+from bentoml._internal.bento.bento import BENTO_YAML_FILENAME
+from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILES
 from bentoml._internal.context import server_context
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
 
 if t.TYPE_CHECKING:
     from _bentoml_sdk import Service
-
-BENTO_YAML_FILENAME = "bento.yaml"
-BENTO_BUILD_CONFIG_FILENAME = "bentofile.yaml"
 
 
 def normalize_identifier(
@@ -51,23 +56,32 @@ def normalize_identifier(
             # this is a bento directory
             yaml_path = path.joinpath(BENTO_YAML_FILENAME)
             bento_path = path.joinpath("src")
-        elif path.is_file() and path.name == "bentofile.yaml":
-            # this is a bentofile.yaml file
+        elif path.is_file() and path.name in DEFAULT_BENTO_BUILD_FILES:
+            # this is a bento build config file
             yaml_path = path
             bento_path = (
                 pathlib.Path(working_dir) if working_dir is not None else path.parent
             )
-        elif path.is_dir() and path.joinpath("bentofile.yaml").is_file():
+        elif path.is_dir() and any(
+            path.joinpath(filename).is_file() for filename in DEFAULT_BENTO_BUILD_FILES
+        ):
             # this is a bento project directory
-            yaml_path = path.joinpath("bentofile.yaml")
-            bento_path = (
-                pathlib.Path(working_dir) if working_dir is not None else path.parent
+            yaml_path = next(
+                path.joinpath(filename)
+                for filename in DEFAULT_BENTO_BUILD_FILES
+                if path.joinpath(filename).is_file()
             )
+            bento_path = pathlib.Path(working_dir) if working_dir is not None else path
         else:
             raise ValueError(f"found a path but not a bento: {service_identifier}")
 
-        with open(yaml_path, "r") as f:
-            bento_yaml = yaml.safe_load(f)
+        if yaml_path.name == "pyproject.toml":
+            with yaml_path.open("rb") as f:
+                data = tomllib.load(f)
+            bento_yaml = data.get("tool", {}).get("bentoml", {}).get("build", {})
+        else:
+            with open(yaml_path, "r") as f:
+                bento_yaml = yaml.safe_load(f)
         assert "service" in bento_yaml, "service field is required in bento.yaml"
         return normalize_package(bento_yaml["service"]), bento_path
 
@@ -153,12 +167,13 @@ def import_service(
     if bento_path.with_name(BENTO_YAML_FILENAME).exists():
         bento = Bento.from_path(str(bento_path.parent))
         model_aliases = {m.alias: str(m.tag) for m in bento.info.all_models if m.alias}
-    elif (bentofile := bento_path.joinpath(BENTO_BUILD_CONFIG_FILENAME)).exists():
-        with open(bentofile, encoding="utf-8") as f:
-            build_config = BentoBuildConfig.from_yaml(f)
-        model_aliases = build_config.model_aliases
     else:
         model_aliases = {}
+        for filename in DEFAULT_BENTO_BUILD_FILES:
+            if (bentofile := bento_path.joinpath(filename)).exists():
+                build_config = BentoBuildConfig.from_file(bentofile)
+                model_aliases = build_config.model_aliases
+                break
     BentoMLContainer.model_aliases.set(model_aliases)
 
     try:

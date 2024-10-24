@@ -10,6 +10,8 @@ import typing as t
 from simple_di import Provide
 from simple_di import inject
 
+from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILES
+
 from ._internal.bento import Bento
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
@@ -372,7 +374,7 @@ def build(
 
 @inject
 def build_bentofile(
-    bentofile: str = "bentofile.yaml",
+    bentofile: str | None = None,
     *,
     version: str | None = None,
     labels: dict[str, str] | None = None,
@@ -398,13 +400,22 @@ def build_bentofile(
     Returns:
         Bento: a Bento instance representing the materialized Bento saved in BentoStore
     """
-    try:
-        bentofile = resolve_user_filepath(bentofile, build_ctx)
-    except FileNotFoundError:
-        raise InvalidArgument(f'bentofile "{bentofile}" not found')
+    if bentofile:
+        try:
+            bentofile = resolve_user_filepath(bentofile, build_ctx)
+        except FileNotFoundError:
+            raise InvalidArgument(f'bentofile "{bentofile}" not found')
+    else:
+        for filename in DEFAULT_BENTO_BUILD_FILES:
+            try:
+                bentofile = resolve_user_filepath(filename, build_ctx)
+                break
+            except FileNotFoundError:
+                pass
+        else:
+            raise InvalidArgument("No bentofile found, please provide a bentofile path")
 
-    with open(bentofile, "r", encoding="utf-8") as f:
-        build_config = BentoBuildConfig.from_yaml(f)
+    build_config = BentoBuildConfig.from_file(bentofile)
 
     if labels:
         if not build_config.labels:

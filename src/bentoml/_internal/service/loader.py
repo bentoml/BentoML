@@ -17,7 +17,7 @@ from ...exceptions import NotFound
 from ..bento import Bento
 from ..bento.bento import BENTO_PROJECT_DIR_NAME
 from ..bento.bento import BENTO_YAML_FILENAME
-from ..bento.bento import DEFAULT_BENTO_BUILD_FILE
+from ..bento.bento import DEFAULT_BENTO_BUILD_FILES
 from ..bento.build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
@@ -386,33 +386,34 @@ def load(
                     f"Failed loading Bento from directory {bento_path}: {e}"
                 )
             logger.info("Service loaded from Bento directory: %s", svc)
-        elif os.path.isfile(
-            os.path.expanduser(os.path.join(bento_path, DEFAULT_BENTO_BUILD_FILE))
-        ):
-            # Loading from path to a project directory containing bentofile.yaml
+        else:
             try:
-                with open(
-                    os.path.join(bento_path, DEFAULT_BENTO_BUILD_FILE),
-                    "r",
-                    encoding="utf-8",
-                ) as f:
-                    build_config = BentoBuildConfig.from_yaml(f)
-                assert build_config.service, '"service" field in "bentofile.yaml" is required for loading the service, e.g. "service: my_service.py:svc"'
-                BentoMLContainer.model_aliases.set(build_config.model_aliases)
-                svc = import_service(
-                    build_config.service,
-                    working_dir=bento_path,
-                    standalone_load=standalone_load,
-                )
+                for filename in DEFAULT_BENTO_BUILD_FILES:
+                    if os.path.isfile(
+                        config_file := os.path.expanduser(
+                            os.path.join(bento_path, filename)
+                        )
+                    ):
+                        build_config = BentoBuildConfig.from_file(config_file)
+                        BentoMLContainer.model_aliases.set(build_config.model_aliases)
+                        svc = import_service(
+                            build_config.service,
+                            working_dir=bento_path,
+                            standalone_load=standalone_load,
+                        )
+                        logger.debug(
+                            "'%s' loaded from '%s': %s", svc.name, bento_path, svc
+                        )
+                        break
+                else:
+                    raise BentoMLException(
+                        f"Failed loading service from path {bento_path}. When loading from a path, it must be either a Bento "
+                        "containing bento.yaml or a project directory containing bentofile.yaml"
+                    )
             except ImportServiceError as e:
                 raise BentoMLException(
                     f"Failed loading Bento from directory {bento_path}: {e}"
                 )
-            logger.debug("'%s' loaded from '%s': %s", svc.name, bento_path, svc)
-        else:
-            raise BentoMLException(
-                f"Failed loading service from path {bento_path}. When loading from a path, it must be either a Bento containing bento.yaml or a project directory containing bentofile.yaml"
-            )
     else:
         try:
             # Loading from service definition file, e.g. "my_service.py:svc"

@@ -4,6 +4,37 @@ BentoCloud BYOC Setup Guide for AWS
 
 As part of our commitment to ensuring a smooth and efficient onboarding process, we have prepared this setup guide to help your DevOps team integrate BentoCloud into your AWS account.
 
+Request quotas
+--------------
+
+To ensure there are no delays in your cluster setup, please make sure you have enough service quotas in your AWS account prior to starting the setup. If not, please request increased quotas in the region where you will deploy BentoCloud.
+
+To request quotas:
+
+1. Visit the `AWS Service Quotas console <https://console.aws.amazon.com/servicequotas/home/services/ec2/quotas>`_ for your region.
+2. `Request quotas <https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html>`_ as per your deployment plan. See the table below for quota details:
+
+   .. list-table::
+      :widths: 10 35 25 30
+      :header-rows: 1
+
+      * - Type
+        - Quota name
+        - Required quantity
+        - Purpose
+      * - CPU
+        - ``Running On-Demand Standard (A, C, D, H, I, M, R, T, Z) instances``
+        - 32 vCPUs
+        - Run infrastructure workloads, image builder jobs, and CPU serving instances.
+      * - GPU
+        - Depending on needs:
+
+          - T4/A10G GPU: ``Running On-Demand G and VT instances``
+          - A100/H100 GPU: ``Running On-Demand P instances``
+
+        - Based on needs
+        - Run your workloads that require GPUs.
+
 Setup
 -----
 

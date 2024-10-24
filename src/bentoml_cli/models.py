@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import typing as t
 
 import click
@@ -12,7 +13,7 @@ from simple_di import Provide
 from simple_di import inject
 
 from bentoml import Tag
-from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
+from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILES
 from bentoml._internal.bento.build_config import BentoBuildConfig
 from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.utils import calc_dir_size
@@ -279,8 +280,6 @@ def import_from(model_path: str) -> None:  # type: ignore (not accessed)
 @click.option(
     "-F",
     "--bentofile",
-    type=click.STRING,
-    default=DEFAULT_BENTO_BUILD_FILE,
     help="Path to bentofile. Default to 'bentofile.yaml'",
 )
 @click.pass_context
@@ -289,7 +288,7 @@ def pull(
     ctx: click.Context,
     model_tag: str | None,
     force: bool,
-    bentofile: str,
+    bentofile: str | None,
     cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     """Pull Model from a remote model store. If model_tag is not provided,
@@ -303,13 +302,20 @@ def pull(
         cloud_client.model.pull(model_tag, force=force)
         return
 
-    try:
-        bentofile = resolve_user_filepath(bentofile, None)
-    except FileNotFoundError:
-        raise InvalidArgument(f'bentofile "{bentofile}" not found')
-
-    with open(bentofile, "r", encoding="utf-8") as f:
-        build_config = BentoBuildConfig.from_yaml(f)
+    if bentofile:
+        try:
+            bentofile = resolve_user_filepath(bentofile, None)
+        except FileNotFoundError:
+            raise InvalidArgument(f'file "{bentofile}" not found')
+    else:
+        for filename in DEFAULT_BENTO_BUILD_FILES:
+            if os.path.exists(filename):
+                build_config = BentoBuildConfig.from_file(filename)
+                break
+        else:
+            raise InvalidArgument(
+                "No bentofile.yaml or pyproject.toml found, please provide a bentofile path"
+            )
 
     if not build_config.models:
         raise InvalidArgument(

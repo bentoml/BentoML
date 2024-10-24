@@ -14,7 +14,7 @@ from simple_di import Provide
 from simple_di import inject
 
 from bentoml._internal.bento.bento import BENTO_YAML_FILENAME
-from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILE
+from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILES
 from bentoml._internal.bento.bento import Bento
 from bentoml._internal.bento.bento import BentoStore
 from bentoml._internal.configuration import get_debug_mode
@@ -67,14 +67,17 @@ def get_environment(
             return EnvManager.from_bento(
                 env_type=env, bento=Bento.from_fs(bento_path_fs)
             ).environment
-        elif bento_path_fs.isfile(DEFAULT_BENTO_BUILD_FILE):
+        elif any(
+            bento_path_fs.isfile(filename) for filename in DEFAULT_BENTO_BUILD_FILES
+        ):
             # path to a bento project
             raise NotImplementedError(
                 "Serving from development project is not yet supported."
             )
         else:
             raise BentoMLException(
-                f"EnvManager failed to create an environment from path {bento_path_fs}. When loading from a path, it must be either a Bento or a project directory containing '{DEFAULT_BENTO_BUILD_FILE}'."
+                f"EnvManager failed to create an environment from path {bento_path_fs}. "
+                f"When loading from a path, it must be either a Bento or a project directory containing '{DEFAULT_BENTO_BUILD_FILES[0]}'."
             )
     else:
         try:

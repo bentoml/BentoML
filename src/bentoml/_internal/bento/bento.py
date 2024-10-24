@@ -67,7 +67,7 @@ logger = logging.getLogger(__name__)
 BENTO_YAML_FILENAME = "bento.yaml"
 BENTO_PROJECT_DIR_NAME = "src"
 BENTO_README_FILENAME = "README.md"
-DEFAULT_BENTO_BUILD_FILE = "bentofile.yaml"
+DEFAULT_BENTO_BUILD_FILES = ("bentofile.yaml", "pyproject.toml")
 
 API_INFO_MD = "| POST [`/{api}`](#{link}) | {input} | {output} |"
 
@@ -318,7 +318,7 @@ class Bento(StoreItem):
                 )
             bento_fs.makedir(BENTO_PROJECT_DIR_NAME)
             target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
-            with target_fs.open(DEFAULT_BENTO_BUILD_FILE, "w") as bentofile_yaml:
+            with target_fs.open("bentofile.yaml", "w") as bentofile_yaml:
                 build_config.to_yaml(bentofile_yaml)
 
             for dir_path, _, files in ctx_fs.walk():

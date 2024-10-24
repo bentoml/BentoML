@@ -21,6 +21,7 @@ from rich.console import Console
 from simple_di import Provide
 from simple_di import inject
 
+from ..bento.bento import DEFAULT_BENTO_BUILD_FILES
 from ..bento.bento import Bento
 from ..bento.build_config import BentoBuildConfig
 from ..configuration import is_editable_bentoml
@@ -756,7 +757,7 @@ class Deployment:
         else:
             raise TimeoutError("Timeout waiting for API server pod to be ready")
 
-        build_config = get_bento_build_config(bento_dir)
+        build_config = BentoBuildConfig.from_bento_dir(bento_dir)
         bento_spec = BentoPathSpec(
             build_config.include, build_config.exclude, bento_dir
         )
@@ -768,7 +769,10 @@ class Deployment:
             for fn in files:
                 full_path = os.path.join(root, fn)
                 rel_path = os.path.relpath(full_path, bento_dir).replace(os.sep, "/")
-                if not bento_spec.includes(rel_path) and rel_path != "bentofile.yaml":
+                if (
+                    not bento_spec.includes(rel_path)
+                    and rel_path not in DEFAULT_BENTO_BUILD_FILES
+                ):
                     continue
                 if rel_path in (REQUIREMENTS_TXT, "setup.sh"):
                     continue
@@ -813,7 +817,7 @@ class Deployment:
         from .bento import BentoAPI
 
         bento_dir = os.path.abspath(bento_dir)
-        build_config = get_bento_build_config(bento_dir)
+        build_config = BentoBuildConfig.from_bento_dir(bento_dir)
         deployment_api = DeploymentAPI(self._client)
         bento_api = BentoAPI(self._client)
         bento_spec = BentoPathSpec(
@@ -836,7 +840,7 @@ class Deployment:
                 return EDITABLE_BENTOML_PATHSPEC.match_file(rel_path)
             rel_path = os.path.relpath(path, bento_dir)
             return rel_path in (
-                "bentofile.yaml",
+                *DEFAULT_BENTO_BUILD_FILES,
                 REQUIREMENTS_TXT,
                 "setup.sh",
             ) or bento_spec.includes(rel_path)
@@ -925,7 +929,7 @@ class Deployment:
                                     needs_update = True
                                     break
 
-                        build_config = get_bento_build_config(bento_dir)
+                        build_config = BentoBuildConfig.from_bento_dir(bento_dir)
                         upload_files: list[tuple[str, bytes]] = []
                         delete_files: list[str] = []
                         affected_files: set[str] = set()
@@ -1434,16 +1438,6 @@ class InstanceTypeInfo:
 
     def to_dict(self):
         return {k: v for k, v in attr.asdict(self).items() if v is not None and v != ""}
-
-
-def get_bento_build_config(bento_dir: str) -> BentoBuildConfig:
-    bentofile_path = os.path.join(bento_dir, "bentofile.yaml")
-    if not os.path.exists(bentofile_path):
-        return BentoBuildConfig(service="").with_defaults()
-    else:
-        # respect bentofile.yaml include and exclude
-        with open(bentofile_path, "r") as f:
-            return BentoBuildConfig.from_yaml(f).with_defaults()
 
 
 REQUIREMENTS_TXT = "requirements.txt"

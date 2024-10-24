@@ -10,6 +10,7 @@ import typing as t
 from sys import version_info
 
 import attr
+import cattrs
 import fs
 import fs.copy
 import jinja2
@@ -934,16 +935,58 @@ class BentoBuildConfig:
         except yaml.YAMLError as exc:
             logger.error(exc)
             raise
+        return cls.load(yaml_content)
 
+    @classmethod
+    def from_pyproject(cls, stream: t.BinaryIO) -> BentoBuildConfig:
+        if sys.version_info >= (3, 11):
+            import tomllib
+        else:
+            import tomli as tomllib
+        data = tomllib.load(stream)
+        config = data.get("tool", {}).get("bentoml", {}).get("build", {})
+        if "name" in data.get("project", {}):
+            config.setdefault("name", data["project"]["name"])
+        build_config = cls.load(config)
+        dependencies = data.get("project", {}).get("dependencies", {})
+        python_packages = build_config.python.packages or []
+        python_packages.extend(dependencies)
+        object.__setattr__(build_config.python, "packages", python_packages)
+        return build_config
+
+    @classmethod
+    def from_file(cls, path: str) -> BentoBuildConfig:
+        if os.path.basename(path) == "pyproject.toml":
+            with open(path, "rb") as f:
+                return cls.from_pyproject(f)
+        else:
+            with open(path, encoding="utf-8") as f:
+                return cls.from_yaml(f)
+
+    @classmethod
+    def load(cls, data: dict[str, t.Any]) -> BentoBuildConfig:
         try:
-            return bentoml_cattr.structure(yaml_content, cls)
-        except TypeError as e:
-            if "missing 1 required positional argument: 'service'" in str(e):
+            return bentoml_cattr.structure(data, cls)
+        except cattrs.errors.BaseValidationError as e:
+            if any(
+                isinstance(exc, KeyError) and exc.args[0] == "service"
+                for exc in e.exceptions
+            ):
                 raise InvalidArgument(
                     'Missing required build config field "service", which indicates import path of target bentoml.Service instance. e.g.: "service: fraud_detector.py:svc"'
-                ) from e
+                ) from None
             else:
-                raise InvalidArgument(str(e)) from e
+                raise
+
+    @classmethod
+    def from_bento_dir(cls, bento_dir: str) -> BentoBuildConfig:
+        from .bento import DEFAULT_BENTO_BUILD_FILES
+
+        for filename in DEFAULT_BENTO_BUILD_FILES:
+            bentofile_path = os.path.join(bento_dir, filename)
+            if os.path.exists(bentofile_path):
+                return cls.from_file(bentofile_path).with_defaults()
+        return cls(service="").with_defaults()
 
     def to_yaml(self, stream: t.TextIO) -> None:
         try:

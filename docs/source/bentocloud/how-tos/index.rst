@@ -33,6 +33,12 @@ Read how-to guides to explore the key features of BentoCloud.
 
         Run inference with Deployments.
 
+    .. grid-item-card:: Develop with Codespaces
+        :link: codespaces
+        :link-type: doc
+
+        Connect your local IDE with a cloud-based development environment, which reflects code changes in real time.
+
     .. grid-item-card:: Autoscaling
         :link: autoscaling
         :link-type: doc
@@ -78,6 +84,7 @@ Read how-to guides to explore the key features of BentoCloud.
     configure-deployments
     manage-deployments
     call-deployment-endpoints
+    codespaces
     autoscaling
     manage-access-token
     manage-secrets

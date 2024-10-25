@@ -169,7 +169,7 @@ BentoML also allows you to set an external deployment as a dependency for a Serv
          @bentoml.service
          class MyService:
              # `cluster` is optional if your Deployment is in a non-default cluster
-             iris = bentoml.depends(deployment="iris_classifier_x6dewa", cluster="my_cluster_name")
+             iris = bentoml.depends(deployment="iris-classifier-x6dewa", cluster="my_cluster_name")
 
              @bentoml.api
              def predict(self, input: np.ndarray) -> int:

@@ -208,7 +208,7 @@ BentoML also allows you to set an external deployment as a dependency for a Serv
       @bentoml.service
       class MyService:
           # Specify the external Service class for type-safe integration
-          iris = bentoml.depends(IrisClassifier, deployment="iris_classifier_x6dewa", cluster="my_cluster")
+          iris = bentoml.depends(IrisClassifier, deployment="iris-classifier-x6dewa", cluster="my_cluster")
 
 ``bentofile.yaml``
 ------------------

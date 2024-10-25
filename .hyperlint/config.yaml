@@ -1,0 +1,5 @@
+content_dir: /docs/source
+openapi:
+  enabled: true
+  urls:
+    - https://cloud.bentoml.com/openapi.json

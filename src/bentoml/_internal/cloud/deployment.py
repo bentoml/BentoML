@@ -762,7 +762,7 @@ class Deployment:
             build_config.include, build_config.exclude, bento_dir
         )
         upload_files: list[tuple[str, bytes]] = []
-        requirements_content = _build_requirements_txt(bento_dir, build_config)
+        requirements_content = _build_requirements_txt(bento_dir)
 
         pod_files = {file.path: file.md5 for file in self.list_files().files}
         for root, _, files in os.walk(bento_dir):
@@ -801,7 +801,7 @@ class Deployment:
         requirements_md5 = hashlib.md5(requirements_content).hexdigest()
         if requirements_md5 != pod_files.get(REQUIREMENTS_TXT, ""):
             upload_files.append((REQUIREMENTS_TXT, requirements_content))
-        setup_script = _build_setup_script(bento_dir, build_config)
+        setup_script = _build_setup_script(bento_dir)
         setup_md5 = hashlib.md5(setup_script).hexdigest()
         if setup_md5 != pod_files.get("setup.sh", ""):
             upload_files.append(("setup.sh", setup_script))
@@ -951,7 +951,7 @@ class Deployment:
                                 upload_files.append((rel_path, open(path, "rb").read()))
                             else:
                                 delete_files.append(rel_path)
-                        setup_script = _build_setup_script(bento_dir, build_config)
+                        setup_script = _build_setup_script(bento_dir)
                         if (
                             new_hash := hashlib.md5(setup_script).hexdigest()
                             != setup_md5
@@ -961,9 +961,7 @@ class Deployment:
                             bento_info._tag = bento_info.tag.make_new_version()
                             needs_update = True
                             break
-                        requirements_content = _build_requirements_txt(
-                            bento_dir, build_config
-                        )
+                        requirements_content = _build_requirements_txt(bento_dir)
                         if (
                             new_hash := hashlib.md5(requirements_content).hexdigest()
                         ) != requirements_hash:
@@ -1455,9 +1453,10 @@ EDITABLE_BENTOML_PATHSPEC = PathSpec.from_lines(
 )
 
 
-def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
+def _build_requirements_txt(bento_dir: str) -> bytes:
     from bentoml._internal.configuration import get_bentoml_requirement
 
+    config = BentoBuildConfig.from_bento_dir(bento_dir)
     filename = config.python.requirements_txt
     content = b""
     if filename and os.path.exists(fullpath := os.path.join(bento_dir, filename)):
@@ -1472,8 +1471,9 @@ def _build_requirements_txt(bento_dir: str, config: BentoBuildConfig) -> bytes:
     return content
 
 
-def _build_setup_script(bento_dir: str, config: BentoBuildConfig) -> bytes:
+def _build_setup_script(bento_dir: str) -> bytes:
     content = b""
+    config = BentoBuildConfig.from_bento_dir(bento_dir)
     if config.docker.system_packages:
         content += f'apt-get update && apt-get install -y {" ".join(config.docker.system_packages)} || exit 1\n'.encode()
     if config.docker.setup_script and os.path.exists(

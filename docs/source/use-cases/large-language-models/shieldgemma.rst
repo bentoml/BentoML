@@ -54,8 +54,8 @@ Code explanations
 
 You can find `the source code in GitHub <https://github.com/bentoml/BentoShield/>`_. Below is a breakdown of the key code implementations within this project.
 
-services.py
-^^^^^^^^^^^
+service.py
+^^^^^^^^^^
 
 The ``service.py`` file outlines the logic of the two required BentoML Services.
 
@@ -262,7 +262,7 @@ Local serving
 
     <a id="localserving"></a>
 
-BentoML allows you to run and test your code locally, so that you can quick validate your code with local compute resources.
+BentoML allows you to run and test your code locally, so that you can quickly validate your code with local compute resources.
 
 1. Clone the project repository and install the dependencies.
 

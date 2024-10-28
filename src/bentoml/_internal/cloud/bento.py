@@ -158,7 +158,7 @@ class BentoAPI:
                 remote_bento = rest_client.v1.create_bento(
                     bento_repository_name=bento_repository.name,
                     req=CreateBentoSchema(
-                        description="",
+                        description=bento.doc,
                         version=version,
                         build_at=info.creation_time,
                         manifest=manifest,
@@ -171,6 +171,7 @@ class BentoAPI:
                     bento_repository_name=bento_repository.name,
                     version=version,
                     req=UpdateBentoSchema(
+                        description=bento.doc,
                         manifest=manifest,
                         labels=labels,
                     ),

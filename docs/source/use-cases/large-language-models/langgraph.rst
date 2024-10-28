@@ -141,7 +141,7 @@ The ``service.py`` file defines the ``SearchAgentService``, a BentoML Service th
         # Define a task endpoint
         @bentoml.task
         async def invoke(
-            self, 
+            self,
             input_query: str="What is the weather in San Francisco today?",
         ) -> str:
             try:
@@ -233,7 +233,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
    .. code-block:: bash
 
         git clone https://github.com/bentoml/BentoLangGraph.git
-        
+
         # Use Mistral 7B
         cd BentoLangGraph/langgraph-mistral
         bentoml secret create huggingface HF_TOKEN=$HF_TOKEN
@@ -257,7 +257,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
        .. code-block:: python
 
           import bentoml
-          
+
           with bentoml.SyncHTTPClient("<your_deployment_endpoint_url>") as client:
               result = client.invoke(
                   input_query="Who won the gold medal at the men's 100 metres event at the 2024 Summer Olympic?",
@@ -273,7 +273,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
               -H 'Content-Type: application/json' \
               -d '{
                   "input_query": "Who won the gold medal at the men's 100 metres event at the 2024 Summer Olympic?"
-          }' 
+          }'
 
 4. To make sure the Deployment automatically scales within a certain replica range, add the scaling flags:
 

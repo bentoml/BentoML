@@ -21,6 +21,12 @@ This section provides example projects for large language models.
 
         Deploy an AI agent capable of calling user-defined functions.
 
+    .. grid-item-card:: :doc:`/use-cases/large-language-models/langgraph`
+        :link: /use-cases/large-language-models/langgraph
+        :link-type: doc
+
+        Deploy a LangGraph LLM agent with BentoML.
+
     .. grid-item-card:: :doc:`/use-cases/large-language-models/shieldgemma`
         :link: /use-cases/large-language-models/shieldgemma
         :link-type: doc
@@ -40,5 +46,6 @@ This section provides example projects for large language models.
 
     vllm
     function-calling
+    langgraph
     shieldgemma
     rag

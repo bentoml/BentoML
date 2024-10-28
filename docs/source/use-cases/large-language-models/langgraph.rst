@@ -130,7 +130,7 @@ The ``service.py`` file defines the ``SearchAgentService``, a BentoML Service th
 
    Once the Mistral Service is injected, use the `ChatOpenAI <https://python.langchain.com/docs/integrations/chat/openai/>`_ API from ``langchain_openai`` to configure an interface to interact with it. Since the ``MistralService`` provides OpenAI-compatible API endpoints, you can use its HTTP client (``to_sync.client``) and client URL (``client_url``) to easily construct an OpenAI client for interaction.
 
-   After that, define the LangGraph workflow that uses the model. The LangGraph agent will call this model and build its flow with nodes and edges, connecting the LLM's outputs with the rest of the system. For detailed explanations of implementing LangGraph workflows, see `the LangGraph documentation <https://langchain-ai.github.io/langgraph/#example>`_.
+   After that, define the LangGraph workflow that uses the model. The LangGraph agent will call this model and build its flow with nodes and edges, connecting the outputs of the LLM with the rest of the system. For detailed explanations of implementing LangGraph workflows, see `the LangGraph documentation <https://langchain-ai.github.io/langgraph/#example>`_.
 
 3. Define a BentoML :doc:`task </guides/tasks>` endpoint ``invoke`` with ``@bentoml.task`` to handle the LangGraph workflow asynchronously. It is a background task that supports long-running operations. This ensures that complex LangGraph workflows involving external tools can complete without timing out.
 

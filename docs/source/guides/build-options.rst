@@ -132,7 +132,7 @@ Alternatively, create a ``.bentoignore`` file in the ``build_ctx`` directory as 
 ``models``
 ^^^^^^^^^^
 
-You can specify the model to be used for building a Bento using a string model tag or a dictionary. When you start from an existing project, you can download models from BentoCloud to your local :doc:`/guides/model-store` with the ``models`` configurations by running ``bentoml models pull``.
+You can specify the model to be used for building a Bento using a string model tag or a dictionary. When you start from an existing project, you can download models from BentoCloud to your local :doc:`/guides/model-loading-and-management` with the ``models`` configurations by running ``bentoml models pull``.
 
 See the following example for details. If you don't define models in ``bentofile.yaml``, the model specified in the Service is used to build the Bento.
 

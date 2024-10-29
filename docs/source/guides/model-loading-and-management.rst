@@ -1,17 +1,16 @@
-===========
-Model Store
-===========
+============================
+Model loading and management
+============================
 
-BentoML provides a local Model Store to save and manage models, which is essentially a local file directory maintained by BentoML. This document explains how to use the BentoML Model Store.
+BentoML offers simple APIs for you to load, store and manage AI models.
 
-When should you use the Model Store?
-------------------------------------
+Understand the Model Store
+--------------------------
 
-While it's straightforward to download and use pre-trained models from public model hubs like Hugging Face directly within a ``service.py`` file for simple use cases, more complex scenarios often require a more organized approach to model management. We recommend you use the BentoML Model Store in the following scenarios:
+BentoML provides a local Model Store to save and manage models, which is essentially a local file directory maintained by BentoML. It is useful in several scenarios including:
 
-- **Private model management**: If you are working with private models that have been fine-tuned or trained from scratch for specific tasks, using BentoML's Model Store offers a secure and efficient way to store, version, and access these models across your projects.
-- **Model cataloging**: BentoML's Model Store facilitates easy cataloging and versioning of models, enabling you to maintain a clear record of model iterations and switch between different model versions as required.
-- **Model downloading acceleration in BentoCloud**: For deployment on BentoCloud, the Model Store improves the cold start time of model downloading. BentoCloud caches models to expedite their availability and supports streaming loading of models directly to GPU memory.
+- **Private model management**: For private models fine-tuned or trained for specific tasks, using BentoML's Model Store offers a secure and efficient way to store, version, and access them.
+- **Model cataloging**: BentoML's Model Store facilitates easy cataloging and versioning of models, enabling you to maintain a clear record of model iterations and switch.
 
 Save a model
 ------------
@@ -51,49 +50,63 @@ If you have an existing model on disk, you can import it into the BentoML Model 
         shutil.copytree(local_model_dir, model_ref.path, dirs_exist_ok=True)
         print(f"Model saved: {model_ref}")
 
-Retrieve a model
-----------------
+Load a model
+------------
 
-To retrieve a model from the BentoML Model Store, use the ``get`` method.
+BentoML provides an efficient mechanism for loading AI models to accelerate model deployment, reducing image build time and cold start time.
 
-.. code-block:: python
+.. tab-set::
 
-    import bentoml
-    bento_model: bentoml.Model = bentoml.models.get("summarization-model:latest")
+   .. tab-item:: From Hugging Face
 
-    # Print related attributes of the model object.
-    print(bento_model.tag)
-    print(bento_model.path)
+      To load a model from Hugging Face (HF), instantiate a ``HuggingFaceModel`` class from ``bentoml.models`` and specify the model ID as shown on HF. For a gated Hugging Face model, remember to export your `Hugging Face API token <https://huggingface.co/docs/hub/en/security-tokens>`_ as environment variables before loading the model.
 
-``bentoml.models.get`` returns a ``bentoml.Model`` instance, linking to a saved model entry in the BentoML Model Store. You can then use the instance to get model information like tag, labels, and file system paths, or create a :doc:`Service </guides/services>` on top of it.
+      Here is an example:
 
-For example, you can load the model into a Transformers pipeline from the ``path`` provided by the ``bentoml.Model`` instance as below. See more in :doc:`/get-started/quickstart`.
+      .. code-block:: python
 
-.. code-block:: python
+         import bentoml
+         from bentoml.models import HuggingFaceModel
+         from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-    import bentoml
-    from transformers import pipeline
+         @bentoml.service(resources={"cpu": "200m", "memory": "512Mi"})
+         class MyService:
+             # Specify a model from HF with its ID
+             model_ref = HuggingFaceModel("google-bert/bert-base-uncased")
 
-    @bentoml.service
-    class Summarization:
-        # Define the model as a class variable
-        model_ref = bentoml.models.get("summarization-model")
+             def __init__(self):
+                 # Load the actual model and tokenizer within the instance context
+                 self.model = AutoModelForSequenceClassification.from_pretrained(self.model_ref)
+                 self.tokenizer = AutoTokenizer.from_pretrained(self.model_ref)
 
-        def __init__(self) -> None:
-            # Load model into pipeline
-            self.pipeline = pipeline('summarization', self.model_ref.path)
+      If you deploy the HF model to BentoCloud, you can view and verify it within your Bento on the details page. It is indicated with the HF icon. Clicking it redirects you to the model page on HF.
 
-        @bentoml.api
-        def summarize(self, text: str = EXAMPLE_INPUT) -> str:
-            ...
+      .. image:: ../../_static/img/guides/model-loading-and-management/hf-model-on-bentocloud.png
 
+   .. tab-item:: From the Model Store or BentoCloud
 
-Models must be retrieved from the class scope of a Service. Defining the model as a class variable declares it as a dependency of the Service, ensuring the models are referenced by the Bento when transported and deployed.
+      To load a model from the local Model Store or BentoCloud, instantiate a ``BentoModel`` from ``bentoml.models`` and specify its model tag. Make sure the model is stored locally or available in BentoCloud.
 
-.. warning::
+      Here is an example:
 
-    If ``bentoml.models.get()`` is called inside the constructor of a Service class, the model will not be referenced by the Bento therefore not pushed or deployed, leading to model ``NotFound`` in BentoML store error.
+      .. code-block:: python
 
+         import bentoml
+         from bentoml.models import BentoModel
+         import joblib
+
+         @bentoml.service(resources={"cpu": "200m", "memory": "512Mi"})
+         class MyService:
+             # Define model reference at the class level
+             # Load a model from the Model Store or BentoCloud
+             iris_ref = BentoModel("iris_sklearn:latest")
+
+             def __init__(self):
+                 self.iris_model = joblib.load(self.iris_ref.path_of("model.pkl"))
+
+.. important::
+
+   When using ``HuggingFaceModel`` and ``BentoModel``, you must load the model from the class scope of a Service. Defining the model as a class variable declares it as a dependency of the Service, ensuring the models are referenced by the Bento when transported and deployed. If you call these two APIs within the constructor of a Service class, the model will not be referenced by the Bento. As a result, it will not be pushed or deployed, leading to a model ``NotFound`` error.
 
 Manage models
 -------------

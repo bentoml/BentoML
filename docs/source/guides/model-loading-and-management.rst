@@ -108,6 +108,8 @@ BentoML provides an efficient mechanism for loading AI models to accelerate mode
 
    When using ``HuggingFaceModel`` and ``BentoModel``, you must load the model from the class scope of a Service. Defining the model as a class variable declares it as a dependency of the Service, ensuring the models are referenced by the Bento when transported and deployed. If you call these two APIs within the constructor of a Service class, the model will not be referenced by the Bento. As a result, it will not be pushed or deployed, leading to a model ``NotFound`` error.
 
+For more information, see :doc:`/reference/stores`.
+
 Manage models
 -------------
 

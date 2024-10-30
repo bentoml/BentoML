@@ -79,8 +79,8 @@ def _get_process(
             pass
 
         server = serve(bento_tag, port=port)
-        Client.wait_until_server_ready("localhost", server.port, 30)
-        client = HTTPClient(svc, f"http://localhost:{server.port}")
+        Client.wait_until_server_ready("localhost", port, 30)
+        client = HTTPClient(svc, server.url)
 
         for batch in iterator:
             func_input = inference_api.input.from_arrow(batch)

@@ -23,7 +23,7 @@ backward_compatible = True
 class NativeModel(tf.Module):
     def __init__(self):
         super().__init__()
-        self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
+        self.weights = np.asarray([[1.0], [1.0], [1.0], [1.0], [1.0]], dtype=np.float64)
         self.dense = lambda inputs: tf.matmul(inputs, self.weights)
 
     @tf.function(

@@ -15,6 +15,19 @@ Manage Bentos
 .. autofunction:: bentoml.build
 .. autofunction:: bentoml.bentos.build_bentofile
 
+Load models
+-----------
+
+.. autoclass:: bentoml.models.BentoModel
+    :members: to_info, from_info, resolve
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: bentoml.models.HuggingFaceModel
+    :members: to_info, from_info, resolve
+    :undoc-members:
+    :show-inheritance:
+
 Manage models
 -------------
 

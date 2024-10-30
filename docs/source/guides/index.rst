@@ -45,11 +45,11 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
 
         Customize the build configurations of a Bento.
 
-    .. grid-item-card:: :doc:`/guides/model-store`
-        :link: /guides/model-store
+    .. grid-item-card:: :doc:`/guides/model-loading-and-management`
+        :link: /guides/model-loading-and-management
         :link-type: doc
 
-        Use the BentoML local Model Store to manage your models in a unified way.
+        Load AI models and manage them in a unified way.
 
     .. grid-item-card:: :doc:`/guides/tasks`
         :link: /guides/tasks
@@ -138,7 +138,7 @@ This chapter introduces the key features of BentoML. We recommend you read :doc:
     containerization
     workers
     build-options
-    model-store
+    model-loading-and-management
     tasks
     gpu-inference
     model-composition

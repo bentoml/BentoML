@@ -35,7 +35,7 @@ Methods within the class which are defined as accessible HTTP API endpoints are 
 
 .. note::
 
-    This Service downloads a pre-trained model from Hugging Face. It is possible to use your own model within the Service class. For more information, see :doc:`/guides/model-store`.
+    This Service downloads a pre-trained model from Hugging Face. It is possible to use your own model within the Service class. For more information, see :doc:`/guides/model-loading-and-management`.
 
 Test the Service code
 ---------------------

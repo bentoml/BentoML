@@ -399,7 +399,6 @@ The following ``docker`` field contains some basic Docker configurations:
     docker:
       distro: debian
       python_version: "3.11"
-      cuda_version: "11.6.2" # Deprecated
       system_packages:
         - libblas-dev
         - liblapack-dev

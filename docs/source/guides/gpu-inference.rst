@@ -79,7 +79,7 @@ When building your Bento, you DO NOT need to specify ``cuda_version`` again in y
         - torch
         - tensorflow[and-cuda]
 
-If you know what you are doing and want to customize the installation of CUDA driver and libraries via ``system_packages``, ``setup_script``, or ``base_image`` options under the :ref:`docker-configuration` field.
+If you want to customize the installation of CUDA driver and libraries, use ``system_packages``, ``setup_script``, or ``base_image`` options under the :ref:`docker-configuration` field.
 
 
 (Deprecated) If your Bento is using GPUs during deployment, configure its required CUDA version in the ``docker`` field of ``bentofile.yaml``. BentoML will install the corresponding version in the Docker image created. An example:

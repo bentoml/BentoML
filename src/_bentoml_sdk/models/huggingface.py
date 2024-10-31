@@ -94,11 +94,14 @@ class HuggingFaceModel(Model[str]):
         if not info.metadata:
             name, revision = info.tag.name, info.tag.version
             return cls(model_id=name.replace("--", "/"), revision=revision or "main")
-        return cls(
+        model = cls(
             model_id=info.metadata["model_id"],
             revision=info.metadata["revision"],
             endpoint=info.metadata["endpoint"],
         )
+        # the commit hash is frozen in the model info, update the cache directly
+        model.__dict__.update(commit_hash=info.metadata["revision"])
+        return model
 
     def _get_model_size(self, revision: str) -> int:
         info = self._hf_api.model_info(

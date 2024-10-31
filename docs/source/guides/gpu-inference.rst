@@ -82,20 +82,6 @@ When building your Bento, you DO NOT need to specify ``cuda_version`` again in y
 If you want to customize the installation of CUDA driver and libraries, use ``system_packages``, ``setup_script``, or ``base_image`` options under the :ref:`docker-configuration` field.
 
 
-(Deprecated) If your Bento is using GPUs during deployment, configure its required CUDA version in the ``docker`` field of ``bentofile.yaml``. BentoML will install the corresponding version in the Docker image created. An example:
-
-.. code-block:: yaml
-
-    service: "service:GPUSVC"
-    labels:
-      owner: bentoml-team
-      stage: demo
-    include:
-    - "*.py"
-    python:
-      requirements_txt: "./requirements.txt"
-    docker:
-      python_version: "3.11.7"
 
 
 BentoCloud

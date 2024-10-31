@@ -81,9 +81,6 @@ When building your Bento, you DO NOT need to specify ``cuda_version`` again in y
 
 If you want to customize the installation of CUDA driver and libraries, use ``system_packages``, ``setup_script``, or ``base_image`` options under the :ref:`docker-configuration` field.
 
-
-
-
 BentoCloud
 ^^^^^^^^^^
 

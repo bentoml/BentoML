@@ -1178,7 +1178,11 @@ class DeploymentAPI:
         )
 
     def list(
-        self, cluster: str | None = None, search: str | None = None, dev: bool = False
+        self,
+        cluster: str | None = None,
+        search: str | None = None,
+        dev: bool = False,
+        q: str | None = None,
     ) -> list[Deployment]:
         """
         List all deployments in the cluster.
@@ -1195,7 +1199,7 @@ class DeploymentAPI:
             res_count = cloud_rest_client.v2.list_deployment(all=True, search=search)
             if res_count.total == 0:
                 return []
-            q = "is:dev" if dev else None
+            q = "is:dev" if dev else q
             res = cloud_rest_client.v2.list_deployment(
                 search=search, count=res_count.total, all=True, q=q
             )

@@ -13,6 +13,7 @@ from simple_di import inject
 from ._internal.cloud.deployment import Deployment
 from ._internal.cloud.deployment import DeploymentConfigParameters
 from ._internal.cloud.schemas.modelschemas import EnvItemSchema
+from ._internal.cloud.schemas.modelschemas import LabelItemSchema
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.tag import Tag
 from .exceptions import BentoMLException
@@ -289,8 +290,24 @@ def list(
     search: str | None = None,
     dev: bool = False,
     q: str | None = None,
+    labels: t.List[LabelItemSchema] | t.List[dict[str, t.Any]] | None = None,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> t.List[Deployment]:
+    # Syntatic sugar to enable searching by `labels` argument
+    if labels is not None:
+        label_query = " ".join(
+            f"label:{d['key']}={d['value']}"
+            for d in (
+                label if isinstance(label, dict) else attr.asdict(label)
+                for label in labels
+            )
+        )
+
+        if q is not None:
+            q = f"{q} {label_query}"
+        else:
+            q = label_query
+
     return _cloud_client.deployment.list(cluster=cluster, search=search, dev=dev, q=q)
 
 

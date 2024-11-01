@@ -12,6 +12,7 @@ from bentoml._internal.cloud.schemas.schemasv1 import ResourceSchema
 from bentoml._internal.cloud.schemas.schemasv1 import UserSchema
 
 from .modelschemas import EnvItemSchema
+from .modelschemas import LabelItemSchema
 
 
 @attr.define
@@ -46,6 +47,7 @@ class DeploymentConfigSchema:
     __forbid_extra_keys__ = False
     access_authorization: bool = attr.field(default=False)
     envs: t.Optional[t.List[EnvItemSchema]] = attr.field(default=None)
+    labels: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
     secrets: t.Optional[t.List[str]] = attr.field(default=None)
     services: t.Dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
 

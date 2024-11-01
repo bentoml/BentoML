@@ -744,14 +744,29 @@ def delete(  # type: ignore
     type=click.Choice(["json", "yaml", "table"]),
     default="table",
 )
+@click.option(
+    "--label",
+    "labels",
+    type=click.STRING,
+    multiple=True,
+    default=None,
+    help="Filter deployments by label(s).",
+    metavar="KEY=VALUE",
+)
 def list_command(  # type: ignore
     cluster: str | None,
     search: str | None,
+    labels: tuple[str, ...] | None,
     output: t.Literal["json", "yaml", "table"],
 ) -> None:
     """List existing deployments on BentoCloud."""
+    if labels is not None:
+        # For labels like ["env=prod", "team=infra"]
+        # This will output: "label:env=prod label:team=infra"
+        labels_query = " ".join(f"label:{label}" for label in labels)
+
     try:
-        d_list = bentoml.deployment.list(cluster=cluster, search=search)
+        d_list = bentoml.deployment.list(cluster=cluster, search=search, q=labels_query)
     except BentoMLException as e:
         raise_deployment_config_error(e, "list")
     res: list[dict[str, t.Any]] = [d.to_dict() for d in d_list]

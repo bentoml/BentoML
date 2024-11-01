@@ -288,9 +288,10 @@ def list(
     cluster: str | None = None,
     search: str | None = None,
     dev: bool = False,
+    q: str | None = None,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> t.List[Deployment]:
-    return _cloud_client.deployment.list(cluster=cluster, search=search, dev=dev)
+    return _cloud_client.deployment.list(cluster=cluster, search=search, dev=dev, q=q)
 
 
 __all__ = ["create", "get", "update", "apply", "terminate", "delete", "list"]

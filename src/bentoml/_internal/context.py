@@ -133,6 +133,7 @@ class ServiceContext:
         cookies: list[Cookie] = attr.field(factory=list)
         status_code: int = 200
         background: BackgroundTasks = attr.field(factory=BackgroundTasks)
+        task_id: str | None = None
 
         @property
         def headers(self) -> Metadata:

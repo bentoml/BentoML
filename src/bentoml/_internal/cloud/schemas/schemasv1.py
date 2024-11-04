@@ -128,6 +128,7 @@ class CreateBentoSchema:
 
 @attr.define
 class UpdateBentoSchema:
+    description: t.Optional[str] = attr.field(default=None)
     manifest: t.Optional[BentoManifestSchema] = attr.field(default=None)
     labels: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
 

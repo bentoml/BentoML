@@ -37,7 +37,7 @@ class HuggingFaceModel(Model[str]):
         str: The downloaded model path.
     """
 
-    model_id: str = attrs.field(converter=str.lower)
+    model_id: str
     revision: str = "main"
     endpoint: str | None = attrs.field(factory=lambda: os.getenv("HF_ENDPOINT"))
 
@@ -77,13 +77,14 @@ class HuggingFaceModel(Model[str]):
         return snapshot_path
 
     def to_info(self, alias: str | None = None) -> BentoModelInfo:
-        tag = Tag(self.model_id.replace("/", "--"), self.commit_hash)
+        model_id = self.model_id.lower()
+        tag = Tag(model_id.replace("/", "--"), self.commit_hash)
         return BentoModelInfo(
             tag,
             alias=alias,
             registry="huggingface",
             metadata={
-                "model_id": self.model_id,
+                "model_id": model_id,
                 "revision": self.commit_hash,
                 "endpoint": self.endpoint or DEFAULT_HF_ENDPOINT,
             },

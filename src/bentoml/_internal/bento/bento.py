@@ -364,7 +364,16 @@ class Bento(StoreItem):
             # Create `readme.md` file
             if build_config.description is None:
                 with bento_fs.open(BENTO_README_FILENAME, "w", encoding="utf-8") as f:
-                    f.write(get_default_svc_readme(svc, svc_version=tag.version))
+                    # if README.md exists in the build context, copy it to the bento
+                    if ctx_fs.exists(BENTO_README_FILENAME):
+                        copy_file(
+                            ctx_fs,
+                            BENTO_README_FILENAME,
+                            bento_fs,
+                            BENTO_README_FILENAME,
+                        )
+                    else:
+                        f.write(get_default_svc_readme(svc, svc_version=tag.version))
             else:
                 if build_config.description.startswith("file:"):
                     file_name = build_config.description[5:].strip()

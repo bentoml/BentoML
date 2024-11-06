@@ -362,17 +362,27 @@ class Bento(StoreItem):
                 )
 
             # Create `readme.md` file
-            if build_config.description is None:
-                with bento_fs.open(BENTO_README_FILENAME, "w", encoding="utf-8") as f:
-                    f.write(get_default_svc_readme(svc, svc_version=tag.version))
+            if (
+                build_config.description is not None
+                and build_config.description.startswith("file:")
+            ):
+                file_name = build_config.description[5:].strip()
+                if not ctx_fs.exists(file_name):
+                    raise InvalidArgument(f"File {file_name} does not exist.")
+                copy_file_to_fs_folder(
+                    file_name, bento_fs, dst_filename=BENTO_README_FILENAME
+                )
+            elif build_config.description is None and ctx_fs.exists(
+                BENTO_README_FILENAME
+            ):
+                copy_file_to_fs_folder(
+                    BENTO_README_FILENAME, bento_fs, dst_filename=BENTO_README_FILENAME
+                )
             else:
-                if build_config.description.startswith("file:"):
-                    file_name = build_config.description[5:].strip()
-                    copy_file_to_fs_folder(
-                        file_name, bento_fs, dst_filename=BENTO_README_FILENAME
-                    )
-                else:
-                    with bento_fs.open(BENTO_README_FILENAME, "w") as f:
+                with bento_fs.open(BENTO_README_FILENAME, "w") as f:
+                    if build_config.description is None:
+                        f.write(get_default_svc_readme(svc, version))
+                    else:
                         f.write(build_config.description)
 
             # Create 'apis/openapi.yaml' file

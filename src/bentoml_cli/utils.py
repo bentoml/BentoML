@@ -7,6 +7,7 @@ import os
 import re
 import time
 import typing as t
+from importlib.metadata import entry_points
 
 import click
 import click_option_group as cog
@@ -14,6 +15,8 @@ from click import ClickException
 from click.exceptions import UsageError
 
 if t.TYPE_CHECKING:
+    from importlib.metadata import EntryPoint
+
     from click import Command
     from click import Context
     from click import HelpFormatter
@@ -474,3 +477,12 @@ def is_valid_bento_tag(value: str) -> bool:
 
 def is_valid_bento_name(value: str) -> bool:
     return re.match(r"^[A-Za-z_0-9]*$", value) is not None
+
+
+def get_entry_points(group: str) -> t.Iterable[EntryPoint]:
+    """A compatible version of importlib.metadata.entry_points for Python < 3.10"""
+    try:
+        return entry_points(group=group)
+    except TypeError:
+        # For Python < 3.10, entry_points() does not accept group argument
+        return entry_points().get(group, [])

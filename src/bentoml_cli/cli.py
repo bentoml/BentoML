@@ -19,6 +19,7 @@ def create_bentoml_cli() -> click.Command:
     from bentoml_cli.serve import serve_command
     from bentoml_cli.start import start_command
     from bentoml_cli.utils import BentoMLCommandGroup
+    from bentoml_cli.utils import get_entry_points
 
     server_context.service_type = "cli"
 
@@ -49,6 +50,9 @@ def create_bentoml_cli() -> click.Command:
     bentoml_cli.add_command(develop_command)
     bentoml_cli.add_command(deployment_command)
     bentoml_cli.add_command(secret_command)
+    # Load commands from extensions
+    for ep in get_entry_points("bentoml.commands"):
+        bentoml_cli.add_command(ep.load())
 
     if psutil.WINDOWS:
         import sys

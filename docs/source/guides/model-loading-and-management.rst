@@ -104,9 +104,11 @@ BentoML provides an efficient mechanism for loading AI models to accelerate mode
              def __init__(self):
                  self.iris_model = joblib.load(self.iris_ref.path_of("model.pkl"))
 
-.. important::
+When using ``HuggingFaceModel`` and ``BentoModel``, you must load the model from the class scope of a Service. Defining the model as a class variable declares it as a dependency of the Service, ensuring the models are referenced by the Bento when transported and deployed. If you call these two APIs within the constructor of a Service class, the model will not be referenced by the Bento. As a result, it will not be pushed or deployed, leading to a model ``NotFound`` error.
 
-   When using ``HuggingFaceModel`` and ``BentoModel``, you must load the model from the class scope of a Service. Defining the model as a class variable declares it as a dependency of the Service, ensuring the models are referenced by the Bento when transported and deployed. If you call these two APIs within the constructor of a Service class, the model will not be referenced by the Bento. As a result, it will not be pushed or deployed, leading to a model ``NotFound`` error.
+.. note::
+
+    BentoML accelerates model loading in two key ways. First, when using ``HuggingFaceModel`` or ``BentoModel``, models are downloaded during image building rather than Service startup. The downloaded models are cached and mounted directly into containers, significantly reducing cold start time and improving scaling performance, especially for large models. Second, BentoML optimizes the actual loading process itself with parallel loading using safetensors. Instead of loading model weights sequentially, multiple parts of the model are loaded simultaneously.
 
 For more information, see :doc:`/reference/stores`.
 

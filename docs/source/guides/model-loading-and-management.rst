@@ -79,6 +79,8 @@ BentoML provides an efficient mechanism for loading AI models to accelerate mode
                  self.model = AutoModelForSequenceClassification.from_pretrained(self.model_ref)
                  self.tokenizer = AutoTokenizer.from_pretrained(self.model_ref)
 
+      By default, ``HuggingFaceModel`` returns the downloaded model path as a string, which means you can directly pass the path into libraries like ``transformers`` for model loading.
+
       If you deploy the HF model to BentoCloud, you can view and verify it within your Bento on the details page. It is indicated with the HF icon. Clicking it redirects you to the model page on HF.
 
       .. image:: ../../_static/img/guides/model-loading-and-management/hf-model-on-bentocloud.png
@@ -103,6 +105,8 @@ BentoML provides an efficient mechanism for loading AI models to accelerate mode
 
              def __init__(self):
                  self.iris_model = joblib.load(self.iris_ref.path_of("model.pkl"))
+
+      By default, ``__get__`` from ``BentoModel`` returns a ``bentoml.Model`` object, which requires additional tools like ``joblib.load`` to load the model data.
 
 When using ``HuggingFaceModel`` and ``BentoModel``, you must load the model from the class scope of a Service. Defining the model as a class variable declares it as a dependency of the Service, ensuring the models are referenced by the Bento when transported and deployed. If you call these two APIs within the constructor of a Service class, the model will not be referenced by the Bento. As a result, it will not be pushed or deployed, leading to a model ``NotFound`` error.
 

@@ -37,7 +37,7 @@ dependencies = [
     "httpx",
     "inflection",
     "numpy",
-    "nvidia-ml-py<12",
+    "nvidia-ml-py",
     # OpenTelemetry is the server dependencies, rather than SDK
     # Since there are discrepancies among API and instrumentation packages,
     # we should always pin the set version of Opentelemetry suite

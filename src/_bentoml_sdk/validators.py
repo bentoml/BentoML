@@ -93,7 +93,7 @@ class PILImageEncoder:
     ) -> dict[str, t.Any]:
         value = handler(schema)
         if handler.mode == "validation":
-            value.update({"type": "file", "format": "image"})
+            value.update({"type": "file", "format": "image", "pil": True})
         else:
             value.update({"type": "string", "format": "binary"})
         return value

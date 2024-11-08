@@ -181,8 +181,6 @@ class IOMixin:
         from starlette.responses import Response
         from starlette.responses import StreamingResponse
 
-        from _bentoml_impl.serde import JSONSerde
-
         if inspect.isasyncgen(obj):
             try:
                 # try if there is any error before the first yield
@@ -248,7 +246,7 @@ class IOMixin:
                 headers=payload.headers,
             )
         else:
-            if is_file_type(type(obj)) and isinstance(serde, JSONSerde):
+            if is_file_type(type(obj)):
                 if isinstance(obj, pathlib.PurePath):
                     media_type = mimetypes.guess_type(obj)[0] or cls.mime_type()
                     should_inline = media_type.startswith("image")

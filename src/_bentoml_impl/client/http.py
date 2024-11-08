@@ -37,6 +37,7 @@ from .task import Task
 
 if t.TYPE_CHECKING:
     from httpx._types import RequestFiles
+    from PIL import Image
 
     from _bentoml_sdk import Service
     from bentoml._internal.external_typing import ASGIApp
@@ -358,10 +359,11 @@ class HTTPClient(AbstractClient, t.Generic[C]):
 
     def _deserialize_output(self, payload: Payload, endpoint: ClientEndpoint) -> t.Any:
         data = iter(payload.data)
-        if (ot := endpoint.output.get("type")) == "string":
-            return bytes(next(data)).decode("utf-8")
-        elif ot == "bytes":
-            return bytes(next(data))
+        if (endpoint.output.get("type")) == "string":
+            content = bytes(next(data))
+            if endpoint.output.get("format") == "binary":
+                return content
+            return content.decode("utf-8")
         elif endpoint.output_spec is not None:
             model = self.serde.deserialize_model(payload, endpoint.output_spec)
             if isinstance(model, RootModel):
@@ -470,10 +472,8 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
                 raise map_exception(resp)
             if endpoint.stream_output:
                 return self._parse_stream_response(endpoint, resp)
-            elif (
-                endpoint.output.get("type") == "file"
-                and self.media_type == "application/json"
-            ):
+            elif endpoint.output.get("type") == "file":
+                # file responses are always raw binaries whatever the serde is
                 return self._parse_file_response(endpoint, resp)
             else:
                 return self._parse_response(endpoint, resp)
@@ -497,11 +497,18 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
 
     def _parse_file_response(
         self, endpoint: ClientEndpoint, resp: httpx.Response
-    ) -> pathlib.Path:
+    ) -> pathlib.Path | Image.Image:
         from multipart.multipart import parse_options_header
+        from PIL import Image
 
         content_disposition = resp.headers.get("content-disposition")
+        content_type = resp.headers.get("content-type", "")
         filename: str | None = None
+        if endpoint.output.get("pil"):
+            image_formats = (
+                [content_type[6:]] if content_type.startswith("image/") else None
+            )
+            return Image.open(io.BytesIO(resp.read()), formats=image_formats)
         if content_disposition:
             _, options = parse_options_header(content_disposition)
             if b"filename" in options:
@@ -589,10 +596,8 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
                 raise map_exception(resp)
             if endpoint.stream_output:
                 return self._parse_stream_response(endpoint, resp)
-            elif (
-                endpoint.output.get("type") == "file"
-                and self.media_type == "application/json"
-            ):
+            elif endpoint.output.get("type") == "file":
+                # file responses are always raw binaries whatever the serde is
                 return await self._parse_file_response(endpoint, resp)
             else:
                 return await self._parse_response(endpoint, resp)
@@ -618,11 +623,18 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
 
     async def _parse_file_response(
         self, endpoint: ClientEndpoint, resp: httpx.Response
-    ) -> pathlib.Path:
+    ) -> pathlib.Path | Image.Image:
         from multipart.multipart import parse_options_header
+        from PIL import Image
 
         content_disposition = resp.headers.get("content-disposition")
+        content_type = resp.headers.get("content-type", "")
         filename: str | None = None
+        if endpoint.output.get("pil"):
+            image_formats = (
+                [content_type[6:]] if content_type.startswith("image/") else None
+            )
+            return Image.open(io.BytesIO(await resp.aread()), formats=image_formats)
         if content_disposition:
             _, options = parse_options_header(content_disposition)
             if b"filename" in options:

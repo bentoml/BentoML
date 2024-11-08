@@ -5,7 +5,7 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:f6b631c837f69b66563c61b24913bf86075a0d2a05f1182d051721d5aad51d9a"
+content_hash = "sha256:c7d8a9bb26fc3e0842b297b12f3a0953494c2b7ed31431ae7ebc50a4edb2153d"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1836,12 +1836,12 @@ files = [
 
 [[package]]
 name = "nvidia-ml-py"
-version = "11.525.150"
+version = "12.560.30"
 summary = "Python Bindings for the NVIDIA Management Library"
 groups = ["default"]
 files = [
-    {file = "nvidia-ml-py-11.525.150.tar.gz", hash = "sha256:50af55b99ea167781102345a7de29bac94a57c8f38de6757ef9f945dd137c90a"},
-    {file = "nvidia_ml_py-11.525.150-py3-none-any.whl", hash = "sha256:a7c410f4a63a78119d8e9d969dbd22d3b86d8d39aa9316be56c2e6ba9271a5c3"},
+    {file = "nvidia-ml-py-12.560.30.tar.gz", hash = "sha256:f0254dc7400647680a072ee02509bfd46102b60bdfeca321576d4d4817e7fe97"},
+    {file = "nvidia_ml_py-12.560.30-py3-none-any.whl", hash = "sha256:fea371c94d63e38a611c17bbb85fe400e9c8ddb9e8684a9cd0e47786a4bc3c73"},
 ]
 
 [[package]]

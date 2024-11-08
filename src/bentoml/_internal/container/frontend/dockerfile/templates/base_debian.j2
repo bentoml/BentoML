@@ -14,5 +14,5 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloa
 
 ENV UV_SYSTEM_PYTHON=1
 RUN curl -LO https://astral.sh/uv/install.sh && \
-    sh install.sh && rm install.sh && mv $HOME/.cargo/bin/uv /usr/local/bin/
+    sh install.sh && rm install.sh && mv $HOME/.local/bin/uv /usr/local/bin/
 {% endblock %}

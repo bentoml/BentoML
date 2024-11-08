@@ -66,7 +66,7 @@ RUN {{ command }}
 {% endfor %}
 
 RUN curl -LO https://astral.sh/uv/install.sh && \
-    sh install.sh && rm install.sh && mv $HOME/.cargo/bin/uv /usr/local/bin/ && uv venv --python {{ __options__python_version }}
+    sh install.sh && rm install.sh && mv $HOME/.local/bin/uv /usr/local/bin/ && uv venv --python {{ __options__python_version }}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/") %}
 {% if __pip_preheat_packages__ %}
 {% for value in __pip_preheat_packages__ -%}

@@ -15,7 +15,7 @@ USER root
 
 ENV UV_SYSTEM_PYTHON=1
 RUN curl -LO https://astral.sh/uv/install.sh && \
-    sh install.sh && rm install.sh && mv $HOME/.cargo/bin/uv /usr/local/bin/
+    sh install.sh && rm install.sh && mv $HOME/.local/bin/uv /usr/local/bin/
 {% if __options__system_packages is not none %}
 # Install user-defined system package
 {% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache("/var/cache/yum") }} {% endcall -%} set -eux && \

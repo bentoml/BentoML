@@ -72,12 +72,12 @@ BentoML provides an efficient mechanism for loading AI models to accelerate mode
          @bentoml.service(resources={"cpu": "200m", "memory": "512Mi"})
          class MyService:
              # Specify a model from HF with its ID
-             model_ref = HuggingFaceModel("google-bert/bert-base-uncased")
+             model_path = HuggingFaceModel("google-bert/bert-base-uncased")
 
              def __init__(self):
                  # Load the actual model and tokenizer within the instance context
-                 self.model = AutoModelForSequenceClassification.from_pretrained(self.model_ref)
-                 self.tokenizer = AutoTokenizer.from_pretrained(self.model_ref)
+                 self.model = AutoModelForSequenceClassification.from_pretrained(self.model_path)
+                 self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
 
       By default, ``HuggingFaceModel`` returns the downloaded model path as a string, which means you can directly pass the path into libraries like ``transformers`` for model loading.
 

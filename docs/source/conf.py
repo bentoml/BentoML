@@ -1,4 +1,5 @@
 import importlib.metadata
+import os
 from datetime import datetime
 
 # -- Project information -----------------------------------------------------
@@ -155,6 +156,9 @@ html_theme_options = {
     "light_logo": "img/logo-light.svg",
     "dark_logo": "img/logo-dark.svg",
 }
+
+# Set canonical URL from readthedocs domain
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "/")
 
 html_title = "BentoML"
 html_static_path = ["_static"]

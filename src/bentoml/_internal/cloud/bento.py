@@ -521,13 +521,16 @@ class BentoAPI:
             with self.spinner.spin(text=f'Extracting bento "{_tag}" tar file'):
                 with fs.open_fs("temp://") as temp_fs:
                     for member in tar.getmembers():
-                        f = tar.extractfile(member)
-                        if f is None:
-                            continue
-                        p = Path(member.name)
-                        if p.parent != Path("."):
-                            temp_fs.makedirs(p.parent.as_posix(), recreate=True)
-                        temp_fs.writebytes(member.name, f.read())
+                        if member.isdir():
+                            temp_fs.makedirs(member.name, recreate=True)
+                        else:
+                            f = tar.extractfile(member)
+                            if f is None:
+                                continue
+                            p = Path(member.name)
+                            if p.parent != Path("."):
+                                temp_fs.makedirs(p.parent.as_posix(), recreate=True)
+                            temp_fs.writebytes(member.name, f.read())
                     bento = Bento.from_fs(temp_fs)
                     bento = bento.save(bento_store)
                     self.spinner.log(f'[bold green]Successfully pulled bento "{_tag}"')

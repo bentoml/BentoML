@@ -1,6 +1,6 @@
 import importlib.metadata
-from datetime import datetime
 import os
+from datetime import datetime
 
 # -- Project information -----------------------------------------------------
 

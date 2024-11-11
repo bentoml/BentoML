@@ -15,7 +15,7 @@ Install BentoML and its ComfyUI extension. The extension augments BentoML's comm
 
     pip install bentoml bentoml-comfyui
 
-Ensure the ComfyUI workflow is functional in your environment. Include only the models and custom nodes required for running the workflow. Including unused models and custom nodes will increase the size of the model unnecessariy and slows down deployment and cold-start. It is also recommended to save and reload the workflow API JSON file to ensure it is working as expected.
+Ensure the ComfyUI workflow is functional in your environment. Include only the models and custom nodes required for running the workflow. Including unused models and custom nodes will increase the size of the model unnecessarily and slows down deployment and cold-start. It is also recommended to save and reload the workflow API JSON file to ensure it is working as expected.
 
 .. note::
 

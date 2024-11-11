@@ -34,7 +34,7 @@ One challenge of serving ComfyUI pipelines as APIs is the lack of a standard sch
 
     .. image:: ../../_static/img/use-cases/diffusion-models/comfyui/add_input_node.png
 
-3. Add an outout node by following the same steps as step 2, but selecting "output" instead of "input". Connect the output to the output node.
+3. Add an output node by following the same steps as step 2, but selecting "output" instead of "input". Connect the output to the output node.
 
 Save the workflow API
 ---------------------

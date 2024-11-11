@@ -4,7 +4,6 @@ import math
 import tarfile
 import typing as t
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import attrs
@@ -19,6 +18,7 @@ from ..bento import Bento
 from ..bento import BentoStore
 from ..configuration.containers import BentoMLContainer
 from ..tag import Tag
+from ..utils.filesystem import safe_extract_tarfile
 from .base import FILE_CHUNK_SIZE
 from .base import UPLOAD_RETRY_COUNT
 from .base import CallbackIOWrapper
@@ -520,14 +520,7 @@ class BentoAPI:
             tar = tarfile.open(fileobj=tar_file, mode="r")
             with self.spinner.spin(text=f'Extracting bento "{_tag}" tar file'):
                 with fs.open_fs("temp://") as temp_fs:
-                    for member in tar.getmembers():
-                        f = tar.extractfile(member)
-                        if f is None:
-                            continue
-                        p = Path(member.name)
-                        if p.parent != Path("."):
-                            temp_fs.makedirs(p.parent.as_posix(), recreate=True)
-                        temp_fs.writebytes(member.name, f.read())
+                    safe_extract_tarfile(tar, temp_fs.getsyspath("/"))
                     bento = Bento.from_fs(temp_fs)
                     bento = bento.save(bento_store)
                     self.spinner.log(f'[bold green]Successfully pulled bento "{_tag}"')

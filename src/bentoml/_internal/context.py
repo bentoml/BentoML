@@ -12,8 +12,8 @@ import attr
 import starlette.datastructures
 from starlette.background import BackgroundTasks
 
+from .utils.filesystem import TempfilePool
 from .utils.http import Cookie
-from .utils.temp import TempfilePool
 
 if TYPE_CHECKING:
     import starlette.requests

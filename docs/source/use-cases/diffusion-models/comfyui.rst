@@ -15,6 +15,10 @@ Install BentoML and its ComfyUI extension. The extension augments BentoML's comm
 
     pip install bentoml bentoml-comfyui
 
+.. note::
+
+    It is recommended to start a new Python virtual environment to avoid conflicts with existing packages and include only the required dependencies.
+
 Ensure the ComfyUI workflow is functional in your environment. Include only the models and custom nodes required for running the workflow. Including unused models and custom nodes will increase the size of the model unnecessarily and slows down deployment and cold-start. It is also recommended to save and reload the workflow API JSON file to ensure it is working as expected.
 
 .. note::
@@ -55,6 +59,14 @@ A ComfyUI workflow has complex model and custom node dependencies. To ensure the
     bentoml comfyui pack --name my-comfyui-workspace [WORKSPACE_PATH]
 
 Now we have the workspace saved as a BentoML model. You can confirm it by running ``bentoml models list``.
+
+The model can be exported to an artifact either in the local filesystem or a cloud storage.
+
+.. code-block:: bash
+
+    bentoml models export my-comfyui-workspace:latest ./my-comfyui-workspace.bentomodel
+    bentoml models export my-comfyui-workspace:latest s3://mybucket/models/my-comfyui-workspace.bentomodel
+
 
 Build the workflow as a Bento
 -----------------------------

@@ -82,9 +82,9 @@ Deploy the workflow a Bento
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $10 in free credits. Follow the instructions to `log in <bentocloud/how-tos/manage-access-token:Log in to BentoCloud using the BentoML CLI>` to BentoCloud.
 
-   .. code-block:: bash
+.. code-block:: bash
 
-        bentoml cloud login
+    bentoml cloud login
 
 Deploy the Bento created in the previous step to BentoCloud by running the following command.
 

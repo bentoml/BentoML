@@ -5,7 +5,6 @@ import tarfile
 import typing as t
 import warnings
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import attrs
@@ -20,6 +19,7 @@ from ..configuration.containers import BentoMLContainer
 from ..models import Model as StoredModel
 from ..models import ModelStore
 from ..tag import Tag
+from ..utils.filesystem import safe_extract_tarfile
 from .base import FILE_CHUNK_SIZE
 from .base import UPLOAD_RETRY_COUNT
 from .base import CallbackIOWrapper
@@ -482,14 +482,7 @@ class ModelAPI:
             tar = tarfile.open(fileobj=tar_file, mode="r")
             with self.spinner.spin(text=f'Extracting model "{_tag}" tar file'):
                 with fs.open_fs("temp://") as temp_fs:
-                    for member in tar.getmembers():
-                        f = tar.extractfile(member)
-                        if f is None:
-                            continue
-                        p = Path(member.name)
-                        if p.parent != Path("."):
-                            temp_fs.makedirs(str(p.parent), recreate=True)
-                        temp_fs.writebytes(member.name, f.read())
+                    safe_extract_tarfile(tar, temp_fs.getsyspath("/"))
                     model = StoredModel.from_fs(temp_fs).save(model_store)
                     self.spinner.log(f'[bold green]Successfully pulled model "{_tag}"')
                     return model

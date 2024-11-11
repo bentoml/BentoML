@@ -9,7 +9,7 @@ Recognizing the complexity of ComfyUI, BentoML provides a non-intrusive solution
 Prerequisites
 -------------
 
-Install BentoML and its ComfyUI extension. The extension augments BentoML's commandline interface with additional commands to save the ComfyUI workspace as a BentoML model and serve it as a Bento API endpoint. Installing the ``bentoml-comfyui`` package enables the ``bentoml comfyui`` sub-command.
+Install BentoML and its ComfyUI extension. The extension augments BentoML's command line interface with additional commands to save the ComfyUI workspace as a BentoML model and serve it as a Bento API endpoint. Installing the ``bentoml-comfyui`` package enables the ``bentoml comfyui`` sub-command.
 
 .. code-block:: bash
 

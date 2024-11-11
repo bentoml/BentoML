@@ -2,9 +2,13 @@
 Develop with Codespaces
 =======================
 
-Codespaces provide a cloud-based development environment that allows you to run AI applications directly on BentoCloud as you develop. With access to various instance types, including GPUs, Codespaces make it easy to develop multi-Service, GPU-powered applications.
+Codespaces is a development platform on BentoCloud designed to solve the challenges in building AI applications:
 
-By connecting your local IDE to a remote Codespace, you can see real-time changes on BentoCloud, as the Codespace automatically hot-reloads when it detects local updates. This ensures your development environment mirrors production, so you can build with confidence.
+- Limited access to a variety of powerful GPUs in local development environments
+- Slow iteration cycles due to container image building processes
+- Inconsistent behavior between development and production environments
+
+With Codespaces, you can connect your local development environment to BentoCloud while using your favorite IDE. This allows you to develop with powerful cloud GPUs in a reliable environment that is consistent with production. Your changes are updated in real-time on BentoCloud, as Codespaces automatically hot-reload when detecting local updates. This ensures you can iterate rapidly and confidently on your applications.
 
 Create a Codespace
 ------------------

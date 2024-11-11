@@ -1,5 +1,5 @@
 ================
-Diffusion Models
+Diffusion models
 ================
 
 This section provides example projects for image and video generation use cases.
@@ -21,6 +21,12 @@ This section provides example projects for image and video generation use cases.
 
         Deploy an image generation server for specific user requirements with BentoML using ControlNet.
 
+    .. grid-item-card:: :doc:`/use-cases/diffusion-models/comfyui`
+        :link: /use-cases/diffusion-models/comfyui
+        :link-type: doc
+
+        Deploy a ComfyUI workflow into a Bento API endpoint.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
@@ -28,3 +34,4 @@ This section provides example projects for image and video generation use cases.
 
     sdxl-turbo
     controlnet
+    comfyui

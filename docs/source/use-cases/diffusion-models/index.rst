@@ -1,6 +1,6 @@
-==========================
-Image and video generation
-==========================
+================
+Diffusion Models
+================
 
 This section provides example projects for image and video generation use cases.
 

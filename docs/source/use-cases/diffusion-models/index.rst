@@ -20,7 +20,7 @@ This section provides example projects for image and video generation use cases.
         :link-type: doc
 
         Deploy an image generation server for specific user requirements with BentoML using ControlNet.
-    
+
     .. grid-item-card:: :doc:`/use-cases/diffusion-models/comfyui`
         :link: /use-cases/diffusion-models/comfyui
         :link-type: doc

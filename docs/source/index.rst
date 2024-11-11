@@ -46,6 +46,8 @@ Featured examples
 
         Deploy an image generation application capable of creating high-quality visuals with just a single inference step.
 
+See the :doc:`/use-cases/index` section to learn more.
+
 Start your BentoML journey
 --------------------------
 

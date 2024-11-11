@@ -59,7 +59,7 @@ Now we have the workspace saved as a BentoML model. You can confirm it by runnin
 Build the workflow as a Bento
 -----------------------------
 
-In this step, we build the workspace and workflow as a Bento. We require the workflow API JSON file and the workspace model we saved in the previous steps. Underneath the hood, BentoML freezes the current Python virtual environment as dependency and genereates a service module with the serving logic for the workflow.
+In this step, we build the workspace and workflow as a Bento. We require the workflow API JSON file and the workspace model we saved in the previous steps. Underneath the hood, BentoML freezes the current Python virtual environment as dependency and generates a service module with the serving logic for the workflow.
 
 .. code-block:: bash
 

@@ -333,14 +333,13 @@ def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
     # Return if filepath exist after expanduser
 
     _path = os.path.expanduser(os.path.expandvars(filepath))
-    if os.path.exists(_path):
-        return os.path.realpath(_path)
 
     # Try finding file in ctx if provided
-    if ctx:
+    if not os.path.isabs(_path) and ctx:
         _path = os.path.expanduser(os.path.join(ctx, filepath))
-        if os.path.exists(_path):
-            return os.path.realpath(_path)
+
+    if os.path.exists(_path):
+        return os.path.realpath(_path)
 
     raise FileNotFoundError(f"file {filepath} not found")
 

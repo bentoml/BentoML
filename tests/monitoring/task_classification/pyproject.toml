@@ -1,0 +1,14 @@
+[project]
+name = "task_classification"
+dependencies = [
+    "scikit-learn",
+    "pandas",
+    "bentoml[monitor-otlp]>=1.0.19",
+]
+
+[dependency-groups]
+test = ["locust"]
+
+[tool.bentoml.build]
+include = ["*.py"]
+service = "service.py:IrisClassifier"

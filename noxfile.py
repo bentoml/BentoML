@@ -84,8 +84,7 @@ def run_e2e_test(session: nox.Session, suite: str):
 @nox.session(name="e2e-monitoring", python=PYTHON_VERSIONS)
 def run_e2e_monitoring_test(session: nox.Session):
     session.run("pdm", "sync", "-G", "io,testing,monitor-otlp", external=True)
-    test_folder = "examples/monitoring/task_classification"
-    session.install("-r", os.path.join(test_folder, "requirements.txt"))
+    test_folder = "tests/monitoring/task_classification"
     os.makedirs(os.path.join(test_folder, "monitoring"), exist_ok=True)
     session.run(*TEST_ARGS, test_folder)
 

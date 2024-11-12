@@ -41,23 +41,29 @@ See the following lists for a complete collection of BentoML example projects. B
 LLMs
 ----
 
-Serve LLMs with BentoML and vLLM:
+Deploy an OpenAI-compatible LLM API service:
 
 - `Llama 3.2 90B <https://github.com/bentoml/BentoVLLM/tree/main/llama3.2-90b-instruct>`_
 - `Llama 3.1 70B <https://github.com/bentoml/BentoVLLM/tree/main/llama3.1-70b-instruct-awq>`_
 - `Mistral 7B <https://github.com/bentoml/BentoVLLM/tree/main/mistral-7b-instruct>`_
 - `Pixtral 12B <https://github.com/bentoml/BentoVLLM/tree/main/pixtral-12b>`_
 - `Phi 3 mini <https://github.com/bentoml/BentoVLLM/tree/main/phi-3-mini-4k-instruct>`_
-- Check out the `BentoVLLM project <https://github.com/bentoml/BentoVLLM>`_ to see more examples
 
-Build compound AI systems on top of LLMs:
+Choose your LLM Inference runtime:
 
-- `Build an AI agent with function calling using BentoML <https://github.com/bentoml/BentoFunctionCalling>`_
-- `Build a LangGraph agent application with BentoML <https://github.com/bentoml/BentoLangGraph>`_
-- `Build a multi-agent application with CrewAI and BentoML <https://github.com/bentoml/BentoCrewAI>`_
-- `Build an AI assistant to ensure LLM safety with BentoML and ShieldGemma <https://github.com/bentoml/BentoShield/>`_
-- `Build a RAG system for document ingestion and search with LlamaIndex and BentoML <https://github.com/bentoml/rag-tutorials>`_
-- `Build a voice agent with open-source models using Twilio, Pipecat and BentoML <https://github.com/bentoml/BentoVoiceAgent>`_
+- `vLLM <https://github.com/bentoml/BentoVLLM>`_ (or `OpenLLM <https://github.com/bentoml/OpenLLM>`_)
+- `TensorRT-LLM <https://github.com/bentoml/BentoTRTLLM>`_
+- `LMDeploy <https://github.com/bentoml/BentoLMDeploy>`_
+- `MLC-LLM <https://github.com/bentoml/BentoMLCLLM>`_
+
+Advanced examples:
+
+- `Agent: Function calling <https://github.com/bentoml/BentoFunctionCalling>`_
+- `Agent: LangGraph <https://github.com/bentoml/BentoLangGraph>`_
+- `Multi-agent: CrewAI <https://github.com/bentoml/BentoCrewAI>`_
+- `LLM safety: ShieldGemma <https://github.com/bentoml/BentoShield/>`_
+- `RAG: LlamaIndex <https://github.com/bentoml/rag-tutorials>`_
+- `Phone call agent <https://github.com/bentoml/BentoVoiceAgent>`_
 
 Image and video
 ---------------

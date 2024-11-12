@@ -55,6 +55,8 @@ Choose your LLM Inference runtime:
 - `TensorRT-LLM <https://github.com/bentoml/BentoTRTLLM>`_
 - `LMDeploy <https://github.com/bentoml/BentoLMDeploy>`_
 - `MLC-LLM <https://github.com/bentoml/BentoMLCLLM>`_
+- `SGLang <https://github.com/bentoml/BentoSGLang>`_
+- `Hugging Face TGI <https://github.com/bentoml/BentoTGI>`_
 
 Advanced examples:
 

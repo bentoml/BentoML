@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from starlette.testclient import TestClient
 
 import bentoml

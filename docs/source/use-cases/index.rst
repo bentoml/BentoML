@@ -77,6 +77,7 @@ Serve text-to-image and image-to-image models with BentoML:
 - `Stable Diffusion XL Turbo <https://github.com/bentoml/BentoDiffusion/tree/main/sdxl-turbo>`_
 - `Stable Video Diffusion <https://github.com/bentoml/BentoDiffusion/tree/main/svd>`_
 - `ControlNet <https://github.com/bentoml/BentoDiffusion/tree/main/controlnet>`_
+- `ComfyUI <https://github.com/bentoml/BentoComfyUI>`_
 - Check out the `BentoDiffusion project <https://github.com/bentoml/BentoDiffusion>`_ to see more examples
 
 Audio
@@ -89,6 +90,7 @@ Serve text-to-speech and speech-to-text models with BentoML:
 - `XTTS with a streaming endpoint <https://github.com/bentoml/BentoXTTSStreaming>`_
 - `WhisperX <https://github.com/bentoml/BentoWhisperX>`_
 - `Bark <https://github.com/bentoml/BentoBark>`_
+- `Moshi <https://github.com/bentoml/BentoMoshi>`_
 
 Computer vision
 ---------------
@@ -118,5 +120,5 @@ Serve custom models with BentoML:
 Others
 ------
 
-- `Build an image captioning inference API with BLIP and BentoML <https://github.com/bentoml/BentoBlip>`_
-- `Build a forecasting inference API for time-series data with Moirai and BentoML <https://github.com/bentoml/BentoMoirai/>`_
+- `BLIP inference API for image captioning and VQA (Visual Question Answering) <https://github.com/bentoml/BentoBlip>`_
+- `Serving Moirai: Time-series forecasting as a service <https://github.com/bentoml/BentoMoirai/>`_

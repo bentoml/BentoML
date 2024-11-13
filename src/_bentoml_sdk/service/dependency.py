@@ -103,7 +103,10 @@ class Dependency(t.Generic[T]):
     async def close(self) -> None:
         if self._resolved is None:
             return
-        await t.cast("RemoteProxy[t.Any]", self._resolved).close()
+
+        remote_proxy = t.cast("RemoteProxy[t.Any]", self._resolved)
+        if asyncio.iscoroutinefunction(getattr(remote_proxy, "close", None)):
+            await remote_proxy.close()
 
 
 @t.overload

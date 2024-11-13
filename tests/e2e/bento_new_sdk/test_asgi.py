@@ -10,8 +10,8 @@ class Model:
     model = {"hello": "world"}
 
     @bentoml.api()
-    def get(self, key: str) -> str | None:
-        return self.model.get(key)
+    def get(self, key: str) -> str:
+        return self.model.get(key, "")
 
 
 @bentoml.service(metrics={"enabled": False})
@@ -19,7 +19,7 @@ class Service:
     model = bentoml.depends(Model)
 
     @bentoml.api()
-    def get(self, key: str) -> dict[str, str | None]:
+    def get(self, key: str) -> dict[str, str]:
         return {"value": self.model.get(key)}
 
 

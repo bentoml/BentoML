@@ -66,6 +66,7 @@ Advanced examples:
 - `LLM safety: ShieldGemma <https://github.com/bentoml/BentoShield/>`_
 - `RAG: LlamaIndex <https://github.com/bentoml/rag-tutorials>`_
 - `Phone call agent <https://github.com/bentoml/BentoVoiceAgent>`_
+- `Multi-LLM routing <https://github.com/bentoml/llm-router>`_
 
 Image and video
 ---------------
@@ -107,6 +108,7 @@ Build embedding inference APIs with BentoML:
 
 - `SentenceTransformers <https://github.com/bentoml/BentoSentenceTransformers>`_
 - `CLIP <https://github.com/bentoml/BentoClip>`_
+- `ColPali <https://github.com/bentoml/BentoColPali>`_
 
 Custom models
 -------------

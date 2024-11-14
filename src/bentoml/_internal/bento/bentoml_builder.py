@@ -7,6 +7,8 @@ import tarfile
 from io import BytesIO
 from pathlib import Path
 
+import fs
+
 from ...exceptions import BentoMLException
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ..configuration import is_editable_bentoml
@@ -113,3 +115,51 @@ def build_bentoml_sdist(
         tar.addfile(tarinfo, pyproject_io)
 
     return sdist_filename
+
+
+def build_git_repo(url: str, ref: str, subdirectory: str | None, dst_path: str) -> str:
+    """
+    Download the git repo at the given url and ref, and build an sdist from it at dst_path
+    """
+    import shutil
+    import subprocess
+
+    from ...exceptions import BentoMLException
+
+    name = os.path.splitext(os.path.basename(url))[0]
+
+    with fs.open_fs("temp://") as temp_fs:
+        dest_dir = temp_fs.getsyspath(name)
+        git_command = ["git", "clone", "--filter=blob:none", "--quiet", url, dest_dir]
+        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+        try:
+            subprocess.check_call(
+                git_command,
+                env=env,
+                stderr=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+            )
+            if ref:
+                subprocess.check_call(
+                    ["git", "fetch", "-q", url, ref],
+                    cwd=dest_dir,
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                )
+                subprocess.check_call(
+                    ["git", "checkout", "FETCH_HEAD"],
+                    cwd=dest_dir,
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+                )
+        except subprocess.CalledProcessError as e:
+            raise BentoMLException(
+                f"Failed to clone git repository {url}: {e.stderr}"
+            ) from e
+        source_dir = os.path.join(dest_dir, subdirectory) if subdirectory else dest_dir
+        build_cmd = [sys.executable, "-m", "uv", "build", "--sdist"]
+        subprocess.check_call(build_cmd, cwd=source_dir)
+        sdist = next(Path(source_dir).glob("dist/*.tar.gz"))
+        logger.info(f"Built sdist {sdist.name}")
+        shutil.move(sdist, dst_path)
+        return sdist.name

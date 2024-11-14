@@ -548,7 +548,8 @@ class Bento(StoreItem):
     def doc(self) -> str:
         if self._doc is not None:
             return self._doc
-
+        if not self._fs.isfile(BENTO_README_FILENAME):
+            return ""
         with self._fs.open(BENTO_README_FILENAME, "r") as readme_md:
             self._doc = str(readme_md.read())
             return self._doc

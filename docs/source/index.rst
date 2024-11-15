@@ -97,16 +97,16 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
 
 
 .. toctree::
-   :caption: BentoML
+   :caption: Get Started
    :hidden:
 
-   get-started/index
+   get-started/hello-world
    use-cases/index
    guides/index
-   reference/index
+   cloud-deployment
 
 .. toctree::
-   :caption: BentoCloud
+   :caption: Learn by Examples
    :hidden:
 
    bentocloud/get-started
@@ -114,6 +114,32 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    bentocloud/best-practices/index
    bentocloud/reference/index
 
+.. toctree::
+   :caption: Build with BentoML
+   :hidden:
+
+   bentocloud/get-started
+   bentocloud/how-tos/index
+   bentocloud/best-practices/index
+   bentocloud/reference/index
+
+.. toctree::
+   :caption: Scale with BentoCloud
+   :hidden:
+
+   bentocloud/get-started
+   bentocloud/how-tos/index
+   bentocloud/best-practices/index
+   bentocloud/reference/index
+
+.. toctree::
+   :caption: References
+   :hidden:
+
+   bentocloud/get-started
+   bentocloud/how-tos/index
+   bentocloud/best-practices/index
+   bentocloud/reference/index
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML

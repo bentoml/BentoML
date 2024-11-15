@@ -1,6 +1,6 @@
-====================
-Manage access tokens
-====================
+=================
+Manage API tokens
+=================
 
 In BentoCloud, API tokens serve as a key method of authorization. You may use tokens to:
 

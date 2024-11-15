@@ -1,6 +1,6 @@
-===========
-Get started
-===========
+================
+Cloud deployment
+================
 
 BentoCloud offers serverless infrastructure tailored for AI inference, allowing you to efficiently deploy, manage, and scale any machine learning (ML) models in the cloud. It operates in conjunction with BentoML, an open-source model serving framework, to facilitate the easy creation and deployment of high-performance AI API services with custom code. As the original creators of BentoML and its ecosystem tools like OpenLLM, we seek to improve cost efficiency of your inference workload with our
 serverless infrastructure optimized for GPUs and fast autoscaling.

@@ -1,6 +1,6 @@
-=====
-Tasks
-=====
+=================
+Async task queues
+=================
 
 Many model inferences are best handled as long-running operations. Tasks in BentoML allow you to execute these long-running workloads in the background and retrieve the results at a later time.
 

@@ -1,6 +1,6 @@
-=============
-API reference
-=============
+=======
+BentoML
+=======
 
 This section contains detailed API specifications. Use them to dig deeper into BentoML APIs and learn about all the options they provide.
 
@@ -12,6 +12,7 @@ This section contains detailed API specifications. Use them to dig deeper into B
   cli
   client
   frameworks/index
+  configurations
   batch
   exceptions
   container

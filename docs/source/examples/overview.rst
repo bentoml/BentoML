@@ -1,42 +1,8 @@
 ========
-Examples
+Overview
 ========
 
-This section provides the tutorials for a curated list of example projects to help you learn how BentoML can be used for different scenarios.
-
-.. grid:: 1 2 2 2
-    :gutter: 3
-    :margin: 0
-    :padding: 3 4 0 0
-
-    .. grid-item-card:: :doc:`/use-cases/large-language-models/index`
-        :link: /use-cases/large-language-models/index
-        :link-type: doc
-
-        Deploy LLM applications with BentoML.
-
-    .. grid-item-card:: :doc:`/use-cases/diffusion-models/index`
-        :link: /use-cases/diffusion-models/index
-        :link-type: doc
-
-        Deploy diffusion models with BentoML.
-
-    .. grid-item-card:: :doc:`/use-cases/custom-models/index`
-        :link: /use-cases/custom-models/index
-        :link-type: doc
-
-        Deploy custom models with BentoML.
-
-.. toctree::
-    :maxdepth: 1
-    :titlesonly:
-    :hidden:
-
-    large-language-models/index
-    diffusion-models/index
-    custom-models/index
-
-See the following lists for a complete collection of BentoML example projects. Browse through different categories to find the example that best suits your needs.
+This section provides the tutorials for a curated list of example projects to help you learn how BentoML can be used for different scenarios. See the following lists for a complete collection of BentoML example projects. Browse through different categories to find the example that best suits your needs.
 
 LLMs
 ----

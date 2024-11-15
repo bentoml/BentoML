@@ -1,6 +1,6 @@
-=========
-Reference
-=========
+==========
+BentoCloud
+==========
 
 This section contains detailed explanations of BentoCloud UI elements and API reference.
 

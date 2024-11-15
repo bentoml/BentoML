@@ -161,5 +161,6 @@ def build_git_repo(url: str, ref: str, subdirectory: str | None, dst_path: str) 
         subprocess.check_call(build_cmd, cwd=source_dir)
         sdist = next(Path(source_dir).glob("dist/*.tar.gz"))
         logger.info(f"Built sdist {sdist.name}")
+        os.makedirs(dst_path, exist_ok=True)
         shutil.move(sdist, dst_path)
         return sdist.name

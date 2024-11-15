@@ -404,6 +404,10 @@ class Service(t.Generic[T]):
             # Replace the model version with the one in the Bento
             if not isinstance(model, HuggingFaceModel):
                 continue
+            model_id = info.metadata.get("model_id")  # use the case in bento info
+            if not model_id:
+                model_id = info.tag.name.replace("--", "/")
+            model.model_id = model_id
             model.revision = info.tag.version
         self.bento = bento
 

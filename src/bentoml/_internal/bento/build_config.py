@@ -33,10 +33,10 @@ from ..container.frontend.dockerfile import get_supported_spec
 from ..container.generate import BENTO_PATH
 from ..utils import bentoml_cattr
 from ..utils import copy_file_to_fs_folder
-from ..utils import download_and_zip_git_repo
 from ..utils import resolve_user_filepath
 from ..utils.dotenv import parse_dotenv
 from ..utils.uri import encode_path_for_uri
+from .bentoml_builder import build_git_repo
 
 if t.TYPE_CHECKING:
     from attr import Attribute
@@ -719,7 +719,7 @@ class PythonOptions:
                 url, ref = link.url_without_fragment[4:], ""
                 if "@" in link.path:  # ssh://git@owner/repo@ref
                     url, _, ref = url.rpartition("@")
-                filename = download_and_zip_git_repo(
+                filename = build_git_repo(
                     url, ref, link.subdirectory_fragment, wheels_folder
                 )
             else:

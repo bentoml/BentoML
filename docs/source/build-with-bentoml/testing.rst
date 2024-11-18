@@ -1,6 +1,6 @@
-=======
-Testing
-=======
+==================
+Test API endpoints
+==================
 
 Testing is important for ensuring your code behaves as expected under various conditions. After creating a BentoML project, you can design different tests to verify both the functionality of the machine learning (ML) model and the operational aspects of the Service.
 
@@ -10,7 +10,7 @@ Testing provides multiple benefits, including:
 - **Regularity**: Facilitate regular and automated checking of the codebase for errors.
 - **Refactorability**: Make the codebase more maintainable and adaptable to changes.
 
-This document explains how to design and run tests for BentoML Services. It uses the :doc:`Summarization Service in Quickstart </get-started/quickstart>` as an example for testing.
+This document explains how to design and run tests for BentoML Services. It uses the :doc:`Summarization Service </get-started/hello-world>` as an example for testing.
 
 Prerequisites
 -------------

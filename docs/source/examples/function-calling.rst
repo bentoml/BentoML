@@ -334,4 +334,4 @@ BentoML allows you to run and test your code locally, so that you can quickly va
 
 3. Visit or send API requests to `http://localhost:3000 <http://localhost:3000/>`_.
 
-For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </guides/containerization>`.
+For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.

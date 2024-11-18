@@ -1,10 +1,10 @@
-===============
-Lifecycle hooks
-===============
+=========================
+Configure lifecycle hooks
+=========================
 
 Lifecycle hooks in BentoML offers mechanism to run custom logic at various stages of a Service's lifecycle. By leveraging these hooks, you can perform setup actions at startup, clean up resources before shutdown, and more.
 
-This document provides an overview of lifecycle hooks and how to use them in BentoML :doc:`/guides/services`.
+This document provides an overview of lifecycle hooks and how to use them in BentoML :doc:`Services </build-with-bentoml/services>`.
 
 Understand server lifecycle
 ---------------------------

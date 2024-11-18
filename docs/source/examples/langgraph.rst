@@ -76,7 +76,7 @@ The `mistral.py <https://github.com/bentoml/BentoLangGraph/blob/main/langgraph-m
 
 ``MistralService`` provides OpenAI-compatible APIs and uses vLLM as the inference backend. It is a dependent BentoML Service and can be invoked by the LangGraph agent.
 
-For more information on code explanations, see :doc:`/use-cases/large-language-models/vllm`.
+For more information on code explanations, see :doc:`/examples/vllm`.
 
 service.py
 ^^^^^^^^^^
@@ -330,4 +330,4 @@ BentoML allows you to run and test your code locally, so that you can quickly va
 
 3. Visit or send API requests to `http://localhost:3000 <http://localhost:3000/>`_.
 
-For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </guides/containerization>`.
+For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.

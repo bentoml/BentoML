@@ -276,7 +276,6 @@ Available strategies include:
 See also
 --------
 
-- :doc:`/guides/containerization`
 - :doc:`/bentocloud/how-tos/manage-deployments`
 - :doc:`/bentocloud/reference/bentocloud-cli`
 - :doc:`/bentocloud/reference/bentocloud-api`

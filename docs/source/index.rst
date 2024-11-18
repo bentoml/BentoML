@@ -113,16 +113,15 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    build-with-bentoml/services
    build-with-bentoml/iotypes
    build-with-bentoml/model-loading-and-management
+   build-with-bentoml/gpu-inference
    build-with-bentoml/clients
-   build-with-bentoml/lifecycle-hooks
    build-with-bentoml/workers
+   build-with-bentoml/lifecycle-hooks
+   build-with-bentoml/asgi
+   build-with-bentoml/gradio
    build-with-bentoml/observability/index
    build-with-bentoml/error-handling
    build-with-bentoml/testing
-   build-with-bentoml/gradio
-   build-with-bentoml/containerization
-   build-with-bentoml/gpu-inference
-   build-with-bentoml/asgi
 
 .. toctree::
    :caption: Scale with BentoCloud

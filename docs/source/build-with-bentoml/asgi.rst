@@ -1,6 +1,6 @@
-================
-ASGI integration
-================
+=======================
+Mount ASGI applications
+=======================
 
 `ASGI (Asynchronous Server Gateway Interface <https://asgi.readthedocs.io/en/latest/>`_ is a spiritual successor to WSGI (Web Server Gateway Interface), designed to provide a standard interface between async-capable Python web servers, frameworks, and applications. ASGI supports asynchronous request handling, allowing multiple requests to be processed at the same time, making it suitable for real-time web applications, such as WebSockets, long polling, and more.
 
@@ -85,7 +85,7 @@ Specifically, do the following to mount FastAPI:
     - Dependency injection: Accessing the BentoML Service instance outside the class typically requires dependency injection mechanisms, such as the ``Depends`` function in FastAPI. This approach is necessary when you want to use the Service instance in other parts of your project.
     - Modular and decoupled design: This approach allows different components of your BentoML project to interact with the Service without being tightly integrated into its class definition. For example, your ML logic can be encapsulated within the BentoML Service, while other aspects, such as custom authentication, supplementary data processing, or additional REST endpoints, can be managed externally yet still interact with the Service as needed.
 
-The following is a more practical example of mounting FastAPI onto the Summarization Service in :doc:`/get-started/quickstart`. It defines two additional endpoints with FastAPI by accessing the Service from inside and outside the class respectively.
+The following is a more practical example of mounting FastAPI onto the Summarization Service in :doc:`/get-started/hello-world`. It defines two additional endpoints with FastAPI by accessing the Service from inside and outside the class respectively.
 
 .. code-block:: python
 
@@ -181,7 +181,7 @@ Specifically, do the following to mount Quart:
 
     In addition to ``get``, you can use the other operations like ``post``, ``put``, and ``delete``. See `the Quart documentation <https://quart.palletsprojects.com/en/latest/tutorials/index.html>`_ to learn more.
 
-The following is a more practical example of mounting Quart onto the Summarization Service in :doc:`/get-started/quickstart`. It defines an additional endpoint ``hello``.
+The following is a more practical example of mounting Quart onto the Summarization Service in :doc:`/get-started/hello-world`. It defines an additional endpoint ``hello``.
 
 .. code-block:: python
 

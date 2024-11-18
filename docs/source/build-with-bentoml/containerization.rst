@@ -2,7 +2,7 @@
 Containerization
 ================
 
-After defining and testing your BentoML :doc:`Service </guides/services>`, you can deploy it as an OCI-compliant image.
+After defining and testing your BentoML :doc:`Service </build-with-bentoml/services>`, you can deploy it as an OCI-compliant image.
 
 Prerequisites
 -------------
@@ -14,7 +14,7 @@ Build a Bento
 
 The first step is to package your entire project into the standard distribution format in BentoML, or a Bento. To build a Bento, you need a configuration YAML file (by convention, it's ``bentofile.yaml``). This file defines the :doc:`build options </guides/build-options>`, such as dependencies and Docker image settings. When a Bento is being created, BentoML creates a Dockerfile within the Bento automatically.
 
-The example file below lists the basic information required to build a Bento for :doc:`/get-started/quickstart`.
+The example file below lists the basic information required to build a Bento for :doc:`/get-started/hello-world`.
 
 .. code-block:: yaml
     :caption: `bentofile.yaml`

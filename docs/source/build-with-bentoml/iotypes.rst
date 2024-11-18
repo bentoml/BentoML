@@ -1,8 +1,8 @@
-======================
-Input and output types
-======================
+=============================
+Define input and output types
+=============================
 
-When creating a BentoML :doc:`Service </guides/services>`, you need to specify the input and output (IO) types the Service's API. These types are integral in shaping the logic of the Service API, guiding the flow of data into and out of the Service. BentoML supports a wide range of data types that are commonly used in Python, Pydantic, as well as types specific to machine learning (ML) workflows. This ensures that BentoML Services can seamlessly integrate with different data sources and ML frameworks.
+When creating a BentoML :doc:`Service </build-with-bentoml/services>`, you need to specify the input and output (IO) types the Service's API. These types are integral in shaping the logic of the Service API, guiding the flow of data into and out of the Service. BentoML supports a wide range of data types that are commonly used in Python, Pydantic, as well as types specific to machine learning (ML) workflows. This ensures that BentoML Services can seamlessly integrate with different data sources and ML frameworks.
 
 This document provides a comprehensive overview of the supported Service API schemas in BentoML, with code examples to illustrate their implementation.
 

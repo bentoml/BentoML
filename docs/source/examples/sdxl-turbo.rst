@@ -12,7 +12,7 @@ Prerequisites
 -------------
 
 - Python 3.9+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
-- You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/quickstart` first.
+- You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/hello-world` first.
 - To run this BentoML Service locally, you need a Nvidia GPU with at least 12G VRAM.
 - (Optional) We recommend you create a virtual environment for dependency isolation. See the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_ or the `Python documentation <https://docs.python.org/3/library/venv.html>`_ for details.
 
@@ -30,7 +30,7 @@ Clone the project repository and install all the dependencies.
 Create a BentoML Service
 ------------------------
 
-Create a BentoML :doc:`Service </guides/services>` in a ``service.py`` file to define the serving logic of the model. You can use this example file in the cloned project:
+Create a BentoML :doc:`Service </build-with-bentoml/services>` in a ``service.py`` file to define the serving logic of the model. You can use this example file in the cloned project:
 
 .. code-block:: python
     :caption: `service.py`
@@ -172,4 +172,4 @@ Once the Deployment is up and running on BentoCloud, you can access it via the e
 
 .. note::
 
-   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image</guides/containerization>`.
+   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.

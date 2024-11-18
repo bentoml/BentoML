@@ -4,7 +4,7 @@ Model composition
 
 Model composition refers to the practice of integrating multiple machine learning (ML) models, making it possible to orchestrate multiple inference or processing workflows within a single application. This approach not only helps facilitate the combination of different ML models but also ensures their independent configuration and scaling.
 
-BentoML provides simple :doc:`Service APIs </guides/services>` to implement complex model composition with parallel or sequential execution for different ML scenarios, like Retrieval-augmented generation (RAG), computer vision (CV), natural language processing (NLP), and optical character recognition (OCR).
+BentoML provides simple :doc:`Service APIs </build-with-bentoml/services>` to implement complex model composition with parallel or sequential execution for different ML scenarios, like Retrieval-augmented generation (RAG), computer vision (CV), natural language processing (NLP), and optical character recognition (OCR).
 
 This document provides an overview of model composition with basic code examples.
 
@@ -167,7 +167,7 @@ This example defines multiple models within the same Service, with separate APIs
             result_b = self.pipeline_b(input_data)[0]
             return {"result_a": result_a, "result_b": result_b}
 
-For a more practical example, see :doc:`/use-cases/diffusion-models/controlnet`.
+For a more practical example, see :doc:`/examples/controlnet`.
 
 Scenario 2: Run and scale multiple models on different instances independently
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

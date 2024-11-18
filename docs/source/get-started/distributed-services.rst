@@ -223,7 +223,7 @@ For projects with multiple Services, you should reference the primary Service ha
       project: gallery
     ...
 
-You can then :doc:`containerize it as an OCI-compliant image </guides/containerization>` or deploy it to `BentoCloud <https://www.bentoml.com/>`_.
+You can then :doc:`containerize it as an OCI-compliant image </get-started/packaging-for-deployment>` or deploy it to `BentoCloud <https://www.bentoml.com/>`_.
 
 Deploy distributed Services
 ---------------------------

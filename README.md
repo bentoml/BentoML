@@ -137,7 +137,7 @@ bentoml deploy .
 
 </details>
 
-For detailed explanations, read [Quickstart](https://docs.bentoml.com/en/latest/get-started/quickstart.html).
+For detailed explanations, read the [Hello World example](https://docs.bentoml.com/en/latest/get-started/hello-world.html).
 
 ## Use cases
 
@@ -161,7 +161,7 @@ Check out the [examples](./examples/) folder for more sample code and usage.
 - [Concurrency and autoscaling](https://docs.bentoml.com/en/latest/bentocloud/how-tos/autoscaling.html)
 - [Model loading and Model Store](https://docs.bentoml.com/en/latest/guides/model-loading-and-management.html)
 - [Observability](https://docs.bentoml.com/en/latest/guides/observability/index.html)
-- [BentoCloud deployment](https://docs.bentoml.com/en/latest/guides/deployment.html)
+- [BentoCloud deployment](https://docs.bentoml.com/en/latest/get-started/cloud-deployment.html)
 
 See [Documentation](https://docs.bentoml.com) for more tutorials and guides.
 

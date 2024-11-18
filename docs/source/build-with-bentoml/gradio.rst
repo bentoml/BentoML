@@ -1,5 +1,6 @@
-Gradio integration
-==================
+====================
+Add a UI with Gradio
+====================
 
 `Gradio <https://github.com/gradio-app/gradio>`_ is an open-source Python library that allows developers to quickly build a web-based user interface (UI) for AI models. BentoML provides a straightforward API to integrate Gradio for serving models with its UI.
 
@@ -17,7 +18,7 @@ Basic usage
 
 Follow the steps below to integrate Gradio with a BentoML Service.
 
-1. Start by preparing a BentoML Service. Here's an example using a text summarization model from the :doc:`/get-started/quickstart` guide:
+1. Start by preparing a BentoML Service. Here's an example using a text summarization model from the :doc:`/get-started/hello-world` guide:
 
    .. code-block:: python
 

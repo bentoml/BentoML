@@ -10,7 +10,7 @@ Prerequisites
 -------------
 
 - Python 3.9+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
-- You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/quickstart` first.
+- You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/hello-world` first.
 - (Optional) We recommend you create a virtual environment for dependency isolation. See the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_ or the `Python documentation <https://docs.python.org/3/library/venv.html>`_ for details.
 
 Install dependencies
@@ -98,7 +98,7 @@ Expected result:
 Create a BentoML Service
 ------------------------
 
-Create a separate ``service.py`` file where you define a BentoML :doc:`Service </guides/services>` to expose the model as a web service.
+Create a separate ``service.py`` file where you define a BentoML :doc:`Service </build-with-bentoml/services>` to expose the model as a web service.
 
 .. code-block:: python
 
@@ -140,7 +140,7 @@ The Service code:
 - Uses the ``@bentoml.service`` decorator to define a BentoML Service. Optionally, you can set additional configurations like resource allocation and traffic timeout.
 - Retrieves the model from the Model Store and defines it a class variable.
 - Checks resource availability like GPUs and the number of threads.
-- Uses the ``@bentoml.api`` decorator to expose the ``predict`` function as an API endpoint, which :doc:`takes a NumPy array as input and returns a NumPy array </guides/iotypes>`. Note that the input data is converted into a ``DMatrix``, which is the data structure XGBoost uses for datasets.
+- Uses the ``@bentoml.api`` decorator to expose the ``predict`` function as an API endpoint, which :doc:`takes a NumPy array as input and returns a NumPy array </build-with-bentoml/iotypes>`. Note that the input data is converted into a ``DMatrix``, which is the data structure XGBoost uses for datasets.
 
 Run ``bentoml serve`` in your project directory to start the Service.
 
@@ -229,4 +229,4 @@ Once the Deployment is up and running on BentoCloud, you can access it via the e
 
 .. note::
 
-   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image</guides/containerization>`.
+   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.

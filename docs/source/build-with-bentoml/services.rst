@@ -1,6 +1,6 @@
-========
-Services
-========
+==========================
+Create online API Services
+==========================
 
 BentoML Services are the core building blocks for BentoML projects, allowing you to define the serving logic of machine learning models. This page explains BentoML Services.
 
@@ -9,7 +9,7 @@ Service definitions
 
 BentoML Services are defined using class-based definitions. Each class represents a distinct Service that can perform certain tasks, such as preprocessing data or making predictions with an ML model. You use the decorator ``@bentoml.service`` to annotate a class, indicating that it is a BentoML Service. By convention, you define a Service (or multiple Services) in a ``service.py`` file. For more information, see :ref:`reference/sdk:Service decorator`.
 
-Here is a Service definition example from :doc:`/get-started/quickstart`.
+Here is a Service definition example from :doc:`/get-started/hello-world`.
 
 .. code-block:: python
 
@@ -80,7 +80,7 @@ The ``@bentoml.api`` decorator in BentoML is a key component for defining API en
         result = self.pipeline(text)
         return result[0]['summary_text']
 
-You can customize the input and output logic of the Service API. See :doc:`/guides/iotypes` to learn more.
+You can customize the input and output logic of the Service API. See :doc:`/build-with-bentoml/iotypes` to learn more.
 
 Custom route path
 ^^^^^^^^^^^^^^^^^

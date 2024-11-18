@@ -1,8 +1,8 @@
-==============
-Error handling
-==============
+=========================
+Customize error responses
+=========================
 
-Effective error handling is important for building user-friendly AI applications. BentoML facilitates this by allowing you to customize error handling logic for a :doc:`Service </guides/services>`.
+Effective error handling is important for building user-friendly AI applications. BentoML facilitates this by allowing you to customize error handling logic for a :doc:`Service </build-with-bentoml/services>`.
 
 This document describes how to define a custom exception class and error handling logic in a BentoML Service.
 

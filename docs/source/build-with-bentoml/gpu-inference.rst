@@ -2,7 +2,7 @@
 GPU inference
 =============
 
-GPU inference with BentoML helps you accelerate the computational efficiency of machine learning models. BentoML provides a streamlined approach to deploying :doc:`/guides/services` that can leverage GPU resources for inference tasks.
+GPU inference with BentoML helps you accelerate the computational efficiency of machine learning models. BentoML provides a streamlined approach to deploying :doc:`Services </build-with-bentoml/services>` that can leverage GPU resources for inference tasks.
 
 This document explains how to configure and allocate GPUs to run inference with BentoML.
 

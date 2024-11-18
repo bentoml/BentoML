@@ -2,7 +2,7 @@
 Packaging for deployment
 ========================
 
-A Bento is a format containing all the components - source code, Python packages, as well as model references and configuration - required for running a BentoML Service. Build options refer to a set of configurations defined in a YAML file (typically named ``bentofile.yaml``) for building a BentoML project into a Bento. The following is an example ``bentofile.yaml`` file for :doc:`/get-started/quickstart`.
+A Bento is a format containing all the components - source code, Python packages, as well as model references and configuration - required for running a BentoML Service. Build options refer to a set of configurations defined in a YAML file (typically named ``bentofile.yaml``) for building a BentoML project into a Bento. The following is an example ``bentofile.yaml`` file for :doc:`/get-started/hello-world`.
 
 .. code-block:: yaml
 
@@ -25,7 +25,7 @@ Bento build options
 ``service``
 ^^^^^^^^^^^
 
-``service`` is a **required** field and points to where a :doc:`Service object </guides/services>` resides. It is often defined as ``service: "service:class-name"``.
+``service`` is a **required** field and points to where a :doc:`Service object </build-with-bentoml/services>` resides. It is often defined as ``service: "service:class-name"``.
 
 - ``service``: The Python module, namely the ``service.py`` file.
 - ``class-name``: The class-based Service's name created in ``service.py``, decorated with ``@bentoml.service``. If you have multiple Services in ``service.py``, you can specify the main Service receiving user requests in ``bentofile.yaml``. Other Services will be started together with this main Service.

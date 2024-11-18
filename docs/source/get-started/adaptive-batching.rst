@@ -151,7 +151,7 @@ In this Service, the ``encode`` endpoint is marked as ``batchable``. It's config
 Handle multiple parameters
 --------------------------
 
-In some cases, you might need to use a BentoML Service to process requests that include multiple parameters. Since the batchable API supports only one batchable parameter (in addition to ``bentoml.Context``), you can use a composite input type, such as a :ref:`Pydantic model <guides/iotypes:pydantic>`, to group these parameters into a single object. You also need a wrapper Service to serve as an intermediary to handle individual requests from clients.
+In some cases, you might need to use a BentoML Service to process requests that include multiple parameters. Since the batchable API supports only one batchable parameter (in addition to ``bentoml.Context``), you can use a composite input type, such as a :ref:`Pydantic model <build-with-bentoml/iotypes:pydantic>`, to group these parameters into a single object. You also need a wrapper Service to serve as an intermediary to handle individual requests from clients.
 
 Here is a ``service.py`` file example of defining multiple parameters when using adaptive batching.
 

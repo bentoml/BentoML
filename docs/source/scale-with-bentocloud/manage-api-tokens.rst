@@ -79,7 +79,7 @@ After you log in, you should be able to manage BentoCloud resources. For more in
 Access protected Deployments
 ============================
 
-You can use a token with **Protected Endpoint Access** to access a protected Bento Deployment. The following example provides different ways to interact with the :doc:`/get-started/quickstart` Summarization Service deployed with authorization enabled.
+You can use a token with **Protected Endpoint Access** to access a protected Bento Deployment. The following example provides different ways to interact with the :doc:`/get-started/hello-world` Summarization Service deployed with authorization enabled.
 
 .. tab-set::
 

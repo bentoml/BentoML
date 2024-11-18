@@ -1,8 +1,8 @@
-=======
-Workers
-=======
+=============================
+Parallelize requests handling
+=============================
 
-BentoML workers enhance the parallel processing capabilities of machine learning models. Under the hood, there are one or multiple workers within a BentoML :doc:`Service </guides/services>`. They are the processes that actually run the code logic within the Service. This design leverages the parallelism of the underlying hardware, whether it's multi-core CPUs or multi-device GPUs.
+BentoML workers enhance the parallel processing capabilities of machine learning models. Under the hood, there are one or multiple workers within a BentoML :doc:`Service </build-with-bentoml/services>`. They are the processes that actually run the code logic within the Service. This design leverages the parallelism of the underlying hardware, whether it's multi-core CPUs or multi-device GPUs.
 
 This document explains how to configure and allocate workers for different use cases.
 

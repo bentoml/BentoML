@@ -1,6 +1,6 @@
-===============
-Inference: vLLM
-===============
+===================
+LLM inference: vLLM
+===================
 
 `vLLM <https://github.com/vllm-project/vllm>`_ is a library designed for efficient serving of large language models (LLMs). It provides high serving throughput and efficient attention key-value memory management using PagedAttention and continuous batching. It seamlessly integrates with a variety of LLMs, such as Llama, OPT, Mixtral, StableLM, and Falcon.
 
@@ -12,7 +12,7 @@ Prerequisites
 -------------
 
 - Python 3.9+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
-- You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/quickstart` first.
+- You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/hello-world` first.
 - If you want to test the project locally, you need an Nvidia GPU with at least 16G VRAM.
 - (Optional) We recommend you create a virtual environment for dependency isolation. See the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_ or the `Python documentation <https://docs.python.org/3/library/venv.html>`_ for details.
 
@@ -30,7 +30,7 @@ Clone the project repository and install all the dependencies.
 Create a BentoML Service
 ------------------------
 
-Define a :doc:`BentoML Service </guides/services>` to customize the serving logic of your lanaguage model, which uses ``vllm`` as the backend option. You can find the following example ``service.py`` file in the cloned repository.
+Define a :doc:`BentoML Service </build-with-bentoml/services>` to customize the serving logic of your lanaguage model, which uses ``vllm`` as the backend option. You can find the following example ``service.py`` file in the cloned repository.
 
 .. note::
 
@@ -283,4 +283,4 @@ After the Service is ready, you can deploy the project to BentoCloud for better 
 
    .. note::
 
-       For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image</guides/containerization>`.
+       For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.

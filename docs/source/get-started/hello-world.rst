@@ -58,7 +58,7 @@ You can define the serving logic of the model in a ``service.py`` file by creati
             result = self.pipeline(text)
             return result[0]['summary_text']
 
-In BentoML, a :doc:`Service </guides/services>` is a deployable and scalable unit, defined as a Python class with the ``@bentoml.service`` decorator. It can manage states and their lifecycle, and expose one or multiple APIs accessible through HTTP. Each API within the Service is defined using the ``@bentoml.api`` decorator, specifying it as a Python function.
+In BentoML, a :doc:`Service </build-with-bentoml/services>` is a deployable and scalable unit, defined as a Python class with the ``@bentoml.service`` decorator. It can manage states and their lifecycle, and expose one or multiple APIs accessible through HTTP. Each API within the Service is defined using the ``@bentoml.api`` decorator, specifying it as a Python function.
 
 The ``bentoml.importing()`` context manager is used to handle import statements for dependencies that are required during serving but may not be available in other situations.
 
@@ -112,4 +112,4 @@ Expected output:
 
     Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly . The event is now being investigated by scientists for potential breaches in the laws of physics . Local authorities considering a town festival to celebrate what is being hailed as 'The Leap of the Century'
 
-Once the Service is ready, you can deploy this :doc:`BentoML project on BentoCloud </guides/deployment>` or :doc:`create a Docker image </guides/containerization>` for it and ship it anywhere.
+Once the Service is ready, you can deploy this :doc:`BentoML project on BentoCloud </get-started/cloud-deployment>` or :doc:`create a Docker image </get-started/packaging-for-deployment>` for it and ship it anywhere.

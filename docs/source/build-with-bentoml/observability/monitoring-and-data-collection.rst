@@ -1,6 +1,6 @@
-==============================
-Monitoring and data collection
-==============================
+==========
+Monitoring
+==========
 
 Data-centric AI is a paradigm that positions data as the cornerstone of AI systems. This approach emphasizes the importance of data quality and relevance, suggesting that the effectiveness of AI models can be primarily determined by the data they are trained on and interact with.
 
@@ -24,7 +24,7 @@ Implement monitoring
 
 In BentoML, you use the ``bentoml.monitor`` context manager to log data related to model inference. It allows you to specify a monitoring session where you can log various data types. This ensures that logging is structured and organized, making it easier to analyze the data later.
 
-The following is an example of implementing monitoring in the Summarization Service in :doc:`/get-started/quickstart`.
+The following is an example of implementing monitoring in the Summarization Service in :doc:`/get-started/hello-world`.
 
 .. code-block:: python
 
@@ -201,7 +201,7 @@ Available fields for ``monitoring``:
 
   - ``log_path``: Defines the directory where monitoring logs will be stored, which is relative to the Service's running location. It defaults to ``monitoring``.
 
-For deployments using :doc:`the OCI-compliant image </guides/containerization>`, you can persist log files by mounting the specified log directory (``monitoring`` in the example) to a volume. This ensures that your monitoring data is retained across container restarts and redeployments.
+For deployments using :doc:`the OCI-compliant image </get-started/packaging-for-deployment>`, you can persist log files by mounting the specified log directory (``monitoring`` in the example) to a volume. This ensures that your monitoring data is retained across container restarts and redeployments.
 
 In Kubernetes, you can persist and ship logs by mounting the log directory and using a `Fluent Bit <https://fluentbit.io/>`_ DaemonSet or a sidecar container. This allows the collected log files to be automatically forwarded to your designated monitoring system or data warehouse, ensuring that your monitoring data is centralized and accessible for analysis and alerting.
 

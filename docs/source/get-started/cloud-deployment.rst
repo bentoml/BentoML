@@ -16,7 +16,7 @@ Log in to BentoCloud
 --------------------
 
 1. Visit the `BentoML website <https://www.bentoml.com/>`_ to sign up.
-2. After your BentoCloud account is approved, install BentoML by running ``pip install bentoml``. See :doc:`/get-started/installation` for details.
+2. After your BentoCloud account is approved, install BentoML by running ``pip install bentoml``.
 3. Log in to BentoCloud with the ``bentoml cloud login`` command. Follow the on-screen instructions to create a new API token.
 
    .. code-block:: bash
@@ -65,7 +65,7 @@ Perform the following steps to quickly deploy an example application on BentoClo
 
    .. note::
 
-      You can test this Service locally by running ``bentoml serve service:Summarization``. For details of the Service, see :doc:`/get-started/quickstart`.
+      You can test this Service locally by running ``bentoml serve service:Summarization``. For details of the Service, see :doc:`/get-started/hello-world`.
 
 3. Create a ``bentofile.yaml`` file as below.
 

@@ -12,7 +12,7 @@ Prerequisites
 -------------
 
 - Python 3.9+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
-- You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/quickstart` first.
+- You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/hello-world` first.
 - (Optional) We recommend you create a virtual environment for dependency isolation. See the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_ or the `Python documentation <https://docs.python.org/3/library/venv.html>`_ for details.
 
 Install dependencies
@@ -29,7 +29,7 @@ Clone the project repository and install all the dependencies.
 Define the model serving logic
 ------------------------------
 
-Create BentoML :doc:`/guides/services` in a ``service.py`` file to specify the serving logic of this BentoML project. In the cloned repository, you can find an example ``service.py`` file that uses the following models:
+Create BentoML :doc:`Services </build-with-bentoml/services>` in a ``service.py`` file to specify the serving logic of this BentoML project. In the cloned repository, you can find an example ``service.py`` file that uses the following models:
 
 - `diffusers/controlnet-canny-sdxl-1.0 <https://huggingface.co/diffusers/controlnet-canny-sdxl-1.0>`_: Offers enhanced control in the image generation process. It allows for precise modifications based on text and image inputs, making sure the generated images are more aligned with specific user requirements (for example, replicating certain compositions).
 - `madebyollin/sdxl-vae-fp16-fix <https://huggingface.co/madebyollin/sdxl-vae-fp16-fix>`_: This Variational Autoencoder (VAE) is responsible for encoding and decoding images within the pipeline.
@@ -221,4 +221,4 @@ Once the Deployment is up and running on BentoCloud, you can access it via the e
 
 .. note::
 
-   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image</guides/containerization>`.
+   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.

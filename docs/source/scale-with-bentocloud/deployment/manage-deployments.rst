@@ -2,7 +2,7 @@
 Manage Deployments
 ==================
 
-After you :doc:`deploy a Bento on BentoCloud </guides/deployment>`, you can easily manage them using the BentoML CLI or API. Available operations include viewing, updating, applying, terminating, and deleting Deployments.
+After you :doc:`deploy a Bento on BentoCloud </get-started/cloud-deployment>`, you can easily manage them using the BentoML CLI or API. Available operations include viewing, updating, applying, terminating, and deleting Deployments.
 
 View
 ----
@@ -199,7 +199,7 @@ To update specific parameters of a single-Service Deployment:
         # No change to unspecified parameters
       )
 
-You can also update Deployment configurations using a separate file (only add the fields you want to change in the file). This is useful when you have multiple BentoML :doc:`/guides/services` in a Deployment.
+You can also update Deployment configurations using a separate file (only add the fields you want to change in the file). This is useful when you have multiple BentoML :doc:`Services </build-with-bentoml/services>` in a Deployment.
 
 .. tab-set::
 

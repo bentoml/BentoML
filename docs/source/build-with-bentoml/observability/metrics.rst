@@ -2,7 +2,7 @@
 Metrics
 =======
 
-Metrics are important measurements that provide insights into the usage and performance of :doc:`/guides/services`. BentoML provides a set of default metrics for performance analysis while you can also define custom metrics with `Prometheus <https://prometheus.io/>`_.
+Metrics are important measurements that provide insights into the usage and performance of :doc:`Services </build-with-bentoml/services>`. BentoML provides a set of default metrics for performance analysis while you can also define custom metrics with `Prometheus <https://prometheus.io/>`_.
 
 In this document, you will:
 

@@ -1,6 +1,6 @@
-============================
-Model loading and management
-============================
+======================
+Load and manage models
+======================
 
 BentoML offers simple APIs for you to load, store and manage AI models.
 

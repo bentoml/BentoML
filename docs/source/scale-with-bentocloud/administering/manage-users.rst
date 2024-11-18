@@ -106,3 +106,7 @@ The tasks you are able to perform depend on your user role. The following table 
      - ✓
      - ✓
      -
+   * - Configure standby instances
+     - ✓
+     -
+     -

@@ -21,6 +21,12 @@ Administrator guide
 
         The BentoCloud BYOC deployment helps you run AI applications in your own environment in a secure and cost-effective way.
 
+    .. grid-item-card:: Configure standby instances
+        :link: byoc
+        :link-type: doc
+
+        Prepare a set number of cloud machines in advance to handle potential demand surges.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
@@ -28,3 +34,4 @@ Administrator guide
 
     manage-users
     byoc
+    configure-standby-instances

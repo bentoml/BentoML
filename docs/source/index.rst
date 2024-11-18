@@ -87,7 +87,7 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    get-started/adaptive-batching
    get-started/model-composition
    get-started/async-task-queues
-   get-started/build-options
+   get-started/packaging-for-deployment
    get-started/cloud-deployment
 
 .. toctree::

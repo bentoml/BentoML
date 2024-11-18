@@ -1,6 +1,6 @@
-=============
-Build options
-=============
+========================
+Packaging for deployment
+========================
 
 A Bento is a format containing all the components - source code, Python packages, as well as model references and configuration - required for running a BentoML Service. Build options refer to a set of configurations defined in a YAML file (typically named ``bentofile.yaml``) for building a BentoML project into a Bento. The following is an example ``bentofile.yaml`` file for :doc:`/get-started/quickstart`.
 

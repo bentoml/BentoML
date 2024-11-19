@@ -2,7 +2,7 @@
 
 Before getting started, check out the `#bentoml-contributors` channel in the [BentoML community slack](https://l.bentoml.com/join-slack).
 
-If you are interested in contributing to existing issues and feature requets, check out the [good-first-issue](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Agood-first-issue) and [help-wanted](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Ahelp-wanted) issues list.
+If you are interested in contributing to existing issues and feature requests, check out the [good-first-issue](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Agood-first-issue) and [help-wanted](https://github.com/bentoml/BentoML/issues?q=is%3Aopen+is%3Aissue+label%3Ahelp-wanted) issues list.
 
 If you are interested in proposing a new feature, make sure to create a new feature request ticket [here](https://github.com/bentoml/BentoML/issues/new/choose) and share your proposal in the `#bentoml-contributors` slack channel for feedback.
 
@@ -216,7 +216,7 @@ bentoml get IrisClassifier --verbose
 
 We are using [pre-commit](https://pre-commit.com/) to manage our hooks, and
 [buf](https://github.com/bufbuild/buf) for formatting and linting of our proto
-files. Configuration can be found [here](./bentoml/grpc/buf.yaml). Currently, we
+files. Configuration can be found [here](./src/bentoml/grpc/buf.yaml). Currently, we
 are running `buf` with docker, hence we kindly ask our developers to have docker
 available. Docker installation can be found
 [here](https://docs.docker.com/get-docker/).

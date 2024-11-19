@@ -126,4 +126,4 @@ Run the following command to deploy this example to BentoCloud for better manage
 ```bash
 bentoml deploy .
 ```
-For more information, see [Create Deployments](https://docs.bentoml.com/en/latest/bentocloud/how-tos/create-deployments.html).
+For more information, see [Create Deployments](https://docs.bentoml.com/en/latest/scale-with-bentocloud/deployment/create-deployments.html).

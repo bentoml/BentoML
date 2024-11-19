@@ -19,7 +19,7 @@ When you define a BentoML Service, use the ``workers`` parameter to set the numb
     class MyService:
         # Service implementation
 
-The number of workers isn't necessarily equivalent to the number of concurrent requests a BentoML Service can serve in parallel. With optimizations like :doc:`adaptable batching </guides/adaptive-batching>` and continuous batching, each worker can potentially handle many requests simultaneously to enhance the throughput of your Service. To specify the ideal number of concurrent requests for a Service (namely, all workers within the Service), you can configure :doc:`concurrency </bentocloud/how-tos/autoscaling>`.
+The number of workers isn't necessarily equivalent to the number of concurrent requests a BentoML Service can serve in parallel. With optimizations like :doc:`adaptable batching </guides/adaptive-batching>` and continuous batching, each worker can potentially handle many requests simultaneously to enhance the throughput of your Service. To specify the ideal number of concurrent requests for a Service (namely, all workers within the Service), you can configure :doc:`concurrency </scale-with-bentocloud/scaling/autoscaling>`.
 
 Use cases
 ---------
@@ -46,7 +46,7 @@ You can set the number of worker processes based on the available CPU cores by s
 GPU workloads
 ^^^^^^^^^^^^^
 
-In scenarios with multi-device GPUs, :doc:`allocating specific GPUs </guides/gpu-inference>` to different workers allows each worker to process tasks independently. This can maximize parallel processing, increase throughput, and reduce overall inference time.
+In scenarios with multi-device GPUs, :doc:`allocating specific GPUs </build-with-bentoml/gpu-inference>` to different workers allows each worker to process tasks independently. This can maximize parallel processing, increase throughput, and reduce overall inference time.
 
 You use ``worker_index`` to represent a worker instance, which is a unique identifier for each worker process within a BentoML Service, starting from ``0``. This index is used primarily to allocate GPUs among multiple workers. One common use case is to load one model per CUDA device to ensure that each GPU is utilized efficiently and to prevent resource contention between models.
 
@@ -75,7 +75,7 @@ This Service dynamically determines the GPU device to use for the model by creat
     :width: 400px
     :align: center
 
-When determining which device ID to assign to each worker for tasks such as loading models onto GPUs, this 1-indexing approach means you need to subtract 1 from the ``worker_index`` to get the 0-based device ID. This is because hardware devices like GPUs are usually indexed starting from 0. For more information, see :doc:`/guides/gpu-inference`.
+When determining which device ID to assign to each worker for tasks such as loading models onto GPUs, this 1-indexing approach means you need to subtract 1 from the ``worker_index`` to get the 0-based device ID. This is because hardware devices like GPUs are usually indexed starting from 0. For more information, see :doc:`/build-with-bentoml/gpu-inference`.
 
 If you want to use multiple GPUs for distributed operations (multiple GPUs for the same worker), PyTorch and TensorFlow offer different methods:
 

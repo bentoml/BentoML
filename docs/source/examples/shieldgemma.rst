@@ -67,7 +67,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
 
 2. Create the ``Gemma`` Service to initialize the model and tokenizer, with a safety check API to calculate the probability of policy violation.
 
-   - The ``Gemma`` class is decorated with ``@bentoml.service``, which converts it into a BentoML Service. You can optionally set :doc:`configurations </guides/configurations>` like timeout, :doc:`concurrency </bentocloud/how-tos/autoscaling>` and GPU resources to use on BentoCloud. We recommend you use an NVIDIA T4 GPU to host ShieldGemma 2B.
+   - The ``Gemma`` class is decorated with ``@bentoml.service``, which converts it into a BentoML Service. You can optionally set :doc:`configurations </guides/configurations>` like timeout, :doc:`concurrency </scale-with-bentocloud/scaling/autoscaling>` and GPU resources to use on BentoCloud. We recommend you use an NVIDIA T4 GPU to host ShieldGemma 2B.
    - The API ``check``, decorated with ``@bentoml.api``, functions as a web API endpoint. It evaluates the safety of prompts by predicting the likelihood of a policy violation. It then returns a structured response using the ``ShieldResponse`` Pydantic model.
 
    .. code-block:: python
@@ -181,7 +181,7 @@ BentoCloud
 
 BentoCloud provides fast and scalable infrastructure for building and scaling AI applications with BentoML in the cloud.
 
-1. Install BentoML and :doc:`log in to BentoCloud </bentocloud/how-tos/manage-access-token>` through the BentoML CLI. If you don't have a BentoCloud account, `sign up here for free <https://www.bentoml.com/>`_ and get $10 in free credits.
+1. Install BentoML and :doc:`log in to BentoCloud </scale-with-bentocloud/manage-api-tokens>` through the BentoML CLI. If you don't have a BentoCloud account, `sign up here for free <https://www.bentoml.com/>`_ and get $10 in free credits.
 
    .. code-block:: bash
 
@@ -195,7 +195,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
       git clone https://github.com/bentoml/BentoShield.git
       cd BentoShield
 
-3. Create BentoCloud :doc:`secrets </bentocloud/how-tos/manage-secrets>` to store the required environment variables and reference them during deployment.
+3. Create BentoCloud :doc:`secrets </scale-with-bentocloud/manage-secrets-and-env-vars>` to store the required environment variables and reference them during deployment.
 
    .. code-block:: bash
 
@@ -251,7 +251,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
       bentoml deployment update <deployment-name> --scaling-min 0 --scaling-max 3 # Set your desired count
 
-   For more information, see :doc:`how to configure concurrency and autoscaling </bentocloud/how-tos/autoscaling>`.
+   For more information, see :doc:`how to configure concurrency and autoscaling </scale-with-bentocloud/scaling/autoscaling>`.
 
 .. _LocalServing:
 

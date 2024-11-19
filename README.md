@@ -153,14 +153,14 @@ Check out the [examples](./examples/) folder for more sample code and usage.
 
 ## Advanced topics
 
-- [Model composition](https://docs.bentoml.com/en/latest/guides/model-composition.html)
-- [Workers and model parallelization](https://docs.bentoml.com/en/latest/guides/workers.html)
-- [Adaptive batching](https://docs.bentoml.com/en/latest/guides/adaptive-batching.html)
-- [GPU inference](https://docs.bentoml.com/en/latest/guides/gpu-inference.html)
+- [Model composition](https://docs.bentoml.com/en/latest/get-started/model-composition.html)
+- [Workers and model parallelization](https://docs.bentoml.com/en/latest/build-with-bentoml/parallelize-requests.html)
+- [Adaptive batching](https://docs.bentoml.com/en/latest/get-started/adaptive-batching.html)
+- [GPU inference](https://docs.bentoml.com/en/latest/build-with-bentoml/gpu-inference.html)
 - [Distributed serving systems](https://docs.bentoml.com/en/latest/guides/distributed-services.html)
-- [Concurrency and autoscaling](https://docs.bentoml.com/en/latest/bentocloud/how-tos/autoscaling.html)
-- [Model loading and Model Store](https://docs.bentoml.com/en/latest/guides/model-loading-and-management.html)
-- [Observability](https://docs.bentoml.com/en/latest/guides/observability/index.html)
+- [Concurrency and autoscaling](https://docs.bentoml.com/en/latest/scale-with-bentocloud/scaling/autoscaling.html)
+- [Model loading and Model Store](https://docs.bentoml.com/en/latest/build-with-bentoml/model-loading-and-management.html)
+- [Observability](https://docs.bentoml.com/en/latest/build-with-bentoml/observability/index.html)
 - [BentoCloud deployment](https://docs.bentoml.com/en/latest/get-started/cloud-deployment.html)
 
 See [Documentation](https://docs.bentoml.com) for more tutorials and guides.

@@ -224,13 +224,13 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
             )
             print(chat_completion.choices[0].message.content)  # Return something like: {"city": "Paris"}
 
-        If your Service is deployed with :ref:`protected endpoints on BentoCloud <bentocloud/how-tos/manage-access-token:access protected deployments>`, you need to set the environment variable ``OPENAI_API_KEY`` to your BentoCloud API key first.
+        If your Service is deployed with :ref:`protected endpoints on BentoCloud <scale-with-bentocloud/manage-api-tokens:access protected deployments>`, you need to set the environment variable ``OPENAI_API_KEY`` to your BentoCloud API key first.
 
         .. code-block:: bash
 
             export OPENAI_API_KEY={YOUR_BENTOCLOUD_API_TOKEN}
 
-        You can then use the following line to replace the client in the above code snippet. Refer to :ref:`bentocloud/how-tos/call-deployment-endpoints:obtain the endpoint url` to retrieve the endpoint URL.
+        You can then use the following line to replace the client in the above code snippet. Refer to :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:obtain the endpoint url` to retrieve the endpoint URL.
 
         .. code-block:: python
 
@@ -264,13 +264,13 @@ After the Service is ready, you can deploy the project to BentoCloud for better 
         envs:
           - name: HF_TOKEN
 
-2. :ref:`Log in to BentoCloud <bentocloud/how-tos/manage-access-token:Log in to BentoCloud using the BentoML CLI>`.
+2. :ref:`Log in to BentoCloud <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>`.
 
    .. code-block:: bash
 
         bentoml cloud login
 
-3. Create a BentoCloud :doc:`secret </bentocloud/how-tos/manage-secrets>` to store the required environment variable and reference it during deployment.
+3. Create a BentoCloud :doc:`secret </scale-with-bentocloud/manage-secrets-and-env-vars>` to store the required environment variable and reference it during deployment.
 
    .. code-block:: bash
 

@@ -16,13 +16,13 @@ Administrator guide
         Implement custom access control for BentoCloud users.
 
     .. grid-item-card:: Bring Your Own Cloud
-        :link: byoc
+        :link: bring-your-own-cloud
         :link-type: doc
 
         The BentoCloud BYOC deployment helps you run AI applications in your own environment in a secure and cost-effective way.
 
     .. grid-item-card:: Configure standby instances
-        :link: byoc
+        :link: bring-your-own-cloud
         :link-type: doc
 
         Prepare a set number of cloud machines in advance to handle potential demand surges.
@@ -33,5 +33,5 @@ Administrator guide
     :hidden:
 
     manage-users
-    byoc
+    bring-your-own-cloud
     configure-standby-instances

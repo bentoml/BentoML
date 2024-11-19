@@ -6,7 +6,7 @@ In BentoCloud, API tokens serve as a key method of authorization. You may use to
 
 - Log in to BentoCloud
 - Manage BentoCloud resources
-- Access protected Deployments, which have :ref:`bentocloud/how-tos/configure-deployments:Authorization` enabled
+- Access protected Deployments, which have :ref:`scale-with-bentocloud/deployment/configure-deployments:Authorization` enabled
 
 This tutorial explains how to create and use API tokens in BentoCloud.
 
@@ -99,7 +99,7 @@ You can use a token with **Protected Endpoint Access** to access a protected Ben
 
     .. tab-item:: Python client
 
-        Set the ``token`` parameter in your :doc:`client </guides/clients>`.
+        Set the ``token`` parameter in your :doc:`client </build-with-bentoml/clients>`.
 
         .. code-block:: python
 

@@ -11,9 +11,9 @@ Understand server lifecycle
 
 BentoML's server lifecycle consists of several stages, each providing a unique opportunity to perform specific tasks:
 
-1. **Deployment hooks**. These hooks run before any :doc:`Service workers </guides/workers>` are spawned, making them suitable for one-time global setup tasks. They're crucial for operations that should occur once, regardless of the number of workers.
+1. **Deployment hooks**. These hooks run before any :doc:`workers </build-with-bentoml/parallelize-requests>` are spawned, making them suitable for one-time global setup tasks. They're crucial for operations that should occur once, regardless of the number of workers.
 2. **Spawn workers**. BentoML then spawns worker processes according to the ``workers`` configuration specified in the ``@bentoml.service`` decorator.
-3. **Service initialization and ASGI application startup**. During the startup of each worker, any :doc:`integrated ASGI application </guides/asgi>` begins its lifecycle. This is when the ``__init__`` method of your Service class is executed, allowing for instance-specific initialization.
+3. **Service initialization and ASGI application startup**. During the startup of each worker, any :doc:`integrated ASGI application </build-with-bentoml/asgi>` begins its lifecycle. This is when the ``__init__`` method of your Service class is executed, allowing for instance-specific initialization.
 4. **ASGI application teardown**. Finally, as the server shuts down, including the ASGI application, shutdown hooks are executed. This stage is ideal for performing cleanup tasks, ensuring a graceful shutdown.
 
 Configure hooks in a BentoML Service

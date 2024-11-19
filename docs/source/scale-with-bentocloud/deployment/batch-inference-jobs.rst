@@ -91,7 +91,7 @@ You can find the full example code in the `rag-tutorials <https://github.com/ben
 Step 2: Create a Deployment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To deploy this BentoML project as a batch job, create a script to start the Deployment with specific :doc:`configurations </bentocloud/how-tos/configure-deployments>`.
+To deploy this BentoML project as a batch job, create a script to start the Deployment with specific :doc:`configurations </scale-with-bentocloud/deployment/configure-deployments>`.
 
 .. code-block:: python
 

@@ -43,4 +43,4 @@ To define a custom exception, inherit from ``BentoMLException`` or one of its su
             # Raise the custom invalid argument exception
             raise MyCustomInvalidArgsException("This is a custom error message.")
 
-For more information, see :doc:`exception APIs </reference/exceptions>`.
+For more information, see :doc:`exception APIs </reference/bentoml/exceptions>`.

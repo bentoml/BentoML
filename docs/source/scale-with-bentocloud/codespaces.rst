@@ -20,7 +20,7 @@ Create a Codespace
 
       bentoml code
 
-3. (Optional) If your project requires secure environment variables like API keys, we recommend you create :doc:`secrets </bentocloud/how-tos/manage-secrets>` for them. For example:
+3. (Optional) If your project requires secure environment variables like API keys, we recommend you create :doc:`secrets </scale-with-bentocloud/manage-secrets-and-env-vars>` for them. For example:
 
    .. code-block:: bash
 

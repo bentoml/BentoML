@@ -132,7 +132,7 @@ Alternatively, create a ``.bentoignore`` file in the ``build_ctx`` directory as 
 ``models``
 ^^^^^^^^^^
 
-You can specify the model to be used for building a Bento using a string model tag or a dictionary. When you start from an existing project, you can download models from BentoCloud to your local :doc:`/guides/model-loading-and-management` with the ``models`` configurations by running ``bentoml models pull``.
+You can specify the model to be used for building a Bento using a string model tag or a dictionary. When you start from an existing project, you can download models from BentoCloud to your local :doc:`/build-with-bentoml/model-loading-and-management` with the ``models`` configurations by running ``bentoml models pull``.
 
 See the following example for details. If you don't define models in ``bentofile.yaml``, the model specified in the Service is used to build the Bento.
 
@@ -337,7 +337,7 @@ The specified environment variables will be injected into the Bento container.
 
 .. note::
 
-    If you deploy your BentoML Service on :doc:`BentoCloud </bentocloud/get-started>`, you can either set environment variables by specifying ``envs`` in ``benfofile.yaml`` or using the ``--env`` flag when running ``bentoml deploy``. See :ref:`bentocloud/how-tos/configure-deployments:environment variables` for details.
+    If you deploy your BentoML Service on :doc:`BentoCloud </bentocloud/get-started>`, you can either set environment variables by specifying ``envs`` in ``benfofile.yaml`` or using the ``--env`` flag when running ``bentoml deploy``. See :ref:`scale-with-bentocloud/deployment/configure-deployments:environment variables` for details.
 
 ``conda``
 ^^^^^^^^^
@@ -522,7 +522,7 @@ The following table provides a full list of available configurations for the ``d
    * - python_version
      - The Python version on the Docker image. It defaults to the Python version in the build environment.
    * - cuda_version
-     - Deprecated. The CUDA version on the Docker image for running models that require GPUs. When using PyTorch or TensorFlow to run models on GPUs, we recommend you directly install them along with their respective CUDA dependencies, using ``pip``. This means you don't need to configure ``cuda_version`` separately. See :doc:`/guides/gpu-inference` for more information.
+     - Deprecated. The CUDA version on the Docker image for running models that require GPUs. When using PyTorch or TensorFlow to run models on GPUs, we recommend you directly install them along with their respective CUDA dependencies, using ``pip``. This means you don't need to configure ``cuda_version`` separately. See :doc:`/build-with-bentoml/gpu-inference` for more information.
    * - system_packages
      - The system packages that will be installed in the container.
    * - setup_script
@@ -535,7 +535,7 @@ The following table provides a full list of available configurations for the ``d
 Build a Bento
 -------------
 
-With a ``bentofile.yaml`` file, you build a Bento by running ``bentoml build``. Note that this command is part of the ``bentoml deploy`` workflow. You should use this command only if you want to build a Bento without :doc:`deploying it to BentoCloud </bentocloud/how-tos/create-deployments>`.
+With a ``bentofile.yaml`` file, you build a Bento by running ``bentoml build``. Note that this command is part of the ``bentoml deploy`` workflow. You should use this command only if you want to build a Bento without :doc:`deploying it to BentoCloud </scale-with-bentocloud/deployment/create-deployments>`.
 
 .. code-block:: bash
 

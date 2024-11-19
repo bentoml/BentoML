@@ -9,26 +9,26 @@ This section explains observability in BentoML.
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`/guides/observability/monitoring-and-data-collection`
-        :link: /guides/observability/monitoring-and-data-collection
+    .. grid-item-card:: :doc:`/build-with-bentoml/observability/monitoring-and-data-collection`
+        :link: /build-with-bentoml/observability/monitoring-and-data-collection
         :link-type: doc
 
         Learn how to implement monitoring and collect inference data in BentoML.
 
-    .. grid-item-card:: :doc:`/guides/observability/logging`
-        :link: /guides/observability/logging
+    .. grid-item-card:: :doc:`/build-with-bentoml/observability/logging`
+        :link: /build-with-bentoml/observability/logging
         :link-type: doc
 
         Learn how to configure logging in BentoML.
 
-    .. grid-item-card:: :doc:`/guides/observability/metrics`
-        :link: /guides/observability/tracing
+    .. grid-item-card:: :doc:`/build-with-bentoml/observability/metrics`
+        :link: /build-with-bentoml/observability/tracing
         :link-type: doc
 
         Learn how to configure metrics in BentoML.
 
-    .. grid-item-card:: :doc:`/guides/observability/tracing`
-        :link: /guides/observability/tracing
+    .. grid-item-card:: :doc:`/build-with-bentoml/observability/tracing`
+        :link: /build-with-bentoml/observability/tracing
         :link-type: doc
 
         Learn how to configure tracing in BentoML.

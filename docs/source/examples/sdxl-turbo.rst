@@ -118,7 +118,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
 
     .. tab-item:: Python client
 
-        This client returns the image as a ``Path`` object. You can use it to access, read, or process the file. See :doc:`/guides/clients` for details.
+        This client returns the image as a ``Path`` object. You can use it to access, read, or process the file. See :doc:`/build-with-bentoml/clients` for details.
 
         .. code-block:: python
 
@@ -160,7 +160,7 @@ First, specify a configuration YAML file (``bentofile.yaml``) to define the buil
     python:
       requirements_txt: "./requirements.txt"
 
-:ref:`Log in to BentoCloud <bentocloud/how-tos/manage-access-token:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
+:ref:`Log in to BentoCloud <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
 
 .. code-block:: bash
 

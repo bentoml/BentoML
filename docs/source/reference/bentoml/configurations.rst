@@ -62,7 +62,7 @@ Here is an example:
 ``workers``
 ^^^^^^^^^^^
 
-:doc:`/guides/workers` are the processes that run the code logic within a Service instance. You use ``workers`` in the ``@bentoml.service`` decorator to define the process-level parallelism within a Service. This configuration is useful for optimizing performance, particularly for high-throughput or compute-intensive Services. ``workers`` defaults to ``1``.
+:doc:`/build-with-bentoml/parallelize-requests` are the processes that run the code logic within a Service instance. You use ``workers`` in the ``@bentoml.service`` decorator to define the process-level parallelism within a Service. This configuration is useful for optimizing performance, particularly for high-throughput or compute-intensive Services. ``workers`` defaults to ``1``.
 
 To specify the number of workers (for example, ``3``) within a Service:
 
@@ -87,7 +87,7 @@ To specify the number of workers (for example, ``3``) within a Service:
 
 - ``timeout``: Determines the maximum time the Service will wait for a response to be sent back to the client. The default timeout is set to 60 seconds.
 - ``max_concurrency``: Specifies the hard limit on the number of requests that can be processed simultaneously by a single Service instance. It helps you control the load and prevent the Service from being overwhelmed by too many simultaneous requests.
-- ``concurrency``: A BentoCloud-specific field that represents the ideal number of simultaneous requests a Service is designed to handle. Concurrency helps optimize resource utilization and influences how BentoCloud autoscales your Service. By default, concurrency is set to allow infinite requests to avoid system bottlenecks. For detailed information, see :doc:`/bentocloud/how-tos/autoscaling`.
+- ``concurrency``: A BentoCloud-specific field that represents the ideal number of simultaneous requests a Service is designed to handle. Concurrency helps optimize resource utilization and influences how BentoCloud autoscales your Service. By default, concurrency is set to allow infinite requests to avoid system bottlenecks. For detailed information, see :doc:`/scale-with-bentocloud/scaling/autoscaling`.
 - ``external_queue``: A BentoCloud-specific field. When deploying a Service on BentoCloud with this field enabled, an external request queue is used to manage incoming traffic more effectively. This is done by queuing excess requests until they can be processed within the defined ``concurrency`` limits.
 
 Here is an example of configuring these settings in your Service definition:
@@ -147,7 +147,7 @@ Here is an example:
     class MyService:
         # Service implementation
 
-For more information, see :doc:`/guides/observability/logging`.
+For more information, see :doc:`/build-with-bentoml/observability/logging`.
 
 ``ssl``
 ^^^^^^^
@@ -227,7 +227,7 @@ Here is an example:
     class MyService:
         # Service implementation
 
-For more information, see :doc:`/guides/observability/monitoring-and-data-collection`.
+For more information, see :doc:`/build-with-bentoml/observability/monitoring-and-data-collection`.
 
 ``metrics``
 ^^^^^^^^^^^
@@ -248,7 +248,7 @@ Here is an example:
     class MyService:
         # Service implementation
 
-For more information, see :doc:`/guides/observability/metrics`.
+For more information, see :doc:`/build-with-bentoml/observability/metrics`.
 
 ``tracing``
 ^^^^^^^^^^^
@@ -278,6 +278,6 @@ Here is an example:
     class MyService:
        # Service implementation code
 
-For more information, see :doc:`/guides/observability/tracing`.
+For more information, see :doc:`/build-with-bentoml/observability/tracing`.
 
 For full schema of the configurations, see `this file <https://github.com/bentoml/BentoML/blob/1.2/src/bentoml/_internal/configuration/v2/default_configuration.yaml>`_.

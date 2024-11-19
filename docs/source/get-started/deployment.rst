@@ -23,4 +23,4 @@ To deploy a BentoML project on BentoCloud, do the following:
 
    .. image:: ../../_static/img/guides/deployment/deployment-replica.png
 
-It is possible to customize deployment configurations like scaling and instance type. For details, see :doc:`/bentocloud/how-tos/configure-deployments`.
+It is possible to customize deployment configurations like scaling and instance type. For details, see :doc:`/scale-with-bentocloud/deployment/configure-deployments`.

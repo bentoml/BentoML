@@ -83,4 +83,4 @@ Use ``retry()`` if a task fails or you need to rerun the task with the same para
         new_status = new_task.get_status()
         print("New task status:", new_status.value)
 
-For more information, see :doc:`/guides/clients`.
+For more information, see :doc:`/build-with-bentoml/clients`.

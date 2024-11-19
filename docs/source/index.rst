@@ -115,7 +115,7 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    build-with-bentoml/model-loading-and-management
    build-with-bentoml/gpu-inference
    build-with-bentoml/clients
-   build-with-bentoml/workers
+   build-with-bentoml/parallelize-requests
    build-with-bentoml/lifecycle-hooks
    build-with-bentoml/asgi
    build-with-bentoml/gradio
@@ -131,7 +131,7 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    scale-with-bentocloud/set-cpu-and-gpu-resources
    scale-with-bentocloud/deployment/index
    scale-with-bentocloud/scaling/index
-   scale-with-bentocloud/manage-secrets
+   scale-with-bentocloud/manage-secrets-and-env-vars
    scale-with-bentocloud/manage-api-tokens
    scale-with-bentocloud/codespaces
    scale-with-bentocloud/administering/index

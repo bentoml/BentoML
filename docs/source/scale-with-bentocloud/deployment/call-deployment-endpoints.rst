@@ -57,7 +57,7 @@ Choose one of the following ways to access your Deployment with the endpoint URL
 
     .. tab-item:: Python client
 
-        Include the endpoint URL in your client as below. For more information, see :doc:`/guides/clients`.
+        Include the endpoint URL in your client as below. For more information, see :doc:`/build-with-bentoml/clients`.
 
         .. code-block:: python
 
@@ -67,7 +67,7 @@ Choose one of the following ways to access your Deployment with the endpoint URL
             result: str = client.summarize(text="Your long text to summarize")
             print(result)
 
-        You can retrieve the information of a client by using ``get_client`` or ``get_async_client`` (set the ``token`` parameter if you enable :ref:`bentocloud/how-tos/configure-deployments:authorization`), then call its available endpoint to make HTTP requests to your Deployment.
+        You can retrieve the information of a client by using ``get_client`` or ``get_async_client`` (set the ``token`` parameter if you enable :ref:`scale-with-bentocloud/deployment/configure-deployments:authorization`), then call its available endpoint to make HTTP requests to your Deployment.
 
         .. code-block:: python
 
@@ -90,4 +90,4 @@ Choose one of the following ways to access your Deployment with the endpoint URL
 Interact with protected endpoints
 ---------------------------------
 
-If you enable :ref:`bentocloud/how-tos/configure-deployments:authorization` for a Deployment when creating it, its endpoint URL will be protected. You need to create :ref:`an API token with Protected Endpoint Access <bentocloud/how-tos/manage-access-token:create an api token>` and then :ref:`use this token to access it <bentocloud/how-tos/manage-access-token:access protected deployments>`.
+If you enable :ref:`scale-with-bentocloud/deployment/configure-deployments:authorization` for a Deployment when creating it, its endpoint URL will be protected. You need to create :ref:`an API token with Protected Endpoint Access <scale-with-bentocloud/manage-api-tokens:create an api token>` and then :ref:`use this token to access it <scale-with-bentocloud/manage-api-tokens:access protected deployments>`.

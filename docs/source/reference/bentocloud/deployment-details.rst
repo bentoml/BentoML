@@ -23,7 +23,7 @@ Playground
    * - Result
      - Display the output by the Deployment.
    * - Authorized/Unauthorized
-     - Available only when you enable :ref:`bentocloud/how-tos/configure-deployments:authorization`. Click it to enter the authorization token.
+     - Available only when you enable :ref:`scale-with-bentocloud/deployment/configure-deployments:authorization`. Click it to enter the authorization token.
 
 Replicas
 --------

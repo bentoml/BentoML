@@ -114,7 +114,7 @@ When using ``HuggingFaceModel`` and ``BentoModel``, you must load the model from
 
     BentoML accelerates model loading in two key ways. First, when using ``HuggingFaceModel`` or ``BentoModel``, models are downloaded during image building rather than Service startup. The downloaded models are cached and mounted directly into containers, significantly reducing cold start time and improving scaling performance, especially for large models. Second, BentoML optimizes the actual loading process itself with parallel loading using safetensors. Instead of loading model weights sequentially, multiple parts of the model are loaded simultaneously.
 
-For more information, see :doc:`/reference/stores`.
+For more information, see :doc:`/reference/bentoml/stores`.
 
 Manage models
 -------------
@@ -189,7 +189,7 @@ You can perform the following operations on models by using the BentoML CLI.
 
     .. tab-item:: Pull/Push
 
-        `BentoCloud <https://cloud.bentoml.com/>`_ provides a centralized model repository with flexible APIs and a web console for managing all models created by your team. After you :doc:`log in to BentoCloud </bentocloud/how-tos/manage-access-token>`, use ``bentoml models push`` and ``bentoml models pull`` to upload your models to and download them from BentoCloud:
+        `BentoCloud <https://cloud.bentoml.com/>`_ provides a centralized model repository with flexible APIs and a web console for managing all models created by your team. After you :doc:`log in to BentoCloud </scale-with-bentocloud/manage-api-tokens>`, use ``bentoml models push`` and ``bentoml models pull`` to upload your models to and download them from BentoCloud:
 
         .. code-block:: bash
 
@@ -250,7 +250,7 @@ In addition to the CLI commands, BentoML also provides equivalent Python APIs fo
 
     .. tab-item:: Push/Pull
 
-        If you :doc:`have access to BentoCloud </bentocloud/how-tos/manage-access-token>`, you can also push local models to or pull models from it.
+        If you :doc:`have access to BentoCloud </scale-with-bentocloud/manage-api-tokens>`, you can also push local models to or pull models from it.
 
         .. code-block:: python
 

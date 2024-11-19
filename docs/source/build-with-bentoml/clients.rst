@@ -4,7 +4,7 @@ Call an API endpoint
 
 BentoML provides a client implementation that allows you to make synchronous and asynchronous requests to BentoML :doc:`Services </build-with-bentoml/services>`.
 
-This document explains how to use :doc:`BentoML clients </reference/client>`.
+This document explains how to use :doc:`BentoML clients </reference/bentoml/client>`.
 
 Client types
 ------------
@@ -71,7 +71,7 @@ In this example, the ``summarize`` method on the client is directly mapped to th
 
 .. note::
 
-    If you deploy your Service to :doc:`BentoCloud </bentocloud/get-started>`, you can get the client of a Deployment by using ``get_client()`` or ``get_async_client()``. For more information, see :ref:`bentocloud/how-tos/call-deployment-endpoints:interact with the Deployment`.
+    If you deploy your Service to BentoCloud, you can get the client of a Deployment by using ``get_client()`` or ``get_async_client()``. For more information, see :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:interact with the Deployment`.
 
 Use a context manager
 ^^^^^^^^^^^^^^^^^^^^^

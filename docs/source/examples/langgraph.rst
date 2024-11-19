@@ -83,7 +83,7 @@ service.py
 
 The ``service.py`` file defines the ``SearchAgentService``, a BentoML Service that wraps around the LangGraph agent and calls the ``MistralService``.
 
-1. Create a Python class and decorate it with ``@bentoml.service``, which transforms it into a BentoML Service. You can optionally set :doc:`configurations </guides/configurations>` like :doc:`workers </guides/workers>` and :doc:`concurrency </bentocloud/how-tos/autoscaling>`.
+1. Create a Python class and decorate it with ``@bentoml.service``, which transforms it into a BentoML Service. You can optionally set :doc:`configurations </guides/configurations>` like :doc:`workers </build-with-bentoml/parallelize-requests>` and :doc:`concurrency </scale-with-bentocloud/scaling/autoscaling>`.
 
    .. code-block:: python
 
@@ -221,14 +221,14 @@ BentoCloud
 
 BentoCloud provides fast and scalable infrastructure for building and scaling AI applications with BentoML in the cloud.
 
-1. Install BentoML and :doc:`log in to BentoCloud </bentocloud/how-tos/manage-access-token>` through the BentoML CLI. If you don't have a BentoCloud account, `sign up here for free <https://www.bentoml.com/>`_ and get $10 in free credits.
+1. Install BentoML and :doc:`log in to BentoCloud </scale-with-bentocloud/manage-api-tokens>` through the BentoML CLI. If you don't have a BentoCloud account, `sign up here for free <https://www.bentoml.com/>`_ and get $10 in free credits.
 
    .. code-block:: bash
 
       pip install bentoml
       bentoml cloud login
 
-2. Clone the repository and select the desired project to deploy it. We recommend you create a BentoCloud :doc:`secret </bentocloud/how-tos/manage-secrets>` to store the required environment variable.
+2. Clone the repository and select the desired project to deploy it. We recommend you create a BentoCloud :doc:`secret </scale-with-bentocloud/manage-secrets-and-env-vars>` to store the required environment variable.
 
    .. code-block:: bash
 
@@ -287,7 +287,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
       bentoml deployment update <deployment-name> --scaling-min 0 --scaling-max 3 # Set your desired count
 
-   For more information, see :doc:`how to configure concurrency and autoscaling </bentocloud/how-tos/autoscaling>`.
+   For more information, see :doc:`how to configure concurrency and autoscaling </scale-with-bentocloud/scaling/autoscaling>`.
 
 .. _LocalServing:
 

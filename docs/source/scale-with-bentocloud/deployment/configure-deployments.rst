@@ -40,7 +40,7 @@ You can set the minimum and maximum scaling replicas to ensure efficient resourc
                 scaling_max=3
             )
 
-For more information, see :doc:`/bentocloud/how-tos/autoscaling`.
+For more information, see :doc:`/scale-with-bentocloud/scaling/autoscaling`.
 
 Instance types
 ^^^^^^^^^^^^^^
@@ -158,7 +158,7 @@ Enabling authorization for a Deployment in BentoCloud is essential for security 
                 access_authorization=True
             )
 
-To access a Deployment with authorization enabled, :ref:`create an API token with Protected Endpoint Access <bentocloud/how-tos/manage-access-token:create an api token>` and refer to :ref:`bentocloud/how-tos/manage-access-token:access protected deployments`.
+To access a Deployment with authorization enabled, :ref:`create an API token with Protected Endpoint Access <scale-with-bentocloud/manage-api-tokens:create an api token>` and refer to :ref:`scale-with-bentocloud/manage-api-tokens:access protected deployments`.
 
 .. _deploy-with-config-file:
 
@@ -276,6 +276,6 @@ Available strategies include:
 See also
 --------
 
-- :doc:`/bentocloud/how-tos/manage-deployments`
-- :doc:`/bentocloud/reference/bentocloud-cli`
-- :doc:`/bentocloud/reference/bentocloud-api`
+- :doc:`/scale-with-bentocloud/deployment/manage-deployments`
+- :doc:`/reference/bentocloud/bentocloud-cli`
+- :doc:`/reference/bentocloud/bentocloud-api`

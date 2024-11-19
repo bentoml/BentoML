@@ -5,80 +5,80 @@ Framework APIs
 .. note::
 
     This page contains the API reference for all frameworks. For more information on a specific
-    framework, please see :doc:`/reference/frameworks/index`
+    framework, please see :doc:`/reference/bentoml/frameworks/index`
 
 .. grid:: 1 2 2 2
     :gutter: 3
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`/reference/frameworks/diffusers`
-        :link: /reference/frameworks/diffusers
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/diffusers`
+        :link: /reference/bentoml/frameworks/diffusers
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/onnx`
-        :link: /reference/frameworks/onnx
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/onnx`
+        :link: /reference/bentoml/frameworks/onnx
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/sklearn`
-        :link: /reference/frameworks/sklearn
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/sklearn`
+        :link: /reference/bentoml/frameworks/sklearn
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/transformers`
-        :link: /reference/frameworks/transformers
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/transformers`
+        :link: /reference/bentoml/frameworks/transformers
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/flax`
-        :link: /reference/frameworks/flax
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/flax`
+        :link: /reference/bentoml/frameworks/flax
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/tensorflow`
-        :link: /reference/frameworks/tensorflow
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/tensorflow`
+        :link: /reference/bentoml/frameworks/tensorflow
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/xgboost`
-        :link: /reference/frameworks/xgboost
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/xgboost`
+        :link: /reference/bentoml/frameworks/xgboost
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/picklable_model`
-        :link: /reference/frameworks/picklable_model
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/picklable_model`
+        :link: /reference/bentoml/frameworks/picklable_model
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/pytorch`
-        :link: /reference/frameworks/pytorch
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/pytorch`
+        :link: /reference/bentoml/frameworks/pytorch
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/lightgbm`
-        :link: /reference/frameworks/lightgbm
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/lightgbm`
+        :link: /reference/bentoml/frameworks/lightgbm
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/mlflow`
-        :link: /reference/frameworks/mlflow
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/mlflow`
+        :link: /reference/bentoml/frameworks/mlflow
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/catboost`
-        :link: /reference/frameworks/catboost
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/catboost`
+        :link: /reference/bentoml/frameworks/catboost
         :link-type: doc
 
 
-    .. grid-item-card:: :doc:`/reference/frameworks/fastai`
-        :link: /reference/frameworks/fastai
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/fastai`
+        :link: /reference/bentoml/frameworks/fastai
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/keras`
-        :link: /reference/frameworks/keras
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/keras`
+        :link: /reference/bentoml/frameworks/keras
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/detectron`
-        :link: /reference/frameworks/detectron
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/detectron`
+        :link: /reference/bentoml/frameworks/detectron
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/easyocr`
-        :link: /reference/frameworks/easyocr
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/easyocr`
+        :link: /reference/bentoml/frameworks/easyocr
         :link-type: doc
 
-    .. grid-item-card:: :doc:`/reference/frameworks/ray`
-        :link: /reference/frameworks/ray
+    .. grid-item-card:: :doc:`/reference/bentoml/frameworks/ray`
+        :link: /reference/bentoml/frameworks/ray
         :link-type: doc
 
 .. toctree::

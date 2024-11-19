@@ -143,7 +143,7 @@ An example:
 This integration test does the following:
 
 1. Use the ``subprocess`` module to start the ``Summarization`` Service in a separate process on port ``50001``.
-2. Create a :doc:`client </guides/clients>` and send a request. ``server_ready_timeout=10`` means the client will wait 10 seconds for the server to become ready before proceeding with the call.
+2. Create a :doc:`client </build-with-bentoml/clients>` and send a request. ``server_ready_timeout=10`` means the client will wait 10 seconds for the server to become ready before proceeding with the call.
 3. Make assertions to ensure the Service is functioning correctly.
 
 Run the integration test:
@@ -172,7 +172,7 @@ HTTP behavior tests
 
 To test the HTTP behavior of a BentoML Service, you can simulate HTTP requests and assert the responses match expected outcomes.
 
-You can use the ``starlette.testclient`` module to create a test client. This allows you to send HTTP requests directly to your BentoML Service, which can be converted to an :doc:`ASGI application </guides/asgi>` via the ``to_asgi()`` method. The test client exposes the same interface as any other ``httpx`` session.
+You can use the ``starlette.testclient`` module to create a test client. This allows you to send HTTP requests directly to your BentoML Service, which can be converted to an :doc:`ASGI application </build-with-bentoml/asgi>` via the ``to_asgi()`` method. The test client exposes the same interface as any other ``httpx`` session.
 
 An example:
 
@@ -303,7 +303,7 @@ Expected result:
 
     ============================================================================================== 1 passed in 120.65s (0:02:00) ==============================================================================================
 
-For more information, see :doc:`/bentocloud/how-tos/configure-deployments` and :doc:`/bentocloud/how-tos/manage-deployments`.
+For more information, see :doc:`/scale-with-bentocloud/deployment/configure-deployments` and :doc:`/scale-with-bentocloud/deployment/manage-deployments`.
 
 Best practices
 --------------

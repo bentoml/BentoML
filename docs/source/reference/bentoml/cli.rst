@@ -6,7 +6,7 @@ BentoML CLI commands have usage documentation. You can learn more by running ``b
 
 .. seealso::
 
-   For details about managing BentoCloud Deployments using the BentoML CLI, see :doc:`/bentocloud/reference/bentocloud-cli`.
+   For details about managing BentoCloud Deployments using the BentoML CLI, see :doc:`/reference/bentocloud/bentocloud-cli`.
 
 .. click:: bentoml_cli.bentos:bento_command
   :prog: bentoml

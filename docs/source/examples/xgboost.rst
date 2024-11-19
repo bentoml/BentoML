@@ -49,7 +49,7 @@ This example uses the ``scikit-learn`` framework to load and preprocess the `bre
     # Train the model
     model = xgb.train(param, dt)
 
-After training, use the ``bentoml.xgboost.save_model`` API to save the model to the BentoML :doc:`/guides/model-loading-and-management`, a local directory to store and manage models. You can retrieve this model later in other services to run predictions.
+After training, use the ``bentoml.xgboost.save_model`` API to save the model to the BentoML :doc:`/build-with-bentoml/model-loading-and-management`, a local directory to store and manage models. You can retrieve this model later in other services to run predictions.
 
 .. code-block:: bash
 
@@ -217,7 +217,7 @@ First, specify a configuration YAML file (``bentofile.yaml``) to define the buil
         - xgboost
         - scikit-learn
 
-:ref:`Log in to BentoCloud <bentocloud/how-tos/manage-access-token:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
+:ref:`Log in to BentoCloud <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
 
 .. code-block:: bash
 

@@ -48,7 +48,7 @@ This image explains how different models use the GPUs assigned to them.
 
 .. note::
 
-    Workers are the processes that actually run the code logic within a BentoML Service. By default, a BentoML Service has one worker. It is possible to set multiple workers and allocate specific GPUs to individual workers. See :doc:`/guides/workers` for details.
+    Workers are the processes that actually run the code logic within a BentoML Service. By default, a BentoML Service has one worker. It is possible to set multiple workers and allocate specific GPUs to individual workers. See :doc:`/build-with-bentoml/parallelize-requests` for details.
 
 If you want to use multiple GPUs for distributed operations (multiple GPUs for the same worker), PyTorch and TensorFlow offer different methods:
 
@@ -112,7 +112,7 @@ To list available GPU types on your BentoCloud account, run:
     gpu.l4.1    *      4000m  16Gi    1    nvidia-l4
     gpu.a100.1  *      6000m  43Gi    1    nvidia-tesla-a100
 
-After your Service is ready, you can then deploy it to BentoCloud by running ``bentoml deploy .``. See :doc:`/bentocloud/how-tos/create-deployments` for details.
+After your Service is ready, you can then deploy it to BentoCloud by running ``bentoml deploy .``. See :doc:`/scale-with-bentocloud/deployment/create-deployments` for details.
 
 Docker
 ^^^^^^

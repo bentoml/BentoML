@@ -9,14 +9,14 @@ This document explains how to configure concurrency and autoscaling in BentoClou
 Replicas
 --------
 
-You can set the :ref:`minimum and maximum replicas <bentocloud/how-tos/configure-deployments:scaling>` to define the boundaries for scaling, allowing the autoscaler to reduce or increase the number of replicas as needed.
+You can set the :ref:`minimum and maximum replicas <scale-with-bentocloud/deployment/configure-deployments:scaling>` to define the boundaries for scaling, allowing the autoscaler to reduce or increase the number of replicas as needed.
 
 Scale-to-Zero
 -------------
 
 Scale-to-zero is a feature that allows the autoscaler to scale the number of replicas to zero when the Service is idle. This feature is useful when you want to minimize costs by reducing the number of replicas to zero during periods of inactivity.
 
-To enable scale-to-zero, set the minimum replicas to 0 in the :ref:`deployment configuration <bentocloud/how-tos/configure-deployments:scaling>`.
+To enable scale-to-zero, set the minimum replicas to 0 in the :ref:`deployment configuration <scale-with-bentocloud/deployment/configure-deployments:scaling>`.
 
 The Deployment will automatically scale up from zero replicas when the Service receives requests. The request will be enqueued in the external queue and the timeout timer would not be started until the Service is scaled up.
 

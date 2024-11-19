@@ -232,7 +232,7 @@ Deploying a project with distributed Services to BentoCloud is similar to deploy
 
 To set custom configurations for each, we recommend you use a separate configuration file and reference it in the BentoML CLI command or Python API for deployment.
 
-The following is an example file that defines some custom configurations for the above two Services. You set configurations of each Service in the ``services`` field. Refer to :doc:`/bentocloud/how-tos/configure-deployments` to see the available configuration fields.
+The following is an example file that defines some custom configurations for the above two Services. You set configurations of each Service in the ``services`` field. Refer to :doc:`/scale-with-bentocloud/deployment/configure-deployments` to see the available configuration fields.
 
 .. code-block:: yaml
 

@@ -116,6 +116,6 @@ Resources
 If you are a first-time user of BentoCloud, we recommend you read the following documents to get familiar with BentoCloud:
 
 - Deploy :doc:`example projects </use-cases/index>` to BentoCloud
-- :doc:`/bentocloud/how-tos/manage-deployments`
-- :doc:`/bentocloud/how-tos/create-deployments`
-- :doc:`/bentocloud/how-tos/manage-access-token`
+- :doc:`/scale-with-bentocloud/deployment/manage-deployments`
+- :doc:`/scale-with-bentocloud/deployment/create-deployments`
+- :doc:`/scale-with-bentocloud/manage-api-tokens`

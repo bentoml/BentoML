@@ -15,7 +15,7 @@ Supported input and output types in BentoML include:
 - **Pydantic field types**: BentoML extends its type support to `Pydantic field types <https://field-idempotency--pydantic-docs.netlify.app/usage/types/>`_, offering a more structured and validated approach to handling complex data schemas.
 - **ML specific types**: To meet the requirements of different ML use cases, BentoML supports types like ``numpy.ndarray``, ``torch.Tensor``, and ``tensorflow.Tensor`` for handling tensor data, ``pandas.DataFrame`` for working with tabular data, ``PIL.Image.Image`` for image data, and ``pathlib.Path`` for file path references.
 
-You use Python's type annotations to define the expected input and output types for each API endpoint. This not only helps validate the data against the specified schema but also enhances the clarity and readability of the code. The type annotations play an important role in generating the API, BentoML :doc:`client </guides/clients>`, and UI components, ensuring a consistent and predictable interaction with the Service.
+You use Python's type annotations to define the expected input and output types for each API endpoint. This not only helps validate the data against the specified schema but also enhances the clarity and readability of the code. The type annotations play an important role in generating the API, BentoML :doc:`client </build-with-bentoml/clients>`, and UI components, ensuring a consistent and predictable interaction with the Service.
 
 In addition, you can use ``pydantic.Field`` to set additional information about parameters, such as default values and descriptions. This improves the API's usability and provides basic documentation. See the following examples for details.
 
@@ -211,7 +211,7 @@ If you don't want to save temporary files to disk, you can return the data as ``
 Tensors
 ^^^^^^^
 
-BentoML supports various tensor types such as ``numpy.ndarray``, ``torch.Tensor``, and ``tensorflow.Tensor``. Additionally, you can use :ref:`reference/sdk:bentoml.validators` like ``bentoml.Shape`` and ``bentoml.DType`` to enforce specific shapes and data types for tensor input. Here is an example:
+BentoML supports various tensor types such as ``numpy.ndarray``, ``torch.Tensor``, and ``tensorflow.Tensor``. Additionally, you can use :ref:`reference/bentoml/sdk:bentoml.validators` like ``bentoml.Shape`` and ``bentoml.DType`` to enforce specific shapes and data types for tensor input. Here is an example:
 
 .. code-block:: python
 

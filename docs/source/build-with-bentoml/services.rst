@@ -7,7 +7,7 @@ BentoML Services are the core building blocks for BentoML projects, allowing you
 Service definitions
 -------------------
 
-BentoML Services are defined using class-based definitions. Each class represents a distinct Service that can perform certain tasks, such as preprocessing data or making predictions with an ML model. You use the decorator ``@bentoml.service`` to annotate a class, indicating that it is a BentoML Service. By convention, you define a Service (or multiple Services) in a ``service.py`` file. For more information, see :ref:`reference/sdk:Service decorator`.
+BentoML Services are defined using class-based definitions. Each class represents a distinct Service that can perform certain tasks, such as preprocessing data or making predictions with an ML model. You use the decorator ``@bentoml.service`` to annotate a class, indicating that it is a BentoML Service. By convention, you define a Service (or multiple Services) in a ``service.py`` file. For more information, see :ref:`reference/bentoml/sdk:Service decorator`.
 
 Here is a Service definition example from :doc:`/get-started/hello-world`.
 
@@ -35,7 +35,7 @@ Methods within the class which are defined as accessible HTTP API endpoints are 
 
 .. note::
 
-    This Service downloads a pre-trained model from Hugging Face. It is possible to use your own model within the Service class. For more information, see :doc:`/guides/model-loading-and-management`.
+    This Service downloads a pre-trained model from Hugging Face. It is possible to use your own model within the Service class. For more information, see :doc:`/build-with-bentoml/model-loading-and-management`.
 
 Test the Service code
 ---------------------
@@ -97,7 +97,7 @@ Each API endpoint has a unique route (URL path). By default, the route is derive
 Inference context
 ^^^^^^^^^^^^^^^^^
 
-You can retrieve the context of an inference call by adding ``bentoml.Context`` to the Service API function. This parameter allows you to access information about the incoming request (like client headers) and also modify the outgoing response (like setting response headers, cookies, or HTTP status codes). Additionally, you can read and write to the global state dictionary via the ``ctx.state`` attribute, which is a :doc:`per-worker </guides/workers>` dictionary that can be read and written across API endpoints.
+You can retrieve the context of an inference call by adding ``bentoml.Context`` to the Service API function. This parameter allows you to access information about the incoming request (like client headers) and also modify the outgoing response (like setting response headers, cookies, or HTTP status codes). Additionally, you can read and write to the global state dictionary via the ``ctx.state`` attribute, which is a :doc:`per-worker </build-with-bentoml/parallelize-requests>` dictionary that can be read and written across API endpoints.
 
 .. code-block:: python
 
@@ -134,10 +134,10 @@ Lifecycle hooks
 
 BentoML's lifecycle hooks provide a way to insert custom logic at specific stages of a Service's lifecycle.
 
-- Deployment hooks (``@bentoml.on_deployment``): Execute global setup actions before :doc:`Service workers </guides/workers>` are spawned. They run only once regardless of the number of workers, ideal for one-time initializations.
+- Deployment hooks (``@bentoml.on_deployment``): Execute global setup actions before :doc:`Service workers </build-with-bentoml/parallelize-requests>` are spawned. They run only once regardless of the number of workers, ideal for one-time initializations.
 - Shutdown hooks (``@bentoml.on_shutdown``): Run cleanup logic when a BentoML Service is shutting down. They enable tasks such as closing connections and releasing resources to ensure a graceful shutdown.
 
-You use decorators to set lifecycle hooks. For details, see :doc:`/guides/lifecycle-hooks`.
+You use decorators to set lifecycle hooks. For details, see :doc:`/build-with-bentoml/lifecycle-hooks`.
 
 Synchronous and asynchronous APIs
 ---------------------------------

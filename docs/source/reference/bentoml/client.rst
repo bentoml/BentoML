@@ -2,7 +2,7 @@
 Client API
 ==========
 
-You can create a :doc:`BentoML client </guides/clients>` to interact with your BentoML Service.
+You can create a :doc:`BentoML client </build-with-bentoml/clients>` to interact with your BentoML Service.
 
 bentoml.SyncHTTPClient
 ----------------------

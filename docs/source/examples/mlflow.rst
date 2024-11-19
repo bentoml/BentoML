@@ -41,7 +41,7 @@ This example uses the ``scikit-learn`` framework to train a classification model
     model.fit(X_train, Y_train)
     mlflow.sklearn.save_model(model, model_uri.resolve())
 
-Next, use the ``bentoml.mlflow.import_model`` API to save the model to the BentoML :doc:`/guides/model-loading-and-management`, a local directory to store and manage models. You can retrieve this model later in other services to run predictions.
+Next, use the ``bentoml.mlflow.import_model`` API to save the model to the BentoML :doc:`/build-with-bentoml/model-loading-and-management`, a local directory to store and manage models. You can retrieve this model later in other services to run predictions.
 
 .. code-block:: bash
 
@@ -181,7 +181,7 @@ Specify a configuration YAML file (``bentofile.yaml``) to define the build optio
         - mlflow
         - scikit-learn
 
-:ref:`Log in to BentoCloud <bentocloud/how-tos/manage-access-token:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
+:ref:`Log in to BentoCloud <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
 
 .. code-block:: bash
 

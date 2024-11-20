@@ -2,7 +2,7 @@
 Deployment
 ==========
 
-Read how-to guides to explore the key features of BentoCloud.
+Read how-to guides to create and mangage your Deployments on BentoCloud.
 
 .. grid:: 1 2 2 2
     :gutter: 3

@@ -2,7 +2,7 @@
 Administering
 =============
 
-Administrator guide
+Guides for users with the Admin role.
 
 .. grid:: 1 2 2 2
     :gutter: 3

@@ -2,7 +2,7 @@
 Scaling
 =======
 
-Read how-to guides to explore the key features of BentoCloud.
+Read how-to guides to scale inference on BentoCloud.
 
 .. grid:: 1 2 2 2
     :gutter: 3

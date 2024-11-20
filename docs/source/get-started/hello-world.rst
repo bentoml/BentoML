@@ -117,6 +117,6 @@ What's next
 -----------
 
 - :doc:`Batch requests <adaptive-batching>`
-- :doc:`Load your own model </build-with-bentoml/model-loading-and-management>` 
+- :doc:`Load your own model </build-with-bentoml/model-loading-and-management>`
 - :doc:`Create a Docker image <packaging-for-deployment>`
 - :doc:`Deploy to the cloud <cloud-deployment>`

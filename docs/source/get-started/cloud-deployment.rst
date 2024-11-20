@@ -2,7 +2,7 @@
 Cloud deployment
 ================
 
-BentoCloud offers serverless infrastructure tailored for AI inference, allowing you to efficiently deploy, manage, and scale any machine learning (ML) models in the cloud. It operates in conjunction with BentoML, an open-source model serving framework, to facilitate the easy creation and deployment of high-performance AI API services with custom code. As the original creators of BentoML and its ecosystem tools like OpenLLM, we seek to improve cost efficiency of your inference workload with our
+BentoCloud offers serverless infrastructure tailored for AI inference, allowing you to efficiently deploy, manage, and scale any models in the cloud. It operates in conjunction with BentoML to facilitate the easy creation and deployment of high-performance AI API services with custom code. As the original creators of BentoML and its ecosystem tools like OpenLLM, we seek to improve cost efficiency of your inference workload with our
 serverless infrastructure optimized for GPUs and fast autoscaling.
 
 Specifically, BentoCloud features:
@@ -65,7 +65,7 @@ Perform the following steps to quickly deploy an example application on BentoClo
 
    .. note::
 
-      You can test this Service locally by running ``bentoml serve service:Summarization``. For details of the Service, see :doc:`/get-started/hello-world`.
+      You can test this Service locally by running ``bentoml serve service:Summarization``.
 
 3. Create a ``bentofile.yaml`` file as below.
 
@@ -115,7 +115,7 @@ Resources
 
 If you are a first-time user of BentoCloud, we recommend you read the following documents to get familiar with BentoCloud:
 
-- Deploy :doc:`example projects </use-cases/index>` to BentoCloud
+- Deploy :doc:`example projects </examples/overview>` to BentoCloud
 - :doc:`/scale-with-bentocloud/deployment/manage-deployments`
 - :doc:`/scale-with-bentocloud/deployment/create-deployments`
 - :doc:`/scale-with-bentocloud/manage-api-tokens`

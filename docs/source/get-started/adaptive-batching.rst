@@ -2,16 +2,12 @@
 Adaptive batching
 =================
 
-Batching refers to the practice of grouping multiple inputs into a single batch for processing, significantly enhancing efficiency and throughput compared to handling inputs individually. In the context of machine learning and data processing, effective batching can dramatically improve performance, especially when dealing with high-volume or real-time data.
-
-There are two main concepts in batching:
+Batching refers to the practice of grouping multiple inputs into a single batch for processing. There are two main concepts in batching:
 
 - **Batch window**: The maximum duration a service waits to accumulate inputs into a batch for processing. This is essentially the maximum latency for processing in a low throughput system. It ensures timely processing, especially in low-traffic conditions, by preventing long waits for small batch completion.
 - **Batch size**: The maximum number of inputs a batch can contain before it's processed. It it used to maximize throughput by leveraging the full capacity of the system's resources within the constraint of the batch window.
 
 BentoML provides a dispatching mechanism called “adaptive batching” that adapts both the batching window and the batch size based on incoming traffic patterns. The dispatching mechanism regresses the recent processing time, wait time, and batch sizes to minimize latency and optimize resource use.
-
-This document explains the concept of adaptive batching in BentoML and its configuration.
 
 Architecture
 ------------
@@ -42,9 +38,7 @@ By default, adaptive batching is disabled. To enable and control it, you use the
     import typing as t
     import numpy as np
 
-    @bentoml.service(
-        resources={"gpu": 1, "memory": "8Gi"},
-    )
+    @bentoml.service
     class BatchService:
         def __init__(self):
             # Model initialization and other setup code

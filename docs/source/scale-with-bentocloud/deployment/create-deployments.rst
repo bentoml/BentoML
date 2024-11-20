@@ -8,7 +8,7 @@ Prerequisites
 -------------
 
 - Make sure you have logged in to BentoCloud using an :doc:`API token </scale-with-bentocloud/manage-api-tokens>` with Developer Operations Access.
-- You have created a BentoML project that contains at least a ``service.py`` file and a ``bentofile.yaml`` file (or you have an available Bento either locally or on BentoCloud). You can use this :doc:`/get-started/hello-world` or any project in :doc:`/use-cases/index`.
+- You have created a BentoML project that contains at least a ``service.py`` file and a ``bentofile.yaml`` file (or you have an available Bento either locally or on BentoCloud). You can use this :doc:`/get-started/hello-world` or any project in :doc:`Examples </examples/overview>`.
 
 Deploy a new project to BentoCloud
 ----------------------------------

@@ -32,11 +32,11 @@ One challenge of serving ComfyUI pipelines as APIs is the lack of a standard sch
 
 1. Identify the widget you'd like to expose as the input by converting it as an input field. Right-click a node and select "Convert Widget to Input" then select the widget name.
 
-    .. image:: ../../_static/img/use-cases/diffusion-models/comfyui/convert_widget.png
+   .. image:: ../../_static/img/use-cases/diffusion-models/comfyui/convert_widget.png
 
 2. Add an input node of the corresponding type by right-clicking the background and selecting "Add Node", "ComfyUI-IDL", "input", then the node type. Connect the input to the widget converted in step 1.
 
-    .. image:: ../../_static/img/use-cases/diffusion-models/comfyui/add_input_node.png
+   .. image:: ../../_static/img/use-cases/diffusion-models/comfyui/add_input_node.png
 
 3. Add an output node by following the same steps as step 2, but selecting "output" instead of "input". Connect the output to the output node.
 
@@ -92,7 +92,9 @@ Verify the behavior of the Bento by running it locally.
 Deploy the workflow a Bento
 ---------------------------
 
-After the Service is ready, you can deploy the project to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $10 in free credits. Follow the instructions to `log in <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>` to BentoCloud.
+After the Service is ready, you can deploy the project to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $10 in free credits.
+
+Follow the instructions to :ref:`log in to BentoCloud <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>`.
 
 .. code-block:: bash
 

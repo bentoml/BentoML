@@ -1,6 +1,6 @@
-========================================
-Manage secrets and environment variables
-========================================
+==============
+Manage secrets
+==============
 
 Secrets can store sensitive data like API keys, authentication tokens, and credentials, essential for accessing various services or resources. BentoCloud provides a secure and flexible environment for injecting required secrets into AI model Deployments.
 

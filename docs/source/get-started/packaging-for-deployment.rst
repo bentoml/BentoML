@@ -2,7 +2,12 @@
 Packaging for deployment
 ========================
 
-A Bento is a format containing all the components - source code, Python packages, as well as model references and configuration - required for running a BentoML Service. Build options refer to a set of configurations defined in a YAML file (typically named ``bentofile.yaml``) for building a BentoML project into a Bento. The following is an example ``bentofile.yaml`` file for :doc:`/get-started/hello-world`.
+BentoML provides a standardized format called Bentos for packaging all the components needed to run AI/ML services - from source code and Python dependencies to model artifacts and configurations. This packaging system ensures your AI services remain consistent and reproducible across different environments.
+
+Bento build options
+-------------------
+
+Build options refer to a set of configurations defined in a YAML file (typically named ``bentofile.yaml``) for building a BentoML project into a Bento. The following is an example for :doc:`/get-started/hello-world`.
 
 .. code-block:: yaml
 
@@ -17,10 +22,7 @@ A Bento is a format containing all the components - source code, Python packages
         - torch
         - transformers
 
-This page explains available Bento build options in ``bentofile.yaml``.
-
-Bento build options
--------------------
+Here are the available fields in this file.
 
 ``service``
 ^^^^^^^^^^^
@@ -605,3 +607,39 @@ Inside the directory, you might see different files and sub-directories dependin
 .. warning::
 
    We do not recommend you change files in a Bento directly, unless it's for debugging purposes.
+
+Containerize a Bento
+--------------------
+
+To containerize a Bento with Docker, simply run ``bentoml containerize <bento_tag>``. For example:
+
+.. code-block:: bash
+
+    bentoml containerize summarization:latest
+
+.. note::
+
+    For Mac computers with Apple silicon, you can specify the ``--platform`` option to avoid potential compatibility issues with some Python libraries.
+
+    .. code-block:: bash
+
+        bentoml containerize --platform=linux/amd64 summarization:latest
+
+The Docker image's tag is the same as the Bento tag by default. View the created Docker image:
+
+.. code-block:: bash
+
+    $ docker images
+
+    REPOSITORY      TAG                IMAGE ID       CREATED         SIZE
+    summarization   lkpxx2u5o24wpxjr   79a06b402644   2 minutes ago   6.66GB
+
+Run the Docker image locally:
+
+.. code-block:: bash
+
+    docker run -it --rm -p 3000:3000 summarization:lkpxx2u5o24wpxjr serve
+
+With the Docker image, you can run the model in any Docker-compatible environment.
+
+If you prefer a serverless platform to build and operate AI applications, you can deploy Bentos to BentoCloud. It gives AI application developers a collaborative environment and a user-friendly toolkit to ship and iterate AI products.

@@ -6,7 +6,7 @@ Hello world
     :description lang=en:
         Serve a simple text summarization model with BentoML.
 
-This tutorial demonstrates how to serve a `text summarization model <https://huggingface.co/sshleifer/distilbart-cnn-12-6>`_ from Hugging Face. You will do the following in this tutorial:
+This tutorial demonstrates how to serve a text summarization model from Hugging Face. You will do the following in this tutorial:
 
 - Set up the BentoML environment
 - Create a BentoML Service
@@ -111,7 +111,7 @@ Expected output:
 
 .. code-block:: bash
 
-    Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly . The event is now being investigated by scientists for potential breaches in the laws of physics . Local authorities considering a town festival to celebrate what is being hailed as 'The Leap of the Century'
+    Hello world! Here's your summary: Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly . The event is now being investigated by scientists for potential breaches in the laws of physics . Local authorities considering a town festival to celebrate what is being hailed as 'The Leap of the Century'
 
 What's next
 -----------

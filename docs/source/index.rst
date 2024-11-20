@@ -127,8 +127,6 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    :caption: Scale with BentoCloud
    :hidden:
 
-   scale-with-bentocloud/concepts
-   scale-with-bentocloud/set-cpu-and-gpu-resources
    scale-with-bentocloud/deployment/index
    scale-with-bentocloud/scaling/index
    scale-with-bentocloud/manage-secrets-and-env-vars

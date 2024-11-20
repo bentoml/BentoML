@@ -495,6 +495,7 @@ class BentoAPI:
         with NamedTemporaryFile() as tar_file:
             with response_ctx as response:
                 if response.status_code != 200:
+                    response.read()
                     raise BentoMLException(
                         f'Failed to download bento "{_tag}": {response.text}'
                     )

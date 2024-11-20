@@ -458,6 +458,7 @@ class ModelAPI:
         with NamedTemporaryFile() as tar_file:
             with response_ctx as response:
                 if response.status_code != 200:
+                    response.read()
                     raise BentoMLException(
                         f'Failed to download model "{_tag}": {response.text}'
                     )

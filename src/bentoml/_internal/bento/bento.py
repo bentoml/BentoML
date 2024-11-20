@@ -182,7 +182,7 @@ class Bento(StoreItem):
     def entry_service(self) -> str:
         return self.info.entry_service
 
-    def get_manifest(self) -> BentoManifestSchema:
+    def get_manifest(self, dev: bool = False) -> BentoManifestSchema:
         from ..cloud.schemas.modelschemas import BentoManifestSchema
         from ..cloud.schemas.modelschemas import BentoRunnerResourceSchema
         from ..cloud.schemas.modelschemas import BentoRunnerSchema
@@ -224,6 +224,7 @@ class Bento(StoreItem):
             envs=info.envs,
             schema=info.schema,
             version=info.version,
+            dev=dev,
             image=image,
         )
 

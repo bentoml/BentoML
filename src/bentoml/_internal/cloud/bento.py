@@ -150,7 +150,7 @@ class BentoAPI:
         labels: list[LabelItemSchema] = [
             LabelItemSchema(key=key, value=value) for key, value in info.labels.items()
         ]
-        manifest = bento.get_manifest()
+        manifest = bento.get_manifest(dev=bare)
         if not remote_bento:
             with self.spinner.spin(
                 text=f'Registering Bento "{bento.tag}" with remote Bento store..'

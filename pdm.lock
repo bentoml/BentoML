@@ -5,7 +5,7 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:506c71ed44098fe76039e45f26956970fe857731ea14ff6c5d52c63fdfe59e6b"
+content_hash = "sha256:3b07478d62b644fab7060d77e50958eb9274815bdc8d0094a7ace7d02d558916"
 
 [[metadata.targets]]
 requires_python = ">=3.9"

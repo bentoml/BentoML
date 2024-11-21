@@ -5,6 +5,37 @@ BentoCloud BYOC Setup Guide for Azure
 
 This document provides step-by-step instructions for configuring the necessary Azure service principal and roles for deploying BentoCloud in your Azure account. By following these steps, you will assign the required roles to a service principal within BentoML's Azure account. This service principal will be used for creating and managing the Azure resources required to operate BentoCloud on your Azure account.
 
+Request quotas
+--------------
+
+To ensure there are no delays in your cluster setup, please make sure you have enough service quotas in your Azure account prior to starting the setup. If not, please request increased quotas in the subscription and region where you will deploy BentoCloud.
+
+To request quotas:
+
+1. Sign in to `the Azure portal <https://portal.azure.com/>`_ and enter ``Quotas`` into the search box, then select **Quotas**. On the **Overview** page, select **Compute**.
+2. `Request quotas <https://cloud.google.com/compute/resource-usage#vm_instance_quota>`_ in the correct subscription and region as per your deployment plan. See the table below for quota details:
+
+   .. list-table::
+      :widths: 10 35 25 30
+      :header-rows: 1
+
+      * - Type
+        - Quota name
+        - Required quantity
+        - Purpose
+      * - CPU
+        - ``Total Regional vCPUs`` and ``Standard DSv3 Family vCPUs``
+        - 32
+        - Run infrastructure workloads, image builder Pods, and serving instances.
+      * - GPU
+        - Depending on needs:
+
+          - T4: ``Standard NCASv3_T4 Family vCPUs``
+          - A100: ``Standard NCADS_A100_v4 Family vCPUs``
+
+        - Based on needs
+        - Run your workloads that require GPUs.
+
 Setup
 -----
 

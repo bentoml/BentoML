@@ -260,12 +260,7 @@ class Bento(StoreItem):
 
         BentoMLContainer.model_aliases.set(build_config.model_aliases)
         # This also verifies that svc can be imported correctly
-        svc = import_service(
-            build_config.service,
-            working_dir=build_ctx,
-            reload=reload,
-            standalone_load=True,
-        )
+        svc = import_service(build_config.service, working_dir=build_ctx, reload=reload)
         is_legacy = isinstance(svc, Service)
         # Apply default build options
         image: Image | None = None

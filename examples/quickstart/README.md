@@ -22,12 +22,12 @@ Perform the following steps to run this project and deploy it to BentoCloud.
    bentoml serve .
    ```
 
-3. Once your Service is ready, you can deploy it to [BentoCloud](https://www.bentoml.com/cloud). Make sure you have [logged in to BentoCloud](https://docs.bentoml.com/en/latest/bentocloud/how-tos/manage-access-token.html) and run the following command to deploy it.
+3. Once your Service is ready, you can deploy it to [BentoCloud](https://www.bentoml.com/cloud). Make sure you have [logged in to BentoCloud](https://docs.bentoml.com/en/latest/scale-with-bentocloud/manage-api-tokens.html) and run the following command to deploy it.
 
    ```
    bentoml deploy .
    ```
 
-   **Note**: Alternatively, you can manually build a Bento, [containerize it with Docker](https://docs.bentoml.com/en/latest/guides/containerization.html), and deploy it in any Docker-compatible environment.
+   **Note**: Alternatively, you can manually build a Bento, [containerize it with Docker](https://docs.bentoml.com/en/latest/get-started/packaging-for-deployment.html), and deploy it in any Docker-compatible environment.
 
-For more information, see [Quickstart in the BentoML documentation](https://docs.bentoml.com/en/latest/get-started/quickstart.html).
+For more information, see [Quickstart in the BentoML documentation](https://docs.bentoml.com/en/latest/get-started/hello-world.html).

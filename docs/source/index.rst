@@ -116,6 +116,7 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    build-with-bentoml/gpu-inference
    build-with-bentoml/clients
    build-with-bentoml/parallelize-requests
+   build-with-bentoml/distributed-services
    build-with-bentoml/lifecycle-hooks
    build-with-bentoml/asgi
    build-with-bentoml/gradio

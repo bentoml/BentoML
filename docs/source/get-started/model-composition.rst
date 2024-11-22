@@ -42,7 +42,7 @@ Examples of ensemble modeling include Random Forest, which is a type of bagged e
 Varied hardware and scaling needs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Different models may have unique hardware requirements and scaling behaviors, making it necessary to compose models to allocate resources efficiently. BentoML allows you to deploy :doc:`multiple Services </guides/distributed-services>`, each wrapping a model, on dedicated hardware devices (CPU and GPU servers) and independently scale them on BentoCloud.
+Different models may have unique hardware requirements and scaling behaviors, making it necessary to compose models to allocate resources efficiently. BentoML allows you to deploy :doc:`multiple Services </build-with-bentoml/distributed-services>`, each wrapping a model, on dedicated hardware devices (CPU and GPU servers) and independently scale them on BentoCloud.
 
 Here is an example ``service.py`` file containing multiple models with varied hardware needs:
 

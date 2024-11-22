@@ -97,7 +97,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
 
    Key elements within the ``ExchangeAssistant`` Service:
 
-   - ``bentoml.depends()``: This function calls the ``Llama`` Service as a dependency, which allows ``ExchangeAssistant`` to utilize all its functionalities. For more information, see :doc:`/guides/distributed-services`.
+   - ``bentoml.depends()``: This function calls the ``Llama`` Service as a dependency, which allows ``ExchangeAssistant`` to utilize all its functionalities. For more information, see :doc:`/build-with-bentoml/distributed-services`.
    - Service initialization: Because the ``Llama`` Service provides OpenAI-compatible endpoints, you can use its HTTP client and ``client_url`` to construct an OpenAI client to interact with it.
    - A front-facing API ``/exchange``: Define the endpoint using the ``@bentoml.api`` decorator to handle currency exchange queries.
 

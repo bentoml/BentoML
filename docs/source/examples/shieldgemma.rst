@@ -99,7 +99,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
 
 3. Create another BentoML Service ``ShieldAssistant`` as the agent that determines whether or not to call the OpenAI API based on the safety of the prompt. It contains two main components:
 
-   - ``bentoml.depends()`` calls the ``Gemma`` Service as a dependency. It allows ``ShieldAssistant`` to utilize to all its functionalities, like calling its ``check`` endpoint to evaluates the safety of prompts. For more information, see :doc:`Distributed Services </guides/distributed-services>`.
+   - ``bentoml.depends()`` calls the ``Gemma`` Service as a dependency. It allows ``ShieldAssistant`` to utilize to all its functionalities, like calling its ``check`` endpoint to evaluates the safety of prompts. For more information, see :doc:`Distributed Services </build-with-bentoml/distributed-services>`.
    - The ``generate`` API endpoint is the front-facing part of this Service. It first checks the safety of the prompt using the ``Gemma`` Service. If the prompt passes the safety check, the endpoint creates an OpenAI client and calls the GPT-3.5 Turbo model to generate a response. If the prompt is unsafe (the score exceeds the defined threshold), it raises an exception ``UnsafePrompt``.
 
    .. code-block:: python

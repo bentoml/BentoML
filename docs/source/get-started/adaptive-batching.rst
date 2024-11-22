@@ -29,7 +29,7 @@ In scenarios with multiple Services, BentoML manages the complexity of batching 
 It is important to note that:
 
 - The adaptive batching algorithm continuously learns and adjusts the batching parameters based on recent trends in request patterns and processing time. This means that during high traffic time, batches are likely to be larger and processed more frequently, whereas during quieter periods, BentoML will prioritize reducing latency, even if that means smaller batch sizes.
-- You use the ``bentoml.depends()`` function by passing the dependent Service class as an argument. This allows one Service to use the functionalities of another. This is particularly useful when the processing pipeline involves multiple steps or when different models are used in conjunction. For details, see :doc:`/guides/distributed-services`.
+- You use the ``bentoml.depends()`` function by passing the dependent Service class as an argument. This allows one Service to use the functionalities of another. This is particularly useful when the processing pipeline involves multiple steps or when different models are used in conjunction. For details, see :doc:`/build-with-bentoml/distributed-services`.
 - The order of the requests in a batch is not guaranteed.
 
 Configure adaptive batching
@@ -190,7 +190,7 @@ Specifically, perform the following three steps to create a similar ``service.py
 
 1. **Define composite input types with Pydantic**. The Pydantic model (``BatchInput`` in this example) groups together all the parameters needed for processing a batch of requests. Each ``BatchInput`` instance represents a single request's parameters, like ``image`` and ``threshold``.
 2. **Create the primary Service for inference**. The primary BentoML Service ``ImageService`` has a batchable API method to accept a list of ``BatchInput`` objects. In this example, the method processes each input in the batch using the provided image and threshold values and returns a list of results.
-3. **Set a wrapper Service for single requests**. The wrapper Service defines an API ``generate`` that accepts individual parameters (``image`` and ``threshold``) for a single request. It uses ``bentoml.depends`` to invoke the ``ImageService``'s batchable ``predict`` method with a list containing a single ``BatchInput`` instance. The result for this individual request is then returned. For more information about creating multiple Services, see :doc:`/guides/distributed-services`.
+3. **Set a wrapper Service for single requests**. The wrapper Service defines an API ``generate`` that accepts individual parameters (``image`` and ``threshold``) for a single request. It uses ``bentoml.depends`` to invoke the ``ImageService``'s batchable ``predict`` method with a list containing a single ``BatchInput`` instance. The result for this individual request is then returned. For more information about creating multiple Services, see :doc:`/build-with-bentoml/distributed-services`.
 
 The primary Service performs the core inference logic in batches, improving efficiency and throughput. The wrapper Service serves as an interface for clients to send individual requests, encapsulating the complexity of batching and simplifying client interactions. This pattern enables you to leverage BentoML's adaptive batching features while accommodating more complex input structures that include multiple parameters per request.
 

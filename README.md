@@ -139,17 +139,16 @@ bentoml deploy .
 
 For detailed explanations, read the [Hello World example](https://docs.bentoml.com/en/latest/get-started/hello-world.html).
 
-## Use cases
+## Examples
 
-- LLMs: [Llama 3.1](https://github.com/bentoml/BentoVLLM/tree/main/llama3.1-8b-instruct), [Mixtral](https://github.com/bentoml/BentoVLLM/tree/main/mixtral-8x7b-instruct), [Solar](https://github.com/bentoml/BentoVLLM/tree/main/solar-10.7b-instruct), [Mistral](https://github.com/bentoml/BentoVLLM/tree/main/mistral-7b-instruct), and [more](https://github.com/bentoml/BentoVLLM)
-- Image Generation: [Stable Diffusion 3 Medium](https://github.com/bentoml/BentoDiffusion/tree/main/sd3-medium), [Stable Video Diffusion](https://github.com/bentoml/BentoDiffusion/tree/main/svd), [Stable Diffusion XL Turbo](https://github.com/bentoml/BentoDiffusion/tree/main/sdxl-turbo), [ControlNet](https://github.com/bentoml/BentoDiffusion/tree/main/controlnet), [LCM LoRAs](https://github.com/bentoml/BentoDiffusion/tree/main/lcm), and [more](https://github.com/bentoml/BentoDiffusion).
-- Text Embeddings: [SentenceTransformers](https://github.com/bentoml/BentoSentenceTransformers)
+- LLMs: [Llama 3.2](https://github.com/bentoml/BentoVLLM/tree/main/llama3.2-90b-instruct), [Mixtral](https://github.com/bentoml/BentoVLLM/tree/main/mixtral-8x7b-instruct), [Solar](https://github.com/bentoml/BentoVLLM/tree/main/solar-10.7b-instruct), and [Mistral](https://github.com/bentoml/BentoVLLM/tree/main/mistral-7b-instruct).
+- Image Generation: [Stable Diffusion 3 Medium](https://github.com/bentoml/BentoDiffusion/tree/main/sd3-medium), [Stable Video Diffusion](https://github.com/bentoml/BentoDiffusion/tree/main/svd), [Stable Diffusion XL Turbo](https://github.com/bentoml/BentoDiffusion/tree/main/sdxl-turbo), [ControlNet](https://github.com/bentoml/BentoDiffusion/tree/main/controlnet), and [LCM LoRAs](https://github.com/bentoml/BentoDiffusion/tree/main/lcm).
+- Embeddings: [SentenceTransformers](https://github.com/bentoml/BentoSentenceTransformers) and [ColPali](https://github.com/bentoml/BentoColPali)
 - Audio: [ChatTTS](https://github.com/bentoml/BentoChatTTS), [XTTS](https://github.com/bentoml/BentoXTTS), [WhisperX](https://github.com/bentoml/BentoWhisperX), [Bark](https://github.com/bentoml/BentoBark)
-- Computer Vision: [YOLO](https://github.com/bentoml/BentoYolo)
-- Multimodal: [BLIP](https://github.com/bentoml/BentoBlip), [CLIP](https://github.com/bentoml/BentoClip)
-- RAG: [RAG-as-a-Service with custom models](https://github.com/bentoml/rag-tutorials)
+- Computer Vision: [YOLO](https://github.com/bentoml/BentoYolo) and [ResNet](https://github.com/bentoml/BentoResnet)
+- Advanced examples: [Function calling](https://github.com/bentoml/BentoFunctionCalling), [LangGraph](https://github.com/bentoml/BentoLangGraph), [CrewAI](https://github.com/bentoml/BentoCrewAI)
 
-Check out the [examples](./examples/) folder for more sample code and usage.
+Check out the [full list](https://docs.bentoml.com/en/latest/examples/overview.html) for more sample code and usage.
 
 ## Advanced topics
 
@@ -157,7 +156,7 @@ Check out the [examples](./examples/) folder for more sample code and usage.
 - [Workers and model parallelization](https://docs.bentoml.com/en/latest/build-with-bentoml/parallelize-requests.html)
 - [Adaptive batching](https://docs.bentoml.com/en/latest/get-started/adaptive-batching.html)
 - [GPU inference](https://docs.bentoml.com/en/latest/build-with-bentoml/gpu-inference.html)
-- [Distributed serving systems](https://docs.bentoml.com/en/latest/guides/distributed-services.html)
+- [Distributed serving systems](https://docs.bentoml.com/en/latest/build-with-bentoml/distributed-services.html)
 - [Concurrency and autoscaling](https://docs.bentoml.com/en/latest/scale-with-bentocloud/scaling/autoscaling.html)
 - [Model loading and Model Store](https://docs.bentoml.com/en/latest/build-with-bentoml/model-loading-and-management.html)
 - [Observability](https://docs.bentoml.com/en/latest/build-with-bentoml/observability/index.html)

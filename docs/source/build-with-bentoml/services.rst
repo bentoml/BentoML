@@ -255,7 +255,7 @@ However, directly calling synchronous blocking functions within an asynchronous 
 
 .. note::
 
-    ``bentoml.depends()`` is commonly used for interservice communication as it allows you to directly call the API methods of a BentoML Service within another Service as if they were local class functions. For more information, see :doc:`/guides/distributed-services`.
+    ``bentoml.depends()`` is commonly used for interservice communication as it allows you to directly call the API methods of a BentoML Service within another Service as if they were local class functions. For more information, see :doc:`/build-with-bentoml/distributed-services`.
 
 In this example, the ``.to_async`` property converts synchronous methods (``txt2img`` and ``synthesize`` of ``SDXLTurboService`` and ``XTTSService`` respectively) into their asynchronous versions, enabling the ``generate_card`` method to perform multiple asynchronous operations concurrently with ``asyncio.gather``.
 

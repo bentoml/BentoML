@@ -35,6 +35,20 @@ if t.TYPE_CHECKING:
     from _bentoml_impl.serde import Serde
 
 
+try:
+    from pydantic._internal._typing_extra import eval_type_lenient
+except ImportError:
+
+    def eval_type_lenient(
+        value: t.Any,
+        globalns: dict[str, t.Any] | None,
+        localns: dict[str, t.Any] | None,
+    ) -> t.Any:
+        from pydantic._internal._typing_extra import eval_type
+
+        return eval_type(value, globalns, localns, lenient=True)
+
+
 DEFAULT_TEXT_MEDIA_TYPE = "text/plain"
 logger = logging.getLogger("bentoml.serve")
 
@@ -306,8 +320,6 @@ class IODescriptor(IOMixin, BaseModel):
     def from_input(
         cls, func: t.Callable[..., t.Any], *, skip_self: bool = False
     ) -> type[IODescriptor]:
-        from pydantic._internal._typing_extra import eval_type_lenient
-
         try:
             module = sys.modules[func.__module__]
         except KeyError:
@@ -356,8 +368,6 @@ class IODescriptor(IOMixin, BaseModel):
 
     @classmethod
     def from_output(cls, func: t.Callable[..., t.Any]) -> type[IODescriptor]:
-        from pydantic._internal._typing_extra import eval_type_lenient
-
         try:
             module = sys.modules[func.__module__]
         except KeyError:

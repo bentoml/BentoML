@@ -142,11 +142,17 @@ class IOMixin:
         from ._pydantic import CUSTOM_PREPARE_METHODS
 
         for _, info in cls.model_fields.items():
+            if is_annotated(info.annotation):
+                origin, *args = get_args(info.annotation)
+            else:
+                origin = info.annotation
+                args = []
             for method in CUSTOM_PREPARE_METHODS:
-                result = method(info.annotation, info.metadata, cls.model_config)
+                result = method(origin, args, cls.model_config)
                 if result is None:
                     continue
-                info.annotation, info.metadata = result
+                info.annotation = t.Annotated[(result[0], *result[1])]  # type: ignore
+                break
 
         return super().__get_pydantic_core_schema__(source, handler)
 

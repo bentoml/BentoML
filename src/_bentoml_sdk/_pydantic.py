@@ -184,6 +184,8 @@ def pathlib_prepare_pydantic_annotations(
 
 
 CUSTOM_PREPARE_METHODS = [
+    # path
+    pathlib_prepare_pydantic_annotations,
     # tensors
     numpy_prepare_pydantic_annotations,
     torch_prepare_pydantic_annotations,

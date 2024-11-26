@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import io
+import json
 import logging
 import pathlib
 import sys
@@ -9,9 +10,8 @@ import typing as t
 from typing import ClassVar
 
 from pydantic import BaseModel
-from pydantic import ConfigDict
 from pydantic import Field
-from pydantic import RootModel
+from pydantic import TypeAdapter
 from pydantic import create_model
 from pydantic._internal._typing_extra import is_annotated
 from starlette.responses import Response
@@ -19,7 +19,6 @@ from typing_extensions import get_args
 
 from bentoml._internal.service.openapi.specification import Schema
 
-from ._pydantic import BentoMLPydanticGenerateSchema
 from .typing_utils import is_image_type
 from .typing_utils import is_iterator_type
 from .typing_utils import is_list_type
@@ -79,7 +78,6 @@ class IterableResponse(Response):
 class IOMixin:
     multipart_fields: ClassVar[t.List[str]]
     media_type: ClassVar[t.Optional[str]] = None
-    model_config = ConfigDict(schema_generator=BentoMLPydanticGenerateSchema)
 
     @classmethod
     def openapi_components(cls, name: str) -> dict[str, Schema]:
@@ -89,7 +87,7 @@ class IOMixin:
         json_schema = cls.model_json_schema(ref_template=REF_TEMPLATE)
         defs = json_schema.pop("$defs", None)
         components: dict[str, Schema] = {}
-        if not issubclass(cls, RootModel):
+        if not issubclass(cls, IORootModel):
             main_name = (
                 f"{name}__{cls.__name__}"
                 if cls.__name__ in ("Input", "Output")
@@ -106,7 +104,7 @@ class IOMixin:
     def mime_type(cls) -> str:
         if cls.media_type is not None:
             return cls.media_type
-        if not issubclass(cls, RootModel):
+        if not issubclass(cls, IORootModel):
             if cls.multipart_fields:
                 return "multipart/form-data"
             return "application/json"
@@ -124,6 +122,19 @@ class IOMixin:
                 return "video/*"
             return "application/octet-stream"
         return "application/json"
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls: type[BaseModel], source, handler):
+        from ._pydantic import CUSTOM_PREPARE_METHODS
+
+        for _, info in cls.model_fields.items():
+            for method in CUSTOM_PREPARE_METHODS:
+                result = method(info.annotation, info.metadata, cls.model_config)
+                if result is None:
+                    continue
+                info.annotation, info.metadata = result
+
+        return super().__get_pydantic_core_schema__(source, handler)
 
     @classmethod
     def __pydantic_init_subclass__(cls) -> None:
@@ -176,7 +187,6 @@ class IOMixin:
         import itertools
         import mimetypes
 
-        from pydantic import RootModel
         from starlette.responses import FileResponse
         from starlette.responses import Response
         from starlette.responses import StreamingResponse
@@ -203,7 +213,9 @@ class IOMixin:
                         if isinstance(item, (str, bytes)):
                             yield item
                         else:
-                            obj_item = cls(item) if issubclass(cls, RootModel) else item
+                            obj_item = (
+                                cls(item) if issubclass(cls, IORootModel) else item
+                            )
                             for chunk in serde.serialize_model(
                                 t.cast(IODescriptor, obj_item)
                             ).data:
@@ -226,7 +238,9 @@ class IOMixin:
                         if isinstance(item, (str, bytes)):
                             yield item
                         else:
-                            obj_item = cls(item) if issubclass(cls, RootModel) else item
+                            obj_item = (
+                                cls(item) if issubclass(cls, IORootModel) else item
+                            )
                             yield from serde.serialize_model(
                                 t.cast(IODescriptor, obj_item)
                             ).data
@@ -234,7 +248,7 @@ class IOMixin:
                     logger.exception("Error while streaming response")
 
             return StreamingResponse(content_stream(), media_type=cls.mime_type())
-        elif not issubclass(cls, RootModel):
+        elif not issubclass(cls, IORootModel):
             if cls.multipart_fields:
                 return Response(
                     "Multipart response is not supported yet", status_code=500
@@ -268,7 +282,7 @@ class IOMixin:
                         media_type=f"image/{image_format.lower()}",
                     )
 
-            if not isinstance(obj, RootModel):
+            if not isinstance(obj, IORootModel):
                 ins: IODescriptor = t.cast(IODescriptor, cls(obj))
             else:
                 ins = t.cast(IODescriptor, obj)
@@ -381,8 +395,36 @@ class IODescriptor(IOMixin, BaseModel):
 RootModelRootType = t.TypeVar("RootModelRootType")
 
 
-class IORootModel(IOMixin, RootModel[RootModelRootType]):
-    pass
+class IORootModel(IODescriptor, t.Generic[RootModelRootType]):
+    root: RootModelRootType
+
+    def __init__(self, root: RootModelRootType) -> None:
+        super().__init__(root=root)  # type: ignore
+
+    def model_dump(self, **kwargs: t.Any) -> dict[str, t.Any]:
+        return super().model_dump(**kwargs)["root"]
+
+    def model_dump_json(self, **kwargs: t.Any) -> str:
+        return json.dumps(self.model_dump(**kwargs))
+
+    @classmethod
+    def model_validate(cls, obj: t.Any, **kwargs: t.Any) -> t.Self:
+        return super().model_validate({"root": obj}, **kwargs)
+
+    @classmethod
+    def model_validate_json(
+        cls, json_data: str | bytes | bytearray, **kwargs: t.Any
+    ) -> t.Self:
+        return cls.model_validate(json.loads(json_data), **kwargs)
+
+    @classmethod
+    def model_json_schema(cls, *args: t.Any, **kwargs: t.Any) -> dict[str, t.Any]:
+        field = cls.model_fields["root"]
+        if field.metadata:
+            typ_ = t.Annotated[(field.annotation, *field.metadata)]
+        else:
+            typ_ = field.annotation
+        return TypeAdapter(typ_).json_schema(*args, **kwargs)
 
 
 def ensure_io_descriptor(typ_: type) -> type[IODescriptor]:

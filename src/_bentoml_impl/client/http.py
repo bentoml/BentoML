@@ -18,7 +18,6 @@ from urllib.parse import urlparse
 
 import attr
 import httpx
-from pydantic import RootModel
 
 from _bentoml_sdk import IODescriptor
 from _bentoml_sdk.typing_utils import is_image_type
@@ -358,6 +357,8 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         )
 
     def _deserialize_output(self, payload: Payload, endpoint: ClientEndpoint) -> t.Any:
+        from _bentoml_sdk.io_models import IORootModel
+
         data = iter(payload.data)
         if (endpoint.output.get("type")) == "string":
             content = bytes(next(data))
@@ -366,7 +367,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             return content.decode("utf-8")
         elif endpoint.output_spec is not None:
             model = self.serde.deserialize_model(payload, endpoint.output_spec)
-            if isinstance(model, RootModel):
+            if isinstance(model, IORootModel):
                 return model.root  # type: ignore
             return model
         else:

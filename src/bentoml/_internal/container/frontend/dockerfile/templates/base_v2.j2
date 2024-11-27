@@ -16,6 +16,7 @@
 #
 # ===========================================
 {% endif %}
+FROM ghcr.io/astral-sh/uv:0.5.4 as uv
 
 # Block SETUP_BENTO_BASE_IMAGE
 {% block SETUP_BENTO_BASE_IMAGE %}
@@ -64,9 +65,9 @@ RUN command -v apt-get && apt-get update && apt-get -y install {{ required_packa
 {% for command in __options__commands %}
 RUN {{ command }}
 {% endfor %}
-
-RUN curl -LO https://astral.sh/uv/install.sh && \
-    sh install.sh && rm install.sh && mv $HOME/.local/bin/uv /usr/local/bin/ && uv venv --python {{ __options__python_version }}
+COPY --from=uv /uv /usr/local/bin/uv
+COPY --from=uv /uvx /usr/local/bin/uvx
+RUN uv venv --python {{ __options__python_version }}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/") %}
 {% if __pip_preheat_packages__ %}
 {% for value in __pip_preheat_packages__ -%}

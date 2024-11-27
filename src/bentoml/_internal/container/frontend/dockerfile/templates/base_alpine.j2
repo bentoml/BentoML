@@ -9,8 +9,8 @@
 ENV ENV /root/.bashrc
 
 ENV UV_SYSTEM_PYTHON=1
-RUN curl -LO https://astral.sh/uv/install.sh && \
-    sh install.sh && rm install.sh && mv $HOME/.local/bin/uv /usr/local/bin/
+COPY --from=uv /uv /usr/local/bin/uv
+COPY --from=uv /uvx /usr/local/bin/uvx
 
 {% if __options__system_packages is not none %}
 # Install user-defined system package

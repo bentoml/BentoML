@@ -4,7 +4,6 @@ dependencies = [
     "scikit-learn",
     "pandas",
     "bentoml[monitor-otlp]>=1.0.19",
-    "pydantic<2.10",
 ]
 
 [dependency-groups]

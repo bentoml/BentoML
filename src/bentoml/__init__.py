@@ -104,6 +104,7 @@ if TYPE_CHECKING:
     from _bentoml_impl.loader import importing
     from _bentoml_sdk import IODescriptor
     from _bentoml_sdk import api
+    from _bentoml_sdk import asgi_app
     from _bentoml_sdk import depends
     from _bentoml_sdk import get_current_service
     from _bentoml_sdk import images
@@ -252,6 +253,7 @@ else:
         "depends",
         "on_shutdown",
         "on_deployment",
+        "asgi_app",
         "mount_asgi_app",
         "get_current_service",
         "IODescriptor",
@@ -363,6 +365,7 @@ __all__ = [
     "validators",
     "Field",
     "get_current_service",
+    "asgi_app",
     "mount_asgi_app",
     # new implementation
     "SyncHTTPClient",

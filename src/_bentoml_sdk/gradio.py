@@ -5,7 +5,7 @@ from pathlib import Path
 
 from bentoml.exceptions import MissingDependencyException
 
-from .decorators import mount_asgi_app
+from .decorators import asgi_app
 
 R = t.TypeVar("R")
 
@@ -55,7 +55,7 @@ def mount_gradio_app(blocks: Blocks, path: str, name: str = "gradio_ui"):
         blocks.root_path = path
         blocks.favicon_path = favicon_path
         gradio_app = gr.routes.App.create_app(blocks, app_kwargs={"root_path": path})
-        mount_asgi_app(gradio_app, path=path, name=name)(obj)
+        asgi_app(gradio_app, path=path, name=name)(obj)
 
         # @bentoml.service() decorator returns a wrapper instead of the original class
         # Check if the object is an instance of Service

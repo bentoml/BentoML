@@ -103,7 +103,7 @@ def api(
     return wrapper
 
 
-def mount_asgi_app(
+def asgi_app(
     app: ASGIApp, *, path: str = "/", name: str | None = None
 ) -> t.Callable[[R], R]:
     """Mount an ASGI app to the service.

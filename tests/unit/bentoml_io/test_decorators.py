@@ -18,7 +18,7 @@ def test_mount_asgi_app():
 
     app = FastAPI()
 
-    @bentoml.mount_asgi_app(app, path="/test")
+    @bentoml.asgi_app(app, path="/test")
     @bentoml.service(metrics={"enabled": False})
     class TestService:
         @app.get("/hello")
@@ -37,7 +37,7 @@ def test_mount_asgi_app_later():
     app = FastAPI()
 
     @bentoml.service(metrics={"enabled": False})
-    @bentoml.mount_asgi_app(app, path="/test")
+    @bentoml.asgi_app(app, path="/test")
     class TestService:
         @app.get("/hello")
         def hello(self):

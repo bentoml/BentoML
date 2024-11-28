@@ -421,7 +421,7 @@ class IORootModel(IODescriptor, t.Generic[RootModelRootType]):
         return super().model_dump(**kwargs)["root"]
 
     def model_dump_json(self, **kwargs: t.Any) -> str:
-        return json.dumps(self.model_dump(**kwargs))
+        return json.dumps(self.model_dump(mode="json", **kwargs))
 
     @classmethod
     def model_validate(cls, obj: t.Any, **kwargs: t.Any) -> t.Self:

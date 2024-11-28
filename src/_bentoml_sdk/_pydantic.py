@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 
-from pydantic import GenerateSchema
 from pydantic._internal import _known_annotated_metadata
 
 from .typing_utils import get_args
@@ -195,31 +194,3 @@ CUSTOM_PREPARE_METHODS = [
     # PIL image
     pil_prepare_pydantic_annotations,
 ]
-
-
-class BentoMLPydanticGenerateSchema(GenerateSchema):
-    def _get_prepare_pydantic_annotations_for_known_type(
-        self, obj: t.Any, annotations: t.Iterable[t.Any]
-    ) -> tuple[t.Any, list[t.Any]] | None:
-        # Check for hashability
-        try:
-            hash(obj)
-        except TypeError:
-            # obj is definitely not a known type if this fails
-            return None
-        # try path preparer first to override the default one
-        res = pathlib_prepare_pydantic_annotations(
-            obj, annotations, self._config_wrapper.config_dict
-        )
-        if res is not None:
-            return res
-
-        res = super()._get_prepare_pydantic_annotations_for_known_type(obj, annotations)
-        if res is not None:
-            return res
-
-        for preparer in CUSTOM_PREPARE_METHODS:
-            res = preparer(obj, annotations, self._config_wrapper.config_dict)
-            if res is not None:
-                return res
-        return None

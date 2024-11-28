@@ -116,7 +116,7 @@ class RunnerAppFactory(BaseAppFactory):
 
     @property
     def on_shutdown(self) -> list[LifecycleHook]:
-        on_shutdown: list[LifecycleHook] = [self.runner.destroy]
+        on_shutdown: list[LifecycleHook] = [with_app_arg(self.runner.destroy)]
         for dispatcher in self.dispatchers.values():
             on_shutdown.append(with_app_arg(dispatcher.shutdown))
         on_shutdown.extend(super().on_shutdown)

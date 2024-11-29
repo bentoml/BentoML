@@ -1,12 +1,12 @@
-===============================
-Unified Model Serving Framework
-===============================
+==========================
+Unified Inference Platform
+==========================
 
 |github_stars| |pypi_status| |actions_status| |documentation_status| |join_slack|
 
 ----
 
-`BentoML <https://github.com/bentoml/BentoML>`_ is a Python library for building online serving systems optimized for AI applications and model inference.
+BentoML is a unified AI inference platform for deploying and scaling AI models with production-grade reliability, all without the complexity of managing infrastructure. It enables your developers to build AI systems 10x faster with custom models, scale efficiently in your cloud, and maintain complete control over security and compliance.
 
 Featured examples
 -----------------
@@ -51,7 +51,7 @@ See :doc:`/examples/overview` to learn more.
 Install BentoML
 ---------------
 
-BentoML is distributed as a Python package available on `PyPI <https://pypi.org/project/bentoml/>`_. You can install it on Linux/UNIX, Windows, and macOS.
+The BentoML inference platform is powered by our widely adopted `open-source framework <https://github.com/bentoml/BentoML>`_, which is distributed as a Python package available on `PyPI <https://pypi.org/project/bentoml/>`_. You can install it on Linux/UNIX, Windows, and macOS.
 
 Install BentoML Python package with `pip <https://pip.pypa.io/en/stable/installation/>`_:
 
@@ -65,6 +65,19 @@ To verify your installation:
 .. code-block:: bash
 
     bentoml --help
+
+Architecture
+------------
+
+The BentoML inference platform converts your models and code into production-ready AI APIs. It runs on all major public clouds and on-premises environments.
+
+It consists of three core components:
+
+- BentoML Open-Source Framework
+- BentoCloud Deployment Management Platform
+- BentoCloud Compute Orchestration Engine
+
+.. image:: ../../_static/img/bentoml-inference-platform-architecture.png
 
 Stay informed
 -------------

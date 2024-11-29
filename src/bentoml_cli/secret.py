@@ -89,58 +89,43 @@ def list(
 def parse_kvs_argument_callback(
     ctx: Context,
     params: Parameter,
-    value: t.Any,  # pylint: disable=unused-argument
-) -> t.List[t.Tuple[str, str]]:
+    value: tuple[str, ...],  # pylint: disable=unused-argument
+) -> t.List[tuple[str, str]]:
     """
     split "key1=value1 key2=value2" into [("key1", "value1"), ("key2", "value2")],
     """
-    key_vals: t.List[t.Tuple[str, str]] = []
+    key_vals: t.List[tuple[str, str]] = []
     for key_val in value:
         key, val = key_val.split("=")
         if not key or not val:
             raise click.BadParameter(f"Invalid key-value pair: {key_val}")
+        if val.startswith("@"):
+            filename = resolve_user_filepath(val[1:], ctx=None)
+            if not os.path.exists(filename) or not os.path.isfile(filename):
+                raise click.BadParameter(f"Invalid file path: {filename}")
+            # read the file content
+            with open(filename, "r") as f:
+                val = f.read()
         key_vals.append((key, val))
     return key_vals
 
 
-def parse_from_literal_argument_callback(
+def read_dotenv_callback(
     ctx: Context,
     params: Parameter,
-    value: t.Any,  # pylint: disable=unused-argument
-) -> t.List[t.Tuple[str, str]]:
-    """
-    split "key1=value1 key2=value2" into [("key1", "value1"), ("key2", "value2")],
-    """
-    from_literal: t.List[t.Tuple[str, str]] = []
-    for key_val in value:
-        key, val = key_val.split("=")
-        if not key or not val:
-            raise click.BadParameter(f"Invalid key-value pair: {key_val}")
-        from_literal.append((key, val))
-    return from_literal
+    value: tuple[str, ...],  # pylint: disable=unused-argument
+) -> t.List[tuple[str, str]]:
+    from dotenv import dotenv_values
 
+    env_map: dict[str, str] = {}
 
-def parse_from_file_argument_callback(
-    ctx: Context,
-    params: Parameter,
-    value: t.Any,  # pylint: disable=unused-argument
-) -> t.List[t.Tuple[str, str]]:
-    """
-    split "key1=value1 key2=value2" into [("key1", "value1"), ("key2", "value2")],
-    """
-    from_file: t.List[t.Tuple[str, str]] = []
-    for key_path in value:
-        key, path = key_path.split("=")
+    for path in value:
         path = resolve_user_filepath(path, ctx=None)
-        if not key or not path:
-            raise click.BadParameter(f"Invalid key-path pair: {key_path}")
         if not os.path.exists(path) or not os.path.isfile(path):
-            raise click.BadParameter(f"Invalid path: {path}")
-        # read the file content
-        with open(path, "r") as f:
-            val = f.read()
-        from_file.append((key, val))
-    return from_file
+            raise click.BadParameter(f"Invalid file path: {path}")
+        values = {k: v for k, v in dotenv_values(path).items() if v is not None}
+        env_map.update(values)
+    return list(env_map.items())
 
 
 def raise_secret_error(err: BentoMLException, action: str) -> t.NoReturn:
@@ -192,17 +177,16 @@ def map_choice_to_type(ctx: Context, params: Parameter, value: t.Any):
 @click.option(
     "-l",
     "--from-literal",
-    type=click.STRING,
     help="Pass key value pairs by --from-literal key1=value1 key2=value2",
-    callback=parse_from_literal_argument_callback,
-    multiple=True,
+    is_flag=True,
+    hidden=True,
 )
 @click.option(
     "-f",
     "--from-file",
-    type=click.STRING,
-    help="Pass key value pairs by --from-file key1=./path_to_file1 key2=./path_to_file2",
-    callback=parse_from_file_argument_callback,
+    metavar="DOTENV_FILE",
+    help="Read environment variables from dotenv file",
+    callback=read_dotenv_callback,
     multiple=True,
 )
 @inject
@@ -211,25 +195,27 @@ def create(
     description: str | None,
     type: t.Literal["env", "mountfile"],
     path: str | None,
-    key_vals: t.List[t.Tuple[str, str]],
-    from_literal: t.List[t.Tuple[str, str]],
-    from_file: t.List[t.Tuple[str, str]],
+    key_vals: t.List[tuple[str, str]],
+    from_literal: bool,
+    from_file: t.List[tuple[str, str]],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
-    """Create a secret on BentoCloud."""
+    """Create a secret on BentoCloud.
+
+    Pass key value pairs by key1=value1 key2=value2
+
+    Pass key value from file by key1=@./path_to_file1 key2=@./path_to_file2
+    """
     try:
-        if from_literal and from_file:
-            raise BentoMLException(
-                "options --from-literal and --from-file can not be used together"
+        if from_literal:
+            click.echo(
+                "--from-literal is deprecated and does not take effect.", err=True
             )
 
-        key_vals.extend(from_literal)
         key_vals.extend(from_file)
 
         if not key_vals:
-            raise BentoMLException(
-                "no key-value pairs provided, please use --from-literal or --from-file or provide key-value pairs"
-            )
+            raise click.BadParameter("At least one key-value pair is required")
 
         if type == "mountfile" and not path:
             path = "$BENTOML_HOME"
@@ -301,17 +287,16 @@ def delete(
 @click.option(
     "-l",
     "--from-literal",
-    type=click.STRING,
     help="Pass key value pairs by --from-literal key1=value1 key2=value2",
-    callback=parse_from_literal_argument_callback,
-    multiple=True,
+    hidden=True,
+    is_flag=True,
 )
 @click.option(
     "-f",
     "--from-file",
-    type=click.STRING,
-    help="Pass key value pairs by --from-file key1=./path_to_file1 key2=./path_to_file2",
-    callback=parse_from_file_argument_callback,
+    metavar="DOTENV_FILE",
+    help="Read environment variables from dotenv file",
+    callback=read_dotenv_callback,
     multiple=True,
 )
 @inject
@@ -321,24 +306,26 @@ def apply(
     type: t.Literal["env", "mountfile"],
     path: str | None,
     key_vals: t.List[t.Tuple[str, str]],
-    from_literal: t.List[t.Tuple[str, str]],
+    from_literal: bool,
     from_file: t.List[t.Tuple[str, str]],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
-    """Apply a secret update on BentoCloud."""
+    """Apply a secret update on BentoCloud.
+
+    Pass key value pairs by key1=value1 key2=value2
+
+    Pass key value from file by key1=@./path_to_file1 key2=@./path_to_file2
+    """
     try:
-        if from_literal and from_file:
-            raise BentoMLException(
-                "options --from-literal and --from-file can not be used together"
+        if from_literal:
+            click.echo(
+                "--from-literal is deprecated and does not take effect.", err=True
             )
 
-        key_vals.extend(from_literal)
         key_vals.extend(from_file)
 
         if not key_vals:
-            raise BentoMLException(
-                "no key-value pairs provided, please use --from-literal or --from-file or provide key-value pairs"
-            )
+            raise click.BadParameter("At least one key-value pair is required")
 
         if type == "mountfile" and not path:
             path = "$BENTOML_HOME"

@@ -71,6 +71,7 @@ dependencies = [
     "uv>=0.5",
     "questionary>=2.0.1",
     "a2wsgi>=1.10.7",
+    "python-dotenv>=1.0.1",
 ]
 dynamic = ["version"]
 [project.urls]

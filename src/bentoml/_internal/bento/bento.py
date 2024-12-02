@@ -366,13 +366,17 @@ class Bento(StoreItem):
                 if not ctx_fs.exists(file_name):
                     raise InvalidArgument(f"File {file_name} does not exist.")
                 copy_file_to_fs_folder(
-                    file_name, bento_fs, dst_filename=BENTO_README_FILENAME
+                    ctx_fs.getsyspath(file_name),
+                    bento_fs,
+                    dst_filename=BENTO_README_FILENAME,
                 )
             elif build_config.description is None and ctx_fs.exists(
                 BENTO_README_FILENAME
             ):
                 copy_file_to_fs_folder(
-                    BENTO_README_FILENAME, bento_fs, dst_filename=BENTO_README_FILENAME
+                    ctx_fs.getsyspath(BENTO_README_FILENAME),
+                    bento_fs,
+                    dst_filename=BENTO_README_FILENAME,
                 )
             else:
                 with bento_fs.open(BENTO_README_FILENAME, "w") as f:

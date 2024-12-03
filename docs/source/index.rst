@@ -1,12 +1,12 @@
-==========================
-Unified Inference Platform
-==========================
+=====================
+BentoML Documentation
+=====================
 
 |github_stars| |pypi_status| |actions_status| |documentation_status| |join_slack|
 
 ----
 
-BentoML is a unified AI inference platform for deploying and scaling AI models with production-grade reliability, all without the complexity of managing infrastructure. It enables your developers to build AI systems 10x faster with custom models, scale efficiently in your cloud, and maintain complete control over security and compliance.
+BentoML is a **Unified Inference Platform** for deploying and scaling AI systems with any model, on any cloud.
 
 Featured examples
 -----------------
@@ -46,38 +46,73 @@ Featured examples
 
         Deploy a ControlNet application to influence image composition, adjust specific elements, and ensure spatial consistency.
 
-See :doc:`/examples/overview` to learn more.
+    .. grid-item-card:: :doc:`More examples 👉</examples/overview>`
+        :link: /examples/overview
+        :link-type: doc
 
-Install BentoML
+        Explore more examples to build AI applications with BentoML.
+
+What is BentoML
 ---------------
 
-The BentoML inference platform is powered by our widely adopted `open-source framework <https://github.com/bentoml/BentoML>`_, which is distributed as a Python package available on `PyPI <https://pypi.org/project/bentoml/>`_. You can install it on Linux/UNIX, Windows, and macOS.
+BentoML is a **Unified Inference Platform** for deploying and scaling AI models with production-grade reliability, all without the complexity of managing infrastructure. It enables your developers to **build AI systems 10x faster with custom models, scale efficiently in your cloud, and maintain complete control over security and compliance**.
 
-Install BentoML Python package with `pip <https://pip.pypa.io/en/stable/installation/>`_:
+.. image:: ../../_static/img/homepage/bentoml-inference-platform.png
 
-.. code-block:: bash
+To get started with BentoML:
 
-    # Recommend Python 3.9+
-    pip install bentoml
+- Use `pip <https://pip.pypa.io/en/stable/installation/>`_ to install the `BentoML open-source model serving framework <https://github.com/bentoml/BentoML>`_, which is distributed as a Python package on `PyPI <https://pypi.org/project/bentoml/>`_.
 
-To verify your installation:
+  .. code-block:: bash
 
-.. code-block:: bash
+     # Recommend Python 3.9+
+     pip install bentoml
 
-    bentoml --help
+- `Sign up for BentoCloud <https://www.bentoml.com/>`_ with $10 free credits.
 
-Architecture
-------------
+How-tos
+-------
 
-The BentoML inference platform converts your models and code into production-ready AI APIs. It runs on all major public clouds and on-premises environments.
+.. grid:: 1 2 2 2
+    :gutter: 3
+    :margin: 0
+    :padding: 3 4 0 0
 
-It consists of three core components:
+    .. grid-item-card:: :doc:`/build-with-bentoml/services`
+        :link: /build-with-bentoml/services
+        :link-type: doc
 
-- BentoML Open-Source Framework
-- BentoCloud Deployment Management Platform
-- BentoCloud Compute Orchestration Engine
+        Build your custom AI APIs with BentoML.
 
-.. image:: ../../_static/img/bentoml-inference-platform-architecture.png
+    .. grid-item-card:: :doc:`/scale-with-bentocloud/deployment/create-deployments`
+        :link: /scale-with-bentocloud/deployment/create-deployments
+        :link-type: doc
+
+        Deploy your AI application to production with one command.
+
+    .. grid-item-card:: :doc:`/scale-with-bentocloud/scaling/autoscaling`
+        :link: /scale-with-bentocloud/scaling/autoscaling
+        :link-type: doc
+
+        Configure fast autoscaling to achieve optimal performance.
+
+    .. grid-item-card:: :doc:`/build-with-bentoml/gpu-inference`
+        :link: /build-with-bentoml/gpu-inference
+        :link-type: doc
+
+        Run model inference on GPUs with BentoML.
+
+    .. grid-item-card:: :doc:`/scale-with-bentocloud/codespaces`
+        :link: /scale-with-bentocloud/codespaces
+        :link-type: doc
+
+        Develop with powerful cloud GPUs using your favorite IDE.
+
+    .. grid-item-card:: :doc:`/build-with-bentoml/model-loading-and-management`
+        :link: /build-with-bentoml/model-loading-and-management
+        :link-type: doc
+
+        Load and serve your custom models with BentoML.
 
 Stay informed
 -------------

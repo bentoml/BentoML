@@ -57,7 +57,7 @@ What is BentoML
 
 BentoML is a **Unified Inference Platform** for deploying and scaling AI models with production-grade reliability, all without the complexity of managing infrastructure. It enables your developers to **build AI systems 10x faster with custom models, scale efficiently in your cloud, and maintain complete control over security and compliance**.
 
-.. image:: ../_static/img/homepage/bentoml-inference-platform.png
+.. image:: _static/img/homepage/bentoml-inference-platform.png
 
 To get started with BentoML:
 

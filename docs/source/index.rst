@@ -16,41 +16,46 @@ Featured examples
     :margin: 0
     :padding: 3 4 0 0
 
-    .. grid-item-card:: :doc:`/examples/vllm`
+    .. grid-item-card:: :doc:`Deploy an open-source LLM endpoint </examples/vllm>`
         :link: /examples/vllm
         :link-type: doc
 
-        Deploy an AI application using vLLM as the backend for high-throughput and memory-efficient inference.
+        Serve large language models with OpenAI-compatible APIs and vLLM inference backend.
 
-    .. grid-item-card:: :doc:`/examples/function-calling`
-        :link: /examples/function-calling
+    .. grid-item-card:: :doc:`Document Q&A with RAG </examples/rag>`
+        :link: /examples/rag
         :link-type: doc
 
-        Deploy an AI agent capable of calling user-defined functions.
+        Deploy private RAG systems with open-source embedding and large language models.
+
+    .. grid-item-card:: :doc:`Serve diffusion models </examples/sdxl-turbo>`
+        :link: /examples/sdxl-turbo
+        :link-type: doc
+
+        Deploy image generation APIs with flexible customization and optimized batch processing.
+
+    .. grid-item-card:: :doc:`Deploy ComfyUI pipelines </examples/comfyui>`
+        :link: /examples/comfyui
+        :link-type: doc
+
+        Automate reproducible workflows with queued execution using ComfyUI pipelines.
+
+    .. grid-item-card:: `Build a phone calling agent <https://github.com/bentoml/BentoTwilioConversationRelay>`_
+        :link: https://github.com/bentoml/BentoTwilioConversationRelay
+
+        Build a phone calling agent with end-to-end streaming capabilities using open-source models and Twilio.
 
     .. grid-item-card:: :doc:`/examples/shieldgemma`
         :link: /examples/shieldgemma
         :link-type: doc
 
-        Deploy an AI assistant using ShieldGemma to filter out harmful input before they are processed further.
-
-    .. grid-item-card:: :doc:`/examples/sdxl-turbo`
-        :link: /examples/sdxl-turbo
-        :link-type: doc
-
-        Deploy an image generation application capable of creating high-quality visuals with just a single inference step.
-
-    .. grid-item-card:: :doc:`/examples/controlnet`
-        :link: /examples/controlnet
-        :link-type: doc
-
-        Deploy a ControlNet application to influence image composition, adjust specific elements, and ensure spatial consistency.
+        Protect your LLM API endpoint from harmful input using Google's safety content moderation model.
 
     .. grid-item-card:: :doc:`More examples 👉</examples/overview>`
         :link: /examples/overview
         :link-type: doc
 
-        Explore more examples to build AI applications with BentoML.
+        Explore what developers are building with BentoML.
 
 What is BentoML
 ---------------
@@ -68,7 +73,7 @@ To get started with BentoML:
      # Recommend Python 3.9+
      pip install bentoml
 
-- `Sign up for BentoCloud <https://www.bentoml.com/>`_ with $10 free credits.
+- `Sign up for BentoCloud <https://www.bentoml.com/>`_ to get a free trial.
 
 How-tos
 -------

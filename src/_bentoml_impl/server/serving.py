@@ -140,8 +140,12 @@ def server_on_deployment(
         if callable(member) and getattr(member, "__bentoml_deployment_hook__", False):
             member()
     # Resolve models before server starts.
-    for model in svc.models:
-        model.resolve()
+    if bento := svc.bento:
+        for model in bento.info.all_models:
+            model.to_model().resolve()
+    else:
+        for model in svc.models:
+            model.resolve()
     if os.path.exists(result_file):
         os.remove(result_file)
 

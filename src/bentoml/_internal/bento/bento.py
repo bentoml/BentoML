@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from fs.base import FS
 
     from _bentoml_sdk import Service as NewService
+    from _bentoml_sdk.models import Model
     from _bentoml_sdk.service import ServiceConfig
     from _bentoml_sdk.service.dependency import Dependency
 
@@ -662,6 +663,17 @@ class BentoModelInfo:
             creation_time=bento_model.info.creation_time,
             alias=alias,
         )
+
+    def to_model(self) -> Model[t.Any]:
+        from bentoml.models import BentoModel
+        from bentoml.models import HuggingFaceModel
+
+        if self.registry == "bentoml":
+            return BentoModel.from_info(self)
+        elif self.registry == "huggingface":
+            return HuggingFaceModel.from_info(self)
+        else:
+            raise ValueError(f"Unknown model registry: {self.registry}")
 
 
 @attr.frozen

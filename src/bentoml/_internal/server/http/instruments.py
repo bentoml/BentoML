@@ -188,6 +188,25 @@ class RunnerTrafficMetricsMiddleware:
             labelnames=["endpoint", "service_name", "service_version", "runner_name"],
             multiprocess_mode="livesum",
         )
+        self.metrics_websocket_connections = metrics_client.Gauge(
+            namespace=self.namespace,
+            name="websocket_connections",
+            documentation="Total number of websocket connections",
+            labelnames=["endpoint", "service_name", "service_version", "runner_name"],
+            multiprocess_mode="livesum",
+        )
+        self.metrics_websocket_data_received = metrics_client.Summary(
+            namespace=self.namespace,
+            name="websocket_data_received",
+            documentation="Total number of bytes received from websocket",
+            labelnames=["endpoint", "service_name", "service_version", "runner_name"],
+        )
+        self.metrics_websocket_data_sent = metrics_client.Summary(
+            namespace=self.namespace,
+            name="websocket_data_sent",
+            documentation="Total number of bytes sent to websocket",
+            labelnames=["endpoint", "service_name", "service_version", "runner_name"],
+        )
         self._is_setup = True
 
     async def __call__(
@@ -198,11 +217,11 @@ class RunnerTrafficMetricsMiddleware:
     ) -> None:
         if not self._is_setup:
             self._setup()
-        if not scope["type"].startswith("http"):
+        if not scope["type"].startswith(("http", "websocket")):
             await self.app(scope, receive, send)
             return
 
-        if scope["path"] == "/metrics":
+        if scope["type"].startswith("http") and scope["path"] == "/metrics":
             from starlette.responses import Response
 
             response = Response(
@@ -214,37 +233,81 @@ class RunnerTrafficMetricsMiddleware:
             return
 
         endpoint = scope["path"]
-        START_TIME_VAR.set(default_timer())
+        start_time = default_timer()
+        status_code = 0
+
+        async def wrapped_receive() -> "ext.ASGIMessage":
+            message = await receive()
+            if message["type"] == "websocket.disconnect":
+                self.metrics_websocket_connections.labels(
+                    endpoint=endpoint,
+                    service_name=server_context.bento_name,
+                    service_version=server_context.bento_version,
+                    runner_name=server_context.service_name,
+                ).dec()
+            elif message["type"] == "websocket.receive":
+                if message.get("bytes") is not None:
+                    data_len = len(message["bytes"])
+                else:
+                    data_len = len(message["text"])
+                self.metrics_websocket_data_received.labels(
+                    endpoint=endpoint,
+                    service_name=server_context.bento_name,
+                    service_version=server_context.bento_version,
+                    runner_name=server_context.service_name,
+                ).observe(data_len)
+            return message
 
         async def wrapped_send(message: "ext.ASGIMessage") -> None:
+            nonlocal status_code
             if message["type"] == "http.response.start":
-                STATUS_VAR.set(message["status"])
+                status_code = message["status"]
             elif message["type"] == "http.response.body":
                 if ("more_body" not in message) or not message["more_body"]:
-                    assert START_TIME_VAR.get() != 0
-                    assert STATUS_VAR.get() != 0
-
                     # instrument request total count
                     self.metrics_request_total.labels(
                         endpoint=endpoint,
                         service_name=server_context.bento_name,
                         service_version=server_context.bento_version,
-                        http_response_code=STATUS_VAR.get(),
+                        http_response_code=status_code,
                         runner_name=server_context.service_name,
                     ).inc()
 
                     # instrument request duration
-                    total_time = max(default_timer() - START_TIME_VAR.get(), 0)
+                    total_time = max(default_timer() - start_time, 0)
                     self.metrics_request_duration.labels(  # type: ignore
                         endpoint=endpoint,
                         service_name=server_context.bento_name,
                         service_version=server_context.bento_version,
-                        http_response_code=STATUS_VAR.get(),
+                        http_response_code=status_code,
                         runner_name=server_context.service_name,
                     ).observe(total_time)
+            elif message["type"] == "websocket.send":
+                if message.get("bytes") is not None:
+                    data_len = len(message["bytes"])
+                else:
+                    data_len = len(message["text"])
+                self.metrics_websocket_data_sent.labels(
+                    endpoint=endpoint,
+                    service_name=server_context.bento_name,
+                    service_version=server_context.bento_version,
+                    runner_name=server_context.service_name,
+                ).observe(data_len)
+            elif message["type"] == "websocket.accept":
+                self.metrics_websocket_connections.labels(
+                    endpoint=endpoint,
+                    service_name=server_context.bento_name,
+                    service_version=server_context.bento_version,
+                    runner_name=server_context.service_name,
+                ).inc()
+            elif message["type"] == "websocket.close":
+                self.metrics_websocket_connections.labels(
+                    endpoint=endpoint,
+                    service_name=server_context.bento_name,
+                    service_version=server_context.bento_version,
+                    runner_name=server_context.service_name,
+                ).dec()
 
-                    START_TIME_VAR.set(0)
-                    STATUS_VAR.set(0)
             await send(message)
 
         with self.metrics_request_in_progress.labels(
@@ -253,5 +316,5 @@ class RunnerTrafficMetricsMiddleware:
             service_version=server_context.bento_version,
             runner_name=server_context.service_name,
         ).track_inprogress():
-            await self.app(scope, receive, wrapped_send)
+            await self.app(scope, wrapped_receive, wrapped_send)
             return

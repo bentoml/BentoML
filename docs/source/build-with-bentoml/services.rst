@@ -266,7 +266,7 @@ Tasks
 
 Tasks in BentoML allow you to execute long-running operations in the background, managed via a task queue style API. These background tasks are ideal for scenarios like batch processing and image or video generation where you don't need the results immediately or synchronously.
 
-To define a task endpoint, use the ``@bentoml.task`` decorator in the Service constructor. For more information, see :doc:`/guides/tasks`.
+To define a task endpoint, use the ``@bentoml.task`` decorator in the Service constructor. For more information, see :doc:`/get-started/async-task-queues`.
 
 Convert legacy Runners to a Service
 -----------------------------------

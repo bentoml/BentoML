@@ -132,7 +132,7 @@ The ``service.py`` file defines the ``SearchAgentService``, a BentoML Service th
 
    After that, define the LangGraph workflow that uses the model. The LangGraph agent will call this model and build its flow with nodes and edges, connecting the outputs of the LLM with the rest of the system. For detailed explanations of implementing LangGraph workflows, see `the LangGraph documentation <https://langchain-ai.github.io/langgraph/#example>`_.
 
-3. Define a BentoML :doc:`task </guides/tasks>` endpoint ``invoke`` with ``@bentoml.task`` to handle the LangGraph workflow asynchronously. It is a background task that supports long-running operations. This ensures that complex LangGraph workflows involving external tools can complete without timing out.
+3. Define a BentoML :doc:`task </get-started/async-task-queues>` endpoint ``invoke`` with ``@bentoml.task`` to handle the LangGraph workflow asynchronously. It is a background task that supports long-running operations. This ensures that complex LangGraph workflows involving external tools can complete without timing out.
 
    After sending the user's query to the LangGraph agent, the task retrieves the final state and provides the results back to the user.
 

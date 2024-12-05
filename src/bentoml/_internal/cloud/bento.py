@@ -102,7 +102,7 @@ class BentoAPI:
             if model.registry == "huggingface":
                 models_to_push.append(HuggingFaceModel.from_info(model))
             else:
-                model = BentoModel(model.tag)
+                model = BentoModel.from_info(model)
                 if model.stored is not None:
                     models_to_push.append(model)
         model_api = ModelAPI(self._client, self.spinner)

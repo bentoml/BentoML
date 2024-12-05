@@ -10,7 +10,11 @@ _is_sourced() {
 }
 
 _main() {
-	[ -d .venv ] && source .venv/bin/activate
+	if [ -d "/app/.venv" ]; then
+		source /app/.venv/bin/activate
+	elif [ -d ".venv" ]; then
+		source .venv/bin/activate
+	fi
 	# For backwards compatibility with the yatai<1.0.0, adapting the old "yatai" command to the new "start" command.
 	if [ "${#}" -gt 0 ] && [ "${1}" = 'python' ] && [ "${2}" = '-m' ] && { [ "${3}" = 'bentoml._internal.server.cli.runner' ] || [ "${3}" = "bentoml._internal.server.cli.api_server" ]; }; then # SC2235, use { } to avoid subshell overhead
 		if [ "${3}" = 'bentoml._internal.server.cli.runner' ]; then

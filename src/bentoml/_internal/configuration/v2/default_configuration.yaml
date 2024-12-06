@@ -34,7 +34,7 @@ services:
         trace_id: 032x
         span_id: 016x
   ssl:
-    enabled: false
+    enabled: true
     certfile: ~
     keyfile: ~
     keyfile_password: ~

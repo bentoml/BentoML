@@ -280,14 +280,8 @@ class Bento(StoreItem):
                 else to_snake_case(svc.name)
             )
             build_config.envs.extend(svc.envs)
-            if enable_image:
+            if svc.image is not None:
                 image = svc.image
-            elif svc.image is not None:
-                logger.warning(
-                    "BentoML service %s has an image config, but BentoML image feature is not enabled. "
-                    "Please enable it by setting BENTOML_ENABLE_FEATURES=bento_image",
-                    svc.name,
-                )
         if image is None and enable_image:
             image = get_image_from_build_config(build_config)
         build_config = build_config.with_defaults()

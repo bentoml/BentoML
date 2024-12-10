@@ -405,6 +405,7 @@ class BentoAPI:
         tag: str | Tag,
         *,
         force: bool = False,
+        with_models: bool = False,
         bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> Bento:
         """Pull a bento from remote bento store
@@ -425,8 +426,13 @@ class BentoAPI:
                 tag,
                 download_task_id,
                 force=force,
+                with_models=with_models,
                 bento_store=bento_store,
             )
+
+    def _pull_bento_models(self, bento: Bento) -> None:
+        for model in bento.info.all_models:
+            model.to_model().resolve()
 
     def _do_pull_bento(
         self,
@@ -434,6 +440,7 @@ class BentoAPI:
         download_task_id: TaskID,
         *,
         force: bool = False,
+        with_models: bool = False,
         bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     ) -> Bento:
         rest_client = self._client
@@ -443,6 +450,8 @@ class BentoAPI:
                 self.spinner.log(
                     f'[bold blue]Bento "{tag}" exists in local bento store'
                 )
+                if with_models:
+                    self._pull_bento_models(bento)
                 return bento
             bento_store.delete(tag)
         except NotFound:
@@ -525,6 +534,8 @@ class BentoAPI:
                     bento = Bento.from_fs(temp_fs)
                     bento = bento.save(bento_store)
                     self.spinner.log(f'[bold green]Successfully pulled bento "{_tag}"')
+                    if with_models:
+                        self._pull_bento_models(bento)
                     return bento
 
     def list(self) -> BentoWithRepositoryListSchema:

@@ -307,6 +307,8 @@ def pull(
             bentofile = resolve_user_filepath(bentofile, None)
         except FileNotFoundError:
             raise InvalidArgument(f'file "{bentofile}" not found')
+        else:
+            build_config = BentoBuildConfig.from_file(bentofile)
     else:
         for filename in DEFAULT_BENTO_BUILD_FILES:
             if os.path.exists(filename):

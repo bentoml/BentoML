@@ -472,7 +472,6 @@ def runner_service(runner: Runner, **kwargs: Unpack[Config]) -> Service[t.Any]:
         runnable_method = runner.runnable_class.bentoml_runnable_methods__[method.name]
         api = APIMethod(  # type: ignore
             func=runnable_method.func,
-            name=method.name,
             batchable=runnable_method.config.batchable,
             batch_dim=runnable_method.config.batch_dim,
             max_batch_size=method.max_batch_size,

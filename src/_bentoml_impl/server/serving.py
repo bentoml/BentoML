@@ -135,10 +135,6 @@ def create_dependency_watcher(
 def server_on_deployment(
     svc: AnyService, result_file: str = Provide[BentoMLContainer.result_store_file]
 ) -> None:
-    for name in dir(svc.inner):
-        member = getattr(svc.inner, name)
-        if callable(member) and getattr(member, "__bentoml_deployment_hook__", False):
-            member()
     # Resolve models before server starts.
     if bento := svc.bento:
         for model in bento.info.all_models:
@@ -146,6 +142,10 @@ def server_on_deployment(
     else:
         for model in svc.models:
             model.resolve()
+    for name in dir(svc.inner):
+        member = getattr(svc.inner, name)
+        if callable(member) and getattr(member, "__bentoml_deployment_hook__", False):
+            member()
     if os.path.exists(result_file):
         os.remove(result_file)
 

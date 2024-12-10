@@ -300,14 +300,16 @@ def bento_management_commands() -> click.Group:
         default=False,
         help="Force pull from remote Bento store to local and overwrite even if it already exists in local",
     )
+    @click.option("--with-models", is_flag=True, default=False, help="Pull models too")
     @inject
     def pull(
         bento_tag: str,
         force: bool,
+        with_models: bool,
         cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ) -> None:  # type: ignore (not accessed)
         """Pull Bento from a remote Bento store server."""
-        cloud_client.bento.pull(bento_tag, force=force)
+        cloud_client.bento.pull(bento_tag, force=force, with_models=with_models)
 
     @bentos.command()
     @click.argument("bento_tag", type=click.STRING)

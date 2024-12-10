@@ -77,6 +77,11 @@ RUN curl -LO https://astral.sh/uv/install.sh && \
 COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
 # install python packages
 {% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} uv pip install -r ./env/python/requirements.txt
+
+{% for command in __options__post_commands %}
+RUN {{ command }}
+{% endfor %}
+
 COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 {% endblock %}
 

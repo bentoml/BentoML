@@ -837,6 +837,7 @@ class ImageInfo:
     python_version: str = ""
     commands: t.List[str] = attr.field(factory=list)
     python_requirements: str = ""
+    post_commands: t.List[str] = attr.field(factory=list)
 
     def write_to_bento(self, bento_fs: FS, envs: list[BentoEnvSchema]) -> None:
         from importlib import resources

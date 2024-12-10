@@ -34,6 +34,8 @@ class Image:
     commands: t.List[str] = attrs.field(factory=list)
     lock_python_packages: bool = True
     python_requirements: str = ""
+    post_commands: t.List[str] = attrs.field(factory=list)
+    _after_pip_install: bool = attrs.field(init=False, default=False, repr=False)
 
     def requirements_file(self, file_path: str) -> t.Self:
         """Add a requirements file to the image. Supports chaining call.
@@ -45,6 +47,7 @@ class Image:
             image = Image("debian:latest").requirements_file("requirements.txt")
         """
         self.python_requirements += Path(file_path).read_text()
+        self._after_pip_install = True
         return self
 
     def python_packages(self, *packages: str) -> t.Self:
@@ -59,6 +62,7 @@ class Image:
                 .requirements_file("requirements.txt")
         """
         self.python_requirements += "\n".join(packages)
+        self._after_pip_install = True
         return self
 
     def run(self, command: str) -> t.Self:
@@ -70,7 +74,8 @@ class Image:
 
             image = Image("debian:latest").run("echo 'Hello, World!'")
         """
-        self.commands.append(command)
+        commands = self.post_commands if self._after_pip_install else self.commands
+        commands.append(command)
         return self
 
     def freeze(self, platform_: str | None = None) -> ImageInfo:
@@ -84,6 +89,7 @@ class Image:
             python_version=self.python_version,
             commands=self.commands,
             python_requirements=python_requirements,
+            post_commands=self.post_commands,
         )
 
     def _freeze_python_requirements(self, platform_: str | None = None) -> str:

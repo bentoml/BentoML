@@ -120,7 +120,7 @@ Create BentoML :doc:`Services </build-with-bentoml/services>` in a ``service.py`
         controlnet_conditioning_scale: float = 0.5
         num_inference_steps: int = 25
 
-This file defines a BentoML Service ``ControlNet`` with custom :doc:`configurations </guides/configurations>` in timeout, worker count, and resources.
+This file defines a BentoML Service ``ControlNet`` with custom :doc:`configurations </reference/bentoml/configurations>` in timeout, worker count, and resources.
 
 - It loads the three pre-trained models and configures them to use GPU if available. The main pipeline (``StableDiffusionXLControlNetPipeline``) integrates these models.
 - It defines an asynchronous API endpoint ``generate``, which takes an image and a set of parameters as input. The parameters for the generation process are extracted from a ``Params`` instance, a Pydantic model that provides automatic data validation.

@@ -110,7 +110,7 @@ Create a separate ``service.py`` file where you define a BentoML :doc:`Service <
 
 The Service code:
 
-- Uses the ``@bentoml.service`` decorator to define a BentoML Service. Optionally, you can set additional :doc:`configurations </guides/configurations>` like resource allocation and traffic timeout.
+- Uses the ``@bentoml.service`` decorator to define a BentoML Service. Optionally, you can set additional :doc:`configurations </reference/bentoml/configurations>` like resource allocation and traffic timeout.
 - Retrieves the model from the Model Store and defines it a class variable.
 - Uses the ``@bentoml.api`` decorator to expose the ``predict`` function as an API endpoint, which :doc:`takes a NumPy array as input and returns a NumPy array </build-with-bentoml/iotypes>`.
 

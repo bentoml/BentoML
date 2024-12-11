@@ -83,7 +83,7 @@ service.py
 
 The ``service.py`` file defines the ``SearchAgentService``, a BentoML Service that wraps around the LangGraph agent and calls the ``MistralService``.
 
-1. Create a Python class and decorate it with ``@bentoml.service``, which transforms it into a BentoML Service. You can optionally set :doc:`configurations </guides/configurations>` like :doc:`workers </build-with-bentoml/parallelize-requests>` and :doc:`concurrency </scale-with-bentocloud/scaling/autoscaling>`.
+1. Create a Python class and decorate it with ``@bentoml.service``, which transforms it into a BentoML Service. You can optionally set :doc:`configurations </reference/bentoml/configurations>` like :doc:`workers </build-with-bentoml/parallelize-requests>` and :doc:`concurrency </scale-with-bentocloud/scaling/autoscaling>`.
 
    .. code-block:: python
 

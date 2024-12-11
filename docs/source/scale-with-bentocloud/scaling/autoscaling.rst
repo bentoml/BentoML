@@ -56,7 +56,7 @@ In general, the autoscaler will scale the number of replicas based on the follow
 Key points about concurrency:
 
 - By default, BentoML does not impose a limit on ``concurrency`` to avoid bottlenecks. To determine the optimal value for ``concurrency``, we recommend conducting a stress test on your Service using a load generation tool such as `Locust <https://locust.io/>`_ either locally or on BentoCloud. The purpose of the stress test is to identify the maximum number of concurrent requests your Service can manage. After identifying this maximum, set the concurrency parameter to a value slightly below this threshold ensuring that the Service has adequate headroom to handle traffic fluctuations.
-- If your Service supports :doc:`adaptive batching </guides/adaptive-batching>` or continuous batching, set ``concurrency`` to match the batch size. This aligns processing capacity with batch requirements, optimizing throughput.
+- If your Service supports :doc:`adaptive batching </get-started/adaptive-batching>` or continuous batching, set ``concurrency`` to match the batch size. This aligns processing capacity with batch requirements, optimizing throughput.
 - For Services designed to handle one request at a time, set ``concurrency`` to ``1``, ensuring that requests are processed sequentially without overlap.
 
 External queue

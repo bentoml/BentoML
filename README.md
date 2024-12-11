@@ -133,7 +133,7 @@ bentoml cloud login
 bentoml deploy .
 ```
 
-![bentocloud-ui](./docs/source/_static/img/bentocloud/get-started/bentocloud-playground-quickstart.png)
+![bentocloud-ui](./docs/source/_static/img/get-started/cloud-deployment/first-bento-on-bentocloud.png)
 
 </details>
 

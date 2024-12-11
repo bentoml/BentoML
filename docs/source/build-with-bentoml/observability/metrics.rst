@@ -44,7 +44,7 @@ BentoML automatically collects a set of default metrics for each Service. These 
 - ``request_in_progress``: The number of requests that are currently being processed by a Service.
 - ``request_total``: The total number of requests that a Service has processed.
 - ``request_duration_seconds``: The time taken to process requests, including the total sum of request processing time, count of requests processed, and distribution across specified duration buckets.
-- ``adaptive_batch_size``: The adaptive batch sizes used during Service execution, which is relevant for optimizing performance in batch processing scenarios. You need to enable :doc:`adaptive batching </guides/adaptive-batching>` to collect this metric.
+- ``adaptive_batch_size``: The adaptive batch sizes used during Service execution, which is relevant for optimizing performance in batch processing scenarios. You need to enable :doc:`adaptive batching </get-started/adaptive-batching>` to collect this metric.
 
 Metric types
 ^^^^^^^^^^^^

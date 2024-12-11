@@ -67,7 +67,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
 
 2. Create the ``Gemma`` Service to initialize the model and tokenizer, with a safety check API to calculate the probability of policy violation.
 
-   - The ``Gemma`` class is decorated with ``@bentoml.service``, which converts it into a BentoML Service. You can optionally set :doc:`configurations </guides/configurations>` like timeout, :doc:`concurrency </scale-with-bentocloud/scaling/autoscaling>` and GPU resources to use on BentoCloud. We recommend you use an NVIDIA T4 GPU to host ShieldGemma 2B.
+   - The ``Gemma`` class is decorated with ``@bentoml.service``, which converts it into a BentoML Service. You can optionally set :doc:`configurations </reference/bentoml/configurations>` like timeout, :doc:`concurrency </scale-with-bentocloud/scaling/autoscaling>` and GPU resources to use on BentoCloud. We recommend you use an NVIDIA T4 GPU to host ShieldGemma 2B.
    - The API ``check``, decorated with ``@bentoml.api``, functions as a web API endpoint. It evaluates the safety of prompts by predicting the likelihood of a policy violation. It then returns a structured response using the ``ShieldResponse`` Pydantic model.
 
    .. code-block:: python

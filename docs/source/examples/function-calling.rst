@@ -70,7 +70,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
 
 2. Create a Python class (``Llama`` in the example) to initialize the model and tokenizer, and use the following decorators to add BentoML functionalities.
 
-   - ``@bentoml.service``: Converts this class into a BentoML Service. You can optionally set :doc:`configurations </guides/configurations>` like timeout and GPU resources to use on BentoCloud. We recommend you use an NVIDIA A100 GPU of 80 GB for optimal performance.
+   - ``@bentoml.service``: Converts this class into a BentoML Service. You can optionally set :doc:`configurations </reference/bentoml/configurations>` like timeout and GPU resources to use on BentoCloud. We recommend you use an NVIDIA A100 GPU of 80 GB for optimal performance.
    - ``@bentoml.mount_asgi_app``: Mounts an `existing ASGI application <https://github.com/bentoml/BentoFunctionCalling/blob/main/openai_endpoints.py>`_ defined in the ``openai_endpoints.py`` file to this class. It sets the base path to ``/v1``, making it accessible via HTTP requests. The mounted ASGI application provides OpenAI-compatible APIs and can be served side-by-side with the LLM Service. For more information, see :doc:`/build-with-bentoml/asgi`.
 
    .. code-block:: python

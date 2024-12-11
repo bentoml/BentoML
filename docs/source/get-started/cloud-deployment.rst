@@ -6,13 +6,10 @@ BentoCloud is an Inference Management Platform and Compute Orchestration Engine 
 
 Why developers love BentoCloud:
 
-- Support for any ML frameworks and inference runtimes (vLLM, TensorRT, Triton, etc.)
-- Flexible Pythonic APIs for building inference services, batch jobs, and complex AI systems
-- Simplified LLM deployment via `OpenLLM <https://github.com/bentoml/OpenLLM>`_
-- Fast and streamlined development and debugging with cloud GPUs
-- Blazing fast cold start with an optimized container stack for ML/AI workloads
-- Built-in observability dashboards
-- Streamlined build, test, deploy, observe, and CI/CD workflow
+- **Flexible Pythonic APIs** for building inference APIs, batch jobs, and compound AI systems
+- **Blazing fast cold start** with a container infrastructure stack rebuilt for ML/AI workloads
+- Support for **any ML frameworks and inference runtimes** (vLLM, TensorRT, Triton, etc.)
+- **Streamlined workflows** across development, testing, deployment, monitoring, and CI/CD
 
 Log in to BentoCloud
 --------------------

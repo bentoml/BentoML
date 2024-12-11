@@ -7,7 +7,9 @@ BentoML provides a standardized format called Bentos for packaging AI/ML service
 Common build options
 --------------------
 
-Build options refer to a set of configurations defined in a YAML file (typically named ``bentofile.yaml``) for building a BentoML project into a Bento. Here's a basic example for :doc:`/get-started/hello-world`.
+Build options refer to a set of configurations for building a BentoML project into a Bento. These options can be defined in a ``pyproject.toml`` file under the ``[tool.bentoml.build]`` section or a YAML file (typically named ``bentofile.yaml``).
+
+Here's an example ``bentofile.yaml`` file for :doc:`/get-started/hello-world`.
 
 .. code-block:: yaml
 
@@ -30,7 +32,7 @@ Key fields:
      python:
        requirements_txt: "./requirements.txt"
 
-For more information on available fields in ``bentofile.yaml``, see :doc:`/reference/bentoml/bento-build-options`.
+For more information on available fields, see :doc:`/reference/bentoml/bento-build-options`.
 
 Build a Bento
 -------------

@@ -2,7 +2,7 @@
 Cloud deployment
 ================
 
-BentoCloud is an Inference Management Platform and Compute Orchestration Engine built on top of BentoML's open-source serving framework. It provides a complete stack for building fast and scalable AI systems with any mode, on any cloud.
+BentoCloud is an Inference Management Platform and Compute Orchestration Engine built on top of BentoML's open-source serving framework. It provides a complete stack for building fast and scalable AI systems with any model, on any cloud.
 
 Why developers love BentoCloud:
 

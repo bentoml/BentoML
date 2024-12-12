@@ -9,6 +9,7 @@ This section contains detailed API specifications. Use them to dig deeper into B
 
   stores
   sdk
+  bento-build-options
   cli
   client
   frameworks/index

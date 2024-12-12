@@ -219,6 +219,21 @@ BentoML will lock the versions of all Python packages for the current platform a
 
     .. tab-item:: pyproject.toml
 
+       When using a ``pyproject.toml`` file, you can define the required Python packages through ``project.dependencies``:
+
+       .. code-block:: toml
+
+          [project]
+          dependencies = [
+            "numpy",
+            "matplotlib==3.5.1",
+            "package>=0.2,<0.3",
+            "torchvision==0.9.2",
+            "git+https://github.com/username/mylib.git@main",
+          ]
+
+       This is equivalent to using ``python.packages``:
+
        .. code-block:: toml
 
           [tool.bentoml.build.python]
@@ -229,6 +244,8 @@ BentoML will lock the versions of all Python packages for the current platform a
             "torchvision==0.9.2",
             "git+https://github.com/username/mylib.git@main"
           ]
+
+       If you specify both ``project.dependencies`` and ``tool.bentoml.build.python.packages``, the dependencies are combined together.
 
     .. tab-item:: bentofile.yaml
 

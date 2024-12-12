@@ -402,7 +402,7 @@ def build_bentofile(
     """
     if bentofile:
         try:
-            bentofile = resolve_user_filepath(bentofile, build_ctx)
+            bentofile = resolve_user_filepath(bentofile, None)
         except FileNotFoundError:
             raise InvalidArgument(f'bentofile "{bentofile}" not found')
     else:

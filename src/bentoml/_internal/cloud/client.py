@@ -665,12 +665,34 @@ class RestApiClientV2(BaseRestApiClient):
     def get_deployment_image_builder_pod(
         self, name: str, cluster: str | None = None
     ) -> KubePodSchema | None:
-        pods = self.list_deployment_pods(name, cluster=cluster)
-        if not pods:
-            return None
-        for pod in pods:
-            if pod.labels.get("yatai.ai/is-bento-image-builder") == "true":
-                return pod
+        deployment = self.get_deployment(name, cluster=cluster)
+        if not deployment.latest_revision:
+            raise NotFound(f"Deployment {name} latest revision is not found")
+        if not deployment.latest_revision.targets:
+            raise NotFound(f"Deployment {name} latest revision targets is not found")
+        target = deployment.latest_revision.targets[0]
+        if not target:
+            raise NotFound(f"Deployment {name} latest revision target is not found")
+        if not target.bento:
+            raise NotFound(
+                f"Deployment {name} latest revision target bento is not found"
+            )
+        scheme = "wss"
+        base_url = self.session.base_url
+        if base_url.scheme == "http":
+            scheme = "ws"
+        endpoint = f"{scheme}://{base_url.netloc.decode('utf-8')}"
+        with connect_ws(
+            url=f"{endpoint}/ws/v1/clusters/{deployment.cluster.name}/pods?"
+            f"{urlencode(dict(organization_name=deployment.cluster.organization_name, namespace=deployment.kube_namespace, selector=f'yatai.ai/bento-repository={target.bento.repository.name},yatai.ai/bento={target.bento.version}'))}",
+            client=self.session,
+        ) as ws:
+            jsn = schema_from_object(ws.receive_json(), KubePodWSResponseSchema)
+            if jsn.type == "error":
+                raise CloudRESTApiClientError(jsn.message)
+            for pod in jsn.payload or []:
+                if pod.labels.get("yatai.ai/is-bento-image-builder") == "true":
+                    return pod
         return None
 
     def list_deployment_pods(

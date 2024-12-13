@@ -166,7 +166,7 @@ Deploy to BentoCloud
 
 After the Service is ready, you can deploy it to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $10 in free credits.
 
-Specify a configuration YAML file (``bentofile.yaml``) to define the build options for a :doc:`Bento </guides/build-options>`, the unified distribution format in BentoML containing source code, Python packages, model references, and so on. Here is an example file:
+Specify a configuration YAML file (``bentofile.yaml``) to define the build options for a :doc:`Bento </reference/bentoml/bento-build-options>`, the unified distribution format in BentoML containing source code, Python packages, model references, and so on. Here is an example file:
 
 .. code-block:: yaml
 

@@ -205,7 +205,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
 bentofile.yaml
 ^^^^^^^^^^^^^^
 
-This configuration file defines the build options for a :doc:`Bento </guides/build-options>`, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
+This configuration file defines the build options for a :doc:`Bento </reference/bentoml/bento-build-options>`, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
 
 Here is an example file:
 

@@ -77,7 +77,7 @@ with bentoml.SyncHTTPClient('http://localhost:3000') as client:
 
 ### Deploying your first Bento
 
-To deploy your BentoML Service code, first create a `bentofile.yaml` file to define its dependencies and environments. Find the full list of bentofile options [here](https://docs.bentoml.com/en/latest/guides/build-options.html).
+To deploy your BentoML Service code, first create a `bentofile.yaml` file to define its dependencies and environments. Find the full list of bentofile options [here](https://docs.bentoml.com/en/latest/reference/bentoml/bento-build-options.html).
 
 ```yaml
 service: 'service:Summarization' # Entry service import path

@@ -256,7 +256,7 @@ Plugins and third-party monitoring data collectors
 
 BentoML also supports plugins and third-party monitoring data collectors. You can create a custom monitoring data collector and publish it as a Python package. Unlike the built-in collector, which is more protocol specific for general use cases, plugins could be more platform-specific.
 
-To use a plugin, you need to install it and include it in ``bentofile.yaml``. For details, see :doc:`/guides/build-options`.
+To use a plugin, you need to install it and include it in ``bentofile.yaml``. For details, see :doc:`/reference/bentoml/bento-build-options`.
 
 Arize AI
 """"""""

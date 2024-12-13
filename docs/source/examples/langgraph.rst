@@ -184,7 +184,7 @@ The ``service.py`` file defines the ``SearchAgentService``, a BentoML Service th
 bentofile.yaml
 ^^^^^^^^^^^^^^
 
-This configuration file defines the build options for a :doc:`Bento </guides/build-options>`, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
+This configuration file defines the build options for a :doc:`Bento </reference/bentoml/bento-build-options>`, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
 
 Here is an example file for `BentoLangGraph/langgraph-mistral <https://github.com/bentoml/BentoLangGraph/tree/main/langgraph-mistral>`_:
 

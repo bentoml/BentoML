@@ -132,7 +132,7 @@ This is a Machine Learning Service created with BentoML."""
 * [📖 Documentation](https://docs.bentoml.com/en/latest/): Learn how to use BentoML.
 * [💬 Community](https://l.bentoml.com/join-slack-swagger): Join the BentoML Slack community.
 * [🐛 GitHub Issues](https://github.com/bentoml/BentoML/issues): Report bugs and feature requests.
-* Tip: you can also [customize this README](https://docs.bentoml.com/en/latest/concepts/bento.html#description).
+* Tip: you can also [customize this README](https://docs.bentoml.com/en/latest/reference/bentoml/bento-build-options.html#description).
 """
     # TODO: add links to documentation that may help with API client development
     return doc

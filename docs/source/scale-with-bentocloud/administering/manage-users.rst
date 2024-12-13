@@ -7,7 +7,7 @@ You can add and delete BentoCloud users to control and customize access to your 
 Invite a new user
 -----------------
 
-1. Click your user name in the top-right corner of any BentoCloud page, then select **Members**.
+1. Click your profile image in the top-right corner of any BentoCloud page, then select **Members**.
 2. On the **Members** page, click **Invite new member**.
 3. In the dialog that appears, provide the following information:
 
@@ -31,7 +31,7 @@ Both the inviter and the new user receive the invitation email. Clicking the lin
 Delete a user
 -------------
 
-1. Click your user name in the top-right corner of any BentoCloud page, then select **Members**.
+1. Click your profile image in the top-right corner of any BentoCloud page, then select **Members**.
 2. On the **Members** page, click **Delete Member** for the user you want to delete.
 3. Click **Delete** in the dialog that appears.
 

@@ -15,9 +15,7 @@ This tutorial explains how to create and use API tokens in BentoCloud.
 Create an API token
 ===================
 
-To create an API token, perform the following steps:
-
-1. Navigate to the `API Tokens <http://cloud.bentoml.com/api_tokens>`_ page on the BentoCloud console.
+1. Click your profile image in the top-right corner of any BentoCloud page, then select **API Tokens**.
 2. Click **Create**.
 3. In the dialog that appears, specify the following fields. Note that you must select at least one of the token types.
 
@@ -31,7 +29,7 @@ To create an API token, perform the following steps:
 
 4. Click **Submit**.
 5. Record the token. This is the only opportunity to record it.
-6. All available tokens appear on the **API Tokens** page. Click **Delete** if you no longer needs a token.
+6. All available tokens appear on the **My API Tokens** page. Click **Delete** if you no longer need a token.
 
 Log in to BentoCloud using the BentoML CLI
 ==========================================

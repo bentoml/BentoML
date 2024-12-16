@@ -10,6 +10,7 @@ Why developers love BentoCloud:
 - **Blazing fast cold start** with a container infrastructure stack rebuilt for ML/AI workloads
 - Support for **any ML frameworks and inference runtimes** (vLLM, TensorRT, Triton, etc.)
 - **Streamlined workflows** across development, testing, deployment, monitoring, and CI/CD
+- Easy access to various GPUs like L4 and A100, in **our cloud or yours**
 
 Log in to BentoCloud
 --------------------

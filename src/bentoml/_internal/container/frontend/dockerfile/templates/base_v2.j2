@@ -55,18 +55,11 @@ WORKDIR $BENTO_PATH
 {% endblock %}
 
 {% block SETUP_BENTO_COMPONENTS %}
-{% set required_packages = "curl git" %}
-RUN command -v apt-get && apt-get update && apt-get -y install {{ required_packages }} \
-    || command -v apk && apk update && apk add {{ required_packages }} \
-    || yum update && yum install -y {{ required_packages }} \
-    || true
-
 {% for command in __options__commands %}
 RUN {{ command }}
 {% endfor %}
 
-RUN curl -LO https://astral.sh/uv/install.sh && \
-    sh install.sh && rm install.sh && mv $HOME/.local/bin/uv /usr/local/bin/ && uv venv --python {{ __options__python_version }}
+RUN pip install uv && uv venv --python {{ __options__python_version }}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/") %}
 {% if __pip_preheat_packages__ %}
 {% for value in __pip_preheat_packages__ -%}
@@ -95,7 +88,7 @@ EXPOSE {{ __prometheus_port__ }}
 
 RUN chmod +x {{ bento__entrypoint }}
 
-USER bentoml
+USER {{ bento__user }}
 
 ENTRYPOINT [ "{{ bento__entrypoint }}" ]
 

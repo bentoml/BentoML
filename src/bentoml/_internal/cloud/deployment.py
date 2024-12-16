@@ -593,7 +593,7 @@ class Deployment:
                     is_first = False
                     spinner.update("🚧 Image building...")
                     spinner.stop()
-                console.print(decoded_str, end="")
+                console.print(decoded_str, end="", markup=False, highlight=False)
 
         tail_thread: Thread | None = None
 

@@ -43,7 +43,7 @@ def secret_command():
     default="table",
 )
 @inject
-def list(
+def list_command(
     search: str | None,
     output: t.Literal["json", "yaml", "table"],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],

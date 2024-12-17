@@ -560,7 +560,7 @@ class ServiceAppFactory(BaseAppFactory):
                 result = await self._to_thread(func, batch, **kwargs)
             return AutoContainer.batch_to_batches(result, indices, method.batch_dim[1])
 
-        arg_names = [k for k in input_kwargs if k not in ("ctx", "context")]
+        arg_names = [k for k in input_kwargs if k != method.ctx_param]
         if input_args:
             if len(input_args) > 1 or len(arg_names) > 0:
                 raise TypeError("Batch inference function only accept one argument")

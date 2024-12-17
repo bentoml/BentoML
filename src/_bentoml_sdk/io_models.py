@@ -324,7 +324,11 @@ KWARGS = "kwargs"
 class IODescriptor(IOMixin, BaseModel):
     @classmethod
     def from_input(
-        cls, func: t.Callable[..., t.Any], *, skip_self: bool = False
+        cls,
+        func: t.Callable[..., t.Any],
+        *,
+        skip_self: bool = False,
+        skip_names: t.Container[str] = (),
     ) -> type[IODescriptor]:
         try:
             module = sys.modules[func.__module__]
@@ -340,7 +344,7 @@ class IODescriptor(IOMixin, BaseModel):
             next(parameter_tuples)
 
         for name, param in parameter_tuples:
-            if name in ("context", "ctx"):
+            if name in skip_names:
                 # Reserved name for context object passed in
                 continue
             annotation = param.annotation

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import inspect
+import sys
 import typing as t
 
 import attrs
@@ -65,11 +66,32 @@ class APIMethod(t.Generic[P, R]):
 
     @ctx_param.default
     def default_ctx_param(self) -> str | None:
+        from bentoml import Context
+
+        from .io_models import eval_type_lenient
+
+        try:
+            module = sys.modules[self.func.__module__]
+        except KeyError:
+            ns = None
+        else:
+            ns = module.__dict__
+
         parameters = inspect.signature(self.func).parameters
         if "ctx" in parameters:
-            return "ctx"
+            annotation = parameters["ctx"].annotation
+            if (
+                annotation is inspect.Parameter.empty
+                or eval_type_lenient(annotation, ns, None) is Context
+            ):
+                return "ctx"
         elif "context" in parameters:
-            return "context"
+            annotation = parameters["context"].annotation
+            if (
+                annotation is inspect.Parameter.empty
+                or eval_type_lenient(annotation, ns, None) is Context
+            ):
+                return "context"
         return None
 
     @is_stream.default
@@ -90,7 +112,12 @@ class APIMethod(t.Generic[P, R]):
 
     @input_spec.default
     def default_input_spec(self) -> type[IODescriptor]:
-        return IODescriptor.from_input(self.func, skip_self=True)
+        ctx_param = self.default_ctx_param()
+        return IODescriptor.from_input(
+            self.func,
+            skip_self=True,
+            skip_names=(ctx_param,) if ctx_param else (),
+        )
 
     @output_spec.default
     def default_output_spec(self) -> type[IODescriptor]:

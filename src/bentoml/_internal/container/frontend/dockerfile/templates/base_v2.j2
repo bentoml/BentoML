@@ -86,7 +86,7 @@ EXPOSE 3000
 # Expose Prometheus port
 EXPOSE {{ __prometheus_port__ }}
 
-RUN chmod +x {{ bento__entrypoint }}
+RUN chmod +x {{ bento__entrypoint }} && chown {{ bento__user }}:{{ bento__user }} -R $BENTO_PATH/.venv
 
 USER {{ bento__user }}
 

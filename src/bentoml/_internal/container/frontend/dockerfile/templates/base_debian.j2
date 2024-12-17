@@ -12,7 +12,6 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloa
     apt-get install -q -y --no-install-recommends --allow-remove-essential \
         ca-certificates gnupg2 bash build-essential curl {% if __options__system_packages is not none %}{{ __options__system_packages | join(' ') }}{% endif %}
 
-ENV UV_SYSTEM_PYTHON=1
 RUN curl -LO https://astral.sh/uv/install.sh && \
     sh install.sh && rm install.sh && mv $HOME/.local/bin/uv /usr/local/bin/
 {% endblock %}

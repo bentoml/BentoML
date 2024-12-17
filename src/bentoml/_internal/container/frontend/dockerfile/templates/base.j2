@@ -62,6 +62,9 @@ WORKDIR $BENTO_PATH
 # Block SETUP_BENTO_COMPONENTS
 {% block SETUP_BENTO_COMPONENTS %}
 
+RUN uv venv -p {{ __options__python_version }} /app/.venv
+ENV VIRTUAL_ENV=/app/.venv
+
 {% set __pip_cache__ = common.mount_cache("/root/.cache/uv") %}
 {% if __pip_preheat_packages__ %}
 {% for value in __pip_preheat_packages__ -%}
@@ -90,7 +93,7 @@ EXPOSE 3000
 # Expose Prometheus port
 EXPOSE {{ __prometheus_port__ }}
 
-RUN chmod +x {{ bento__entrypoint }}
+RUN chmod +x {{ bento__entrypoint }} && chown {{ bento__user }}:{{ bento__user }} -R $VIRTUAL_ENV
 
 USER bentoml
 

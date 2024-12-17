@@ -228,7 +228,7 @@ class HTTPAppFactory(BaseAppFactory):
         # otel middleware
         from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
-        def client_request_hook(span: Span, _: dict[str, t.Any]) -> None:
+        def client_request_hook(span: Span, *_: t.Any) -> None:
             if span is not None:
                 trace_context.request_id = span.context.span_id
 

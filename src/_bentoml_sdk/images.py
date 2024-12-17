@@ -162,9 +162,11 @@ class PythonImage(Image):
             python_version = self.python_version
             if self.distro in ("ubi8",):
                 python_version = python_version.replace(".", "")
-            self.base_image = CONTAINER_METADATA[self.distro]["python"]["image"].format(
+            distro_config = CONTAINER_METADATA[self.distro]
+            self.base_image = distro_config["python"]["image"].format(
                 spec_version=python_version
             )
+            self.commands.insert(0, distro_config["default_install_command"])
 
     def system_packages(self, *packages: str) -> t.Self:
         if self._original_base_image:

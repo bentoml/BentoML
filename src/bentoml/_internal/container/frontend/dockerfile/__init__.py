@@ -72,7 +72,9 @@ CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
             "image": "amazonlinux:2",
             "supported_architectures": ["amd64", "arm64"],
         },
-        "install_command": "yum update && yum install -y {packages}",
+        "default_install_command": "yum update && yum install -y amazon-linux-extras ca-certificates "
+        'gcc gcc-c++ make bash shadow-utils && amazon-linux-extras enable && yum groupinstall -y "Development Tools"',
+        "install_command": "yum install -y {packages}",
     },
     "ubi8": {
         "supported_python_versions": SUPPORTED_PYTHON_VERSIONS,
@@ -85,7 +87,8 @@ CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
             "image": "nvidia/cuda:{spec_version}-cudnn8-runtime-ubi8",
             "supported_architectures": ["amd64", "arm64", "ppc64le"],
         },
-        "install_command": "yum update && yum install -y {packages}",
+        "default_install_command": "yum update && yum install -y ca-certificates gcc gcc-c++ make bash shadow-utils git",
+        "install_command": "yum install -y {packages}",
     },
     "debian": {
         "supported_python_versions": SUPPORTED_PYTHON_VERSIONS,
@@ -102,7 +105,9 @@ CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
             "image": "continuumio/miniconda3:latest",
             "supported_architectures": SUPPORTED_ARCHITECTURES,
         },
-        "install_command": "apt-get update && apt-get install -y {packages}",
+        "default_install_command": "apt-get update && apt-get install -q -y --no-install-recommends "
+        "--allow-remove-essential ca-certificates gnupg2 bash build-essential git",
+        "install_command": "apt-get install -q -y {packages}",
     },
     "alpine": {
         "supported_python_versions": SUPPORTED_PYTHON_VERSIONS,
@@ -115,7 +120,8 @@ CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
             "image": "continuumio/miniconda3:4.10.3p0-alpine",
             "supported_architectures": ["amd64"],
         },
-        "install_command": "apk update && apk add {packages}",
+        "default_install_command": "apk add --update bash gcc libc-dev shadow musl-dev build-base linux-headers g++ git",
+        "install_command": "apk add --update {packages}",
     },
 }
 

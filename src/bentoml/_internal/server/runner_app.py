@@ -156,7 +156,7 @@ class RunnerAppFactory(BaseAppFactory):
         from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
         from starlette.middleware import Middleware
 
-        def client_request_hook(span: Span | None, _scope: t.Dict[str, t.Any]) -> None:
+        def client_request_hook(span: Span | None, *_: t.Any) -> None:
             if span is not None:
                 trace_context.request_id = span.context.span_id
 

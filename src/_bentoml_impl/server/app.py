@@ -218,10 +218,10 @@ class ServiceAppFactory(BaseAppFactory):
             )
 
         # OpenTelemetry middleware
-        def server_request_hook(span: Span | None, _scope: dict[str, t.Any]) -> None:
+        def server_request_hook(span: Span, _scope: dict[str, t.Any]) -> None:
             from bentoml._internal.context import trace_context
 
-            if span is not None:
+            if span.context is not None:
                 trace_context.request_id = span.context.span_id
 
         from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware

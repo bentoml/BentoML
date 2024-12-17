@@ -5,7 +5,7 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:b5f559d8ff8e0e5ad4e141b67105147b6a6f343c833227cba0c30b82e7dc47ef"
+content_hash = "sha256:6f42027f1c1e29fd79d548b0514680f9d68625e0a9885a7244efb9ff1687defc"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -786,17 +786,18 @@ files = [
 
 [[package]]
 name = "fastapi"
-version = "0.1.17"
-requires_python = ">=3.6"
+version = "0.115.6"
+requires_python = ">=3.8"
 summary = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 groups = ["docs", "testing"]
 dependencies = [
-    "pydantic>=0.17",
-    "starlette>=0.9.7",
+    "pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4",
+    "starlette<0.42.0,>=0.40.0",
+    "typing-extensions>=4.8.0",
 ]
 files = [
-    {file = "fastapi-0.1.17-py3-none-any.whl", hash = "sha256:a6aaad2f60684477480ac9d7a1c95e67f4696a722f184db467494bfdd5b8f29d"},
-    {file = "fastapi-0.1.17.tar.gz", hash = "sha256:a9a9b6cc32c38bab27a6549b94c44a30c70b485bc789d03de3aa8725f3394be5"},
+    {file = "fastapi-0.115.6-py3-none-any.whl", hash = "sha256:e9240b29e36fa8f4bb7290316988e90c381e5092e0cbe84e7818cc3713bcf305"},
+    {file = "fastapi-0.115.6.tar.gz", hash = "sha256:9ec46f7addc14ea472958a96aae5b5de65f39721a46aaf5705c480d9a8b76654"},
 ]
 
 [[package]]
@@ -3972,7 +3973,7 @@ files = [
 
 [[package]]
 name = "starlette"
-version = "0.42.0"
+version = "0.41.3"
 requires_python = ">=3.8"
 summary = "The little ASGI library that shines."
 groups = ["default", "docs", "testing"]
@@ -3981,8 +3982,8 @@ dependencies = [
     "typing-extensions>=3.10.0; python_version < \"3.10\"",
 ]
 files = [
-    {file = "starlette-0.42.0-py3-none-any.whl", hash = "sha256:02f877201a3d6d301714b5c72f15cac305ea5cc9e213c4b46a5af7eecad0d625"},
-    {file = "starlette-0.42.0.tar.gz", hash = "sha256:91f1fbd612f3e3d821a8a5f46bf381afe2a9722a7b8bbde1c07fb83384c2882a"},
+    {file = "starlette-0.41.3-py3-none-any.whl", hash = "sha256:44cedb2b7c77a9de33a8b74b2b90e9f50d11fcf25d8270ea525ad71a25374ff7"},
+    {file = "starlette-0.41.3.tar.gz", hash = "sha256:0e4ab3d16522a255be6b28260b938eae2482f98ce5cc934cb08dce8dc3ba5835"},
 ]
 
 [[package]]

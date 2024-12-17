@@ -171,7 +171,7 @@ testing = [
     "scikit-learn",
     "yamllint==1.32.0",
     "coverage[toml]==7.2.6",
-    "fastapi",
+    "fastapi~=0.112",
     "lxml",
     "orjson",
     "pytest-cov==4.1.0",

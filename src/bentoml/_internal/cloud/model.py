@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import math
+import os
 import tarfile
 import typing as t
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from tempfile import NamedTemporaryFile
+from tempfile import mkstemp
 from threading import Lock
 
 import attrs
@@ -152,9 +154,11 @@ class ModelAPI:
         def io_cb(x: int):
             self.spinner.transmission_progress.update(upload_task_id, advance=x)
 
-        with NamedTemporaryFile(
+        fd, tar_name = mkstemp(
             prefix="bentoml-model-", suffix=".tar", dir=bentoml_tmp_dir
-        ) as tar_io:
+        )
+        try:
+            tar_io = os.fdopen(fd, "wb+")
             with self.spinner.spin(
                 text=f'Creating tar archive for model "{model.tag}"..'
             ):
@@ -219,7 +223,7 @@ class ModelAPI:
                         upload_id: str = remote_model.upload_id
 
                     chunks_count = math.ceil(file_size / FILE_CHUNK_SIZE)
-                    tar_io.file.close()
+                    os.close(fd)
 
                     def chunk_upload(
                         upload_id: str, chunk_number: int
@@ -241,7 +245,7 @@ class ModelAPI:
                         with self.spinner.spin(
                             text=f'({chunk_number}/{chunks_count}) Uploading chunk of model "{model.tag}"...'
                         ):
-                            with open(tar_io.name, "rb") as f:
+                            with open(tar_name, "rb") as f:
                                 chunk_io = CallbackIOWrapper(
                                     f,
                                     read_cb=io_cb,
@@ -335,6 +339,12 @@ class ModelAPI:
                 raise BentoMLException(f'Failed to upload model "{model.tag}"')
             else:
                 self.spinner.log(f'[bold green]Successfully pushed model "{model.tag}"')
+        finally:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+            os.unlink(tar_name)
 
     @inject
     def pull(

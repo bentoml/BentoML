@@ -73,6 +73,7 @@ class HuggingFaceModel(Model[str]):
                 model_path,
                 os.path.join(base_path, os.path.basename(model_path)),
                 symlinks=True,
+                dirs_exist_ok=True,
             )
         return snapshot_path
 

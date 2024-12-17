@@ -7,24 +7,35 @@ This section provides the tutorials for a curated list of example projects to he
 LLMs
 ----
 
-Deploy an OpenAI-compatible LLM API service:
+One-command LLM deployment with `OpenLLM <https://github.com/bentoml/OpenLLM>`_:
 
+.. code-block:: bash
+
+   pip install openllm  # or pip3 install openllm
+   openllm hello
+
+Deploy an OpenAI-compatible LLM API service with BentoML and vLLM:
+
+- `Llama 3.3 70B <https://github.com/bentoml/BentoVLLM/tree/main/llama3.3-70b-instruct-function-calling>`_
 - `Llama 3.2 90B <https://github.com/bentoml/BentoVLLM/tree/main/llama3.2-90b-instruct>`_
 - `Llama 3.1 70B <https://github.com/bentoml/BentoVLLM/tree/main/llama3.1-70b-instruct-awq>`_
 - `Mistral 7B <https://github.com/bentoml/BentoVLLM/tree/main/mistral-7b-instruct>`_
 - `Pixtral 12B <https://github.com/bentoml/BentoVLLM/tree/main/pixtral-12b>`_
 - `Phi 3 mini <https://github.com/bentoml/BentoVLLM/tree/main/phi-3-mini-4k-instruct>`_
 
-Choose your LLM Inference runtime:
+Customize your LLM inference runtime:
 
-- `vLLM <https://github.com/bentoml/BentoVLLM>`_ (or `OpenLLM <https://github.com/bentoml/OpenLLM>`_)
+- `vLLM <https://github.com/bentoml/BentoVLLM>`_
 - `TensorRT-LLM <https://github.com/bentoml/BentoTRTLLM>`_
 - `LMDeploy <https://github.com/bentoml/BentoLMDeploy>`_
 - `MLC-LLM <https://github.com/bentoml/BentoMLCLLM>`_
 - `SGLang <https://github.com/bentoml/BentoSGLang>`_
 - `Hugging Face TGI <https://github.com/bentoml/BentoTGI>`_
 
-Advanced examples:
+Compound AI systems
+-------------------
+
+Build and scale compound AI systems with BentoML:
 
 - `Agent: Function calling <https://github.com/bentoml/BentoFunctionCalling>`_
 - `Agent: LangGraph <https://github.com/bentoml/BentoLangGraph>`_

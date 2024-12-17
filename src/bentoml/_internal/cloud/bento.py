@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import math
+import os
 import tarfile
 import typing as t
 from concurrent.futures import ThreadPoolExecutor
 from tempfile import NamedTemporaryFile
+from tempfile import mkstemp
 
 import attrs
 import fs
@@ -208,9 +210,11 @@ class BentoAPI:
         def io_cb(x: int):
             self.spinner.transmission_progress.update(upload_task_id, advance=x)
 
-        with NamedTemporaryFile(
+        fd, tar_name = mkstemp(
             prefix="bentoml-bento-", suffix=".tar", dir=bentoml_tmp_dir
-        ) as tar_io:
+        )
+        try:
+            tar_io = os.fdopen(fd, "wb+")
             with self.spinner.spin(
                 text=f'Creating tar archive for bento "{bento.tag}"..'
             ):
@@ -284,7 +288,7 @@ class BentoAPI:
                         upload_id: str = remote_bento.upload_id
 
                     chunks_count = math.ceil(file_size / FILE_CHUNK_SIZE)
-                    tar_io.file.close()
+                    os.close(fd)
 
                     def chunk_upload(
                         upload_id: str, chunk_number: int
@@ -305,7 +309,7 @@ class BentoAPI:
                         with self.spinner.spin(
                             text=f'({chunk_number}/{chunks_count}) Uploading chunk of Bento "{bento.tag}"...'
                         ):
-                            with open(tar_io.name, "rb") as f:
+                            with open(tar_name, "rb") as f:
                                 chunk_io = CallbackIOWrapper(
                                     f,
                                     read_cb=io_cb,
@@ -398,6 +402,12 @@ class BentoAPI:
                 raise BentoMLException(f'Failed to upload Bento "{bento.tag}"')
             else:
                 self.spinner.log(f'[bold green]Successfully pushed Bento "{bento.tag}"')
+        finally:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+            os.unlink(tar_name)
 
     @inject
     def pull(

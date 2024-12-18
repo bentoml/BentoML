@@ -35,14 +35,33 @@ Log in to BentoCloud
 Deploy your first model
 -----------------------
 
-Perform the following steps to quickly deploy the :doc:`hello-world` example to BentoCloud.
+1. Clone the :doc:`hello-world` example.
 
-1. Make sure you have already cloned the `project repository <https://github.com/bentoml/quickstart>`_.
-2. In the root directory of this project, run ``bentoml deploy``. Optionally, use the ``-n`` flag to set a name.
+   .. code-block:: bash
+
+      git clone https://github.com/bentoml/quickstart.git
+      cd quickstart
+
+2. Deploy it to BentoCloud from the project directory. Optionally, use the ``-n`` flag to set a name.
 
    .. code-block:: bash
 
       bentoml deploy . -n my-first-bento
+
+   Sample output:
+
+   .. code-block:: bash
+
+      🍱 Built bento summarization:ngfnciv5g6nxonry
+      Successfully pushed Bento "summarization:ngfnciv5g6nxonry"
+      ✅ Created deployment "my-first-bento" in cluster "google-cloud-us-central-1"
+      💻 View Dashboard: https://demo.cloud.bentoml.com/deployments/my-first-bento
+
+   The first Deployment might take a minute or two. Wait until it's fully ready:
+
+   .. code-block:: bash
+
+      ✅ Deployment "my-first-bento" is ready: https://demo.cloud.bentoml.com/deployments/my-first-bento
 
 3. On the BentoCloud console, navigate to the **Deployments** page, and click your Deployment. Once it's up and running, you can interact with it using the **Form** section on the **Playground** tab.
 

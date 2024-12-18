@@ -14,21 +14,44 @@ This tutorial demonstrates how to serve a text summarization model from Hugging 
 
 You can find the source code in the `quickstart <https://github.com/bentoml/quickstart>`_ GitHub repository.
 
-Install dependencies
---------------------
+Set up the environment
+----------------------
 
-Clone the project repository and install the required dependencies.
+1. Clone the project repository.
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    git clone https://github.com/bentoml/quickstart.git
-    cd quickstart
-    # Recommend Python 3.11
-    pip install -r requirements.txt
+      git clone https://github.com/bentoml/quickstart.git
+      cd quickstart
 
-.. note::
+2. Create a virtual environment and activate it.
 
-   We recommend you create a virtual environment for dependency isolation.
+   .. tab-set::
+
+        .. tab-item:: Mac/Linux
+
+            .. code-block:: bash
+
+               python3 -m venv quickstart
+               source quickstart/bin/activate
+
+        .. tab-item:: Windows
+
+            .. code-block:: bash
+
+               python -m venv quickstart
+               quickstart\Scripts\activate
+
+   .. note::
+
+      We recommend you create a virtual environment for dependency isolation. If you don't want to set up a local development environment, skip to the :doc:`BentoCloud deployment document <cloud-deployment>`.
+
+3. Install the dependencies.
+
+   .. code-block:: bash
+
+      # Recommend Python 3.11
+      pip install -r requirements.txt
 
 Create a BentoML Service
 ------------------------
@@ -64,54 +87,57 @@ In BentoML, a :doc:`Service </build-with-bentoml/services>` is a deployable and 
 
 The ``bentoml.importing()`` context manager is used to handle import statements for dependencies required during serving but may not be available in other situations.
 
-Run ``bentoml serve service:<service_class_name>`` to start the BentoML server.
+Serve the model locally
+-----------------------
 
-.. code-block:: bash
+1. Run ``bentoml serve service:<service_class_name>`` to start the BentoML server.
 
-    $ bentoml serve service:Summarization
+   .. code-block:: bash
 
-    2024-02-02T07:16:14+0000 [WARNING] [cli] Converting 'Summarization' to lowercase: 'summarization'.
-    2024-02-02T07:16:15+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:Summarization" listening on http://localhost:3000 (Press CTRL+C to quit)
+      $ bentoml serve service:Summarization
 
-The server is active at http://localhost:3000. You can interact with it in different ways.
+      2024-02-02T07:16:14+0000 [WARNING] [cli] Converting 'Summarization' to lowercase: 'summarization'.
+      2024-02-02T07:16:15+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:Summarization" listening on http://localhost:3000 (Press CTRL+C to quit)
 
-.. tab-set::
+2. You can call the exposed ``summarize`` endpoint at http://localhost:3000.
 
-    .. tab-item:: CURL
+   .. tab-set::
 
-        .. code-block:: bash
+       .. tab-item:: CURL
 
-            curl -X 'POST' \
-                'http://localhost:3000/summarize' \
-                -H 'accept: text/plain' \
-                -H 'Content-Type: application/json' \
-                -d '{
-                "text": "Breaking News: In an astonishing turn of events, the small town of Willow Creek has been taken by storm as local resident Jerry Thompson'\''s cat, Whiskers, performed what witnesses are calling a '\''miraculous and gravity-defying leap.'\'' Eyewitnesses report that Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly. The event, which took place in Thompson'\''s backyard, is now being investigated by scientists for potential breaches in the laws of physics. Local authorities are considering a town festival to celebrate what is being hailed as '\''The Leap of the Century."
-            }'
+           .. code-block:: bash
 
-    .. tab-item:: Python client
+               curl -X 'POST' \
+                   'http://localhost:3000/summarize' \
+                   -H 'accept: text/plain' \
+                   -H 'Content-Type: application/json' \
+                   -d '{
+                   "text": "Breaking News: In an astonishing turn of events, the small town of Willow Creek has been taken by storm as local resident Jerry Thompson'\''s cat, Whiskers, performed what witnesses are calling a '\''miraculous and gravity-defying leap.'\'' Eyewitnesses report that Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly. The event, which took place in Thompson'\''s backyard, is now being investigated by scientists for potential breaches in the laws of physics. Local authorities are considering a town festival to celebrate what is being hailed as '\''The Leap of the Century."
+               }'
 
-        .. code-block:: python
+       .. tab-item:: Python client
 
-            import bentoml
+           .. code-block:: python
 
-            with bentoml.SyncHTTPClient("http://localhost:3000") as client:
-                result = client.summarize(
-                    text="Breaking News: In an astonishing turn of events, the small town of Willow Creek has been taken by storm as local resident Jerry Thompson's cat, Whiskers, performed what witnesses are calling a 'miraculous and gravity-defying leap.' Eyewitnesses report that Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly. The event, which took place in Thompson's backyard, is now being investigated by scientists for potential breaches in the laws of physics. Local authorities are considering a town festival to celebrate what is being hailed as 'The Leap of the Century.'"
-                )
-                print(result)
+               import bentoml
 
-    .. tab-item:: Swagger UI
+               with bentoml.SyncHTTPClient("http://localhost:3000") as client:
+                   result = client.summarize(
+                       text="Breaking News: In an astonishing turn of events, the small town of Willow Creek has been taken by storm as local resident Jerry Thompson's cat, Whiskers, performed what witnesses are calling a 'miraculous and gravity-defying leap.' Eyewitnesses report that Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly. The event, which took place in Thompson's backyard, is now being investigated by scientists for potential breaches in the laws of physics. Local authorities are considering a town festival to celebrate what is being hailed as 'The Leap of the Century.'"
+                   )
+                   print(result)
 
-        Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, and click **Try it out**. In the **Request body** box, enter your prompt and click **Execute**.
+       .. tab-item:: Swagger UI
 
-        .. image:: ../_static/img/get-started/quickstart/service-ui.png
+           Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, and click **Try it out**. In the **Request body** box, enter your prompt and click **Execute**.
 
-Expected output:
+           .. image:: ../_static/img/get-started/quickstart/service-ui.png
 
-.. code-block:: bash
+   Expected output:
 
-    Hello world! Here's your summary: Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly . The event is now being investigated by scientists for potential breaches in the laws of physics . Local authorities considering a town festival to celebrate what is being hailed as 'The Leap of the Century'
+   .. code-block:: bash
+
+       Hello world! Here's your summary: Whiskers, an otherwise unremarkable tabby cat, jumped a record-breaking 20 feet into the air to catch a fly . The event is now being investigated by scientists for potential breaches in the laws of physics . Local authorities considering a town festival to celebrate what is being hailed as 'The Leap of the Century'
 
 What's next
 -----------

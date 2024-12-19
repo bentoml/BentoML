@@ -140,6 +140,7 @@ def _track_serve_init(
 
     if svc.bento is not None:
         bento = svc.bento
+        apis = getattr(bento.info, "apis", [])
         event_properties = ServeInitEvent(
             serve_id=serve_info.serve_id,
             serve_from_bento=True,
@@ -149,11 +150,13 @@ def _track_serve_init(
             bento_creation_timestamp=bento.info.creation_time,
             num_of_models=len(bento.info.all_models),
             num_of_runners=len(svc.runners) if is_legacy else len(svc.dependencies),
-            num_of_apis=len(bento.info.apis),
+            num_of_apis=len(apis),
             model_types=[m.module for m in bento.info.all_models],
-            runnable_types=[r.runnable_type for r in bento.info.runners],
-            api_input_types=[api.input_type for api in bento.info.apis],
-            api_output_types=[api.output_type for api in bento.info.apis],
+            runnable_types=[
+                r.runnable_type for r in getattr(bento.info, "runners", [])
+            ],
+            api_input_types=[api.input_type for api in apis],
+            api_output_types=[api.output_type for api in apis],
         )
     else:
         if is_legacy:

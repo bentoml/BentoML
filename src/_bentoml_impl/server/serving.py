@@ -263,6 +263,8 @@ def serve_http(
                 backlog=backlog,
             )
         )
+        if BentoMLContainer.ssl.enabled.get() and not ssl_certfile:
+            raise BentoMLConfigException("ssl_certfile is required when ssl is enabled")
 
         ssl_args = construct_ssl_args(
             ssl_certfile=ssl_certfile,

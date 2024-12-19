@@ -16,13 +16,13 @@ from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.configuration import get_quiet_mode
 from bentoml._internal.container.frontend.dockerfile import CONTAINER_METADATA
 from bentoml._internal.container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
+from bentoml._internal.utils.pkg import get_local_bentoml_dependency
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger("bentoml.build")
 
 DEFAULT_PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
-BENTOML_GIT_DEPENDENCY = "bentoml @ git+https://github.com/bentoml/bentoml.git"
 
 
 @attrs.define
@@ -109,7 +109,7 @@ class Image:
             with requirements_in.open("w") as f:
                 f.write(requirements_file.dumps(preserve_one_empty_line=True))
                 if not has_bentoml_req:
-                    req = get_bentoml_requirement() or BENTOML_GIT_DEPENDENCY
+                    req = get_bentoml_requirement() or get_local_bentoml_dependency()
                     f.write(f"{req}\n")
             lock_args = [
                 str(requirements_in),

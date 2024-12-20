@@ -288,7 +288,7 @@ class BentoAPI:
                         upload_id: str = remote_bento.upload_id
 
                     chunks_count = math.ceil(file_size / FILE_CHUNK_SIZE)
-                    os.close(fd)
+                    tar_io.close()
 
                     def chunk_upload(
                         upload_id: str, chunk_number: int

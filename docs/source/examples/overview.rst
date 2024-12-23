@@ -55,7 +55,7 @@ Serve text-to-image and image-to-image models with BentoML:
 - `Stable Diffusion XL Turbo <https://github.com/bentoml/BentoDiffusion/tree/main/sdxl-turbo>`_
 - `Stable Video Diffusion <https://github.com/bentoml/BentoDiffusion/tree/main/svd>`_
 - `ControlNet <https://github.com/bentoml/BentoDiffusion/tree/main/controlnet>`_
-- `ComfyUI <https://github.com/bentoml/BentoComfyUI>`_
+- `ComfyUI workflows as APIs <https://github.com/bentoml/comfy-pack>`_
 - Check out the `BentoDiffusion project <https://github.com/bentoml/BentoDiffusion>`_ to see more examples
 
 Audio

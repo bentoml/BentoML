@@ -44,7 +44,7 @@ This setup process will establish an IAM Role to provide BentoCloud with the nec
 2. Go to the `CloudFormation <http://console.aws.amazon.com/cloudformation/home>`_ web console. Ensure you are in the desired AWS region. Switch region if necessary.
 3. On the **Stacks** page, choose **Create stack** > **With new resources (standard)**.
 
-   .. image:: ../../_static/img/bentocloud/byoc/aws/stack-with-new-resources.png
+   .. image:: ../../../_static/img/bentocloud/administering/byoc/aws/stack-with-new-resources.png
 
 4. In the **Create stack** section, select **Choose an existing template** and **Amazon S3 URL** to paste the following URL, and then click **Next**:
 
@@ -52,14 +52,14 @@ This setup process will establish an IAM Role to provide BentoCloud with the nec
 
         https://customer-helpdesk.s3.us-west-1.amazonaws.com/create-bentocloud-copilot-role-v2.json
 
-   .. image:: ../../_static/img/bentocloud/byoc/aws/create-stack.png
+   .. image:: ../../../_static/img/bentocloud/administering/byoc/aws/create-stack.png
 
 5. In the **Specify stack details** section, provide the following information and click **Next**.
 
    - **Stack name**: ``bentocloud``
    - **BentoCloudCopilot**: ``arn:aws:iam::303081928216:user/bentocloud-copilot-[organization_name]``
 
-   .. image:: ../../_static/img/bentocloud/byoc/aws/specify-stack-details.png
+   .. image:: ../../../_static/img/bentocloud/administering/byoc/aws/specify-stack-details.png
 
 6. In the **Configuring stack options** section, keep the default selections and click **Next**.
 7. In the **Review and create** section, scroll down to **Capabilities** to acknowledge IAM Role creation, and click **Submit**.
@@ -67,13 +67,13 @@ This setup process will establish an IAM Role to provide BentoCloud with the nec
 
    a. Go to **CloudFormation** > **Stacks** > **bentocloud**, and wait until the stack enters the following state:
 
-      .. image:: ../../_static/img/bentocloud/byoc/aws/aws-state-one.png
+      .. image:: ../../../_static/img/bentocloud/administering/byoc/aws/aws-state-one.png
 
-      .. image:: ../../_static/img/bentocloud/byoc/aws/aws-state-two.png
+      .. image:: ../../../_static/img/bentocloud/administering/byoc/aws/aws-state-two.png
 
    b. Go to the **Outputs** tab, and copy the value of ``InstallerRole``.
 
-      .. image:: ../../_static/img/bentocloud/byoc/aws/value.png
+      .. image:: ../../../_static/img/bentocloud/administering/byoc/aws/value.png
 
 Post setup
 ----------
@@ -90,7 +90,7 @@ You may revoke the authorization to BentoCloud copilot when there is no ongoing 
 1. Go to the `Identity and Access Management (IAM) console <https://console.aws.amazon.com/iam/>`_.
 2. In the navigation pane, select **Roles** > **The copilot role.**
 
-   .. image:: ../../_static/img/bentocloud/byoc/aws/bentocloud-copilot-iam.png
+   .. image:: ../../../_static/img/bentocloud/administering/byoc/aws/bentocloud-copilot-iam.png
 
 3. Removing/adding the ``AWS`` line from the ``Principal`` field will revoke/grant authorization to BentoCloud copilot.
 

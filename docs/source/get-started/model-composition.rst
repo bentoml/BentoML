@@ -32,6 +32,7 @@ You can run multiple models on the same hardware device and expose separate or c
     import bentoml
     from bentoml.models import HuggingFaceModel
     from transformers import pipeline
+    from typing import List
 
     # Run two models in the same Service on the same hardware device
     @bentoml.service(
@@ -39,31 +40,34 @@ You can run multiple models on the same hardware device and expose separate or c
         traffic={"timeout": 20},
     )
     class MultiModelService:
-        # Retrieve model references from HF
-        model_a_path = HuggingFaceModel("model_a")
-        model_b_path = HuggingFaceModel("model_b")
+        # Retrieve model references from HF by specifying its HF ID
+        model_a_path = HuggingFaceModel("FacebookAI/roberta-large-mnli")
+        model_b_path = HuggingFaceModel("distilbert/distilbert-base-uncased")
 
         def __init__(self) -> None:
             # Initialize pipelines for each model
-            self.pipeline_a = pipeline('task_a', model=self.model_a_path)
-            self.pipeline_b = pipeline('task_b', model=self.model_b_path)
+            self.pipeline_a = pipeline(task="zero-shot-classification", model=self.model_a_path, hypothesis_template="This text is about {}")
+            self.pipeline_b = pipeline(task="sentiment-analysis", model=self.model_b_path)
 
         # Define an API for data processing with model A
         @bentoml.api
-        def process_a(self, input_data: str) -> str:
-            return self.pipeline_a(input_data)[0]
+        def process_a(self, input_data: str, labels: List[str] = ["positive", "negative", "neutral"]) -> dict:
+            return self.pipeline_a(input_data, labels)
 
         # Define an API for data processing with model B
         @bentoml.api
-        def process_b(self, input_data: str) -> str:
+        def process_b(self, input_data: str) -> dict:
             return self.pipeline_b(input_data)[0]
 
         # Define an API endpoint that combines the processing of both models
         @bentoml.api
-        def combined_process(self, input_data: str) -> dict:
-            result_a = self.pipeline_a(input_data)[0]
-            result_b = self.pipeline_b(input_data)[0]
-            return {"result_a": result_a, "result_b": result_b}
+        def combined_process(self, input_data: str, labels: List[str] = ["positive", "negative", "neutral"]) -> dict:
+            classification = self.pipeline_a(input_data, labels)
+            sentiment = self.pipeline_b(input_data)[0]
+            return {
+                "classification": classification,
+                "sentiment": sentiment
+            }
 
 .. note::
 
@@ -83,40 +87,43 @@ You can let models work in a sequence, where the output of one model becomes the
 
     import bentoml
     from bentoml.models import HuggingFaceModel
-    import numpy as np
     from transformers import pipeline
+    from typing import Dict, Any
 
 
     @bentoml.service(resources={"cpu": "2", "memory": "2Gi"})
     class PreprocessingService:
-        model_a_path = HuggingFaceModel("model_a")
+        model_a_path = HuggingFaceModel("distilbert/distilbert-base-uncased")
 
         def __init__(self) -> None:
             # Initialize pipeline for model A
-            self.pipeline_a = pipeline('task_a', model=self.model_a_path)
+            self.pipeline_a = pipeline(task="text-classification", model=self.model_a_path)
 
         @bentoml.api
-        def preprocess(self, input_data: np.ndarray) -> np.ndarray:
+        def preprocess(self, input_data: str) -> Dict[str, Any]:
             # Dummy preprocessing steps
-            data_a = self.pipeline_a(input_data)
-            return data_a
+            return self.pipeline_a(input_data)[0]
 
 
     @bentoml.service(resources={"gpu": 1, "memory": "4Gi"})
     class InferenceService:
-        model_b_path = HuggingFaceModel("model_b")
+        model_b_path = HuggingFaceModel("distilbert/distilroberta-base")
         preprocessing_service = bentoml.depends(PreprocessingService)
 
         def __init__(self) -> None:
             # Initialize pipeline for model B
-            self.pipeline_b = pipeline('task_b', model=self.model_b_path)
+            self.pipeline_b = pipeline(task="text-classification", model=self.model_b_path)
 
         @bentoml.api
-        async def predict(self, input_data: np.ndarray) -> np.ndarray:
+        async def predict(self, input_data: str) -> Dict[str, Any]:
+            # Dummy inference on preprocessed data
+            # Implement your custom logic here
             preprocessed_data = await self.preprocessing_service.to_async.preprocess(input_data)
-            # Simulate inference on preprocessed data
-            data_b = self.pipeline_b(preprocessed_data)
-            return data_b
+            final_result = self.pipeline_b(input_data)[0]
+            return {
+                "preprocessing_result": preprocessed_data,
+                "final_result": final_result
+            }
 
 You use ``bentoml.depends`` to access one Service from another. It accepts the dependent Service class as an argument and allows you to call its available function. See :doc:`/build-with-bentoml/distributed-services` for details.
 
@@ -132,36 +139,34 @@ You can run multiple independent models at the same time and then combine their 
     import asyncio
     import bentoml
     from bentoml.models import HuggingFaceModel
-    import numpy as np
     from transformers import pipeline
+    from typing import Dict, Any, List
 
     @bentoml.service(resources={"gpu": 1, "memory": "4Gi"})
     class ModelAService:
-        model_a_path = HuggingFaceModel("model_a")
+        model_a_path = HuggingFaceModel("FacebookAI/roberta-large-mnli")
 
         def __init__(self) -> None:
             # Initialize pipeline for model A
-            self.pipeline_a = pipeline('task_a', model=self.model_a_path)
+            self.pipeline_a = pipeline(task="zero-shot-classification", model=self.model_a_path, hypothesis_template="This text is about {}")
 
         @bentoml.api
-        def predict(self, input_data: np.ndarray) -> np.ndarray:
+        def predict(self, input_data: str, labels: List[str] = ["positive", "negative", "neutral"]) -> Dict[str, Any]:
             # Dummy preprocessing steps
-            data_a = self.pipeline_a(input_data)
-            return data_a
+            return self.pipeline_a(input_data, labels)
 
     @bentoml.service(resources={"gpu": 1, "memory": "4Gi"})
     class ModelBService:
-        model_b_path = HuggingFaceModel("model_b")
+        model_b_path = HuggingFaceModel("distilbert/distilbert-base-uncased")
 
         def __init__(self) -> None:
             # Initialize pipeline for model B
-            self.pipeline_b = pipeline('task_b', model=self.model_b_path)
+            self.pipeline_b = pipeline(task="sentiment-analysis", model=self.model_b_path)
 
         @bentoml.api
-        def predict(self, input_data: np.ndarray) -> np.ndarray:
+        def predict(self, input_data: str) -> Dict[str, Any]:
             # Dummy preprocessing steps
-            data_b = self.pipeline_b(input_data)
-            return data_b
+            return self.pipeline_b(input_data)[0]
 
     @bentoml.service(resources={"cpu": "4", "memory": "8Gi"})
     class EnsembleService:
@@ -169,13 +174,16 @@ You can run multiple independent models at the same time and then combine their 
         service_b = bentoml.depends(ModelBService)
 
         @bentoml.api
-        async def ensemble_predict(self, input_data: np.ndarray) -> np.ndarray:
+        async def ensemble_predict(self, input_data: str, labels: List[str] = ["positive", "negative", "neutral"]) -> Dict[str, Any]:
             result_a, result_b = await asyncio.gather(
-                self.service_a.to_async.predict(input_data),
+                self.service_a.to_async.predict(input_data, labels),
                 self.service_b.to_async.predict(input_data)
             )
             # Dummy aggregation
-            return (result_a + result_b) / 2
+            return {
+                "zero_shot_classification": result_a,
+                "sentiment_analysis": result_b
+            }
 
 Inference graph
 """""""""""""""

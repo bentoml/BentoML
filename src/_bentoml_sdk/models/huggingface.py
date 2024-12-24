@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import shutil
 import typing as t
@@ -85,25 +87,26 @@ class HuggingFaceModel(Model[str]):
 
     def to_info(self, alias: str | None = None) -> BentoModelInfo:
         model_id = self.model_id.lower()
-        tag = Tag(model_id.replace("/", "--"), self.commit_hash)
+        metadata = {
+            "model_id": model_id,
+            "revision": self.commit_hash,
+            "endpoint": self.endpoint or DEFAULT_HF_ENDPOINT,
+            "include": self.include,
+            "exclude": self.exclude,
+        }
+        content_hash = hashlib.md5(
+            json.dumps(metadata, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        tag = Tag(model_id.replace("/", "--"), content_hash)
         return BentoModelInfo(
-            tag,
-            alias=alias,
-            registry="huggingface",
-            metadata={
-                "model_id": model_id,
-                "revision": self.commit_hash,
-                "endpoint": self.endpoint or DEFAULT_HF_ENDPOINT,
-                "include": self.include,
-                "exclude": self.exclude,
-            },
+            tag, alias=alias, registry="huggingface", metadata=metadata
         )
 
     @classmethod
     def from_info(cls, info: BentoModelInfo) -> HuggingFaceModel:
         if not info.metadata:
-            name, revision = info.tag.name, info.tag.version
-            return cls(model_id=name.replace("--", "/"), revision=revision or "main")
+            name, _ = info.tag.name, info.tag.version
+            return cls(model_id=name.replace("--", "/"))
         model = cls(
             model_id=info.metadata["model_id"],
             revision=info.metadata["revision"],
@@ -145,7 +148,7 @@ class HuggingFaceModel(Model[str]):
         }
         return CreateModelSchema(
             description="",
-            version=revision,
+            version=self.to_info().tag.version or revision,
             manifest=ModelManifestSchema(
                 module="",
                 metadata=metadata,

@@ -105,7 +105,7 @@ class HuggingFaceModel(Model[str]):
     @classmethod
     def from_info(cls, info: BentoModelInfo) -> HuggingFaceModel:
         if not info.metadata:
-            name, _ = info.tag.name, info.tag.version
+            name = info.tag.name
             return cls(model_id=name.replace("--", "/"))
         model = cls(
             model_id=info.metadata["model_id"],

@@ -2,138 +2,37 @@
 Model composition
 =================
 
-Model composition refers to the practice of integrating multiple machine learning (ML) models, making it possible to orchestrate multiple inference or processing workflows within a single application. This approach not only helps facilitate the combination of different ML models but also ensures their independent configuration and scaling.
+Model composition lets you combine multiple models to build sophisticated AI applications such as RAG and AI agents. BentoML provides simple :doc:`Service APIs </build-with-bentoml/services>` for creating workflows where models need to work together - either in sequence (one after another) or in parallel (at the same time).
 
-BentoML provides simple :doc:`Service APIs </build-with-bentoml/services>` to implement complex model composition with parallel or sequential execution for different ML scenarios, like Retrieval-augmented generation (RAG), computer vision (CV), natural language processing (NLP), and optical character recognition (OCR).
+You might want to use model composition in BentoML when you need to:
 
-This document provides an overview of model composition with basic code examples.
+- Process different types of data together (for example, images and text) with different models
+- Improve accuracy and performance by combining results from multiple models
+- Run different models on specialized hardware (for example, GPUs and CPUs)
+- Orchestrate sequential steps like preprocessing, inference, and postprocessing with specialized models or services
 
-When should you compose models?
--------------------------------
+.. seealso::
 
-Consider model composition with BentoML in the following scenarios.
+   For more information, see the blog post `A Guide to Model Composition <https://medium.com/bentoml/a-guide-to-model-composition-09fbff8e62a5>`_.
 
-Multi-modal applications
-^^^^^^^^^^^^^^^^^^^^^^^^
+Examples
+--------
 
-Multi-modal applications require the ability to understand, process, and derive insights from different types of data (for example, text, images, and audio) simultaneously. You can compose distinct models to build such applications, each specialized in handling a specific type of data.
+Model composition in BentoML can involve single or multiple :doc:`Services </build-with-bentoml/services>`, depending on your application.
 
-A typical example of model composition for building multi-modal applications is `BLIP-2 <https://arxiv.org/abs/2301.12597>`_, a state-of-the-art model designed for tasks that involve both text and images. It integrates three distinct models, each contributing a unique capability to the system:
+For each Service, you can use ``resources`` in the ``@bentoml.service`` decorator to configure the required resources for deployment, such as GPUs. Note that :ref:`this field only takes effect on BentoCloud <resources>`.
 
-- A frozen pre-trained image encoder
-- A lightweight Querying Transformer model (Q-Former)
-- A frozen large language model (LLM) like OPT and FlanT5
+Run multiple models in one Service
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. figure:: ../../source/_static/img/guides/model-composition/model-composition-blip-2.png
-
-    BLIP-2 architecture. Source: The `original BLIP-2 paper <https://arxiv.org/abs/2301.12597>`_.
-
-Ensemble modeling
-^^^^^^^^^^^^^^^^^
-
-Ensemble modeling is an ML strategy to overcome the limitations of single models by combining the predictions from multiple models to produce a single, more accurate result. Key techniques in ensemble modeling include:
-
-- **Bagging**: Train multiple models on different subsets of the training data and then average their predictions, useful for reducing variance.
-- **Boosting**: Sequentially train models, where each model attempts to correct errors made by the previous ones.
-- **Stacking**: Train multiple models and then use a better model that leverages the strengths of each base model to improve overall performance and combine their predictions.
-
-Examples of ensemble modeling include Random Forest, which is a type of bagged ensemble of decision trees, and Gradient Boosting Machines (GBMs), which use boosting to produce powerful predictive models. These techniques are used across various domains, from financial forecasting to healthcare diagnostics.
-
-Varied hardware and scaling needs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Different models may have unique hardware requirements and scaling behaviors, making it necessary to compose models to allocate resources efficiently. BentoML allows you to deploy :doc:`multiple Services </build-with-bentoml/distributed-services>`, each wrapping a model, on dedicated hardware devices (CPU and GPU servers) and independently scale them on BentoCloud.
-
-Here is an example ``service.py`` file containing multiple models with varied hardware needs:
-
-.. code-block:: python
-
-    from PIL.Image import Image as PILImage
-    import typing as t
-    import bentoml
-
-    @bentoml.service(resources={"gpu": 1, "memory": "4Gi"})
-    class ImageModel:
-        def __init__(self):
-            # Simulating an image processing model initialization
-            self.model = "Simulated image processing model"
-
-        @bentoml.api
-        def process_image(self, input: PILImage) -> str:
-            return f"Processed image using GPU"
-
-    @bentoml.service(resources={"cpu": "2", "memory": "2Gi"})
-    class TextModel:
-        def __init__(self):
-            # Simulating a text processing model initialization
-            self.model = "Simulated text processing model"
-
-        @bentoml.api
-        def analyze_text(self, text: str) -> str:
-            return f"Analyzed text: {text} using CPU"
-
-    @bentoml.service(resources={"cpu": "1", "memory": "1Gi"})
-    class DataModel:
-        def __init__(self):
-            # Simulating a data analysis model initialization
-            self.model = "Simulated data analysis model"
-
-        @bentoml.api
-        def process_data(self, data: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-            return {"processed_data": data, "status": "success"}
-
-    @bentoml.service(resources={"cpu": "4", "memory": "8Gi"})
-    class InferenceOrchestrator:
-        image_processor = bentoml.depends(ImageModel)
-        text_analyzer = bentoml.depends(TextModel)
-        data_processor = bentoml.depends(DataModel)
-
-        @bentoml.api
-        ...
-
-In this example, the ``ImageModel``, ``TextModel``, and ``DataModel`` are defined in separated Services, each with their own hardware resource requirements (GPU for image processing, and CPU for text and data analysis) set in the ``@bentoml.service`` decorator. This means you can independently scale them when deployed on BentoCloud.
-
-Pipeline processing
-^^^^^^^^^^^^^^^^^^^
-
-Model composition is an ideal choice when you need a sequence of processing steps (like preprocessing, prediction, post-processing). Each step can be handled by a different model optimized for that specific function. For example, in a document processing application, the task often begins with preprocessing the input, followed by the main prediction task, and ends with post-processing. Each of these steps might require different models:
-
-- **Preprocessing**: An OCR model extracts text from images.
-- **Prediction**: A text classification model categorizes the document.
-- **Post-processing**: A summarization model creates a brief summary.
-
-In addition to sequential pipelines, you may also want to run multiple models concurrently to handle different aspects of a task. This is particularly useful in scenarios like ensemble modeling (as mentioned above, predictions from multiple models are aggregated to improve accuracy), or in computer vision tasks, where image segmentation and object detection models might run in parallel to provide a composite analysis of an image.
-
-Note that if you can use one model for all the steps directly without affecting performance, you should use one model directly. The choice depends on the specific requirements of your application.
-
-For more information, see this paper `The Shift from Models to Compound AI Systems <https://bair.berkeley.edu/blog/2024/02/18/compound-ai-systems/>`_.
-
-Why should you compose models?
-------------------------------
-
-Composing models in BentoML offers several benefits:
-
-- **Improved accuracy and performance**: By leveraging the strengths of multiple specialized models, you can improve the overall accuracy and performance of the solution. One typical example is ensemble modeling, as aggregating the results from multiple models can help cancel out their individual biases and errors, leading to more accurate predictions. You can learn more `in this blog post <https://www.datacamp.com/tutorial/what-bagging-in-machine-learning-a-guide-with-examples>`_.
-- **Customization and flexibility**: Model composition offers the freedom to mix and match models as needed. You can easily swap out individual components without overhauling the entire project, allowing for modular upgrades and testing.
-- **Resource optimization**: You can improve resource utilization by distributing workloads across models, each optimized for specific hardware requirements.
-- **Faster development and iteration (for a bigger problem)**: Teams can work on different models simultaneously, leading to quicker iterations and shorter development cycles.
-
-How to compose models in BentoML
---------------------------------
-
-Model composition in BentoML can involve single or multiple Services, with each model potentially serving as part of a pipeline within a Service, or as standalone components that communicate across Services. The architecture you choose depends on your specific needs. For example, a pipeline of models might be wrapped within a single Service for streamlined processing, while another separate Service might handle routing and orchestrate user requests to this inference Service.
-
-See the following scenarios for details.
-
-Scenario 1: Run multiple models within the same Service on the same instance
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This example defines multiple models within the same Service, with separate APIs for each and a combined API.
+You can run multiple models on the same hardware device and expose separate or combined APIs for them.
 
 .. code-block:: python
 
     import bentoml
+    from bentoml.models import HuggingFaceModel
     from transformers import pipeline
+    from typing import List
 
     # Run two models in the same Service on the same hardware device
     @bentoml.service(
@@ -141,117 +40,133 @@ This example defines multiple models within the same Service, with separate APIs
         traffic={"timeout": 20},
     )
     class MultiModelService:
-        # Retrieve model references from the BentoML Model Store
-        model_a_ref = bentoml.models.get("model_a:latest")
-        model_b_ref = bentoml.models.get("model_b:latest")
+        # Retrieve model references from HF by specifying its HF ID
+        model_a_path = HuggingFaceModel("FacebookAI/roberta-large-mnli")
+        model_b_path = HuggingFaceModel("distilbert/distilbert-base-uncased")
 
         def __init__(self) -> None:
             # Initialize pipelines for each model
-            self.pipeline_a = pipeline('task_a', model=self.model_a_ref.path)
-            self.pipeline_b = pipeline('task_b', model=self.model_b_ref.path)
+            self.pipeline_a = pipeline(task="zero-shot-classification", model=self.model_a_path, hypothesis_template="This text is about {}")
+            self.pipeline_b = pipeline(task="sentiment-analysis", model=self.model_b_path)
 
-        # Define an API endpoint for processing input data with model A
+        # Define an API for data processing with model A
         @bentoml.api
-        def process_a(self, input_data: str) -> str:
-            return self.pipeline_a(input_data)[0]
+        def process_a(self, input_data: str, labels: List[str] = ["positive", "negative", "neutral"]) -> dict:
+            return self.pipeline_a(input_data, labels)
 
-        # Define an API endpoint for processing input data with model B
+        # Define an API for data processing with model B
         @bentoml.api
-        def process_b(self, input_data: str) -> str:
+        def process_b(self, input_data: str) -> dict:
             return self.pipeline_b(input_data)[0]
 
         # Define an API endpoint that combines the processing of both models
         @bentoml.api
-        def combined_process(self, input_data: str) -> dict:
-            result_a = self.pipeline_a(input_data)[0]
-            result_b = self.pipeline_b(input_data)[0]
-            return {"result_a": result_a, "result_b": result_b}
+        def combined_process(self, input_data: str, labels: List[str] = ["positive", "negative", "neutral"]) -> dict:
+            classification = self.pipeline_a(input_data, labels)
+            sentiment = self.pipeline_b(input_data)[0]
+            return {
+                "classification": classification,
+                "sentiment": sentiment
+            }
 
-For a more practical example, see :doc:`/examples/controlnet`.
+.. note::
 
-Scenario 2: Run and scale multiple models on different instances independently
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   The ``HuggingFaceModel`` function returns the downloaded model path as a string. You must pass in the model ID as shown on Hugging Face (for example, ``HuggingFaceModel("FacebookAI/roberta-large-mnli")``).  See :doc:`/build-with-bentoml/model-loading-and-management` for details.
+
+Run and scale multiple models independently in separate Services
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When your models need independent scaling or different hardware, split them into separate Services.
 
 Sequential
 """"""""""
 
-This example defines a sequential pipeline where output from one model is fed as input to another. This is often used in scenarios where data must be prepared to match the model's input requirements before making predictions.
+You can let models work in a sequence, where the output of one model becomes the input for another. This is useful for creating pipelines where data needs to be preprocessed before being used for predictions.
 
 .. code-block:: python
 
     import bentoml
-    import numpy as np
+    from bentoml.models import HuggingFaceModel
     from transformers import pipeline
+    from typing import Dict, Any
+
 
     @bentoml.service(resources={"cpu": "2", "memory": "2Gi"})
     class PreprocessingService:
-        model_a_ref = bentoml.models.get("model_a:latest")
+        model_a_path = HuggingFaceModel("distilbert/distilbert-base-uncased")
 
         def __init__(self) -> None:
-            # Initialize pipeline for model
-            self.pipeline_a = pipeline('task_a', model=self.model_a_ref.path)
+            # Initialize pipeline for model A
+            self.pipeline_a = pipeline(task="text-classification", model=self.model_a_path)
 
         @bentoml.api
-        def preprocess(self, input_data: np.ndarray) -> np.ndarray:
+        def preprocess(self, input_data: str) -> Dict[str, Any]:
             # Dummy preprocessing steps
-            data_a = self.pipeline_a(input_data)
-            return data_a
+            return self.pipeline_a(input_data)[0]
+
 
     @bentoml.service(resources={"gpu": 1, "memory": "4Gi"})
     class InferenceService:
-        model_b_ref = bentoml.models.get("model_b:latest")
+        model_b_path = HuggingFaceModel("distilbert/distilroberta-base")
         preprocessing_service = bentoml.depends(PreprocessingService)
 
         def __init__(self) -> None:
-            # Initialize pipeline for model
-            self.pipeline_b = pipeline('task_b', model=self.model_b_ref.path)
+            # Initialize pipeline for model B
+            self.pipeline_b = pipeline(task="text-classification", model=self.model_b_path)
 
         @bentoml.api
-        async def predict(self, input_data: np.ndarray) -> np.ndarray:
+        async def predict(self, input_data: str) -> Dict[str, Any]:
+            # Dummy inference on preprocessed data
+            # Implement your custom logic here
             preprocessed_data = await self.preprocessing_service.to_async.preprocess(input_data)
-            # Simulate inference on preprocessed data
-            data_b = self.pipeline_b(preprocessed_data)
-            return data_b
+            final_result = self.pipeline_b(input_data)[0]
+            return {
+                "preprocessing_result": preprocessed_data,
+                "final_result": final_result
+            }
+
+You use ``bentoml.depends`` to access one Service from another. It accepts the dependent Service class as an argument and allows you to call its available function. See :doc:`/build-with-bentoml/distributed-services` for details.
+
+You use the ``.to_async`` property of a Service to convert a synchronous method to asynchronous. Note that directly calling a synchronous blocking function within an asynchronous context is not recommended, since it can block the event loop.
 
 Concurrent
 """"""""""
 
-This example runs two independent models concurrently to generate different types of predictions from the same input data and aggregate their results.
+You can run multiple independent models at the same time and then combine their results. This is useful for ensemble models where you want to aggregate predictions from different models to improve accuracy.
 
 .. code-block:: python
 
     import asyncio
     import bentoml
-    import numpy as np
+    from bentoml.models import HuggingFaceModel
     from transformers import pipeline
+    from typing import Dict, Any, List
 
     @bentoml.service(resources={"gpu": 1, "memory": "4Gi"})
     class ModelAService:
-        model_a_ref = bentoml.models.get("model_a:latest")
+        model_a_path = HuggingFaceModel("FacebookAI/roberta-large-mnli")
 
         def __init__(self) -> None:
-            # Initialize pipeline for model
-            self.pipeline_a = pipeline('task_a', model=self.model_a_ref.path)
+            # Initialize pipeline for model A
+            self.pipeline_a = pipeline(task="zero-shot-classification", model=self.model_a_path, hypothesis_template="This text is about {}")
 
         @bentoml.api
-        def predict(self, input_data: np.ndarray) -> np.ndarray:
+        def predict(self, input_data: str, labels: List[str] = ["positive", "negative", "neutral"]) -> Dict[str, Any]:
             # Dummy preprocessing steps
-            data_a = self.pipeline_a(input_data)
-            return data_a
+            return self.pipeline_a(input_data, labels)
 
     @bentoml.service(resources={"gpu": 1, "memory": "4Gi"})
     class ModelBService:
-        model_b_ref = bentoml.models.get("model_b:latest")
+        model_b_path = HuggingFaceModel("distilbert/distilbert-base-uncased")
 
         def __init__(self) -> None:
-            # Initialize pipeline for model
-            self.pipeline_b = pipeline('task_b', model=self.model_b_ref.path)
+            # Initialize pipeline for model B
+            self.pipeline_b = pipeline(task="sentiment-analysis", model=self.model_b_path)
 
         @bentoml.api
-        def predict(self, input_data: np.ndarray) -> np.ndarray:
+        def predict(self, input_data: str) -> Dict[str, Any]:
             # Dummy preprocessing steps
-            data_b = self.pipeline_b(input_data)
-            return data_b
+            return self.pipeline_b(input_data)[0]
 
     @bentoml.service(resources={"cpu": "4", "memory": "8Gi"})
     class EnsembleService:
@@ -259,18 +174,21 @@ This example runs two independent models concurrently to generate different type
         service_b = bentoml.depends(ModelBService)
 
         @bentoml.api
-        async def ensemble_predict(self, input_data: np.ndarray) -> np.ndarray:
+        async def ensemble_predict(self, input_data: str, labels: List[str] = ["positive", "negative", "neutral"]) -> Dict[str, Any]:
             result_a, result_b = await asyncio.gather(
-                self.service_a.to_async.predict(input_data),
+                self.service_a.to_async.predict(input_data, labels),
                 self.service_b.to_async.predict(input_data)
             )
             # Dummy aggregation
-            return (result_a + result_b) / 2
+            return {
+                "zero_shot_classification": result_a,
+                "sentiment_analysis": result_b
+            }
 
 Inference graph
 """""""""""""""
 
-The following is a complex example of model composition within BentoML, including both parallel and sequential processing steps for an advanced inference workflow.
+You can create more complex workflows that combine both parallel and sequential processing.
 
 .. code-block:: python
 
@@ -370,13 +288,13 @@ The following is a complex example of model composition within BentoML, includin
 
             return results
 
-This ``service.py`` file does the following:
+This example creates a workflow that:
 
-1. **Receive a prompt**: Starts by accepting an original text input, like "I have an idea!", which will be fed into the text generation models.
-2. **Generate text in parallel**: The original prompt is sent simultaneously to two separate text generation models (``GPT2`` and ``DistilGPT2``). This step is parallel, meaning both models generate text based on the same input at the same time, without waiting for each other. This parallelism is implemented through ``asyncio.gather``, which schedules both asynchronous operations to run concurrently.
-3. **Classify text sequentially**: After receiving the generated text from both models, each piece of text is then sequentially processed by a text classification model (``BertBaseUncased``). It evaluates the content of each generated text based on its sentiment, and assigns a classification score to them.
-4. **Generate results**: Finally, the scores assigned by the classification model, along with the generated text themselves, are compiled into a single response.
+1. Takes a text prompt as input
+2. Generates new text using GPT2 and DistilGPT2 in parallel
+3. Scores each generated text response using BERT sequentially
+4. Returns both the generated text and their scores
 
 .. note::
 
-    In some cases, you may want to stream output directly from one LLM to another LLM as input to build a compound LLM system. This is not yet supported in BentoML, but it is on its roadmap. If you are interested in this topic, you are welcome to join our discussion in the `BentoML Slack community <https://l.bentoml.com/join-slack>`_ or `raise an issue in GitHub <https://github.com/bentoml/BentoML/issues/new/choose>`_.
+   In some cases, you may want to stream output directly from one LLM to another LLM as input to build a compound LLM system. This is not yet supported in BentoML, but it is on its roadmap. If you are interested in this topic, you are welcome to join our discussion in the `BentoML Slack community <https://l.bentoml.com/join-slack>`_ or `raise an issue in GitHub <https://github.com/bentoml/BentoML/issues/new/choose>`_.

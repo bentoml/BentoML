@@ -83,12 +83,12 @@ To handle nullable input, you can use ``Optional``:
         ) -> Generator[str, None, None]:
             ...
 
-In the ``LanguageModel`` class, the ``temperature`` and ``max_tokens`` fields are marked as ``Optional``. This means they can be ``None``. Note that when using ``Optional`` types in BentoML, you must provide a default value (here, ``default=None``). General union types are not supported.
+In the ``LanguageModel`` class, the ``temperature`` and ``max_tokens`` fields are marked as ``Optional``, which means they can be ``None``. When using ``Optional`` types in BentoML, you must provide a default value (here, ``default=None``). General union types are not supported.
 
 Pydantic
 ^^^^^^^^
 
-Pydantic models allow for more structured data with validation. They are particularly useful when your Service needs to handle complex data structures with rigorous validation requirements. Here is an example:
+Pydantic models support more structured data with validation. They are particularly useful when your Service needs to handle complex data structures with rigorous validation requirements. Here is an example:
 
 .. code-block:: python
 
@@ -206,6 +206,85 @@ To output a file with a path, you can use ``context.temp_dir`` to provide a uniq
 
 When the method returns a ``Path`` object pointing to the generated file, BentoML serializes this file and includes it in the response to the client.
 
+More practical examples to handle files:
+
+.. tab-set::
+
+    .. tab-item:: Add a string to a file
+
+       .. code-block:: python
+
+          from pathlib import Path
+          from bentoml.validators import ContentType
+          from typing import Annotated  # Python 3.9 or above
+          from typing_extensions import Annotated  # Older than 3.9
+          import bentoml
+
+          @bentoml.service
+          class AppendStringToFile:
+
+              @bentoml.api()
+              def append_string_to_eof(
+                  self,
+                  context: bentoml.Context,
+                  txt_file: Annotated[Path, ContentType("text/plain")],
+                  input_string: str,
+              ) -> Annotated[Path, ContentType("text/plain")]:
+                  with open(txt_file, "a") as file:
+                      file.write(input_string)
+                  return txt_file
+
+    .. tab-item:: Convert a PDF's first page to an image
+
+       .. code-block:: python
+
+          from bentoml.validators import ContentType
+          from typing import Annotated  # Python 3.9 or above
+          from typing_extensions import Annotated  # Older than 3.9
+          from PIL import Image as im
+          import bentoml
+
+          @bentoml.service
+          class PDFtoImage:
+              @bentoml.api
+              def pdf_first_page_as_image(
+                  self,
+                  pdf: Annotated[Path, ContentType("application/pdf")],
+              ) -> Image:
+                  from pdf2image import convert_from_path
+
+                  pages = convert_from_path(pdf)
+                  return pages[0].resize(pages[0].size, im.ANTIALIAS)
+
+    .. tab-item:: Speed up an audio file
+
+       .. code-block:: python
+
+          from pathlib import Path
+          from bentoml.validators import ContentType
+          from typing import Annotated  # Python 3.9 or above
+          from typing_extensions import Annotated  # Older than 3.9
+          import bentoml
+
+          @bentoml.service
+          class AudioSpeedUp:
+              @bentoml.api
+              def speed_up_audio(
+                  self,
+                  context: bentoml.Context,
+                  audio: Annotated[Path, ContentType("audio/mpeg")],
+                  velocity: float,
+              ) -> Annotated[Path, ContentType("audio/mp3")]:
+
+                  import os
+                  from pydub import AudioSegment
+
+                  output_path = os.path.join(context.temp_dir, "output.mp3")
+                  sound = AudioSegment.from_file(audio)
+                  sound = sound.speedup(velocity)
+                  sound.export(output_path, format="mp3")
+                  return Path(output_path)
+
 If you don't want to save temporary files to disk, you can return the data as ``bytes`` instead of ``pathlib.Path`` with properly annotated ``ContentType``. This is efficient for Services that generate data on the fly.
 
 Tensors
@@ -279,39 +358,45 @@ The ``DataframeSchema`` validator supports the following two orientations, which
 Images
 ^^^^^^
 
-BentoML Services can work with images through the PIL library or ``pathlib.Path``.
+BentoML Services can handle images through ``PIL.Image.Image`` and ``pathlib.Path``.
 
-Here is an example of using PIL:
+.. tab-set::
 
-.. code-block:: python
+    .. tab-item:: PIL.Image.Image
 
-    from PIL.Image import Image as PILImage
-    import bentoml
+        You can directly pass image objects through ``PIL.Image.Image``.
 
-    @bentoml.service
-    class MnistPredictor:
-        @bentoml.api
-        def infer(self, input: PILImage) -> int:
-            # Image processing and inference logic
-            ...
+        .. code-block:: python
 
-Alternatively, you can use ``pathlib.Path`` with a ``ContentType`` validator to handle image files:
+            from PIL import Image as im
+            from PIL.Image import Image
+            import bentoml
 
-.. code-block:: python
+            @bentoml.service
+            class ImageResize:
 
-    from pathlib import Path
-    from typing import Annotated  # Python 3.9 or above
-    from typing_extensions import Annotated  # Older than 3.9
-    from bentoml.validators import ContentType
-    import bentoml
+                @bentoml.api
+                def generate(self, image: Image, height: int = 64, width: int = 64) -> Image:
+                    size = height, width
+                    return image.resize(size, im.LANCZOS)
 
-    @bentoml.service
-    class MnistPredictor:
-        @bentoml.api
-        def infer(self, input: Annotated[Path, ContentType('image/jpeg')) -> int:
-            ...
+    .. tab-item:: pathlib.Path
 
-This is particularly useful when dealing with image uploads in web applications or similar scenarios.
+        You can use ``pathlib.Path`` with a ``ContentType`` validator to handle image files:
+
+        .. code-block:: python
+
+            from pathlib import Path
+            from typing import Annotated  # Python 3.9 or above
+            from typing_extensions import Annotated  # Older than 3.9
+            from bentoml.validators import ContentType
+            import bentoml
+
+            @bentoml.service
+            class MnistPredictor:
+                @bentoml.api
+                def infer(self, input: Annotated[Path, ContentType('image/jpeg')]) -> int:
+                    ...
 
 Compound
 ^^^^^^^^

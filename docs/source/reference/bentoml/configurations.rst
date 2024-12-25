@@ -32,6 +32,8 @@ Configuration fields
 
 BentoML offers a comprehensive set of configuration fields, allowing detailed customization of Services. You can use them to meet the specific requirements of different deployment environments and use cases.
 
+.. _resources:
+
 ``resources``
 ^^^^^^^^^^^^^
 

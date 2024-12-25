@@ -83,7 +83,8 @@ BentoML provides an efficient mechanism for loading AI models to accelerate mode
 
       If you deploy the HF model to BentoCloud, you can view and verify it within your Bento on the details page. It is indicated with the HF icon. Clicking it redirects you to the model page on HF.
 
-      .. image:: ../../_static/img/guides/model-loading-and-management/hf-model-on-bentocloud.png
+      .. image:: ../../_static/img/build-with-bentoml/model-loading-and-management/hf-model-on-bentocloud.png
+         :alt: Hugging Face model marked with an icon on BentoCloud console
 
    .. tab-item:: From the Model Store or BentoCloud
 

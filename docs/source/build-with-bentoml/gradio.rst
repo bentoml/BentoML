@@ -96,6 +96,7 @@ Follow the steps below to integrate Gradio with a BentoML Service.
 
         bentoml serve service:Summarization
 
-   .. image:: ../../_static/img/guides/gradio/gradio-ui-bentoml.png
+   .. image:: ../../_static/img/build-with-bentoml/gradio/gradio-ui-bentoml.png
+      :alt: Gradio UI for a BentoML Service
 
 Visit this `example <https://github.com/bentoml/BentoML/tree/main/examples>`_ to view the full demo code.

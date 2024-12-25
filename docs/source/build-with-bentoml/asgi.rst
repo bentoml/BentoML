@@ -131,17 +131,20 @@ The following is a more practical example of mounting FastAPI onto the Summariza
 
 After you start the BentoML Service, which is accessible at `http://localhost:3000 <http://localhost:3000/>`_, you can find two additional endpoints ``hello-inside`` and ``hello-outside`` exposed.
 
-.. image:: ../../_static/img/guides/asgi/two-asgi-fastapi-routes.png
+.. image:: ../../_static/img/build-with-bentoml/asgi/two-asgi-fastapi-routes.png
+   :alt: Two API endpoints defined in BentoML
 
 By sending a ``GET`` request, you can receive the corresponding output from both endpoints.
 
 FastAPI route inside the Service class:
 
-.. image:: ../../_static/img/guides/asgi/inside-the-class.png
+.. image:: ../../_static/img/build-with-bentoml/asgi/inside-the-class.png
+   :alt: FastAPI route inside the BentoML Service class
 
 FastAPI route outside the Service class:
 
-.. image:: ../../_static/img/guides/asgi/outside-the-class.png
+.. image:: ../../_static/img/build-with-bentoml/asgi/outside-the-class.png
+   :alt: FastAPI route outside the BentoML Service class
 
 Quart
 ^^^^^

@@ -29,7 +29,8 @@ Note that when you enable batching, ``batch_dim`` can be a tuple or a single val
 
     This image illustrates the concept of ``batch_dim`` in the context of processing 2-D arrays.
 
-    .. image:: ../../_static/img/guides/adaptive-batching/batch-dim-example.png
+    .. image:: ../../_static/img/reference/bentoml/sdk/batch-dim-example.png
+       :alt: Batching dimension explanation
 
     On the left side, there are two 2-D arrays of size 5x2, represented by blue and green boxes. The arrows show two different paths that these arrays can take depending on the ``batch_dim`` configuration:
 

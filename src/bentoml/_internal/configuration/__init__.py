@@ -71,7 +71,7 @@ def is_editable_bentoml() -> bool:
 
     dist = importlib.metadata.distribution("bentoml")
     direct_url_file = next(
-        (f for f in (dist.files or []) if f.name == "direct_url.json"), None
+        (f for f in (dist.files or []) if str(f).endswith("direct_url.json")), None
     )
     if direct_url_file is None:
         return False
@@ -84,7 +84,7 @@ def get_bentoml_requirement() -> str | None:
     """Returns the requirement string for BentoML."""
     dist = importlib.metadata.distribution("bentoml")
     direct_url_file = next(
-        (f for f in (dist.files or []) if f.name == "direct_url.json"), None
+        (f for f in (dist.files or []) if str(f).endswith("direct_url.json")), None
     )
     if direct_url_file is None:
         return f"bentoml=={BENTOML_VERSION}"

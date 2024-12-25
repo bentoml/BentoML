@@ -240,7 +240,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
 
         Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, and click **Try it out**. In the **Request body** box, enter your prompt and click **Execute**.
 
-        .. image:: ../../_static/img/use-cases/large-language-models/vllm/service-ui.png
+        .. image:: ../../_static/img/examples/vllm/service-ui.png
 
 Deploy to BentoCloud
 --------------------
@@ -279,7 +279,7 @@ After the Service is ready, you can deploy the project to BentoCloud for better 
 
 4. Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
 
-   .. image:: ../../_static/img/use-cases/large-language-models/vllm/vllm-bentocloud.png
+   .. image:: ../../_static/img/examples/vllm/vllm-bentocloud.png
 
    .. note::
 

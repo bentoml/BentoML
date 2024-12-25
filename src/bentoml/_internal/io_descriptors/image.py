@@ -19,9 +19,9 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import Schema
 from ..types import LazyType
-from ..utils import LazyLoader
-from ..utils import resolve_user_filepath
+from ..utils.filesystem import resolve_user_filepath
 from ..utils.http import set_cookies
+from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 
 PIL_EXC_MSG = "'Pillow' is required to use the Image IO descriptor. Install with 'pip install bentoml[io-image]'."

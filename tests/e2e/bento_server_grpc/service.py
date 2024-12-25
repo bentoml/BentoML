@@ -9,7 +9,7 @@ from context_server_interceptor import AsyncContextInterceptor
 from pydantic import BaseModel
 
 import bentoml
-from bentoml._internal.utils import LazyLoader
+from bentoml._internal.utils.lazy_loader import LazyLoader
 from bentoml._internal.utils.metrics import exponential_buckets
 from bentoml.io import JSON
 from bentoml.io import File

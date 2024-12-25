@@ -257,9 +257,9 @@ class ServiceAppFactory(BaseAppFactory):
             middlewares.append(Middleware(middleware_cls, **options))
         # CORS middleware
         if self.enable_access_control:
-            assert (
-                self.access_control_options.get("allow_origins") is not None
-            ), "To enable cors, access_control_allow_origin must be set"
+            assert self.access_control_options.get("allow_origins") is not None, (
+                "To enable cors, access_control_allow_origin must be set"
+            )
 
             from starlette.middleware.cors import CORSMiddleware
 

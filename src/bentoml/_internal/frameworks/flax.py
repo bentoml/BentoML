@@ -18,7 +18,7 @@ from ..models.model import ModelContext
 from ..models.model import PartialKwargsModelOptions as ModelOptions
 from ..runner.utils import Params
 from ..types import LazyType
-from ..utils import LazyLoader
+from ..utils.lazy_loader import LazyLoader
 from ..utils.pkg import get_pkg_version
 from .common.jax import JaxArrayContainer
 from .common.jax import jax

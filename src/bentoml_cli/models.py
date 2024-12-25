@@ -16,10 +16,9 @@ from bentoml import Tag
 from bentoml._internal.bento.bento import DEFAULT_BENTO_BUILD_FILES
 from bentoml._internal.bento.build_config import BentoBuildConfig
 from bentoml._internal.container import BentoMLContainer
-from bentoml._internal.utils import calc_dir_size
 from bentoml._internal.utils import human_readable_size
-from bentoml._internal.utils import resolve_user_filepath
-from bentoml._internal.utils import rich_console as console
+from bentoml._internal.utils.filesystem import calc_dir_size
+from bentoml._internal.utils.filesystem import resolve_user_filepath
 from bentoml.exceptions import InvalidArgument
 from bentoml.models import import_model
 from bentoml_cli.utils import BentoMLCommandGroup
@@ -86,14 +85,12 @@ def get(
     model = model_store.get(model_tag)
 
     if output == "path":
-        console.print(model.path)
+        rich.print(model.path)
     elif output == "json":
         info = json.dumps(model.info.to_dict(), indent=2, default=str)
-        console.print_json(info)
+        rich.print_json(info)
     else:
-        console.print(
-            Syntax(str(model.info.dump()), "yaml", background_color="default")
-        )
+        rich.print(Syntax(str(model.info.dump()), "yaml", background_color="default"))
 
 
 @model_command.command(name="list")
@@ -135,10 +132,10 @@ def list_models(
     ]
     if output == "json":
         info = json.dumps(res, indent=2)
-        console.print_json(info)
+        rich.print_json(info)
     elif output == "yaml":
         info = yaml.safe_dump(res, indent=2)
-        console.print(Syntax(info, "yaml"))
+        rich.print(Syntax(info, "yaml"))
     else:
         table = Table(box=None)
         table.add_column("Tag")
@@ -152,7 +149,7 @@ def list_models(
                 model["size"],
                 model["creation_time"],
             )
-        console.print(table)
+        rich.print(table)
 
 
 @model_command.command()

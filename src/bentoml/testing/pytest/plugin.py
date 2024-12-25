@@ -16,8 +16,8 @@ from bentoml._internal.cloud import BentoCloudClient
 from bentoml._internal.configuration import clean_bentoml_version
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.models import ModelContext
-from bentoml._internal.utils import LazyLoader
-from bentoml._internal.utils import validate_or_create_dir
+from bentoml._internal.utils.filesystem import validate_or_create_dir
+from bentoml._internal.utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
     import numpy as np

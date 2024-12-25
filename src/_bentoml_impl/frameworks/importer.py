@@ -18,7 +18,7 @@ class FrameworkImporter(MetaPathFinder):
     ) -> ModuleSpec | None:
         if not fullname.startswith("bentoml."):
             return None
-        framework = fullname.split(".")[1]
+        framework = fullname.split(".", 1)[1]
         if "." in framework:
             return None
         spec = importlib.util.find_spec(f"_bentoml_impl.frameworks.{framework}")

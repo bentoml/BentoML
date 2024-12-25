@@ -5,7 +5,7 @@ import typing as t
 import attr
 import yaml
 
-from ..utils import bentoml_cattr
+from ..utils.cattr import bentoml_cattr
 from .schemas.schemasv1 import CreateSecretSchema
 from .schemas.schemasv1 import SecretContentSchema
 from .schemas.schemasv1 import SecretItem

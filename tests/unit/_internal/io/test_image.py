@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from bentoml._internal.utils import LazyLoader
+from bentoml._internal.utils.lazy_loader import LazyLoader
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import InvalidArgument
 from bentoml.grpc.utils import import_generated_stubs

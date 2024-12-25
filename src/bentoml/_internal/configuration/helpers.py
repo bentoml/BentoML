@@ -12,7 +12,7 @@ import schema as s
 import yaml
 
 from ...exceptions import BentoMLConfigException
-from ..utils import LazyLoader
+from ..utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:
     from types import ModuleType

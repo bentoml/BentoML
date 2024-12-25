@@ -13,8 +13,8 @@ from bentoml._internal.cloud.config import DEFAULT_ENDPOINT
 from bentoml._internal.cloud.config import CloudClientConfig
 from bentoml._internal.cloud.config import CloudClientContext
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.utils import bentoml_cattr
 from bentoml._internal.utils import reserve_free_port
+from bentoml._internal.utils.cattr import bentoml_cattr
 from bentoml.exceptions import CLIException
 from bentoml.exceptions import CloudRESTApiClientError
 from bentoml_cli.auth_server import AuthCallbackHttpServer

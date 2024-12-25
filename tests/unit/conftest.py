@@ -44,7 +44,7 @@ def reload_directory(
     └── train.py
     """
     from bentoml._internal.bento.build_config import BentoBuildConfig
-    from bentoml._internal.utils import bentoml_cattr
+    from bentoml._internal.utils.cattr import bentoml_cattr
 
     root = tmp_path_factory.mktemp("reload_directory")
     # create a models directory

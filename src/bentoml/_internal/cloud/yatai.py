@@ -23,7 +23,7 @@ from ..models import Model
 from ..models import ModelStore
 from ..models import copy_model
 from ..tag import Tag
-from ..utils import calc_dir_size
+from ..utils.filesystem import calc_dir_size
 from .base import FILE_CHUNK_SIZE
 from .base import CallbackIOWrapper
 from .base import Spinner

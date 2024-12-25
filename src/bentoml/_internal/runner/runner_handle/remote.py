@@ -16,7 +16,7 @@ from ....exceptions import RemoteException
 from ....exceptions import ServiceUnavailable
 from ...configuration.containers import BentoMLContainer
 from ...context import server_context
-from ...utils import LazyLoader
+from ...utils.lazy_loader import LazyLoader
 from ...utils.uri import uri_to_path
 from ..container import Payload
 from ..utils import PAYLOAD_META_HEADER

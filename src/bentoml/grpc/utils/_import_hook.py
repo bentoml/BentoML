@@ -32,7 +32,7 @@ def import_generated_stubs(
            pb, services = import_generated_stubs(version="v1", file="service.proto")
     """
     # generate git root from this file's path
-    from bentoml._internal.utils import LazyLoader
+    from bentoml._internal.utils.lazy_loader import LazyLoader
 
     exception_message = f"Generated stubs for '{version}/{file}' are missing (broken installation). Please reinstall bentoml: 'pip install bentoml[grpc].'"
     file = file.split(".")[0]
@@ -53,7 +53,7 @@ def import_generated_stubs(
 
 
 def import_grpc() -> tuple[types.ModuleType, types.ModuleType]:
-    from bentoml._internal.utils import LazyLoader
+    from bentoml._internal.utils.lazy_loader import LazyLoader
 
     exception_message = "'grpcio' is required for gRPC support. Install with 'pip install bentoml[grpc]'."
     grpc = LazyLoader("grpc", globals(), "grpc", exc_msg=exception_message)

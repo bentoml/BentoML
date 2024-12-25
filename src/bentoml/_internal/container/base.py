@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 import attr
 
 from ...exceptions import BentoMLException
-from ..utils import resolve_user_filepath
+from ..utils.filesystem import resolve_user_filepath
 
 if TYPE_CHECKING:
     from typing_extensions import Self

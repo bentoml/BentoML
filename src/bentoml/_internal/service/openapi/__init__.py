@@ -12,7 +12,7 @@ from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import NotFound
 
 from ...types import LazyType
-from ...utils import bentoml_cattr
+from ...utils.cattr import bentoml_cattr
 from .specification import Contact
 from .specification import Info
 from .specification import MediaType

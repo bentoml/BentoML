@@ -19,7 +19,7 @@ from simple_di import inject
 
 from ...configuration import get_debug_mode
 from ...configuration.containers import BentoMLContainer
-from ...utils import compose
+from .. import compose
 from .schemas import CommonProperties
 from .schemas import EventMeta
 from .schemas import ServeInitEvent

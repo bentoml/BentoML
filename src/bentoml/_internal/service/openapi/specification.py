@@ -20,7 +20,7 @@ import yaml
 from cattr.gen import make_dict_unstructure_fn
 from cattr.gen import override
 
-from ...utils import bentoml_cattr
+from ...utils.cattr import bentoml_cattr
 
 logger = logging.getLogger(__name__)
 

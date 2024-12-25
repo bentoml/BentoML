@@ -15,7 +15,7 @@ from bentoml.testing.utils import parse_multipart_form
 if TYPE_CHECKING:
     import PIL.Image as PILImage
 else:
-    from bentoml._internal.utils import LazyLoader
+    from bentoml._internal.utils.lazy_loader import LazyLoader
 
     PILImage = LazyLoader("PILImage", globals(), "PIL.Image")
 

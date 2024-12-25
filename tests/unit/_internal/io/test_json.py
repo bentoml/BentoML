@@ -15,7 +15,7 @@ import pydantic
 import pytest
 
 from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
-from bentoml._internal.utils import LazyLoader
+from bentoml._internal.utils.lazy_loader import LazyLoader
 from bentoml.exceptions import BadInput
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml.io import JSON

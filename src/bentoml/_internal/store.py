@@ -16,7 +16,7 @@ from ..exceptions import NotFound
 from .exportable import Exportable
 from .tag import Tag
 from .types import PathType
-from .utils import calc_dir_size
+from .utils.filesystem import calc_dir_size
 from .utils.uri import encode_path_for_uri
 
 T = t.TypeVar("T")

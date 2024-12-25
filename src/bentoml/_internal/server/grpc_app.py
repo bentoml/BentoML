@@ -20,8 +20,8 @@ from ...grpc.utils import import_grpc
 from ...grpc.utils import load_from_file
 from ..configuration.containers import BentoMLContainer
 from ..context import ServiceContext as Context
-from ..utils import LazyLoader
 from ..utils import with_app_arg
+from ..utils.lazy_loader import LazyLoader
 
 logger = logging.getLogger(__name__)
 
@@ -240,9 +240,9 @@ class Server(aio._server.Server):
         if self.ssl_certfile:
             client_auth = False
             ca_cert = None
-            assert (
-                self.ssl_keyfile
-            ), "'ssl_keyfile' is required when 'ssl_certfile' is provided."
+            assert self.ssl_keyfile, (
+                "'ssl_keyfile' is required when 'ssl_certfile' is provided."
+            )
             if self.ssl_ca_certs is not None:
                 client_auth = True
                 ca_cert = load_from_file(self.ssl_ca_certs)

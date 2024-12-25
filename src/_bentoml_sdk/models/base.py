@@ -19,7 +19,7 @@ from bentoml._internal.models import ModelStore
 from bentoml._internal.models.model import copy_model
 from bentoml._internal.tag import Tag
 from bentoml._internal.types import PathType
-from bentoml._internal.utils import calc_dir_size
+from bentoml._internal.utils.filesystem import calc_dir_size
 from bentoml.exceptions import NotFound
 
 if t.TYPE_CHECKING:

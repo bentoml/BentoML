@@ -36,10 +36,10 @@ from ..store import StoreItem
 from ..tag import Tag
 from ..tag import to_snake_case
 from ..types import PathType
-from ..utils import bentoml_cattr
-from ..utils import copy_file_to_fs_folder
-from ..utils import encode_path_for_uri
 from ..utils import normalize_labels_value
+from ..utils.cattr import bentoml_cattr
+from ..utils.filesystem import copy_file_to_fs_folder
+from ..utils.uri import encode_path_for_uri
 from .build_config import BentoBuildConfig
 from .build_config import BentoEnvSchema
 from .build_config import BentoPathSpec
@@ -84,7 +84,7 @@ def create_inference_api_table(svc: Service) -> str:
     contents = [
         API_INFO_MD.format(
             api=api.name,
-            link=f"operations-{APP_TAG.name.replace(' ','_')}-{svc.name}__{api.name}",  # follows operationId from OpenAPI
+            link=f"operations-{APP_TAG.name.replace(' ', '_')}-{svc.name}__{api.name}",  # follows operationId from OpenAPI
             input=api.input.__class__.__name__,
             output=api.output.__class__.__name__,
         )

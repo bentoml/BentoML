@@ -31,10 +31,10 @@ from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
 from ..container.frontend.dockerfile import DistroSpec
 from ..container.frontend.dockerfile import get_supported_spec
 from ..container.generate import BENTO_PATH
-from ..utils import bentoml_cattr
-from ..utils import copy_file_to_fs_folder
-from ..utils import resolve_user_filepath
+from ..utils.cattr import bentoml_cattr
 from ..utils.dotenv import parse_dotenv
+from ..utils.filesystem import copy_file_to_fs_folder
+from ..utils.filesystem import resolve_user_filepath
 from ..utils.uri import encode_path_for_uri
 from .bentoml_builder import build_git_repo
 

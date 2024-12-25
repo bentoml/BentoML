@@ -217,9 +217,9 @@ class Service:
         if runners is not None:
             runner_names: t.Set[str] = set()
             for r in runners:
-                assert isinstance(
-                    r, AbstractRunner
-                ), f'Service runners list can only contain bentoml.Runner instances, type "{type(r)}" found.'
+                assert isinstance(r, AbstractRunner), (
+                    f'Service runners list can only contain bentoml.Runner instances, type "{type(r)}" found.'
+                )
 
                 if r.name in runner_names:
                     raise ValueError(
@@ -230,9 +230,9 @@ class Service:
         # validate models list contains Model instances
         if models is not None:
             for model in models:
-                assert isinstance(
-                    model, Model
-                ), f'Service models list can only contain bentoml.Model instances, type "{type(model)}" found.'
+                assert isinstance(model, Model), (
+                    f'Service models list can only contain bentoml.Model instances, type "{type(model)}" found.'
+                )
 
         self.__attrs_init__(  # type: ignore
             name=name,
@@ -329,7 +329,7 @@ class Service:
 
     def __repr__(self):
         if self.bento:
-            return f'bentoml.Service(tag="{self.tag}", ' f'path="{self.bento.path}")'
+            return f'bentoml.Service(tag="{self.tag}", path="{self.bento.path}")'
 
         try:
             import_str, working_dir = self.get_service_import_origin()
@@ -341,7 +341,7 @@ class Service:
         except BentoMLException:
             return (
                 f'bentoml.Service(name="{self.name}", '
-                f'runners=[{",".join([r.name for r in self.runners])}])'
+                f"runners=[{','.join([r.name for r in self.runners])}])"
             )
 
     def __str__(self) -> str:

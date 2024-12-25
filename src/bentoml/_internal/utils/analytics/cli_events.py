@@ -1,7 +1,7 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-from .. import calc_dir_size
+from ..filesystem import calc_dir_size
 from .schemas import BentoBuildEvent
 
 if TYPE_CHECKING:

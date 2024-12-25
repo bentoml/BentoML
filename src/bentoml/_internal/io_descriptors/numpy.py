@@ -17,8 +17,8 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import Schema
 from ..types import LazyType
-from ..utils import LazyLoader
 from ..utils.http import set_cookies
+from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 
 if t.TYPE_CHECKING:

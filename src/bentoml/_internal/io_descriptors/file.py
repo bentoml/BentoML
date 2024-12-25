@@ -19,7 +19,7 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import Schema
 from ..types import FileLike
-from ..utils import resolve_user_filepath
+from ..utils.filesystem import resolve_user_filepath
 from ..utils.http import set_cookies
 from .base import IODescriptor
 

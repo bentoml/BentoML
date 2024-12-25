@@ -165,7 +165,7 @@ if TYPE_CHECKING:
 else:
     from _bentoml_impl.frameworks.importer import FrameworkImporter
 
-    from ._internal.utils import LazyLoader as _LazyLoader
+    from ._internal.utils.lazy_loader import LazyLoader as _LazyLoader
 
     FrameworkImporter.install()
 

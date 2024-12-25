@@ -16,7 +16,7 @@ from ._internal.bento import Bento
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.tag import Tag
-from ._internal.utils import resolve_user_filepath
+from ._internal.utils.filesystem import resolve_user_filepath
 from .exceptions import BadInput
 from .exceptions import BentoMLException
 from .exceptions import InvalidArgument

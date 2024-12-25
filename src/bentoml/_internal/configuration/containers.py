@@ -23,6 +23,7 @@ from ..utils import split_with_quotes
 from ..utils import validate_or_create_dir
 from ..utils.unflatten import unflatten
 from . import expand_env_var
+from . import load_config
 from .helpers import expand_env_var_in_values
 from .helpers import flatten_dict
 from .helpers import get_default_config
@@ -519,3 +520,4 @@ class _BentoMLContainerClass:
 
 
 BentoMLContainer = _BentoMLContainerClass()
+load_config()

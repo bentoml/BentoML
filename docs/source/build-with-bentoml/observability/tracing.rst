@@ -126,7 +126,8 @@ With your BentoML Service configured, `run Zipkin <https://zipkin.io/pages/quick
 
 Start your BentoML Service and send some requests to it. You can then visit the Zipkin UI at ``http://localhost:9411/`` to view the traces:
 
-.. image:: ../../_static/img/guides/observability/tracing/zipkin-ui-tracing-bentoml.png
+.. image:: ../../_static/img/build-with-bentoml/observability/tracing/zipkin-ui-tracing-bentoml.png
+   :alt: Zipkin UI for BentoML traces
 
 Jaeger
 ^^^^^^
@@ -197,7 +198,8 @@ With your BentoML Service configured, run Jaeger before starting the Service. Fo
 
 Start your BentoML Service and send some requests to it. You can then visit the Jaeger UI at ``http://localhost:16686/`` to view the traces:
 
-.. image:: ../../_static/img/guides/observability/tracing/jaeger-ui-tracing-bentoml.png
+.. image:: ../../_static/img/build-with-bentoml/observability/tracing/jaeger-ui-tracing-bentoml.png
+   :alt: Jaeger UI for BentoML traces
 
 OTLP exporter
 ^^^^^^^^^^^^^

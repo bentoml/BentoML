@@ -18,9 +18,10 @@ Waiting synchronously for such tasks could lead to inefficiencies, with the call
 
 Here is the general workflow of using BentoML tasks:
 
-.. image:: ../../_static/img/guides/tasks/task-workflow.png
+.. image:: ../../_static/img/get-started/tasks/task-workflow.png
     :width: 400px
     :align: center
+    :alt: BentoML task workflow
 
 Define a task endpoint
 ----------------------

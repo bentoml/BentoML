@@ -394,7 +394,8 @@ You can integrate Prometheus to scrape and visualize both default and custom met
 
         histogram_quantile(0.99, rate(bentoml_service_request_duration_seconds_bucket{endpoint="/encode"}[1m]))
 
-   .. image:: ../../_static/img/guides/observability/metrics/prome-ui-bentoml.png
+   .. image:: ../../_static/img/build-with-bentoml/observability/metrics/prome-ui-bentoml.png
+      :alt: Prometheus UI for BentoML metrics
 
 Create a Grafana dashboard
 --------------------------
@@ -424,10 +425,12 @@ Grafana is an analytics platform that allows you to create dynamic and informati
 4. Access the Grafana web UI at ``http://localhost:4000/`` (use your own port). Log in with the default credentials (``admin``/``admin``).
 5. In the Grafana search box at the top, enter ``Data sources`` and add Prometheus as an available option. In **Connection**, set the URL to the address of your running Prometheus instance, such as ``http://localhost:9090``. Save the configuration and test the connection to ensure Grafana can retrieve data from Prometheus.
 
-   .. image:: ../../_static/img/guides/observability/metrics/grafana-bentoml-1.png
+   .. image:: ../../_static/img/build-with-bentoml/observability/metrics/grafana-bentoml-1.png
+      :alt: Add Prometheus in Grafana
 
 6. With Prometheus configured as a data source, you can create a new dashboard. Start by adding a panel and selecting a metric to visualize, such as ``bentoml_service_request_duration_seconds_bucket``. Grafana offers a wide array of visualization options, from simple line graphs to more complex representations like heatmaps or gauges.
 
-   .. image:: ../../_static/img/guides/observability/metrics/grafana-bentoml-2.png
+   .. image:: ../../_static/img/build-with-bentoml/observability/metrics/grafana-bentoml-2.png
+      :alt: Grafana UI for BentoML metrics
 
    For detailed instructions on dashboard creation and customization, read the `Grafana documentation <https://grafana.com/docs/grafana/latest/dashboards/>`_.

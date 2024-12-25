@@ -42,9 +42,10 @@ To use a specific GPU:
 
 This image explains how different models use the GPUs assigned to them.
 
-.. image:: ../../_static/img/guides/gpu-inference/gpu-inference-architecture.png
+.. image:: ../../_static/img/build-with-bentoml/gpu-inference/gpu-inference-architecture.png
     :width: 400px
     :align: center
+    :alt: BentoML GPU inference architecture
 
 .. note::
 

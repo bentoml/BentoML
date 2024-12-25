@@ -71,9 +71,10 @@ Here is an example:
 
 This Service dynamically determines the GPU device to use for the model by creating a ``torch.device`` object. The device ID is set by ``bentoml.server_context.worker_index - 1`` to allocate a specific GPU to each worker process. Worker 1 (``worker_index = 1``) uses GPU 0 and worker 2 (``worker_index = 2``) uses GPU 1. See the figure below for details.
 
-.. image:: ../../_static/img/guides/workers/workers-models-gpus.png
+.. image:: ../../_static/img/build-with-bentoml/workers/workers-models-gpus.png
     :width: 400px
     :align: center
+    :alt: GPUs allocated to different BentoML workers for serving models
 
 When determining which device ID to assign to each worker for tasks such as loading models onto GPUs, this 1-indexing approach means you need to subtract 1 from the ``worker_index`` to get the 0-based device ID. This is because hardware devices like GPUs are usually indexed starting from 0. For more information, see :doc:`/build-with-bentoml/gpu-inference`.
 

@@ -131,7 +131,8 @@ Serve the model locally
 
            Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, and click **Try it out**. In the **Request body** box, enter your prompt and click **Execute**.
 
-           .. image:: ../_static/img/get-started/quickstart/service-ui.png
+           .. image:: ../_static/img/get-started/hello-world/service-ui.png
+              :alt: BentoML hello world example Swagger UI
 
    Expected output:
 

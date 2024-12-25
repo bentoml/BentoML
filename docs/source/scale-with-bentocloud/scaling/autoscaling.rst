@@ -51,7 +51,8 @@ For instance, consider a scenario where ``concurrency`` is set to 32 and the Ser
 
 In general, the autoscaler will scale the number of replicas based on the following formula, permitted by the ``min_replicas`` and ``max_replicas`` settings in the deployment:
 
-.. image:: ../../_static/img/guides/autoscaling/hpa.png
+.. image:: ../../_static/img/bentocloud/autoscaling/hpa.png
+   :alt: HPA algorithm
 
 Key points about concurrency:
 

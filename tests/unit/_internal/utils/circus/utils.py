@@ -40,7 +40,7 @@ def get_ioloop():
 def get_available_port():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        s.bind(("", 0))
+        s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
     finally:
         s.close()

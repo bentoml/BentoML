@@ -92,9 +92,8 @@ Custom models
 
 Serve custom models with BentoML:
 
-- `MLflow <https://github.com/bentoml/BentoML/tree/main/examples/mlflow>`_
-- `XGBoost <https://github.com/bentoml/BentoML/tree/main/examples/xgboost>`_
-- `scikit-learn <https://github.com/bentoml/BentoML/tree/main/examples/sk-learn>`_
+- `MLflow <https://github.com/bentoml/BentoMLflow>`_
+- `XGBoost <https://github.com/bentoml/BentoXGBoost>`_
 
 Others
 ------

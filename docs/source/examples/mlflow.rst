@@ -4,7 +4,7 @@ MLflow
 
 `MLflow <https://mlflow.org/>`_ is an open-source platform, purpose-built to assist machine learning practitioners and teams in handling the complexities of the machine learning process. MLflow focuses on the full lifecycle for machine learning projects, ensuring that each phase is manageable, traceable, and reproducible.
 
-This document explains how to serve and deploy an MLflow model with BentoML. You can find all the source code in `examples/mlflow <https://github.com/bentoml/BentoML/tree/main/examples/mlflow>`_.
+This document explains how to serve and deploy an MLflow model with BentoML. You can find all the source code `here <https://github.com/bentoml/BentoMLflow>`_.
 
 Prerequisites
 -------------

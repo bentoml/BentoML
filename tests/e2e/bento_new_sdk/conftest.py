@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-EXAMPLE_DIR = Path(__file__).parent.parent.parent.parent / "examples"
+EXAMPLE_DIR = Path(__file__).parent.parent / "fixtures"
 E2E_EXAMPLES = ["quickstart"]
 
 

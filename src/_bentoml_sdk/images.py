@@ -191,7 +191,6 @@ def get_image_from_build_config(build_config: BentoBuildConfig) -> Image | None:
             "conda options are not supported by bento v2, fallback to bento v1"
         )
         return None
-    image = PythonImage()
     docker_options = build_config.docker
     if docker_options.cuda_version is not None:
         logger.warning(
@@ -208,12 +207,14 @@ def get_image_from_build_config(build_config: BentoBuildConfig) -> Image | None:
             "docker.setup_script is not supported by bento v2, fallback to bento v1"
         )
         return None
+    image_params = {}
     if docker_options.base_image is not None:
-        image.base_image = docker_options.base_image
+        image_params["base_image"] = docker_options.base_image
     if docker_options.distro is not None:
-        image.distro = docker_options.distro
+        image_params["distro"] = docker_options.distro
     if docker_options.python_version is not None:
-        image.python_version = docker_options.python_version
+        image_params["python_version"] = docker_options.python_version
+    image = PythonImage(**image_params)
     if docker_options.system_packages:
         image.system_packages(*docker_options.system_packages)
 

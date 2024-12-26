@@ -49,7 +49,7 @@ This example uses the ``scikit-learn`` framework to load and preprocess the `bre
     # Train the model
     model = xgb.train(param, dt)
 
-After training, use the ``bentoml.xgboost.save_model`` API to save the model to the BentoML :doc:`/build-with-bentoml/model-loading-and-management`, a local directory to store and manage models. You can retrieve this model later in other services to run predictions.
+After training, use the ``bentoml.xgboost.save_model`` API to save the model to the BentoML :doc:`Model Store </build-with-bentoml/model-loading-and-management>`, a local directory to store and manage models. You can retrieve this model later in other services to run predictions.
 
 .. code-block:: bash
 

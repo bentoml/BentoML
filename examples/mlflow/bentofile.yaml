@@ -1,8 +1,0 @@
-service: "service:IrisClassifier"
-labels:
-  owner: bentoml-team
-  stage: demo
-include:
-  - "*.py"
-python:
-  requirements_txt: './requirements.txt'

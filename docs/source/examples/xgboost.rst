@@ -4,7 +4,7 @@ XGBoost
 
 `XGBoost <https://xgboost.readthedocs.io/en/stable/>`_ is an optimized distributed gradient boosting library designed to be highly efficient, flexible and portable. It implements machine learning algorithms under the Gradient Boosting framework.
 
-This document explains how to serve and deploy an XGBoost model for predicting breast cancer with BentoML. You can find all the source code in `examples/xgboost <https://github.com/bentoml/BentoML/tree/main/examples/xgboost>`_.
+This document explains how to serve and deploy an XGBoost model for predicting breast cancer with BentoML. You can find all the source code `here <https://github.com/bentoml/BentoXGBoost>`_.
 
 Prerequisites
 -------------

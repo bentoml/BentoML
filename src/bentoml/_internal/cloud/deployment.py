@@ -345,7 +345,7 @@ def ensure_bento(
             build_ctx=project_path, bare=bare, _bento_store=_bento_store, reload=reload
         )
         if cli:
-            rich.print(f"🍱 Built bento [green]{bento_obj.info.tag}[/]")
+            rich.print(f":bento: Built bento [green]{bento_obj.info.tag}[/]")
         if push:
             bento_api.push(bento=bento_obj, bare=bare)
         return bento_obj
@@ -561,7 +561,7 @@ class Deployment:
                 if pod is None:
                     if time.time() - started_at > timeout:
                         spinner.console.print(
-                            "🚨 [bold red]Time out waiting for image builder pod created[/bold red]"
+                            ":police_car_light: [bold red]Time out waiting for image builder pod created[/bold red]"
                         )
                         return
                     if stop_tail_event.wait(check_interval):
@@ -571,7 +571,7 @@ class Deployment:
                     break
                 if time.time() - started_at > wait_pod_timeout:
                     spinner.console.print(
-                        "🚨 [bold red]Time out waiting for image builder pod running[/bold red]"
+                        ":police_car_light: [bold red]Time out waiting for image builder pod running[/bold red]"
                     )
                     return
                 if stop_tail_event.wait(check_interval):
@@ -591,7 +591,7 @@ class Deployment:
                 decoded_str = decoded_bytes.decode("utf-8")
                 if is_first:
                     is_first = False
-                    spinner.update("🚧 Image building...")
+                    spinner.update(":construction: Image building...")
                     spinner.stop()
                 console.print(decoded_str, end="", markup=False, highlight=False)
 
@@ -599,17 +599,21 @@ class Deployment:
 
         try:
             status: DeploymentState | None = None
-            spinner.update(f'🔄 Waiting for deployment "{self.name}" to be ready...')
+            spinner.update(
+                f':hourglass: Waiting for deployment "{self.name}" to be ready...'
+            )
             while time.time() - start_time < timeout:
                 for _ in range(3):
                     try:
                         new_status = self.get_status()
                         break
                     except TimeoutException:
-                        spinner.update("⚠️ Unable to get deployment status, retrying...")
+                        spinner.update(
+                            ":warning: Unable to get deployment status, retrying..."
+                        )
                 else:
                     spinner.log(
-                        "🚨 [bold red]Unable to contact the server, but the deployment is created. "
+                        ":police_car_light: [bold red]Unable to contact the server, but the deployment is created. "
                         "You can check the status on the bentocloud website.[/bold red]"
                     )
                     return 1
@@ -618,7 +622,7 @@ class Deployment:
                 ):  # on status change
                     status = new_status
                     spinner.update(
-                        f'🔄 Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
+                        f':hourglass: Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
                     )
                     if status.status == DeploymentStatus.ImageBuilding.value:
                         if tail_thread is None:
@@ -643,7 +647,7 @@ class Deployment:
                 ]:
                     spinner.stop()
                     console.print(
-                        f'🚨 [bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}"[/]'
+                        f':police_car_light: [bold red]Deployment "{self.name}" is not ready. Current status: "{status.status}"[/]'
                     )
                     return 1
                 if status.status in (
@@ -652,7 +656,7 @@ class Deployment:
                 ):
                     spinner.stop()
                     console.print(
-                        f'✅ [bold green] Deployment "{self.name}" is ready:[/] {self.admin_console}'
+                        f':white_check_mark: [bold green] Deployment "{self.name}" is ready:[/] {self.admin_console}'
                     )
                     break
 
@@ -660,7 +664,7 @@ class Deployment:
             else:
                 spinner.stop()
                 console.print(
-                    f'🚨 [bold red]Time out waiting for Deployment "{self.name}" ready[/]'
+                    f':police_car_light: [bold red]Time out waiting for Deployment "{self.name}" ready[/]'
                 )
                 return 1
 
@@ -730,7 +734,7 @@ class Deployment:
         check_interval = 5
         start_time = time.time()
         console = spinner.console
-        spinner_text = "🔄 Preparing codespace - status: [green]{}[/]"
+        spinner_text = ":hourglass: Preparing codespace - status: [green]{}[/]"
         status = self.get_status(False).status
         while time.time() - start_time < timeout:
             spinner.update(spinner_text.format(status))
@@ -871,7 +875,7 @@ class Deployment:
 
         spinner = Spinner(console=console)
         needs_update = is_bento_changed(bento_info)
-        spinner.log(f"💻 View Dashboard: {self.admin_console}")
+        spinner.log(f":laptop_computer: View Dashboard: {self.admin_console}")
         endpoint_url: str | None = None
         stop_event = Event()
         try:
@@ -882,10 +886,12 @@ class Deployment:
             while True:
                 stop_event.clear()
                 if needs_update:
-                    console.print("✨ [green bold]Bento change detected[/]")
-                    spinner.update("🔄 Pushing Bento to BentoCloud")
+                    console.print(":sparkles: [green bold]Bento change detected[/]")
+                    spinner.update(":hourglass: Pushing Bento to BentoCloud")
                     bento_api._do_push_bento(bento_info, upload_id, bare=True)  # type: ignore
-                    spinner.update("🔄 Updating codespace with new configuration")
+                    spinner.update(
+                        ":hourglass: Updating codespace with new configuration"
+                    )
                     update_config = DeploymentConfigParameters(
                         bento=str(bento_info.tag),
                         name=self.name,
@@ -920,7 +926,7 @@ class Deployment:
                                 )
                             except Exception as e:
                                 spinner.console.print(
-                                    f"🚨 [bold red]Failed to build Bento: {e}[/]"
+                                    f":police_car_light: [bold red]Failed to build Bento: {e}[/]"
                                 )
                             else:
                                 assert isinstance(bento_info, Bento)
@@ -980,7 +986,7 @@ class Deployment:
                             DeploymentStatus.Unhealthy.value,
                         ]:
                             console.print(
-                                f'🚨 [bold red]Codespace "{self.name}" aborted. Current status: "{status}"[/]'
+                                f':police_car_light: [bold red]Codespace "{self.name}" aborted. Current status: "{status}"[/]'
                             )
                             return
         except KeyboardInterrupt:

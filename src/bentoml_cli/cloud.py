@@ -77,15 +77,19 @@ def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
                 default=True,
             ):
                 if webbrowser.open_new_tab(authURL):
-                    rich.print(f"✅ Opened [blue]{authURL}[/] in your web browser.")
+                    rich.print(
+                        f":white_check_mark: Opened [blue]{authURL}[/] in your web browser."
+                    )
                 else:
                     rich.print(
-                        f"🚨 Failed to open browser. Try create a new API token at {baseURL} or Open [blue]{authURL}[/] yourself"
+                        f":police_car_light: Failed to open browser. Try create a new API token at {baseURL} or Open [blue]{authURL}[/] yourself"
                     )
             else:
-                rich.print(f"🫱  Open [blue]{authURL}[/] yourself...")
+                rich.print(
+                    f":backhand_index_pointing_right: Open [blue]{authURL}[/] yourself..."
+                )
             try:
-                rich.print("🔒 Waiting for authentication...")
+                rich.print(":hourglass: Waiting for authentication...")
                 code = callback_server.wait_indefinitely_for_code()
                 if code is None:
                     raise ValueError(
@@ -93,7 +97,7 @@ def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
                     )
                 api_token = code
             except Exception:
-                rich.print("🚨 Error accquiring token from web browser")
+                rich.print(":police_car_light: Error accquiring token from web browser")
                 return
         elif choice == "paste":
             api_token = click.prompt(
@@ -123,20 +127,21 @@ def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
 
         ctx.save()
         rich.print(
-            f"✅ Configured BentoCloud credentials (current-context: {ctx.name})"
+            f":white_check_mark: Configured BentoCloud credentials (current-context: {ctx.name})"
         )
         rich.print(
-            f"✅ Logged in as [blue]{user.email}[/] at [blue]{org.name}[/] organization"
+            f":white_check_mark: Logged in as [blue]{user.email}[/] at [blue]{org.name}[/] organization"
         )
     except CloudRESTApiClientError as e:
         if e.error_code == 401:
             rich.print(
-                f"🚨 Error validating token: HTTP 401: Bad credentials ({endpoint}/api-token)",
+                f":police_car_light: Error validating token: HTTP 401: Bad credentials ({endpoint}/api-token)",
                 file=sys.stderr,
             )
         else:
             rich.print(
-                f"🚨 Error validating token: HTTP {e.error_code}", file=sys.stderr
+                f":police_car_light: Error validating token: HTTP {e.error_code}",
+                file=sys.stderr,
             )
 
 

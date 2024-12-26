@@ -252,11 +252,11 @@ class BentoAPI:
                     )
                 except Exception as e:  # pylint: disable=broad-except
                     self.spinner.log(
-                        f'[bold red]🚨 Failed to upload bento "{bento.tag}"'
+                        f'[bold red]:police_car_light: Failed to upload bento "{bento.tag}"'
                     )
                     raise e
                 self.spinner.log(
-                    f'[bold green]✅ Successfully pushed bento "{bento.tag}"'
+                    f'[bold green]:white_check_mark: Successfully pushed bento "{bento.tag}"'
                 )
                 return
             finish_req = FinishUploadSchema(

@@ -893,9 +893,9 @@ def create_deployment(
             deployment_config_params=config_params
         )
         spinner.log(
-            f'✅ Created deployment "{deployment.name}" in cluster "{deployment.cluster}"'
+            f':white_check_mark: Created deployment "{deployment.name}" in cluster "{deployment.cluster}"'
         )
-        spinner.log(f"💻 View Dashboard: {deployment.admin_console}")
+        spinner.log(f":laptop_computer: View Dashboard: {deployment.admin_console}")
         if wait:
             spinner.update(
                 "[bold blue]Waiting for deployment to be ready, you can use --no-wait to skip this process[/]",

@@ -1,3 +1,0 @@
-service: "service.py:AudioSpeedUp"
-include:
-  - "service.py"

@@ -8,10 +8,10 @@ from unittest import skipUnless
 from unittest.mock import patch
 
 import pytest
-from circus.tests.support import TestCircus
 
 from bentoml._internal.utils.circus.watchfilesplugin import ServiceReloaderPlugin
 from bentoml._internal.utils.pkg import source_locations
+from tests.unit._internal.utils.circus.utils import TestCircus
 
 if TYPE_CHECKING:
     from unittest import TestCase

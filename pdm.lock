@@ -5,7 +5,7 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:6f42027f1c1e29fd79d548b0514680f9d68625e0a9885a7244efb9ff1687defc"
+content_hash = "sha256:e0710dd29ee52bf852501a95993d4b21b0736ab3d7d5f1c0ba934d0f2e19da9b"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -528,22 +528,6 @@ files = [
     {file = "charset_normalizer-3.3.2-cp39-cp39-win32.whl", hash = "sha256:aed38f6e4fb3f5d6bf81bfa990a07806be9d83cf7bacef998ab1a9bd660a581f"},
     {file = "charset_normalizer-3.3.2-cp39-cp39-win_amd64.whl", hash = "sha256:b01b88d45a6fcb69667cd6d2f7a9aeb4bf53760d7fc536bf679ec94fe9f3ff3d"},
     {file = "charset_normalizer-3.3.2-py3-none-any.whl", hash = "sha256:3e4d1f6587322d2788836a99c69062fbb091331ec940e02d12d179c1d53e25fc"},
-]
-
-[[package]]
-name = "circus"
-version = "0.18.0"
-requires_python = ">=3.7"
-summary = "Circus is a program that will let you run and watch multiple processes and sockets."
-groups = ["default"]
-dependencies = [
-    "psutil",
-    "pyzmq>=17.0",
-    "tornado>=5.0.2",
-]
-files = [
-    {file = "circus-0.18.0-py3-none-any.whl", hash = "sha256:f3ee4167bea16d34b42bab61440284f3936d2548f5546e70cf79f66daec867b0"},
-    {file = "circus-0.18.0.tar.gz", hash = "sha256:193ce8224e068ced66724cf483106fb6674b51a57583ac1a0e7ed7a7ee8c71ab"},
 ]
 
 [[package]]
@@ -1331,6 +1315,22 @@ dependencies = [
 files = [
     {file = "jsonschema_specifications-2023.12.1-py3-none-any.whl", hash = "sha256:87e4fdf3a94858b8a2ba2778d9ba57d8a9cafca7c7489c46ba0d30a8bc6a9c3c"},
     {file = "jsonschema_specifications-2023.12.1.tar.gz", hash = "sha256:48a76787b3e70f5ed53f1160d2b81f586e4ca6d1548c5de7085d1682674764cc"},
+]
+
+[[package]]
+name = "kantoku"
+version = "0.18.1"
+requires_python = ">=3.7"
+summary = "Circus is a program that will let you run and watch multiple processes and sockets."
+groups = ["default"]
+dependencies = [
+    "psutil",
+    "pyzmq>=17.0",
+    "tornado>=5.0.2",
+]
+files = [
+    {file = "kantoku-0.18.1-py3-none-any.whl", hash = "sha256:eec46610e17001a090b9f39f820592e1d2205648f95bdd57df85f0d94ebd1b07"},
+    {file = "kantoku-0.18.1.tar.gz", hash = "sha256:6d25065f9da68949aa8181c59151a4670230720ac2b054059fcf6daf1f618740"},
 ]
 
 [[package]]

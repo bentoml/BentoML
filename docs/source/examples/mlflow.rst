@@ -41,7 +41,7 @@ This example uses the ``scikit-learn`` framework to train a classification model
     model.fit(X_train, Y_train)
     mlflow.sklearn.save_model(model, model_uri.resolve())
 
-Next, use the ``bentoml.mlflow.import_model`` API to save the model to the BentoML :doc:`/build-with-bentoml/model-loading-and-management`, a local directory to store and manage models. You can retrieve this model later in other services to run predictions.
+Next, use the ``bentoml.mlflow.import_model`` API to save the model to the BentoML :doc:`Model Store </build-with-bentoml/model-loading-and-management>`, a local directory to store and manage models. You can retrieve this model later in other services to run predictions.
 
 .. code-block:: bash
 

@@ -1,0 +1,12 @@
+service: "service:Summarization"
+labels:
+  project: quickstart
+  stage: dev
+include:
+  - "service.py"
+python:
+  packages:
+  - torch
+  - transformers
+docker:
+  python_version: "3.10"

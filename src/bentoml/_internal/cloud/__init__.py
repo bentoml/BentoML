@@ -4,6 +4,7 @@ import attrs
 
 from bentoml._internal.cloud.client import RestApiClient
 
+from .base import Spinner
 from .bento import BentoAPI
 from .config import DEFAULT_ENDPOINT
 from .config import CloudClientConfig
@@ -50,8 +51,9 @@ class BentoCloudClient:
             endpoint = ctx.endpoint
 
         client = RestApiClient(endpoint, api_key, timeout)
-        bento = BentoAPI(client)
-        model = ModelAPI(client)
+        spinner = Spinner()
+        bento = BentoAPI(client, spinner=spinner)
+        model = ModelAPI(client, spinner=spinner)
         deployment = DeploymentAPI(client)
         secret = SecretAPI(client)
 

@@ -604,14 +604,16 @@ class PythonOptions:
                     option_line.options.pop("requirements", None)
 
                 if any(
-                    req.name and req.name.lower() == "bentoml"
+                    req.name and req.name.lower() == "bentoml" and req.link is not None
                     for req in requirements_txt.requirements
                 ):
                     has_bentoml_req = True
 
                 f.write(requirements_txt.dumps(preserve_one_empty_line=True))
             elif self.packages is not None:
-                bentoml_req_regex = re.compile(r"^bentoml\b(?![-\._])", re.IGNORECASE)
+                bentoml_req_regex = re.compile(
+                    r"^bentoml(?:\[[^\]]+\])?\s*@", re.IGNORECASE
+                )
                 if any(bentoml_req_regex.match(pkg) for pkg in self.packages):
                     has_bentoml_req = True
                 f.write("\n".join(self.packages) + "\n")

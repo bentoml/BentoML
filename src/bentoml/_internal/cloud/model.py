@@ -158,8 +158,8 @@ class ModelAPI:
         fd, tar_name = mkstemp(
             prefix="bentoml-model-", suffix=".tar", dir=bentoml_tmp_dir
         )
+        tar_io = os.fdopen(fd, "wb+")
         try:
-            tar_io = os.fdopen(fd, "wb+")
             with self.spinner.spin(
                 text=f'Creating tar archive for model "{model.tag}"..'
             ):
@@ -342,7 +342,7 @@ class ModelAPI:
                 self.spinner.log(f'[bold green]Successfully pushed model "{model.tag}"')
         finally:
             try:
-                os.close(fd)
+                tar_io.close()
             except OSError:
                 pass
             os.unlink(tar_name)

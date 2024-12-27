@@ -212,8 +212,8 @@ class BentoAPI:
         fd, tar_name = mkstemp(
             prefix="bentoml-bento-", suffix=".tar", dir=bentoml_tmp_dir
         )
+        tar_io = os.fdopen(fd, "wb+")
         try:
-            tar_io = os.fdopen(fd, "wb+")
             with self.spinner.spin(
                 text=f'Creating tar archive for bento "{bento.tag}"..'
             ):
@@ -403,7 +403,7 @@ class BentoAPI:
                 self.spinner.log(f'[bold green]Successfully pushed Bento "{bento.tag}"')
         finally:
             try:
-                os.close(fd)
+                tar_io.close()
             except OSError:
                 pass
             os.unlink(tar_name)

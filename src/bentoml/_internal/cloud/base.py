@@ -119,6 +119,7 @@ class Spinner:
         )
         self._spinner_task_id: t.Optional[TaskID] = None
         self._live = Live(self, console=self.console)
+        self._start_count = 0
 
     @contextmanager
     def spin(self, text: str) -> t.Generator[TaskID, None, None]:
@@ -150,10 +151,14 @@ class Spinner:
 
     def start(self) -> None:
         """Start live updating."""
+        self._start_count += 1
         self._live.start()
 
     def stop(self) -> None:
         """Stop live updating."""
+        self._start_count -= 1
+        if self._start_count > 0:
+            return
         if self._spinner_task_id is not None:
             self._spinner_progress.remove_task(self._spinner_task_id)
             self._spinner_task_id = None

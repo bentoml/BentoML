@@ -407,8 +407,9 @@ class Service(t.Generic[T]):
             model_id = info.metadata.get("model_id")  # use the case in bento info
             if not model_id:
                 model_id = info.tag.name.replace("--", "/")
+            revision = info.metadata.get("revision", info.tag.version)
             model.model_id = model_id
-            model.revision = info.tag.version
+            model.revision = revision
         self.bento = bento
 
 

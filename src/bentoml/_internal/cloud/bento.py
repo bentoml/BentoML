@@ -54,7 +54,6 @@ class BentoAPI:
     _client: RestApiClient = attrs.field(repr=False)
     spinner: Spinner = attrs.field(repr=False, factory=Spinner)
 
-    @inject
     def push(
         self,
         bento: Bento,

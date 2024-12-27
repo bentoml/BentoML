@@ -39,14 +39,14 @@ Example output:
 
 This example is ready for easy deployment and scaling on BentoCloud. You can use either external LLM APIs or deploy an open-source LLM together with the LangGraph agent. With a single command, you get a production-grade application with fast autoscaling, secure deployment in your cloud, and comprehensive observability.
 
-.. image:: ../../_static/img/use-cases/large-language-models/langgraph/langgraph-agent-on-bentocloud.png
+.. image:: ../../_static/img/examples/langgraph/langgraph-agent-on-bentocloud.png
 
 Architecture
 ------------
 
 This project consists of two main components: a BentoML Service that serves a LangGraph agent as REST APIs and an LLM that generates text. The LLM can be an external API like Claude 3.5 Sonnet or an open-source model served via BentoML (Mistral 7B in this example).
 
-.. image:: ../../_static/img/use-cases/large-language-models/langgraph/langgraph-bentoml-architecture.png
+.. image:: ../../_static/img/examples/langgraph/langgraph-bentoml-architecture.png
 
 After a user submits a query, it is processed through the LangGraph agent, which includes:
 
@@ -250,7 +250,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
     .. tab-item:: BentoCloud Playground
 
-		.. image:: ../../_static/img/use-cases/large-language-models/langgraph/langgraph-agent-on-bentocloud.png
+		.. image:: ../../_static/img/examples/langgraph/langgraph-agent-on-bentocloud.png
 
     .. tab-item:: Python client
 

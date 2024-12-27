@@ -40,14 +40,14 @@ It will result in the application raising an exception, indicating the prompt is
 
 This example is ready for easy deployment and scaling on BentoCloud. With a single command, you can deploy a production-grade application with fast autoscaling, secure deployment in your cloud, and comprehensive observability.
 
-.. image:: ../../_static/img/use-cases/large-language-models/shieldgemma/shieldgemma-bentocloud.png
+.. image:: ../../_static/img/examples/shieldgemma/shieldgemma-bentocloud.png
 
 Architecture
 ------------
 
 This example includes two BentoML Services: ``Gemma`` and ``ShieldAssistant``. ``Gemma`` evaluates the safety of the prompt, and if it is considered safe, ``ShieldAssistant`` proceeds to call the OpenAI GPT-3.5 Turbo API to generate a response. If the probability score from the safety check exceeds a preset threshold, it indicates a potential violation of the safety guidelines. As a result, ``ShieldAssistant`` raises an error and rejects the query.
 
-.. image:: ../../_static/img/use-cases/large-language-models/shieldgemma/architecture-shield.png
+.. image:: ../../_static/img/examples/shieldgemma/architecture-shield.png
 
 Code explanations
 -----------------
@@ -211,7 +211,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
     .. tab-item:: BentoCloud Playground
 
-		.. image:: ../../_static/img/use-cases/large-language-models/shieldgemma/shieldgemma-bentocloud.png
+		.. image:: ../../_static/img/examples/shieldgemma/shieldgemma-bentocloud.png
 
     .. tab-item:: Python client
 

@@ -176,15 +176,15 @@ The server is active at `http://localhost:3000 <http://localhost:3000>`_. You ca
 
         Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, specify the image and parameters, and click **Execute**.
 
-        .. image:: ../../_static/img/use-cases/diffusion-models/controlnet/service-ui.png
+        .. image:: ../../_static/img/examples/controlnet/service-ui.png
 
 This is the example image used in the request:
 
-.. image:: ../../_static/img/use-cases/diffusion-models/controlnet/example-image.png
+.. image:: ../../_static/img/examples/controlnet/example-image.png
 
 Expected output:
 
-.. image:: ../../_static/img/use-cases/diffusion-models/controlnet/output-image.png
+.. image:: ../../_static/img/examples/controlnet/output-image.png
 
 Deploy to BentoCloud
 --------------------
@@ -217,7 +217,7 @@ First, specify a configuration YAML file (``bentofile.yaml``) to define the buil
 
 Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
 
-.. image:: ../../_static/img/use-cases/diffusion-models/controlnet/controlnet-bentocloud.png
+.. image:: ../../_static/img/examples/controlnet/controlnet-bentocloud.png
 
 .. note::
 

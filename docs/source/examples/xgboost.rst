@@ -195,7 +195,7 @@ The server is active at `http://localhost:3000 <http://localhost:3000/>`_. You c
 
         Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, specify the data, and click **Execute**.
 
-        .. image:: ../../_static/img/use-cases/custom-models/xgboost/service-ui.png
+        .. image:: ../../_static/img/examples/xgboost/service-ui.png
 
 Deploy to BentoCloud
 --------------------
@@ -225,7 +225,7 @@ First, specify a configuration YAML file (``bentofile.yaml``) to define the buil
 
 Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
 
-.. image:: ../../_static/img/use-cases/custom-models/xgboost/bentocloud-ui.png
+.. image:: ../../_static/img/examples/xgboost/bentocloud-ui.png
 
 .. note::
 

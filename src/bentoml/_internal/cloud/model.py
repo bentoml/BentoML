@@ -32,6 +32,7 @@ from .schemas.schemasv1 import CompleteMultipartUploadSchema
 from .schemas.schemasv1 import CompletePartSchema
 from .schemas.schemasv1 import CreateModelRepositorySchema
 from .schemas.schemasv1 import FinishUploadSchema
+from .schemas.schemasv1 import ModelSchema
 from .schemas.schemasv1 import PreSignMultipartUploadUrlSchema
 from .schemas.schemasv1 import TransmissionStrategy
 
@@ -519,4 +520,21 @@ class ModelAPI:
             model
             for model in sorted(res.items, key=lambda x: x.created_at, reverse=True)
         ]
+        return res
+
+    def get(self, name: str, version: str | None = None) -> ModelSchema:
+        """Get a model from the remote model store
+
+        Args:
+            tag: The tag of the model to get
+
+        Returns:
+            The model
+        """
+        if version is None or version == "latest":
+            res = self._client.v1.get_latest_model(name)
+        else:
+            res = self._client.v1.get_model(name, version)
+        if res is None:
+            raise NotFound(f'Model "{name}:{version}" not found')
         return res

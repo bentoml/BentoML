@@ -40,6 +40,7 @@ from ..configuration.containers import BentoMLContainer
 from ..tag import Tag
 from ..utils import bentoml_cattr
 from ..utils import filter_control_codes
+from ..utils import is_jupyter
 from ..utils import resolve_user_filepath
 from .base import Spinner
 from .schemas.modelschemas import BentoManifestSchema
@@ -625,7 +626,7 @@ class Deployment:
                         f':hourglass: Waiting for deployment "{self.name}" to be ready. Current status: "{status.status}"'
                     )
                     if status.status == DeploymentStatus.ImageBuilding.value:
-                        if tail_thread is None:
+                        if tail_thread is None and not is_jupyter():
                             tail_thread = Thread(
                                 target=tail_image_builder_logs, daemon=True
                             )

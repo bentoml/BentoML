@@ -106,6 +106,11 @@ SERVER_LOGGING_CONFIG: dict[str, t.Any] = {
             "handlers": ["tracehandler"],
             "propagate": False,
         },
+        "uvicorn.error": {
+            "level": logging.WARNING,
+            "handlers": ["tracehandler"],
+            "propagate": True,
+        },
     },
     "root": {
         "handlers": ["tracehandler"],

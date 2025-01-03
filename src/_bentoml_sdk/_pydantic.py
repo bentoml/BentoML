@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 
 from pydantic._internal import _known_annotated_metadata
+from pydantic._internal._typing_extra import is_annotated
 
 from .typing_utils import get_args
 from .typing_utils import get_origin
@@ -194,3 +195,38 @@ CUSTOM_PREPARE_METHODS = [
     # PIL image
     pil_prepare_pydantic_annotations,
 ]
+
+SUPPORTED_CONTAINER_TYPES = [
+    t.Union,
+    list,
+    t.List,
+    dict,
+    t.Dict,
+    t.AsyncGenerator,
+    t.AsyncIterable,
+    t.AsyncIterator,
+    t.Generator,
+    t.Iterable,
+    t.Iterator,
+]
+
+
+def patch_annotation(annotation: t.Any, model_config: ConfigDict) -> t.Any:
+    import typing_extensions as te
+
+    origin, args = te.get_origin(annotation), te.get_args(annotation)
+    if origin in SUPPORTED_CONTAINER_TYPES:
+        patched_args = [patch_annotation(arg, model_config) for arg in args]
+        return origin[tuple(patched_args)]
+
+    if is_annotated(annotation):
+        source, *annotations = args
+    else:
+        source = annotation
+        annotations = []
+    for method in CUSTOM_PREPARE_METHODS:
+        result = method(source, annotations, model_config)
+        if result is None:
+            continue
+        return t.Annotated[(result[0], *result[1])]  # type: ignore
+    return annotation

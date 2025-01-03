@@ -81,7 +81,13 @@ BentoML provides an efficient mechanism for loading AI models to accelerate mode
 
       By default, ``HuggingFaceModel`` returns the downloaded model path as a string, which means you can directly pass the path into libraries like ``transformers`` for model loading.
 
-      If you deploy the HF model to BentoCloud, you can view and verify it within your Bento on the details page. It is indicated with the HF icon. Clicking it redirects you to the model page on HF.
+      If your model is hosted in a private repository, specify your endpoint URL through the ``endpoint`` parameter, which defaults to ``https://huggingface.co/``.
+
+      .. code-block:: python
+
+         model_path = HuggingFaceModel("your_model_id", endpoint="https://my.huggingface.co/")
+
+      After deploying the HF model to BentoCloud, you can view and verify it on the Bento details page. It is indicated with the HF icon. Clicking it redirects you to the model page on HF.
 
       .. image:: ../../_static/img/build-with-bentoml/model-loading-and-management/hf-model-on-bentocloud.png
          :alt: Hugging Face model marked with an icon on BentoCloud console

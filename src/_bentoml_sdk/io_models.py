@@ -139,20 +139,10 @@ class IOMixin:
 
     @classmethod
     def __get_pydantic_core_schema__(cls: type[BaseModel], source, handler):
-        from ._pydantic import CUSTOM_PREPARE_METHODS
+        from ._pydantic import patch_annotation
 
         for _, info in cls.model_fields.items():
-            if is_annotated(info.annotation):
-                origin, *args = get_args(info.annotation)
-            else:
-                origin = info.annotation
-                args = []
-            for method in CUSTOM_PREPARE_METHODS:
-                result = method(origin, args, cls.model_config)
-                if result is None:
-                    continue
-                info.annotation = t.Annotated[(result[0], *result[1])]  # type: ignore
-                break
+            info.annotation = patch_annotation(info.annotation, cls.model_config)
 
         return super().__get_pydantic_core_schema__(source, handler)
 

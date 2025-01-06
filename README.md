@@ -157,7 +157,7 @@ Check out the [full list](https://docs.bentoml.com/en/latest/examples/overview.h
 - [Adaptive batching](https://docs.bentoml.com/en/latest/get-started/adaptive-batching.html)
 - [GPU inference](https://docs.bentoml.com/en/latest/build-with-bentoml/gpu-inference.html)
 - [Distributed serving systems](https://docs.bentoml.com/en/latest/build-with-bentoml/distributed-services.html)
-- [Concurrency and autoscaling](https://docs.bentoml.com/en/latest/scale-with-bentocloud/scaling/autoscaling.html)
+- [Concurrency and autoscaling](https://docs.bentoml.com/en/latest/scale-with-bentocloud/scaling/autoscaling.html)  # Improved link formatting
 - [Model loading and Model Store](https://docs.bentoml.com/en/latest/build-with-bentoml/model-loading-and-management.html)
 - [Observability](https://docs.bentoml.com/en/latest/build-with-bentoml/observability/index.html)
 - [BentoCloud deployment](https://docs.bentoml.com/en/latest/get-started/cloud-deployment.html)

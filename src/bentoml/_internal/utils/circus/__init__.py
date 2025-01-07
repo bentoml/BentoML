@@ -36,7 +36,7 @@ class Arbiter(_Arbiter):
 class ThreadedArbiter(Arbiter, Thread):
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         Arbiter.__init__(self, *args, **kwargs)
-        Thread.__init__(self)
+        Thread.__init__(self, daemon=True)
         self.__cb: t.Optional[t.Callable[[t.Any], t.Any]] = None
 
     def start(self, cb: t.Callable[[t.Any], t.Any] | None = None) -> None:

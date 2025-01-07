@@ -320,11 +320,15 @@ class ServiceAppFactory(BaseAppFactory):
         # Call on_shutdown hook with optional ctx or context parameter
         for name, member in vars(self.service.inner).items():
             if callable(member) and getattr(member, "__bentoml_shutdown_hook__", False):
+                logger.info("Running shutdown hook: %s", name)
                 result = getattr(
                     self._service_instance, name
                 )()  # call the bound method
                 if inspect.isawaitable(result):
                     await result
+                    logger.info("Completed async shutdown hook: %s", name)
+                else:
+                    logger.info("Completed shutdown hook: %s", name)
 
         await cleanup()
         own_proxy = getattr(self._service_instance, "__self_proxy__", None)

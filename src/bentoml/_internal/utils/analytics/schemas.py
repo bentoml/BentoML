@@ -22,6 +22,7 @@ from ...cloud.config import CloudClientConfig
 from ...configuration import BENTOML_VERSION
 from ...configuration.containers import BentoMLContainer
 from ...utils import bentoml_cattr
+from ...utils import is_jupyter
 
 if t.TYPE_CHECKING:
     from pathlib import Path
@@ -92,20 +93,6 @@ def is_interactive() -> bool:
     return not hasattr(main, "__file__")
 
 
-@lru_cache(maxsize=1)
-def in_notebook() -> bool:
-    try:
-        from IPython import get_ipython
-
-        if "IPKernelApp" not in get_ipython().config:  # pragma: no cover
-            return False
-    except ImportError:
-        return False
-    except AttributeError:
-        return False
-    return True
-
-
 @attr.define
 class CommonProperties:
     # when the event is triggered
@@ -116,7 +103,7 @@ class CommonProperties:
     bentoml_version: str = attr.field(default=BENTOML_VERSION)
     python_version: str = attr.field(factory=get_python_version)
     is_interactive: bool = attr.field(factory=is_interactive)
-    in_notebook: bool = attr.field(factory=in_notebook)
+    in_notebook: bool = attr.field(factory=is_jupyter)
 
     # resource related
     memory_usage_percent: float = attr.field(init=False)

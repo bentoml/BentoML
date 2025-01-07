@@ -331,6 +331,7 @@ class ServiceAppFactory(BaseAppFactory):
                     logger.info("Completed cleanup hook: %s", name)
 
         await cleanup()
+        logger.info("Service instance cleanup finalized")
         own_proxy = getattr(self._service_instance, "__self_proxy__", None)
         if isinstance(own_proxy, RemoteProxy):
             await own_proxy.close()

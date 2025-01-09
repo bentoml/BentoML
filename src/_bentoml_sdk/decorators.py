@@ -48,6 +48,7 @@ def api(
     batch_dim: int | tuple[int, int] = ...,
     max_batch_size: int = ...,
     max_latency_ms: int = ...,
+    openapi_overrides: dict[str, t.Any] | None = ...,
 ) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]: ...
 
 
@@ -62,6 +63,7 @@ def api(
     batch_dim: int | tuple[int, int] = 0,
     max_batch_size: int = 100,
     max_latency_ms: int = 60000,
+    openapi_overrides: dict[str, t.Any] | None = None,
 ) -> (
     APIMethod[P, R]
     | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]
@@ -79,6 +81,7 @@ def api(
         batch_dim: The batch dimension of the API.
         max_batch_size: The maximum batch size of the API.
         max_latency_ms: The maximum latency of the API.
+        openapi_overrides: Optional dictionary of OpenAPI specification overrides for this endpoint.
     """
 
     def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
@@ -96,6 +99,8 @@ def api(
             params["input_spec"] = input_spec
         if output_spec is not None:
             params["output_spec"] = output_spec
+        if openapi_overrides is not None:
+            params["openapi_overrides"] = openapi_overrides
         return APIMethod(func, **params)
 
     if func is not None:

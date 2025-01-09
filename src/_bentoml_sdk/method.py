@@ -58,7 +58,8 @@ class APIMethod(t.Generic[P, R]):
     is_stream: bool = attrs.field(init=False)
     doc: str | None = attrs.field(init=False)
     ctx_param: str | None = attrs.field(init=False)
-    is_task: bool = False
+    is_task: bool = attrs.field(default=False)
+    openapi_overrides: dict[str, t.Any] | None = attrs.field(default=None)
 
     @doc.default
     def default_doc(self) -> str | None:

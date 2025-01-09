@@ -126,19 +126,23 @@ error_responses = {
 def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
     routes: dict[str, PathItem] = {}
     for api in svc.apis.values():
-        routes[api.route] = PathItem(
-            post={
-                "responses": {
-                    HTTPStatus.OK.value: api.openapi_response(),
-                    **error_responses,
-                },
-                "tags": [APP_TAG.name],
-                "x-bentoml-name": api.name,
-                "description": api.doc or "",
-                "requestBody": api.openapi_request(),
-                "operationId": f"{svc.name}__{api.name}",
+        post_spec = {
+            "responses": {
+                HTTPStatus.OK.value: api.openapi_response(),
+                **error_responses,
             },
-        )
+            "tags": [APP_TAG.name],
+            "x-bentoml-name": api.name,
+            "description": api.doc or "",
+            "requestBody": api.openapi_request(),
+            "operationId": f"{svc.name}__{api.name}",
+        }
+
+        # Apply any user-provided OpenAPI overrides
+        if api.openapi_overrides:
+            merger.merge(post_spec, api.openapi_overrides)
+
+        routes[api.route] = PathItem(post=post_spec)
         if api.is_task:
             routes[f"{api.route}/status"] = PathItem(
                 get={

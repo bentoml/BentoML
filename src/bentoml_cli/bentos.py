@@ -417,8 +417,14 @@ def bento_management_commands() -> click.Group:
             key, label_value = label.split("=", 1)
             labels_dict[key] = label_value
 
+        service: str | None = None
+        if ":" in build_ctx:
+            service = build_ctx
+            build_ctx = "."
+
         bento = build_bentofile(
             bentofile,
+            service=service,
             version=version,
             labels=labels_dict or None,
             build_ctx=build_ctx,

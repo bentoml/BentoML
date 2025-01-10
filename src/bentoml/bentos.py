@@ -376,6 +376,7 @@ def build(
 def build_bentofile(
     bentofile: str | None = None,
     *,
+    service: str | None = None,
     version: str | None = None,
     labels: dict[str, str] | None = None,
     build_ctx: str | None = None,
@@ -405,17 +406,23 @@ def build_bentofile(
             bentofile = resolve_user_filepath(bentofile, None)
         except FileNotFoundError:
             raise InvalidArgument(f'bentofile "{bentofile}" not found')
+        else:
+            build_config = BentoBuildConfig.from_file(bentofile)
     else:
         for filename in DEFAULT_BENTO_BUILD_FILES:
             try:
                 bentofile = resolve_user_filepath(filename, build_ctx)
-                break
             except FileNotFoundError:
                 pass
+            else:
+                build_config = BentoBuildConfig.from_file(bentofile)
+                break
         else:
-            raise InvalidArgument("No bentofile found, please provide a bentofile path")
-
-    build_config = BentoBuildConfig.from_file(bentofile)
+            if service is None:
+                raise InvalidArgument(
+                    "No build config file found and no service specified"
+                )
+            build_config = BentoBuildConfig(service=service)
 
     if labels:
         if not build_config.labels:

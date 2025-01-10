@@ -2,7 +2,7 @@
 Define the runtime environment
 ==============================
 
-Since v1.3.20, BentoML introduces a new Python SDK for configuring the runtime environment of a Bento. You can set it alongside your BentoML Service code in ``service.py``. 
+Since v1.3.20, BentoML introduces a new Python SDK for configuring the runtime environment of a Bento. You can set it alongside your BentoML Service code in ``service.py``.
 
 Essentially, the runtime environment contains a set of Bento build options, such as:
 

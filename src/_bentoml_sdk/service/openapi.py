@@ -1,14 +1,24 @@
 from __future__ import annotations
 
+import logging
 import typing as t
 from http import HTTPStatus
+from typing import Any
+from typing import Dict
+from typing import TypeVar
+from typing import Union
+from typing import cast
 
-import pydantic
 from deepmerge.merger import Merger
+from fastapi import FastAPI  # type: ignore
+from fastapi.openapi.utils import get_openapi  # type: ignore
+from pydantic import BaseModel as PydanticBaseModel  # type: ignore
+from typing_extensions import TypedDict
 
 from bentoml._internal.service.openapi import APP_TAG
 from bentoml._internal.service.openapi import INFRA_TAG
 from bentoml._internal.service.openapi import make_infra_endpoints
+from bentoml._internal.service.openapi.specification import Components
 from bentoml._internal.service.openapi.specification import Contact
 from bentoml._internal.service.openapi.specification import Info
 from bentoml._internal.service.openapi.specification import MediaType
@@ -24,6 +34,33 @@ from bentoml._internal.utils import bentoml_cattr
 from bentoml.exceptions import InternalServerError
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import NotFound
+
+logger = logging.getLogger(__name__)
+
+# Type alias for better type checking
+BaseModel = PydanticBaseModel  # type: ignore
+
+T = TypeVar("T")
+
+
+# Type aliases for better readability and type safety
+class OpenAPIDict(TypedDict, total=False):
+    paths: Dict[str, Any]
+    components: Dict[str, Any]
+    title: str
+    version: str
+    routes: list[Any]
+
+
+class SchemaDict(TypedDict, total=False):
+    type: str
+    ref: str
+    properties: Dict[str, Any]
+    items: Dict[str, Any]
+
+
+ComponentsDict = Dict[str, Dict[str, Union[Schema, Reference]]]
+SchemaType = Union[Schema, Reference, Dict[str, Any]]
 
 if t.TYPE_CHECKING:
     import fastapi as fastapi
@@ -44,37 +81,66 @@ REF_TEMPLATE = "#/components/schemas/{model}"
 
 def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
     """Generate a OpenAPI specification for a service."""
-    mounted_app_paths = {}
-    schema_components: dict[str, dict[str, Schema]] = {}
+    mounted_app_paths: Dict[str, PathItem] = {}
+    schema_components: Dict[str, Dict[str, SchemaType]] = {}
 
     def join_path(prefix: str, path: str) -> str:
         return f"{prefix.rstrip('/')}/{path.lstrip('/')}"
 
     for app, path, _ in svc.mount_apps:
         if LazyType["fastapi.FastAPI"]("fastapi.FastAPI").isinstance(app):
-            from fastapi.openapi.utils import get_openapi
+            app_instance = t.cast(FastAPI, app)
 
-            openapi = get_openapi(
-                title=app.title,
-                version=app.version,
-                routes=app.routes,
+            openapi_spec: OpenAPIDict = get_openapi(
+                title=app_instance.title,
+                version=app_instance.version,
+                routes=app_instance.routes,
             )
             mounted_app_paths.update(
                 {
-                    join_path(path, k): bentoml_cattr.structure(v, PathItem)
-                    for k, v in openapi["paths"].items()
+                    join_path(path, str(k)): bentoml_cattr.structure(v, PathItem)
+                    for k, v in cast(
+                        Dict[str, Any], openapi_spec.get("paths", {})
+                    ).items()
                 }
             )
 
-            if "components" in openapi:
-                merger.merge(schema_components, openapi["components"])
+            components = openapi_spec.get("components", {})
+            if components:
+                merger.merge(
+                    schema_components,
+                    cast(Dict[str, Dict[str, SchemaType]], components),
+                )
 
     merger.merge(schema_components, generate_service_components(svc))
+
+    # Convert schema components to proper type
+    schemas: dict[str, t.Union[Schema, Reference]] = {}
+    schema_dict = schema_components.get("schemas", {})
+    for name, schema in schema_dict.items():
+        if isinstance(schema, (Schema, Reference)):
+            schemas[name] = schema
+        elif isinstance(schema, dict):
+            try:
+                if "$ref" in schema:
+                    schemas[name] = Reference(ref=schema["$ref"])
+                else:
+                    # Convert schema with proper type hints
+                    schema_dict = t.cast(t.Dict[str, t.Any], schema)
+                    schemas[name] = Schema(**schema_dict)
+            except (TypeError, ValueError) as e:
+                logger.error(f"Failed to convert schema {name}: {e}")
+                schemas[name] = Schema(
+                    type="object"
+                )  # Fallback to generic object schema
+
+    # Ensure components is properly structured
+    components = Components(schemas=schemas) if schemas else None
 
     return OpenAPISpecification(
         openapi=openapi_version,
         tags=[APP_TAG, INFRA_TAG],
-        components=schema_components,
+        components=components,
         info=Info(
             title=svc.name,
             description=svc.doc,
@@ -92,7 +158,7 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
     )
 
 
-class TaskStatusResponse(pydantic.BaseModel):
+class TaskStatusResponse(BaseModel):
     task_id: str
     status: t.Literal["in_progress", "success", "failure", "cancelled"]
     created_at: str
@@ -255,7 +321,112 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
                         if not isinstance(tag, str):
                             raise TypeError("Tags must be strings")
 
-            merger.merge(post_spec, api.openapi_overrides)
+            # Handle OpenAPI spec merging using proper OpenAPI types
+            overrides = api.openapi_overrides
+            operation_dict = dict(post_spec)  # Make a copy to avoid modifying original
+
+            for key, value in overrides.items():
+                if key == "tags" and isinstance(value, list):
+                    # Merge tags list, ensuring all elements are strings
+                    current_tags = t.cast(t.List[str], operation_dict.get("tags", []))
+                    if not isinstance(current_tags, list):
+                        current_tags = []
+                    # Convert all values to strings, skip non-string values
+                    value_list = t.cast(t.List[t.Any], value)
+                    new_tags = [
+                        str(item)
+                        for item in value_list
+                        if isinstance(item, (str, int, float))
+                    ]
+                    operation_dict["tags"] = list(set(current_tags + new_tags))
+                elif key == "parameters" and isinstance(value, list):
+                    # Merge parameters list with proper typing
+                    current_params = t.cast(
+                        t.List[t.Dict[str, t.Any]], operation_dict.get("parameters", [])
+                    )
+                    if not isinstance(current_params, list):
+                        current_params = []
+                    # Convert parameters to proper type, ensuring they're dictionaries
+                    value_list = t.cast(t.List[t.Any], value)
+                    param_list: t.List[t.Dict[str, t.Any]] = []
+                    for param in value_list:
+                        if isinstance(param, dict):
+                            # Convert dictionary items with proper typing
+                            param_items = t.cast(t.Dict[str, t.Any], param)
+                            typed_param: t.Dict[str, t.Any] = {}
+                            for k, v in param_items.items():
+                                typed_param[str(k)] = v
+                            param_list.append(typed_param)
+                    # Merge parameters and ensure proper typing for OpenAPI spec
+                    merged_params: t.List[t.Dict[str, t.Any]] = []
+                    if isinstance(current_params, list):
+                        merged_params.extend(current_params)
+                    merged_params.extend(param_list)
+                    # Convert to Operation-compatible type
+                    operation_dict["parameters"] = t.cast(
+                        t.Dict[str, t.Any], merged_params
+                    )
+                elif key == "responses" and isinstance(value, dict):
+                    # Merge responses using Response type
+                    current_responses = t.cast(
+                        t.Dict[str, t.Union[Response, t.Dict[str, t.Any]]],
+                        operation_dict.get("responses", {}),
+                    )
+                    if not isinstance(current_responses, dict):
+                        current_responses = {}
+                    merged_responses: t.Dict[str, Response] = {}
+
+                    # Helper function to create MediaType objects safely
+                    def create_media_type(spec: t.Dict[str, t.Any]) -> MediaType:
+                        return MediaType(
+                            schema=spec.get("schema"),
+                            example=spec.get("example"),
+                            examples=spec.get("examples"),
+                            encoding=spec.get("encoding"),
+                        )
+
+                    # Helper function to create Response objects safely
+                    def create_response(resp_dict: t.Dict[str, t.Any]) -> Response:
+                        if "description" not in resp_dict:
+                            resp_dict = dict(resp_dict)
+                            resp_dict["description"] = "Response"
+                        if "content" in resp_dict:
+                            content: t.Dict[str, MediaType] = {}
+                            content_dict = t.cast(
+                                t.Dict[str, t.Dict[str, t.Any]], resp_dict["content"]
+                            )
+                            for content_type, content_spec in content_dict.items():
+                                if isinstance(content_spec, dict):
+                                    content[content_type] = create_media_type(
+                                        content_spec
+                                    )
+                            resp_dict["content"] = content
+                        return Response(**resp_dict)
+
+                    # First, convert existing responses to proper Response objects
+                    for code, resp in current_responses.items():
+                        if isinstance(resp, dict):
+                            merged_responses[str(code)] = create_response(resp)
+                        elif isinstance(resp, Response):
+                            merged_responses[str(code)] = resp
+
+                    # Then merge in new responses
+                    response_dict = t.cast(
+                        t.Dict[str, t.Union[Response, t.Dict[str, t.Any]]], value
+                    )
+                    for code, resp in response_dict.items():
+                        if isinstance(resp, dict):
+                            merged_responses[str(code)] = create_response(resp)
+                        elif isinstance(resp, Response):
+                            merged_responses[str(code)] = resp
+                    operation_dict["responses"] = merged_responses
+                else:
+                    # For other fields (description, summary, etc.), just override
+                    operation_dict[key] = value
+
+            # Create Operation object with merged data
+            post_spec.clear()
+            post_spec.update(operation_dict)
 
         routes[api.route] = PathItem(post=post_spec)
         if api.is_task:

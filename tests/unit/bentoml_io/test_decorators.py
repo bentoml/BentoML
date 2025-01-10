@@ -337,6 +337,9 @@ def test_api_decorator_multiple_overrides():
 
     @bentoml.service(name="test_multi_endpoint_service")
     class TestMultiEndpointService(Service):
+        def __init__(self):
+            super().__init__(name="test_multi_endpoint_service")
+
         @bentoml.api(
             openapi_overrides={
                 "description": "First endpoint description",

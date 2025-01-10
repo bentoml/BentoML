@@ -146,7 +146,7 @@ def test_api_decorator_openapi_overrides():
     from bentoml._internal.service.openapi import generate_spec
     from bentoml._internal.service.openapi.specification import OpenAPISpecification
 
-    @bentoml.service
+    @bentoml.service(name="test_overriden_service")
     class TestOverridenService(Service):
         @bentoml.api(
             openapi_overrides={
@@ -192,7 +192,7 @@ def test_api_decorator_parameter_overrides():
     from bentoml._internal.service.openapi import generate_spec
     from bentoml._internal.service.openapi.specification import OpenAPISpecification
 
-    @bentoml.service
+    @bentoml.service(name="test_parameter_service")
     class TestParameterService(Service):
         @bentoml.api(
             openapi_overrides={
@@ -248,7 +248,7 @@ def test_api_decorator_response_overrides():
     from bentoml._internal.service.openapi import generate_spec
     from bentoml._internal.service.openapi.specification import OpenAPISpecification
 
-    @bentoml.service
+    @bentoml.service(name="test_response_service")
     class TestResponseService(Service):
         @bentoml.api(
             openapi_overrides={
@@ -335,7 +335,7 @@ def test_api_decorator_multiple_overrides():
     from bentoml._internal.service.openapi import generate_spec
     from bentoml._internal.service.openapi.specification import OpenAPISpecification
 
-    @bentoml.service
+    @bentoml.service(name="test_multi_endpoint_service")
     class TestMultiEndpointService(Service):
         @bentoml.api(
             openapi_overrides={
@@ -413,7 +413,7 @@ def test_api_decorator_invalid_overrides():
     from bentoml._internal.service.openapi import generate_spec
 
     # Test invalid field name
-    @bentoml.service
+    @bentoml.service(name="test_invalid_field_service")
     class TestInvalidFieldService(Service):
         @bentoml.api(
             openapi_overrides={
@@ -428,7 +428,7 @@ def test_api_decorator_invalid_overrides():
         generate_spec(svc_field)
 
     # Test invalid field value type
-    @bentoml.service
+    @bentoml.service(name="test_invalid_value_service")
     class TestInvalidValueService(Service):
         @bentoml.api(
             openapi_overrides={
@@ -443,7 +443,7 @@ def test_api_decorator_invalid_overrides():
         generate_spec(svc_value)
 
     # Test invalid nested schema
-    @bentoml.service
+    @bentoml.service(name="test_invalid_schema_service")
     class TestInvalidSchemaService(Service):
         @bentoml.api(
             openapi_overrides={
@@ -468,7 +468,7 @@ def test_api_decorator_invalid_overrides():
         generate_spec(svc_schema)
 
     # Test invalid response code
-    @bentoml.service
+    @bentoml.service(name="test_invalid_response_service")
     class TestInvalidResponseService(Service):
         @bentoml.api(
             openapi_overrides={

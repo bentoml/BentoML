@@ -31,11 +31,11 @@ if t.TYPE_CHECKING:
     from .factory import Service
 
 merger = Merger(
-    # merge dicts
+    # merge dicts recursively
     [(dict, "merge")],
-    # override all other types
-    ["override"],
-    # override conflicting types
+    # merge lists by concatenating
+    ["append"],
+    # override other types
     ["override"],
 )
 
@@ -143,6 +143,103 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
         # tags, parameters, requestBody, responses, etc. The overrides are deep
         # merged with the auto-generated specification.
         if api.openapi_overrides:
+            # Validate OpenAPI fields before merging
+            valid_fields = {
+                "description",
+                "tags",
+                "summary",
+                "operationId",
+                "parameters",
+                "requestBody",
+                "responses",
+                "deprecated",
+                "security",
+                "servers",
+                "externalDocs",
+            }
+            invalid_fields = set(api.openapi_overrides.keys()) - valid_fields
+            if invalid_fields:
+                raise ValueError(
+                    f"Invalid OpenAPI field(s): {', '.join(invalid_fields)}. "
+                    f"Valid fields are: {', '.join(sorted(valid_fields))}"
+                )
+
+            # Validate value types and schemas
+            for field, value in api.openapi_overrides.items():
+                if field == "parameters":
+                    if not isinstance(value, list):
+                        raise TypeError(
+                            "Invalid value type for 'parameters'. Expected list, got "
+                            f"{type(value).__name__}"
+                        )
+                    for param in t.cast(t.List[t.Dict[str, t.Any]], value):
+                        if not isinstance(param, dict):
+                            raise TypeError("Parameter must be a dictionary")
+                        required_fields = {"name", "in"}
+                        param_keys = set(param.keys())
+                        missing = required_fields - param_keys
+                        if missing:
+                            raise ValueError(
+                                f"Parameter missing required fields: {', '.join(missing)}"
+                            )
+                elif field == "responses":
+                    if not isinstance(value, dict):
+                        raise TypeError(
+                            "Invalid value type for 'responses'. Expected dict, got "
+                            f"{type(value).__name__}"
+                        )
+                    responses = t.cast(t.Dict[str, t.Dict[str, t.Any]], value)
+                    for code, response in responses.items():
+                        try:
+                            code_int = int(str(code))
+                            if not 100 <= code_int <= 599:
+                                raise ValueError
+                        except ValueError:
+                            raise ValueError(
+                                f"Invalid response code '{code}'. Must be a valid HTTP "
+                                "status code between 100 and 599"
+                            )
+                        if not isinstance(response, dict):
+                            raise TypeError("Response must be a dictionary")
+                        if "description" not in response:
+                            raise ValueError(
+                                f"Response {code} missing required field: description"
+                            )
+                        # Validate schema types if present
+                        if "content" in response:
+                            for content_type, content in response["content"].items():
+                                if not isinstance(content, dict):
+                                    raise TypeError(
+                                        f"Content for {content_type} must be a dictionary"
+                                    )
+                                if "schema" in content:
+                                    schema = content["schema"]
+                                    if not isinstance(schema, dict):
+                                        raise TypeError("Schema must be a dictionary")
+                                    if "type" in schema and schema["type"] not in {
+                                        "object",
+                                        "array",
+                                        "string",
+                                        "number",
+                                        "integer",
+                                        "boolean",
+                                        "null",
+                                    }:
+                                        raise ValueError(
+                                            f"Invalid schema type: {schema['type']}. "
+                                            "Must be one of: object, array, string, number, integer, boolean, null"
+                                        )
+                elif field == "tags":
+                    if not isinstance(value, list):
+                        raise TypeError(
+                            "Invalid value type for 'tags'. Expected list, got "
+                            f"{type(value).__name__}"
+                        )
+                    tags = t.cast(t.List[str], value)
+                    for tag in tags:
+                        if not isinstance(tag, str):
+                            raise TypeError("Tags must be strings")
+
             merger.merge(post_spec, api.openapi_overrides)
 
         routes[api.route] = PathItem(post=post_spec)

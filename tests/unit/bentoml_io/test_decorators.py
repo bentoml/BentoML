@@ -337,8 +337,7 @@ def test_api_decorator_multiple_overrides():
 
     @bentoml.service(name="test_multi_endpoint_service")
     class TestMultiEndpointService(Service):
-        def __init__(self):
-            super().__init__(name="test_multi_endpoint_service")
+        pass  # No need for custom __init__, service decorator handles initialization
 
         @bentoml.api(
             openapi_overrides={

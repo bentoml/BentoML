@@ -425,7 +425,7 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
                     operation_dict[key] = value
 
             # Create Operation object with merged data
-            post_spec.clear()
+            # Don't clear post_spec, just update it with merged data
             post_spec.update(operation_dict)
 
         routes[api.route] = PathItem(post=post_spec)

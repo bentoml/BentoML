@@ -33,9 +33,9 @@ if t.TYPE_CHECKING:
 merger = Merger(
     # merge dicts recursively
     [(dict, "merge")],
-    # merge lists by concatenating
-    ["append"],
-    # override other types
+    # override all other types (including lists)
+    ["override"],
+    # override conflicting types
     ["override"],
 )
 
@@ -212,11 +212,22 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
                                     raise TypeError(
                                         f"Content for {content_type} must be a dictionary"
                                     )
-                                if "schema" in content:
-                                    schema = content["schema"]
-                                    if not isinstance(schema, dict):
-                                        raise TypeError("Schema must be a dictionary")
-                                    if "type" in schema and schema["type"] not in {
+                                try:
+                                    content_dict: dict[str, t.Any] = {
+                                        "schema": content.get("schema"),
+                                        "example": content.get("example"),
+                                        "examples": content.get("examples"),
+                                        "encoding": content.get("encoding"),
+                                    }
+                                    content_obj = MediaType(**content_dict)
+                                except (TypeError, ValueError) as e:
+                                    raise TypeError(f"Invalid content format: {e}")
+
+                                if content_obj.schema is not None:
+                                    schema = content_obj.schema
+                                    if isinstance(schema, Reference):
+                                        continue
+                                    valid_types = {
                                         "object",
                                         "array",
                                         "string",
@@ -224,10 +235,14 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
                                         "integer",
                                         "boolean",
                                         "null",
-                                    }:
+                                    }
+                                    if (
+                                        schema.type is not None
+                                        and schema.type not in valid_types
+                                    ):
                                         raise ValueError(
-                                            f"Invalid schema type: {schema['type']}. "
-                                            "Must be one of: object, array, string, number, integer, boolean, null"
+                                            f"Invalid schema type: {schema.type}. "
+                                            f"Must be one of: {', '.join(sorted(valid_types))}"
                                         )
                 elif field == "tags":
                     if not isinstance(value, list):

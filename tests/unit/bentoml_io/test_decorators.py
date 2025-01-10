@@ -142,7 +142,7 @@ def test_api_decorator_pandas():
 
 
 def test_api_decorator_openapi_overrides():
-    from bentoml._internal.service import Service
+    from bentoml._internal.service.factory import Service
     from bentoml._internal.service.openapi import generate_spec
     from bentoml._internal.service.openapi.specification import OpenAPISpecification
 
@@ -188,7 +188,7 @@ def test_api_decorator_openapi_overrides():
 
 
 def test_api_decorator_parameter_overrides():
-    from bentoml._internal.service import Service
+    from bentoml._internal.service.factory import Service
     from bentoml._internal.service.openapi import generate_spec
     from bentoml._internal.service.openapi.specification import OpenAPISpecification
 
@@ -244,7 +244,7 @@ def test_api_decorator_parameter_overrides():
 
 
 def test_api_decorator_response_overrides():
-    from bentoml._internal.service import Service
+    from bentoml._internal.service.factory import Service
     from bentoml._internal.service.openapi import generate_spec
     from bentoml._internal.service.openapi.specification import OpenAPISpecification
 
@@ -409,7 +409,7 @@ def test_api_decorator_invalid_overrides():
 
     import pytest
 
-    from bentoml._internal.service import Service
+    from bentoml._internal.service.factory import Service
     from bentoml._internal.service.openapi import generate_spec
 
     # Test invalid field name

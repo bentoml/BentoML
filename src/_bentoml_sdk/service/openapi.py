@@ -138,7 +138,10 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
             "operationId": f"{svc.name}__{api.name}",
         }
 
-        # Apply any user-provided OpenAPI overrides
+        # Apply any user-provided OpenAPI overrides to customize the specification
+        # Users can override any valid OpenAPI operation fields like description,
+        # tags, parameters, requestBody, responses, etc. The overrides are deep
+        # merged with the auto-generated specification.
         if api.openapi_overrides:
             merger.merge(post_spec, api.openapi_overrides)
 

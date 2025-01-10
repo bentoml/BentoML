@@ -94,6 +94,119 @@ Each API endpoint has a unique route (URL path). By default, the route is derive
         result = self.pipeline(text)
         return result[0]['summary_text']
 
+OpenAPI Customization
+^^^^^^^^^^^^^^^^^^^
+
+BentoML automatically generates OpenAPI specifications for your service endpoints. You can customize these specifications using the ``openapi_overrides`` parameter in the ``@bentoml.api`` decorator. This allows you to override any valid OpenAPI operation fields while preserving the auto-generated parts.
+
+Customizable Fields
+-----------------
+
+You can override various OpenAPI operation fields:
+
+* ``description``: Detailed API endpoint description
+* ``tags``: List of tags for grouping endpoints
+* ``parameters``: Query, path, or header parameters
+* ``requestBody``: Request body schema and examples
+* ``responses``: Response schemas and examples
+* ``summary``: Brief summary of the endpoint
+* ``externalDocs``: External documentation references
+* ``deprecated``: Mark endpoint as deprecated
+* Any other valid OpenAPI operation field
+
+Basic Example
+-----------
+
+.. code-block:: python
+
+    @bentoml.api(
+        openapi_overrides={
+            "description": "Custom description for this endpoint",
+            "tags": ["custom-tag"],
+            "parameters": [
+                {
+                    "name": "version",
+                    "in": "query",
+                    "required": False,
+                    "schema": {"type": "string"}
+                }
+            ]
+        }
+    )
+    def predict(self, text: str) -> str:
+        return self.model.predict(text)
+
+Advanced Example
+-------------
+
+Here's an example with more complex overrides:
+
+.. code-block:: python
+
+    @bentoml.api(
+        openapi_overrides={
+            "description": "Process data with custom parameters",
+            "tags": ["ml-model", "v2"],
+            "parameters": [
+                {
+                    "name": "version",
+                    "in": "query",
+                    "required": False,
+                    "schema": {"type": "string"}
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Successful prediction",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "prediction": {"type": "string"},
+                                    "confidence": {"type": "number"},
+                                    "version": {"type": "string"}
+                                }
+                            },
+                            "examples": {
+                                "success": {
+                                    "value": {
+                                        "prediction": "positive",
+                                        "confidence": 0.95,
+                                        "version": "v2"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "400": {
+                    "description": "Invalid input",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "error": {"type": "string"}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+    def predict(self, text: str) -> dict:
+        return {"prediction": "...", "confidence": 0.95, "version": "v2"}
+
+The ``openapi_overrides`` dictionary is deep merged with the auto-generated OpenAPI specification. This means you can:
+
+* Override specific fields while keeping others auto-generated
+* Add new fields without affecting existing ones
+* Customize deeply nested structures like response schemas
+* Maintain backward compatibility with existing clients
+* Add examples and documentation for better API understanding
+
 Inference context
 ^^^^^^^^^^^^^^^^^
 

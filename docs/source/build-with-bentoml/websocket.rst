@@ -10,7 +10,7 @@ Usage
 BentoML Services can handle WebSocket connections through `FastAPI's WebSocket support <https://fastapi.tiangolo.com/advanced/websockets/>`_. To set up a WebSocket server:
 
 1. Create a FastAPI application.
-2. :doc:`Mount it to your BentoML Service <.build-with-bentoml/asgi>`.
+2. :doc:`Mount it to your BentoML Service </build-with-bentoml/asgi>`.
 
 Once the BentoML server starts, the WebSocket server is also initialized and ready to accept connections.
 

@@ -26,7 +26,7 @@ In BentoML, you can stream LLM output using Python generators. Here's an example
         def __init__(self) -> None:
             # Initialize your model configuration
             # A dummy example here
-            self.model_id = MODEL_ID 
+            self.model_id = MODEL_ID
 
         @bentoml.api
         async def generate(self, prompt: str) -> Generator[str, None, None]:
@@ -43,7 +43,7 @@ In BentoML, you can stream LLM output using Python generators. Here's an example
                 messages=[message.model_dump()], # type: ignore
                 stream=True,
             )
-            
+
             # Stream and yield the response chunks
             async for chunk in completion:
                 yield chunk.choices[0].delta.content or ""
@@ -73,15 +73,15 @@ Here is an example of :doc:`configuring a WebSocket server </build-with-bentoml/
         def __init__(self) -> None:
             # Initialize your TTS engine here
             self.engine = self.setup_tts_engine()
-            
+
         def setup_tts_engine(self):
             # Configure your TTS engine here
             pass
-            
+
         def synthesize(self, text: str) -> Generator[bytes, None, None]:
             # Implement your TTS logic here
             pass
-            
+
         # Define a WebSocket endpoint for streaming audio
         @app.websocket("/ws")
         async def speech(self, websocket: WebSocket):

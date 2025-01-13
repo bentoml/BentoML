@@ -34,7 +34,7 @@ Here is a simple example:
         def __init__(self):
             # Initialize your resources here (e.g., models, configurations)
             print("Service initialized")
-            
+
         @app.websocket("/ws")
         async def websocket_endpoint(self, websocket: WebSocket):
             await websocket.accept()
@@ -61,7 +61,7 @@ The :doc:`BentoML Python client </build-with-bentoml/clients>` does not yet supp
     async def test_websocket():
         # /chat comes from the asgi_app path, /ws from the endpoint
         # Adjust URL as needed
-        uri = "ws://localhost:3000/chat/ws" 
+        uri = "ws://localhost:3000/chat/ws"
         async with websockets.connect(uri) as websocket:
             # Send a test message
             await websocket.send("Hello BentoML")

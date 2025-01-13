@@ -172,6 +172,8 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    build-with-bentoml/distributed-services
    build-with-bentoml/lifecycle-hooks
    build-with-bentoml/asgi
+   build-with-bentoml/streaming
+   build-with-bentoml/websocket
    build-with-bentoml/gradio
    build-with-bentoml/observability/index
    build-with-bentoml/error-handling

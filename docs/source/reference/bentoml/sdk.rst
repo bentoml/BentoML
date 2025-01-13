@@ -9,7 +9,7 @@ Service decorator
 
 .. autofunction:: bentoml.runner_service
 
-.. autofunction:: bentoml.mount_asgi_app
+.. autofunction:: bentoml.asgi_app
 
 Service API
 -----------

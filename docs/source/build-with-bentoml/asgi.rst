@@ -43,7 +43,7 @@ FastAPI
     app = FastAPI()
 
     @bentoml.service
-    @bentoml.mount_asgi_app(app, path="/v1")
+    @bentoml.asgi_app(app, path="/v1")
     class MyService:
         name = "MyService"
 
@@ -59,7 +59,7 @@ FastAPI
 Specifically, do the following to mount FastAPI:
 
 1. Create a FastAPI application with ``FastAPI()``.
-2. Use the ``@bentoml.mount_asgi_app`` decorator to mount the FastAPI application to the BentoML Service, enabling them to be served together. Set the ``path`` parameter to :ref:`customize the prefix path <customize-prefix-path>`.
+2. Use the ``@bentoml.asgi_app`` decorator to mount the FastAPI application to the BentoML Service, enabling them to be served together. Set the ``path`` parameter to :ref:`customize the prefix path <customize-prefix-path>`.
 3. Define a FastAPI route inside or outside the Service class using ``@app.get("/<route-name>")``.
 
    - Inside the class: Use ``self`` to access the Service instance's attributes and methods.
@@ -103,7 +103,7 @@ The following is a more practical example of mounting FastAPI onto the Summariza
         resources={"cpu": "2"},
         traffic={"timeout": 10},
     )
-    @bentoml.mount_asgi_app(app, path="/v1")
+    @bentoml.asgi_app(app, path="/v1")
     class Summarization:
         def __init__(self) -> None:
             self.pipeline = pipeline('summarization')
@@ -169,14 +169,14 @@ The following is an example of integrating Quart with BentoML.
         return f"Hello, {service.name}"
 
     @bentoml.service
-    @bentoml.mount_asgi_app(app, path="/v1")
+    @bentoml.asgi_app(app, path="/v1")
     class MyService:
         name = "MyService"
 
 Specifically, do the following to mount Quart:
 
 1. Create a Quart application with ``Quart()``.
-2. Use the ``@bentoml.mount_asgi_app`` decorator to mount the Quart application to the BentoML Service, enabling them to be served together. Set the ``path`` parameter to :ref:`customize the prefix path <customize-prefix-path>`.
+2. Use the ``@bentoml.asgi_app`` decorator to mount the Quart application to the BentoML Service, enabling them to be served together. Set the ``path`` parameter to :ref:`customize the prefix path <customize-prefix-path>`.
 3. Define a Quart route outside the Service class using ``@app.get(/"<route-name>")``. Use ``bentoml.get_current_service()`` to inject the ``MyService`` instance, allowing the route to access the Service's attributes and methods.
 4. Within the Quart route, add your desired implementation logic. This example returns a greeting message using the Service's name.
 
@@ -208,7 +208,7 @@ The following is a more practical example of mounting Quart onto the Summarizati
         resources={"cpu": "2"},
         traffic={"timeout": 10},
     )
-    @bentoml.mount_asgi_app(app, path="/v1")
+    @bentoml.asgi_app(app, path="/v1")
     class Summarization:
         def __init__(self) -> None:
             self.pipeline = pipeline('summarization')
@@ -241,7 +241,7 @@ Customize the prefix path
 
 When mounting an ASGI tool onto a BentoML Service, it is possible to customize the route path by setting a prefix. This is useful for organizing your API endpoints and simplifying routing and namespace management.
 
-To set a prefix path, simply set the ``path`` parameter in the decorator ``@bentoml.mount_asgi_app``. Here is a FastAPI example:
+To set a prefix path, simply set the ``path`` parameter in the decorator ``@bentoml.asgi_app``. Here is a FastAPI example:
 
 .. code-block:: python
 
@@ -251,7 +251,7 @@ To set a prefix path, simply set the ``path`` parameter in the decorator ``@bent
     app = FastAPI()
 
     @bentoml.service
-    @bentoml.mount_asgi_app(app, path="/fastapi") # Add the prefix here
+    @bentoml.asgi_app(app, path="/fastapi") # Add the prefix here
     class MyService:
         name = "MyService"
 
@@ -302,6 +302,6 @@ This example ensures that the ``Summarization`` Service only accepts requests fr
 
     Alternatively, you can edit your ``hosts`` file to map ``example.com`` to ``127.0.0.1`` (localhost) and then access ``http://example.com:3000/``.
 
-While ``add_asgi_middleware`` is used to add middleware to the ASGI application that BentoML uses to serve the APIs, ``@bentoml.mount_asgi_app`` is used to integrate the entire ASGI application into the BentoML Service. This is suitable for adding complete web applications like FastAPI or Quart applications that come with their routing logic, directly alongside your BentoML Service.
+While ``add_asgi_middleware`` is used to add middleware to the ASGI application that BentoML uses to serve the APIs, ``@bentoml.asgi_app`` is used to integrate the entire ASGI application into the BentoML Service. This is suitable for adding complete web applications like FastAPI or Quart applications that come with their routing logic, directly alongside your BentoML Service.
 
 The middleware added via ``add_asgi_middleware`` applies to the entire ASGI application, including both the BentoML Service and any mounted ASGI applications. This ensures consistent processing of all requests across the application, whether they target BentoML Services or other components.

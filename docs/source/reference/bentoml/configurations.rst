@@ -82,6 +82,38 @@ To specify the number of workers (for example, ``3``) within a Service:
     class MyService:
         # Service implementation
 
+``image``
+^^^^^^^^^
+
+``image`` allows you to configure the runtime specifications for building a Bento.
+
+.. code-block:: python
+
+    my_image = bentoml.images.PythonImage(python_version='3.11') \
+        .python_packages("torch", "transformers")
+
+    @bentoml.service(image=my_image)
+    class MyService:
+        # Service implementation
+
+For more information, see :doc:`/build-with-bentoml/runtime-environment`.
+
+``envs``
+^^^^^^^^
+
+``envs`` allows you to set the environment variables required for your Service. Each environment variable is defined with ``name`` and ``value`` keys. To avoid exposing sensitive information, you can omit the value and set it when deploying it to BentoCloud.
+
+.. code-block:: python
+
+    @bentoml.service(
+        envs=[
+            {"name": "HF_TOKEN"},  # Omit the value
+            {"name": "DB_HOST", "value": "localhost"}
+        ]
+    )
+    class MyService:
+        # Service implementation
+
 ``traffic``
 ^^^^^^^^^^^
 

@@ -256,7 +256,7 @@ Plugins and third-party monitoring data collectors
 
 BentoML also supports plugins and third-party monitoring data collectors. You can create a custom monitoring data collector and publish it as a Python package. Unlike the built-in collector, which is more protocol specific for general use cases, plugins could be more platform-specific.
 
-To use a plugin, you need to install it and include it in ``bentofile.yaml``. For details, see :doc:`/reference/bentoml/bento-build-options`.
+To use a plugin, you need to install it in the runtime environment for deployment. For details, see :doc:`/build-with-bentoml/runtime-environment`.
 
 Arize AI
 """"""""
@@ -291,11 +291,15 @@ In the ``@bentoml.service`` decorator, add the ``space_key`` and ``api_key`` to 
 
 For more information about available Arize parameters, see `the Arize documentation <https://docs.arize.com/arize/api-reference/python-sdk/arize.log>`_.
 
-The plugin should also be added in ``bentofile.yaml``:
+For deployment, the plugin should also be installed in your runtime environment:
 
-.. code-block:: yaml
+.. code-block:: python
 
-    service: "service:Summarization"
-    python:
-      packages:
-        - bentoml-plugins-arize  # Add this plugin
+    import bentoml
+
+    my_image = bentoml.images.PythonImage(python_version='3.11') \
+        .python_packages("bentoml-plugins-arize") # Add this plugin
+
+    @bentoml.service(image=my_image)
+    class MyService:
+        # Service implementation

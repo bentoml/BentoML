@@ -19,13 +19,15 @@ You can deploy a new project through either the command line interface (CLI) or 
 
     .. tab-item:: BentoML CLI
 
-        In your project directory where the ``bentofile.yaml`` file is stored, run the following command and use the ``-n`` flag to optionally set a name.
+        Run the following command and use the ``-n`` flag to optionally set a name. The Deployment status will be updated in real time in your terminal.
 
         .. code-block:: bash
 
            bentoml deploy . -n <deployment_name>
 
-        You can see the Deployment status in your terminal after running the command.
+        .. note::
+
+           By default, this command packages all files under the directory from which it is executed. To exclude specific files or directories, define them in a ``.bentoignore`` file.
 
     .. tab-item:: Python API
 
@@ -70,7 +72,7 @@ If you already have a Bento built locally (run ``bentoml list`` to view all the 
 
     .. tab-item:: BentoML CLI
 
-        In your project directory where the ``bentofile.yaml`` file is stored, run the following command and use the ``-n`` flag to optionally set a name.
+        Run the following command and use the ``-n`` flag to optionally set a name.
 
         .. code-block:: bash
 

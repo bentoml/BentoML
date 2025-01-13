@@ -71,16 +71,20 @@ For development, to install PyTorch or TensorFlow with the appropriate CUDA vers
     pip install torch
     pip install tensorflow[and-cuda]
 
-When building your Bento, you DO NOT need to specify ``cuda_version`` again in your ``bentofile.yaml`` to install the CUDA toolkit separately. Simply add PyTorch and TensorFlow under ``packages`` (or they are in the separate ``requirements.txt`` file).
+When building your Bento, simply add PyTorch and TensorFlow using the ``python_packages`` method (or put them in a separate ``requirements.txt`` file).
 
-.. code-block:: yaml
+.. code-block:: python
 
-    python:
-      packages:
-        - torch
-        - tensorflow[and-cuda]
+    import bentoml
 
-If you want to customize the installation of CUDA driver and libraries, use ``system_packages``, ``setup_script``, or ``base_image`` options under the :ref:`docker-configuration` field.
+    my_image = bentoml.images.PythonImage(python_version='3.11') \
+        .python_packages("torch", "tensorflow[and-cuda]")
+
+    @bentoml.service(image=my_image)
+    class MyService:
+        # Service implementation
+
+To customize the installation of CUDA driver and libraries, use the ``base_image`` parameter and the ``system_packages`` and ``run`` methods when :doc:`defining the runtime specifications </build-with-bentoml/runtime-environment>`.
 
 BentoCloud
 ^^^^^^^^^^
@@ -167,7 +171,7 @@ Example output:
     |=======================================================================================|
     |    0   N/A  N/A      1813      G   /usr/lib/xorg/Xorg                           70MiB |
     |    0   N/A  N/A      1946      G   /usr/bin/gnome-shell                         78MiB |
-    |    0   N/A  N/A     11197      C   /Home/Documents/BentoML/demo/bin/python     3328MiB |
+    |    0   N/A  N/A     11197      C   /Home/Documents/BentoML/demo/bin/python     3328MiB|
     +---------------------------------------------------------------------------------------+
 
 For more information, see `the Docker documentation <https://docs.docker.com/config/containers/resource_constraints/#gpu>`_.

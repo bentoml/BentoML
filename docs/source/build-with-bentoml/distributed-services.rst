@@ -210,21 +210,6 @@ BentoML also allows you to set an external deployment as a dependency for a Serv
           # Specify the external Service class for type-safe integration
           iris = bentoml.depends(IrisClassifier, deployment="iris-classifier-x6dewa", cluster="my_cluster")
 
-``bentofile.yaml``
-------------------
-
-For projects with multiple Services, you should reference the primary Service handling user requests for the ``service`` field in ``bentofile.yaml``. For example:
-
-.. code-block:: yaml
-
-    service: "service:ControlNet" #ControlNet is the one that receives users' requests
-    labels:
-      owner: bentoml-team
-      project: gallery
-    ...
-
-You can then :doc:`containerize it as an OCI-compliant image </guides/containerization>` or deploy it to `BentoCloud <https://www.bentoml.com/>`_.
-
 Deploy distributed Services
 ---------------------------
 

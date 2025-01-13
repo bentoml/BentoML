@@ -65,7 +65,7 @@ Configuration methods
 
 The ``PythonImage`` class provides various methods to customize the build process.
 
-``.python_packages()``
+``python_packages()``
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Install specific Python dependencies by listing them directly. It supports version constraints.
@@ -105,7 +105,7 @@ To configure PyPI indexes and other pip options:
             "my-private-package"
         )
 
-``.requirements_file()``
+``requirements_file()``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can also install Python dependencies from a ``requirements.txt`` file instead of using ``.python_packages()``.
@@ -117,7 +117,7 @@ You can also install Python dependencies from a ``requirements.txt`` file instea
     image = bentoml.images.PythonImage(python_version='3.11') \
         .requirements_file("./path/to/requirements.txt")
 
-``.system_packages()``
+``system_packages()``
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Install system-level dependencies in the runtime environment.
@@ -129,7 +129,7 @@ Install system-level dependencies in the runtime environment.
     image = bentoml.images.PythonImage(python_version='3.11') \
         .system_packages("curl", "git")
 
-``.run()``
+``run()``
 ^^^^^^^^^^
 
 Run custom commands during the build process. It supports chaining with other methods.

@@ -20,7 +20,7 @@ Before building a Bento, you need to define the runtime environment of it. Here'
     @bentoml.service(
         image=my_image,
         envs=[
-            {"name": "HF_TOKEN", "value": "your_hf_token"},
+            {"name": "HF_TOKEN"},  # You can omit value and set it when deploying the Service
             {"name": "DB_HOST", "value": "localhost"}
         ]
     )
@@ -44,6 +44,10 @@ Run the following command in the same directory as your ``service.py`` file. Rep
 .. code-block:: bash
 
    bentoml build service:<service_name>
+
+.. note::
+
+    By default, this command packages all files under the directory from which it is executed. To exclude specific files or directories, define them in a ``.bentoignore`` file.
 
 After building, each Bento is automatically assigned a unique version. You can list all available Bentos using:
 

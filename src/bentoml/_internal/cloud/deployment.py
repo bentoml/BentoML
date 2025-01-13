@@ -336,12 +336,16 @@ def ensure_bento(
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
     _client: RestApiClient = Provide[BentoMLContainer.rest_api_client],
 ) -> Bento | BentoManifestSchema:
+    from bentoml.bentos import build_bentofile
+
     from .bento import BentoAPI
 
+    if not project_path and not bento:
+        raise BentoMLException(
+            "Creating a deployment needs a target; project path or bento is necessary"
+        )
     bento_api = BentoAPI(_client)
     if project_path:
-        from bentoml.bentos import build_bentofile
-
         bento_obj = build_bentofile(
             build_ctx=project_path, bare=bare, _bento_store=_bento_store, reload=reload
         )
@@ -350,37 +354,48 @@ def ensure_bento(
         if push:
             bento_api.push(bento=bento_obj, bare=bare)
         return bento_obj
-    elif bento:
-        bento = Tag.from_taglike(bento)
-        try:
-            bento_obj = _bento_store.get(bento)
-        except NotFound:
-            bento_obj = None
+    assert bento is not None
+    bento_tag = Tag.from_taglike(bento)
+    try:
+        bento_obj = _bento_store.get(bento_tag)
+    except NotFound:
+        bento_obj = None
 
-        # try to get from bentocloud
-        try:
-            bento_schema = bento_api.get(name=bento.name, version=bento.version)
-        except NotFound:
-            bento_schema = None
+    # try to get from bentocloud
+    try:
+        bento_schema = bento_api.get(name=bento_tag.name, version=bento_tag.version)
+    except NotFound:
+        bento_schema = None
 
-        if bento_obj is not None:
-            # push to bentocloud
+    if bento_obj is not None:
+        # push to bentocloud
+        if push:
+            bento_api.push(bento=bento_obj, bare=bare)
+        return bento_obj
+    if bento_schema is not None:
+        assert bento_schema.manifest is not None
+        if cli:
+            rich.print(
+                f"[bold blue]Using bento [green]{bento_tag}[/] from bentocloud to deploy"
+            )
+        bento_schema.manifest.version = bento_tag.version
+        return bento_schema.manifest
+
+    # bento is a service definition
+    if isinstance(bento, str):
+        try:
+            bento_obj = build_bentofile(
+                service=bento, bare=bare, _bento_store=_bento_store, reload=reload
+            )
+        except BentoMLException:
+            pass
+        else:
+            if cli:
+                rich.print(f":bento: Built bento [green]{bento_obj.info.tag}[/]")
             if push:
                 bento_api.push(bento=bento_obj, bare=bare)
             return bento_obj
-        if bento_schema is not None:
-            assert bento_schema.manifest is not None
-            if cli:
-                rich.print(
-                    f"[bold blue]Using bento [green]{bento.name}:{bento.version}[/] from bentocloud to deploy"
-                )
-            bento_schema.manifest.version = bento.version
-            return bento_schema.manifest
-        raise NotFound(f"bento {bento} not found in both local and cloud")
-    else:
-        raise BentoMLException(
-            "Create a deployment needs a target; project path or bento is necessary"
-        )
+    raise NotFound(f"Bento {bento} is not found in both local and bentocloud")
 
 
 @attr.define

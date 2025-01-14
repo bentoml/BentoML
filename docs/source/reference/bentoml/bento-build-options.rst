@@ -2,7 +2,11 @@
 Bento build options
 ===================
 
-Build options refer to a set of configurations for building a BentoML project into a Bento. These options can be defined in a ``pyproject.toml`` file under the ``[tool.bentoml.build]`` section or a YAML file (typically named ``bentofile.yaml``).
+Build options refer to a set of runtime specifications for building a BentoML project into a Bento. You can define them either in a ``pyproject.toml`` file under the ``[tool.bentoml.build]`` section or a YAML file (typically named ``bentofile.yaml``).
+
+.. important::
+
+   Since BentoML v1.3.20, BentoML introduces :doc:`a new Python SDK to define runtime specifications </build-with-bentoml/runtime-environment>`. This offers a programmatic alternative to using ``pyproject.toml`` or ``bentofile.yaml``. While BentoML maintains compatibility with these configuration files, we recommend using the new Python SDK to define your runtime environment.
 
 Available fields
 ----------------

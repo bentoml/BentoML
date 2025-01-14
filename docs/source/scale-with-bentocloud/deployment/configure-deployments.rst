@@ -96,7 +96,7 @@ You can set environment variables for your deployment to configure the behavior 
 
 .. important::
 
-    You DO NOT need to set the same environment variables again if you have already specified them in ``bentofile.yaml`` using the ``envs`` field. See :doc:`/reference/bentoml/bento-build-options` for details.
+    You DO NOT need to set the same environment variables again if you have already specified them in :ref:`Service configurations <envs>` using the ``envs`` field.
 
 .. tab-set::
 

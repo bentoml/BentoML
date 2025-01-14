@@ -2,18 +2,12 @@
 Create Deployments
 ==================
 
-Once you have fully tested your BentoML Service locally, you can push it to BentoCloud for production deployment. This document explains how to create a Deployment on BentoCloud.
-
-Prerequisites
--------------
-
-- Make sure you have logged in to BentoCloud using an :doc:`API token </scale-with-bentocloud/manage-api-tokens>` with Developer Operations Access.
-- You have created a BentoML project that contains at least a ``service.py`` file and a ``bentofile.yaml`` file (or you have an available Bento either locally or on BentoCloud). You can use this :doc:`/get-started/hello-world` or any project in :doc:`Examples </examples/overview>`.
+Once you have fully tested your BentoML Service locally, you can push it to BentoCloud for production deployment.
 
 Deploy a new project to BentoCloud
 ----------------------------------
 
-You can deploy a new project through either the command line interface (CLI) or Python API.
+You can deploy a new project through either the command line interface (CLI) or Python API. Make sure you have already :doc:`defined the runtime environment </build-with-bentoml/runtime-environment>`.
 
 .. tab-set::
 
@@ -51,7 +45,7 @@ You can deploy a new project through either the command line interface (CLI) or 
 
 BentoML does the following automatically during deployment:
 
-1. **Build**: Build your project into a Bento based on ``bentofile.yaml``.
+1. **Build**: Build your project into a Bento based on the :doc:`runtime environment defined </build-with-bentoml/runtime-environment>`.
 2. **Push**: Push the Bento to BentoCloud.
 3. **Deploy**: Deploy the Bento on BentoCloud by performing the following steps in order:
 

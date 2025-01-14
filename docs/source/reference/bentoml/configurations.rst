@@ -98,6 +98,8 @@ To specify the number of workers (for example, ``3``) within a Service:
 
 For more information, see :doc:`/build-with-bentoml/runtime-environment`.
 
+.. _envs:
+
 ``envs``
 ^^^^^^^^
 

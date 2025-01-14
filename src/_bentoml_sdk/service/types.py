@@ -12,11 +12,14 @@ from typing import runtime_checkable
 from simple_di import Provide  # type: ignore
 from typing_extensions import Protocol
 
-from bentoml._internal import external_typing as ext
 from bentoml._internal.bento.build_config import BentoEnvSchema
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext as _ServiceContext
+from bentoml._internal.external_typing import AsgiMiddleware
 from bentoml.exceptions import BentoMLException
+
+if t.TYPE_CHECKING:
+    from starlette.types import ASGIApp
 
 # Type variables and aliases
 T = TypeVar("T")  # Service type parameter
@@ -68,8 +71,8 @@ APIMethodDict = t.Dict[str, "APIMethod[..., t.Any]"]
 DependencyDict = t.Dict[str, "DependencyInstance"]
 ComponentDict = t.Dict[str, t.Any]
 ModelList = t.List[t.Union["StoredModel", "Model[t.Any]"]]
-MountAppList = t.List[t.Tuple[ext.ASGIApp, str, str]]
-MiddlewareList = t.List[t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]]
+MountAppList = t.List[t.Tuple["ASGIApp", str, str]]
+MiddlewareList = t.List[t.Tuple[t.Type["AsgiMiddleware"], t.Dict[str, t.Any]]]
 EnvList = t.List[BentoEnvSchema]
 ServiceImage = t.Optional["Image"]
 ServiceBento = t.Optional["Bento"]

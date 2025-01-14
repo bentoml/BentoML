@@ -68,9 +68,9 @@ def _get_process(
     ) -> t.Generator[RecordBatch, None, None]:
         svc = _load_bento_spark(bento_tag)
 
-        assert api_name in svc.apis, (
-            "An error occurred transferring the Bento to the Spark worker."
-        )
+        assert (
+            api_name in svc.apis
+        ), "An error occurred transferring the Bento to the Spark worker."
         inference_api = svc.apis[api_name]
         assert inference_api.func is not None, "Inference API function not defined"
 

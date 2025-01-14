@@ -194,9 +194,9 @@ def serve_http(
     if isinstance(bento_identifier, Service):
         svc = bento_identifier
         bento_identifier = svc.import_string
-        assert working_dir is None, (
-            "working_dir should not be set when passing a service in process"
-        )
+        assert (
+            working_dir is None
+        ), "working_dir should not be set when passing a service in process"
         # use cwd
         bento_path = pathlib.Path(".")
     else:

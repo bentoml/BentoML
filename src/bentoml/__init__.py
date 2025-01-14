@@ -19,7 +19,7 @@ from typing import Any
 
 from ._internal.configuration import BENTOML_VERSION as __version__
 
-MODEL_ATTRS = {
+MODULE_ATTRS = {
     "Field": "pydantic:Field",
     # BentoML built-in types
     "load_config": "._internal.configuration:load_config",
@@ -293,10 +293,10 @@ else:
     del _LazyLoader, FrameworkImporter
 
     def __getattr__(name: str) -> Any:
-        if name in MODEL_ATTRS:
+        if name in MODULE_ATTRS:
             from importlib import import_module
 
-            module_name, attr_name = MODEL_ATTRS[name].split(":")
+            module_name, attr_name = MODULE_ATTRS[name].split(":")
             module = import_module(module_name, __package__)
             return getattr(module, attr_name)
         raise AttributeError(f"module {__name__} has no attribute {name}")

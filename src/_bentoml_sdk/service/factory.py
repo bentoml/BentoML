@@ -15,16 +15,20 @@ import anyio.to_thread
 import attrs
 from simple_di import Provide
 from simple_di import inject
+from typing_extensions import TypeAlias
 from typing_extensions import Unpack
 
 from bentoml import Runner
+from bentoml._internal import external_typing as ext
 from bentoml._internal.bento.bento import Bento
 from bentoml._internal.bento.build_config import BentoEnvSchema
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
 from bentoml._internal.models import Model as StoredModel
+from bentoml._internal.service.openapi.specification import OpenAPISpecification
 from bentoml._internal.utils import deprecated
 from bentoml._internal.utils import dict_filter_none
+from bentoml._internal.utils.circus import Server
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
 
@@ -34,23 +38,15 @@ from ..models import BentoModel
 from ..models import HuggingFaceModel
 from ..models import Model
 from .config import ServiceConfig as Config
+from .dependency import Dependency
 
 logger = logging.getLogger("bentoml.io")
 
 T = t.TypeVar("T", bound=object)
+P = t.ParamSpec("P")
+R = t.TypeVar("R")
 
-if t.TYPE_CHECKING:
-    from bentoml._internal import external_typing as ext
-    from bentoml._internal.service.openapi.specification import OpenAPISpecification
-    from bentoml._internal.utils.circus import Server
-
-    from .dependency import Dependency
-
-    P = t.ParamSpec("P")
-    R = t.TypeVar("R")
-
-    class _ServiceDecorator(t.Protocol):
-        def __call__(self, inner: type[T]) -> Service[T]: ...
+ServiceDecorator: TypeAlias = t.Callable[[type[T]], "Service[T]"]
 
 
 def with_config(
@@ -74,10 +70,10 @@ class Service(t.Generic[T]):
     config: Config
     inner: type[T]
     image: t.Optional[Image] = None
-    envs: t.List[BentoEnvSchema] = attrs.field(factory=list, converter=convert_envs)
+    envs: list[BentoEnvSchema] = attrs.field(factory=list, converter=convert_envs)
     bento: t.Optional[Bento] = attrs.field(init=False, default=None)
     models: list[Model[t.Any]] = attrs.field(factory=list)
-    apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict)
+    apis: dict[str, APIMethod[t.Any, t.Any]] = attrs.field(factory=dict)
     dependencies: dict[str, Dependency[t.Any]] = attrs.field(factory=dict, init=False)
     openapi_service_overrides: dict[str, t.Any] = attrs.field(factory=dict, init=True)
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
@@ -424,13 +420,13 @@ def service(inner: type[T], /) -> Service[T]: ...
 
 @t.overload
 def service(
-    inner: None = ...,
+    inner: None = None,
     /,
     *,
     image: Image | None = None,
     envs: list[dict[str, t.Any]] | None = None,
     **kwargs: Unpack[Config],
-) -> _ServiceDecorator: ...
+) -> ServiceDecorator[T]: ...
 
 
 def service(
@@ -440,7 +436,7 @@ def service(
     image: Image | None = None,
     envs: list[dict[str, t.Any]] | None = None,
     **kwargs: Unpack[Config],
-) -> t.Any:
+) -> t.Union[Service[T], ServiceDecorator[T]]:
     """Mark a class as a BentoML service.
 
     Example:

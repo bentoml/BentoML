@@ -236,6 +236,26 @@ service level (per replica) config
 """
 
 
+class OpenAPIServiceOverrides(TypedDict, total=False):
+    """OpenAPI specification overrides at the service level.
+
+    Fields:
+        title: Service title in the OpenAPI specification
+        version: Service version in the OpenAPI specification
+        description: Service description in the OpenAPI specification
+        servers: List of server objects that provide connectivity information
+        components: Reusable OpenAPI components (schemas, responses, etc.)
+        tags: List of tags used for grouping operations
+    """
+
+    title: str
+    version: str
+    description: str
+    servers: List[Dict[str, Any]]
+    components: Dict[str, Dict[str, Any]]
+    tags: List[Dict[str, Any]]
+
+
 class ServiceConfig(TypedDict, total=False):
     name: str
     traffic: TrafficSchema
@@ -252,6 +272,7 @@ class ServiceConfig(TypedDict, total=False):
     runner_probe: RunnerProbeSchema
     tracing: TracingSchema
     monitoring: MonitoringSchema
+    openapi_service_overrides: OpenAPIServiceOverrides
 
 
 schema_type = TypeAdapter(ServiceConfig)

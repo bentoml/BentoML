@@ -25,8 +25,10 @@ from bentoml._internal.service.openapi.specification import MediaType
 from bentoml._internal.service.openapi.specification import OpenAPISpecification
 from bentoml._internal.service.openapi.specification import PathItem
 from bentoml._internal.service.openapi.specification import Reference
+from bentoml._internal.service.openapi.specification import RequestBody
 from bentoml._internal.service.openapi.specification import Response
 from bentoml._internal.service.openapi.specification import Schema
+from bentoml._internal.service.openapi.specification import Tag
 from bentoml._internal.service.openapi.utils import exception_components_schema
 from bentoml._internal.service.openapi.utils import exception_schema
 from bentoml._internal.types import LazyType
@@ -34,6 +36,20 @@ from bentoml._internal.utils import bentoml_cattr
 from bentoml.exceptions import InternalServerError
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import NotFound
+
+# Type aliases for better type safety
+OperationValue = t.Union[str, int, float, bool, None, dict[str, t.Any], list[t.Any]]
+OperationFieldType = t.Union[
+    str,
+    bool,
+    list[t.Union[str, dict[str, t.Any]]],  # For tags, parameters, security
+    dict[str, t.Any],  # For externalDocs, requestBody
+    RequestBody,  # For typed requestBody
+]
+ValidatedDict = t.Dict[str, OperationFieldType]
+
+# Type mapping for validation
+OperationFieldTypes = t.Dict[str, t.Union[type, tuple[type, ...]]]
 
 logger = logging.getLogger(__name__)
 
@@ -79,10 +95,46 @@ merger = Merger(
 REF_TEMPLATE = "#/components/schemas/{model}"
 
 
-def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
-    """Generate a OpenAPI specification for a service."""
+def generate_spec(
+    svc: Service[t.Any], *, openapi_version: str = "3.0.2"
+) -> OpenAPISpecification:
+    """Generate an OpenAPI specification for a service.
+
+    Args:
+        svc: The BentoML service to generate the specification for
+        openapi_version: The OpenAPI specification version to use
+
+    Returns:
+        An OpenAPI specification for the service
+    """
+    # Initialize paths and components
     mounted_app_paths: Dict[str, PathItem] = {}
     schema_components: Dict[str, Dict[str, SchemaType]] = {}
+
+    # Define valid component types
+    VALID_COMPONENT_TYPES = frozenset(
+        [
+            "schemas",
+            "responses",
+            "examples",
+            "requestBodies",
+            "headers",
+            "securitySchemes",
+            "links",
+            "callbacks",
+        ]
+    )
+
+    # Server object type definitions
+    class ServerVariables(t.TypedDict, total=False):
+        enum: t.List[str]
+        default: str
+        description: str
+
+    class ServerObject(t.TypedDict):
+        url: str
+        description: t.NotRequired[str]
+        variables: t.NotRequired[t.Dict[str, ServerVariables]]
 
     def join_path(prefix: str, path: str) -> str:
         return f"{prefix.rstrip('/')}/{path.lstrip('/')}"
@@ -114,40 +166,389 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
 
     merger.merge(schema_components, generate_service_components(svc))
 
-    # Convert schema components to proper type
+    # Apply service-level OpenAPI overrides if present
+    if svc.openapi_service_overrides:
+        overrides = svc.openapi_service_overrides
+        if "components" in overrides:
+            merger.merge(schema_components, overrides["components"])
+
+    # Convert schema components to proper type, avoiding recursion
+    def convert_schema(
+        schema_data: t.Union[Schema, Reference, dict[str, t.Any]], depth: int = 0
+    ) -> t.Union[Schema, Reference]:
+        """Convert a schema input to a proper Schema or Reference object.
+
+        Args:
+            schema_data: Input schema data (Schema, Reference, or dict)
+            depth: Current recursion depth for preventing infinite loops
+
+        Returns:
+            Schema or Reference object
+        """
+        if depth > 100:  # Prevent infinite recursion
+            return Schema(type="object")
+        if isinstance(schema_data, (Schema, Reference)):
+            return schema_data
+        if not isinstance(schema_data, dict):
+            return Schema(type="object")
+
+        # Add recursion depth limit
+        MAX_DEPTH = 100
+        if depth > MAX_DEPTH:
+            return Schema(type="object")
+
+        # Handle non-dict inputs
+        if not isinstance(schema_data, dict):
+            return Schema(type="object")
+
+        # Create a copy to avoid modifying input
+        schema_dict: dict[str, t.Any] = dict(schema_data)
+        if "$ref" in schema_dict:
+            return Reference(ref=str(schema_dict["$ref"]))
+
+        # Handle nested schemas in properties
+        if "properties" in schema_dict:
+            properties: dict[str, t.Any] = schema_dict.get("properties", {})
+            if isinstance(properties, dict):
+                converted_props: dict[str, t.Union[Schema, Reference]] = {}
+                for prop_name, prop_schema in properties.items():
+                    prop_key = str(prop_name)
+                    if isinstance(prop_schema, (dict, Schema, Reference)):
+                        # Break potential infinite recursion with depth limit
+                        if depth < MAX_DEPTH:
+                            converted_props[prop_key] = convert_schema(
+                                t.cast(
+                                    t.Union[Schema, Reference, dict[str, t.Any]],
+                                    prop_schema,
+                                ),
+                                depth + 1,
+                            )
+                        else:
+                            converted_props[prop_key] = Schema(type="object")
+                    else:
+                        converted_props[prop_key] = Schema(type="object")
+                schema_dict["properties"] = converted_props
+
+        # Handle array items
+        if "items" in schema_dict:
+            items: t.Any = schema_dict.get("items")
+            if isinstance(items, (dict, Schema, Reference)):
+                # Break potential infinite recursion with depth limit
+                if depth < MAX_DEPTH:
+                    schema_dict["items"] = convert_schema(
+                        t.cast(t.Union[Schema, Reference, dict[str, t.Any]], items),
+                        depth + 1,
+                    )
+                else:
+                    schema_dict["items"] = Schema(type="object")
+            elif isinstance(items, list):
+                converted_items: list[t.Union[Schema, Reference]] = []
+                for item in t.cast(list[t.Any], items):
+                    if isinstance(item, (dict, Schema, Reference)):
+                        # Break potential infinite recursion with depth limit
+                        if depth < MAX_DEPTH:
+                            converted_items.append(
+                                convert_schema(
+                                    t.cast(
+                                        t.Union[Schema, Reference, dict[str, t.Any]],
+                                        item,
+                                    ),
+                                    depth + 1,
+                                )
+                            )
+                        else:
+                            converted_items.append(Schema(type="object"))
+                    else:
+                        converted_items.append(Schema(type="object"))
+                schema_dict["items"] = converted_items
+
+        try:
+            return Schema(**schema_dict)
+        except (TypeError, ValueError) as e:
+            logger.error(f"Failed to convert schema: {e}")
+            return Schema(type="object")
+
     schemas: dict[str, t.Union[Schema, Reference]] = {}
     schema_dict = schema_components.get("schemas", {})
     for name, schema in schema_dict.items():
-        if isinstance(schema, (Schema, Reference)):
-            schemas[name] = schema
-        elif isinstance(schema, dict):
-            try:
-                if "$ref" in schema:
-                    schemas[name] = Reference(ref=schema["$ref"])
-                else:
-                    # Convert schema with proper type hints
-                    schema_dict = t.cast(t.Dict[str, t.Any], schema)
-                    schemas[name] = Schema(**schema_dict)
-            except (TypeError, ValueError) as e:
-                logger.error(f"Failed to convert schema {name}: {e}")
-                schemas[name] = Schema(
-                    type="object"
-                )  # Fallback to generic object schema
+        schemas[name] = convert_schema(schema)
 
     # Ensure components is properly structured
     components = Components(schemas=schemas) if schemas else None
 
-    return OpenAPISpecification(
+    # Prepare base specification
+    info = Info(
+        title=svc.name,
+        description=svc.doc,
+        version=svc.bento.tag.version or "None" if svc.bento else "None",
+        contact=Contact(name="BentoML Team", email="contact@bentoml.com"),
+    )
+
+    # Apply service-level overrides to Info object
+    if svc.openapi_service_overrides:
+        overrides = svc.openapi_service_overrides
+        # Validate and apply Info fields with proper type checking
+        try:
+            title = overrides.get("title")
+            if title is not None:
+                if not isinstance(title, (str, int, float)):
+                    logger.warning(
+                        f"Invalid type for OpenAPI title override: {type(title)}. "
+                        "Using service name as fallback."
+                    )
+                else:
+                    title = str(title)
+
+            description = overrides.get("description")
+            if description is not None:
+                if not isinstance(description, (str, int, float)):
+                    logger.warning(
+                        f"Invalid type for OpenAPI description override: {type(description)}. "
+                        "Using service doc as fallback."
+                    )
+                    description = info.description
+                else:
+                    description = str(description)
+
+            version = overrides.get("version")
+            if version is not None:
+                if not isinstance(version, (str, int, float)):
+                    logger.warning(
+                        f"Invalid type for OpenAPI version override: {type(version)}. "
+                        "Using service version as fallback."
+                    )
+                    version = info.version
+                else:
+                    version = str(version)
+
+            # Create new Info object with validated overrides
+            info = Info(
+                title=title or info.title,
+                description=description or info.description or "",
+                version=version or info.version,
+                contact=info.contact,
+            )
+        except (TypeError, ValueError) as e:
+            logger.warning(
+                f"Error applying OpenAPI info overrides: {e}. Using defaults."
+            )
+
+    # Prepare servers configuration with proper OpenAPI types
+    initial_server = {"url": ".", "description": "Default server"}
+    servers = [initial_server]
+
+    # Initialize components first
+    components = Components(schemas={})
+
+    # Validate components if present in overrides
+    if svc.openapi_service_overrides and "components" in svc.openapi_service_overrides:
+        override_components = t.cast(
+            t.Dict[str, t.Any], svc.openapi_service_overrides.get("components", {})
+        )
+        if isinstance(override_components, dict):
+            try:
+                # Handle schemas
+                if "schemas" in override_components:
+                    schema_dict = t.cast(
+                        t.Dict[str, t.Any], override_components.get("schemas", {})
+                    )
+                    if isinstance(schema_dict, dict):
+                        for name, schema in schema_dict.items():
+                            try:
+                                if isinstance(schema, dict):
+                                    components.schemas[str(name)] = Schema(
+                                        **t.cast(t.Dict[str, t.Any], schema)
+                                    )
+                                elif isinstance(schema, (Schema, Reference)):
+                                    components.schemas[str(name)] = schema
+                                else:
+                                    logger.warning(
+                                        f"Invalid schema type for '{name}': {type(schema).__name__}"
+                                    )
+                            except (TypeError, ValueError) as e:
+                                logger.warning(f"Invalid schema '{name}': {e}")
+
+                # Handle other component types
+                for comp_type in VALID_COMPONENT_TYPES:
+                    if comp_type in override_components:
+                        comp_value = override_components.get(comp_type)
+                        if isinstance(comp_value, dict):
+                            # Create a new dictionary to avoid modifying the original
+                            validated_comp = {
+                                str(k): v
+                                for k, v in t.cast(
+                                    t.Dict[str, t.Any], comp_value
+                                ).items()
+                            }
+                            setattr(components, comp_type, validated_comp)
+                        else:
+                            logger.warning(
+                                f"Invalid {comp_type} type: {type(comp_value).__name__ if comp_value is not None else 'None'}. Expected dict."
+                            )
+            except Exception as e:
+                logger.warning(f"Error merging components: {e}")
+        else:
+            logger.warning(
+                f"Invalid components override type: {type(override_components).__name__}. Expected dict."
+            )
+
+    # Prepare info object with proper validation
+    title = svc.name
+    description = svc.doc or ""
+    version = svc.bento.tag.version or "None" if svc.bento else "None"
+
+    # Apply overrides with validation
+    if svc.openapi_service_overrides:
+        if "title" in svc.openapi_service_overrides:
+            title_override = svc.openapi_service_overrides["title"]
+            if isinstance(title_override, (str, int, float)):
+                title = str(title_override)
+            else:
+                logger.warning(
+                    f"Invalid title override type: {type(title_override).__name__}. Using service name."
+                )
+
+        if "description" in svc.openapi_service_overrides:
+            desc_override = svc.openapi_service_overrides["description"]
+            if isinstance(desc_override, (str, int, float)):
+                description = str(desc_override)
+            else:
+                logger.warning(
+                    f"Invalid description override type: {type(desc_override).__name__}. Using service doc."
+                )
+
+        if "version" in svc.openapi_service_overrides:
+            version_override = svc.openapi_service_overrides["version"]
+            if isinstance(version_override, (str, int, float)):
+                version = str(version_override)
+            else:
+                logger.warning(
+                    f"Invalid version override type: {type(version_override).__name__}. Using service version."
+                )
+
+    # Create base specification
+    spec = OpenAPISpecification(
         openapi=openapi_version,
         tags=[APP_TAG, INFRA_TAG],
         components=components,
         info=Info(
-            title=svc.name,
-            description=svc.doc,
-            version=svc.bento.tag.version or "None" if svc.bento else "None",
+            title=title,
+            description=description,
+            version=version,
             contact=Contact(name="BentoML Team", email="contact@bentoml.com"),
         ),
-        servers=[{"url": "."}],
+        servers=[{"url": "."}],  # Default server
+        paths={
+            **make_infra_endpoints(),
+            **_get_api_routes(svc),
+            **mounted_app_paths,
+        },
+    )
+
+    # Handle server overrides with proper type checking and error handling
+    if svc.openapi_service_overrides and "servers" in svc.openapi_service_overrides:
+        try:
+            servers_raw = t.cast(
+                t.Any, svc.openapi_service_overrides.get("servers", [])
+            )
+            if not isinstance(servers_raw, list):
+                logger.warning(
+                    f"Invalid servers override type: expected list, got {type(servers_raw).__name__}"
+                )
+                return spec
+
+            # Initialize validated servers list
+            validated_servers: t.List[t.Dict[str, t.Any]] = []
+
+            # Validate servers list
+            if not isinstance(servers_raw, list):
+                logger.warning(
+                    f"Invalid servers override type: expected list, got {type(servers_raw).__name__}"
+                )
+                return spec
+
+            # Process each server entry
+            for server_entry in t.cast(t.List[t.Any], servers_raw):
+                if not isinstance(server_entry, dict):
+                    logger.warning(
+                        f"Invalid server object type: expected dict, got {type(server_entry).__name__}"
+                    )
+                    continue
+
+                if "url" not in server_entry:
+                    logger.warning("Server object missing required 'url' field")
+                    continue
+
+                try:
+                    server_dict = t.cast(t.Dict[str, t.Any], server_entry)
+
+                    # Create server object with validated fields
+                    server_data: t.Dict[str, t.Any] = {"url": str(server_dict["url"])}
+
+                    # Validate optional fields
+                    if "description" in server_dict:
+                        desc = server_dict["description"]
+                        if isinstance(desc, (str, int, float, bool)):
+                            server_data["description"] = str(desc)
+
+                    # Validate variables if present
+                    if "variables" in server_dict:
+                        vars_data = server_dict["variables"]
+                        if isinstance(vars_data, dict):
+                            validated_vars: t.Dict[str, t.Dict[str, t.Any]] = {}
+
+                            for var_name, var_def in t.cast(
+                                t.Dict[str, t.Any], vars_data
+                            ).items():
+                                if isinstance(var_def, dict):
+                                    var_dict = t.cast(t.Dict[str, t.Any], var_def)
+                                    var_obj: t.Dict[str, t.Any] = {}
+
+                                    # Validate required fields
+                                    if "default" in var_dict:
+                                        var_obj["default"] = str(var_dict["default"])
+
+                                    # Validate optional fields
+                                    if "enum" in var_dict and isinstance(
+                                        var_dict["enum"], list
+                                    ):
+                                        enum_values = t.cast(
+                                            t.List[t.Any], var_dict["enum"]
+                                        )
+                                        var_obj["enum"] = [str(v) for v in enum_values]
+                                    if "description" in var_dict:
+                                        var_obj["description"] = str(
+                                            var_dict["description"]
+                                        )
+
+                                    validated_vars[str(var_name)] = var_obj
+
+                            if validated_vars:
+                                server_data["variables"] = validated_vars
+
+                    validated_servers.append(server_data)
+                except (TypeError, ValueError, KeyError) as err:
+                    logger.warning(f"Error validating server object: {err}")
+
+            if validated_servers:
+                spec.servers = validated_servers  # type: ignore
+        except Exception as e:
+            logger.warning(f"Error processing server overrides: {e}")
+
+    return spec
+
+    # Create base specification with properly typed components
+    # Convert servers to the format expected by OpenAPISpecification
+    final_servers: t.List[t.Dict[str, t.Any]] = [
+        {k: v for k, v in server.items()} for server in servers
+    ]
+
+    spec = OpenAPISpecification(
+        openapi=openapi_version,
+        tags=[APP_TAG, INFRA_TAG],
+        components=components,
+        info=info,
+        servers=final_servers,
         paths={
             # setup infra endpoints
             **make_infra_endpoints(),
@@ -156,6 +557,46 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
             **mounted_app_paths,
         },
     )
+
+    # Apply remaining service-level overrides
+    if svc.openapi_service_overrides:
+        if "servers" in overrides:
+            override_servers = overrides["servers"]
+            if isinstance(override_servers, list):
+                # Validate server objects
+                validated_servers: t.List[ServerObject] = []
+                for server_entry in override_servers:
+                    if isinstance(server_entry, dict) and "url" in server_entry:
+                        server_obj: t.Dict[str, t.Any] = {
+                            "url": str(server_entry["url"])
+                        }
+                        if "description" in server_entry:
+                            server_obj["description"] = str(server_entry["description"])
+                        if "variables" in server_entry and isinstance(
+                            server_entry["variables"], dict
+                        ):
+                            server_obj["variables"] = server_entry["variables"]
+                        validated_servers.append(t.cast(ServerObject, server_obj))
+                if validated_servers:
+                    spec.servers = validated_servers
+
+        if "tags" in overrides:
+            tags = overrides["tags"]
+            if isinstance(tags, list):
+                # Ensure we keep the required APP_TAG and INFRA_TAG
+                validated_tags = []
+                for tag in tags:
+                    if isinstance(tag, dict) and "name" in tag:
+                        try:
+                            validated_tags.append(Tag(**tag))
+                        except (TypeError, ValueError):
+                            continue
+                    elif isinstance(tag, Tag):
+                        validated_tags.append(tag)
+                if validated_tags:
+                    spec.tags = [APP_TAG, INFRA_TAG] + validated_tags
+
+    return spec
 
 
 class TaskStatusResponse(BaseModel):
@@ -192,17 +633,68 @@ error_responses = {
 def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
     routes: dict[str, PathItem] = {}
     for api in svc.apis.values():
-        post_spec = {
-            "responses": {
-                HTTPStatus.OK.value: api.openapi_response(),
-                **error_responses,
-            },
-            "tags": [APP_TAG.name],
-            "x-bentoml-name": api.name,
-            "description": api.doc or "",
-            "requestBody": api.openapi_request(),
-            "operationId": f"{svc.name}__{api.name}",
-        }
+        # Start with service-level overrides if they exist
+        post_spec = {}
+        if svc.openapi_service_overrides:
+            # Apply service-level operation fields that make sense at the endpoint level
+            valid_operation_fields: OperationFieldTypes = {
+                "description": str,
+                "summary": str,
+                "tags": list,
+                "externalDocs": dict,
+                "parameters": list,
+                "requestBody": (dict, RequestBody),
+                "responses": dict,
+                "deprecated": bool,
+                "security": list,
+                "servers": list,
+            }
+
+            # Validate and convert operation fields
+            validated_overrides: ValidatedDict = {}
+            for field, expected_type in valid_operation_fields.items():
+                if field not in svc.openapi_service_overrides:
+                    continue
+
+                value = svc.openapi_service_overrides[field]
+                if isinstance(expected_type, tuple):
+                    if not isinstance(value, expected_type):
+                        continue
+                elif not isinstance(value, expected_type):
+                    # Try to convert basic types
+                    try:
+                        if expected_type is str:
+                            value = str(value)
+                        elif expected_type is bool:
+                            value = bool(value)
+                        elif expected_type is list and isinstance(value, (tuple, set)):
+                            value = list(value)
+                        elif expected_type is dict and hasattr(value, "__dict__"):
+                            value = dict(value.__dict__)
+                        else:
+                            continue
+                    except (ValueError, TypeError):
+                        continue
+
+                validated_overrides[field] = value
+
+            if validated_overrides:
+                post_spec.update(validated_overrides)
+
+        # Add/override with standard fields
+        post_spec.update(
+            {
+                "responses": {
+                    HTTPStatus.OK.value: api.openapi_response(),
+                    **error_responses,
+                },
+                "tags": [APP_TAG.name],
+                "x-bentoml-name": api.name,
+                "description": api.doc or "",
+                "requestBody": api.openapi_request(),
+                "operationId": f"{svc.name}__{api.name}",
+            }
+        )
 
         # Apply any user-provided OpenAPI overrides to customize the specification
         # Users can override any valid OpenAPI operation fields like description,
@@ -425,8 +917,8 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
                     operation_dict[key] = value
 
             # Create Operation object with merged data
-            # Don't clear post_spec, just update it with merged data
-            post_spec.update(operation_dict)
+            # Create a fresh dictionary to avoid reference issues
+            post_spec = {**operation_dict}
 
         routes[api.route] = PathItem(post=post_spec)
         if api.is_task:

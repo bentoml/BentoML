@@ -68,6 +68,47 @@ You use the ``@bentoml.service`` decorator to specify Service-level configuratio
 
 All configuration fields are optional with default values. This allows for fine-tuning and optimization of Services according to specific use cases and deployment environments.
 
+OpenAPI Specification Customization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can customize the OpenAPI specification at the service level using the ``openapi_service_overrides`` parameter in the ``@bentoml.service`` decorator. This allows you to override various aspects of the OpenAPI specification while preserving auto-generated parts.
+
+.. code-block:: python
+
+    @bentoml.service(
+        name="MyAwesomeService",
+        openapi_service_overrides={
+            "title": "My Awesome BentoML Service",
+            "version": "v2.1.0",
+            "description": "Here is a custom service-level description",
+            "servers": [{"url": "/my-prefix"}],
+            "components": {
+                "schemas": {
+                    "CustomError": {
+                        "type": "object",
+                        "properties": {
+                            "code": {"type": "string"},
+                            "message": {"type": "string"}
+                        }
+                    }
+                }
+            }
+        }
+    )
+    class MyService:
+        # Service definition here
+
+The following fields can be customized:
+
+* ``title``: The title of your API service
+* ``version``: API version string
+* ``description``: Detailed service description
+* ``servers``: List of server objects defining API endpoints
+* ``components``: Reusable OpenAPI components (schemas, responses, etc.)
+* ``tags``: List of tags for API operations grouping
+
+All fields are validated to ensure they conform to the OpenAPI specification. Invalid fields will be logged with warnings and fallback to default values.
+
 Service APIs
 ------------
 

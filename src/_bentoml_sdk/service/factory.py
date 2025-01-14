@@ -79,6 +79,7 @@ class Service(t.Generic[T]):
     models: list[Model[t.Any]] = attrs.field(factory=list)
     apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict)
     dependencies: dict[str, Dependency[t.Any]] = attrs.field(factory=dict, init=False)
+    openapi_service_overrides: dict[str, t.Any] = attrs.field(factory=dict, init=True)
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
         factory=list, init=False
     )
@@ -117,6 +118,10 @@ class Service(t.Generic[T]):
             traffic = self.config.setdefault("traffic", {})
             traffic["external_queue"] = True
             traffic.setdefault("concurrency", 1)
+
+        # Handle OpenAPI service-level overrides from config
+        if "openapi_service_overrides" in self.config:
+            self.openapi_service_overrides = self.config["openapi_service_overrides"]
 
         pre_mount_apps = getattr(self.inner, "__bentoml_mounted_apps__", [])
         if pre_mount_apps:

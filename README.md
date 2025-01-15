@@ -132,7 +132,7 @@ docker run --rm -p 3000:3000 summarization:latest
 bentoml cloud login
 
 # Deploy from current directory:
-bentoml deploy .
+bentoml deploy service:Summarization
 ```
 
 ![bentocloud-ui](./docs/source/_static/img/get-started/cloud-deployment/first-bento-on-bentocloud.png)

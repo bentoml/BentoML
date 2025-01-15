@@ -46,7 +46,7 @@ Deploy your first model
 
    .. code-block:: bash
 
-      bentoml deploy . -n my-first-bento
+      bentoml deploy -n my-first-bento service:Summarization
 
    .. note::
 

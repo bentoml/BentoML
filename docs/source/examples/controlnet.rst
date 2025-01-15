@@ -191,29 +191,29 @@ Deploy to BentoCloud
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $10 in free credits.
 
-First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project:
+First, :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for building a Bento, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
 
-.. code-block:: yaml
-    :caption: `bentofile.yaml`
+Here is an example:
 
-    service: "service:ControlNet"
-    labels:
-      owner: bentoml-team
-      project: gallery
-    include:
-    - "*.py"
-    python:
-      requirements_txt: "./requirements.txt"
-    docker:
-        distro: debian
-        system_packages:
-          - ffmpeg
+.. code-block:: python
+    :caption: `service.py`
+
+    my_image = bentoml.images.PythonImage(python_version='3.11', distro='debian') \
+                .system_packages("ffmpeg") \
+                .requirements_file("requirements.txt")
+
+    @bentoml.service(
+        image=my_image, # Apply the specifications
+        ...
+    )
+    class ControlNet:
+        ...
 
 :ref:`Log in to BentoCloud <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
 
 .. code-block:: bash
 
-    bentoml deploy .
+    bentoml deploy service:ControlNet
 
 Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
 

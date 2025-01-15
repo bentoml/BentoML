@@ -78,8 +78,36 @@ Install specific Python dependencies by listing them directly. It supports versi
         .python_packages(
             "numpy>=1.20.0",
             "pandas",
-            "scikit-learn==1.2.0"
+            "scikit-learn==1.2.0",
+            "git+https://github.com/username/mylib.git@main"
         )
+
+.. note::
+
+    You don't need to specify bentoml as a dependency in this field since the current version of BentoML will be added to the list by default. However, you can override this by specifying a different BentoML version.
+
+To include a package from a GitHub repository, use `the pip requirements file format <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_. You can specify the repository URL, the branch, tag, or commit to install from, and the subdirectory if the Python package is not in the root of the repository.
+
+.. code-block:: python
+
+    import bentoml
+
+    image = bentoml.images.PythonImage(python_version='3.11') \
+        .python_packages(
+            "git+https://github.com/username/repository.git@branch_name",
+            "git+https://github.com/username/repository.git@v1.0.0",
+            "git+https://github.com/username/repository.git@abcdef1234567890abcdef1234567890abcdef12",
+            "git+https://github.com/username/repository.git@branch_name#subdirectory=package_dir"
+        )
+
+If your project depends on a private GitHub repository, you can include the Python package from the repository via SSH. Make sure that the environment where BentoML is running has the appropriate SSH keys configured and that `these keys are added to GitHub <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account>`_.
+
+.. code-block:: python
+
+    import bentoml
+
+    image = bentoml.images.PythonImage(python_version='3.11') \
+        .python_packages("git+ssh://git@github.com/username/repository.git@branch_name")
 
 To configure PyPI indexes and other pip options:
 

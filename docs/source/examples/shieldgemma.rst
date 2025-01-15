@@ -138,32 +138,26 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
           response = await self.client.chat.completions.create(model="gpt-3.5-turbo", messages=messages)
           return AssistantResponse(text=response.choices[0].message.content)
 
-bentofile.yaml
-^^^^^^^^^^^^^^
+Define the runtime environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This configuration file defines the build options for a :doc:`Bento </reference/bentoml/bento-build-options>`, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
+:doc:`Define the runtime environment </build-with-bentoml/runtime-environment>` for building a Bento, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
 
-Here is an example file:
+Here is an example:
 
-.. code-block:: yaml
+.. code-block:: python
+    :caption: `service.py`
 
-   name: bentoshield-assistant
-   service: "service:ShieldAssistant"
-   labels:
-     owner: bentoml-team
-     stage: demo
-   include:
-     - "*.py"
-   python:
-     requirements_txt: "./requirements.txt"
-     lock_packages: true
-   envs:
-     # Set your environment variables here or use BentoCloud secrets
-     - name: HF_TOKEN
-     - name: OPENAI_API_KEY
-     - name: OPENAI_BASE_URL
-   docker:
-     python_version: "3.11"
+    my_image = bentoml.images.PythonImage(python_version='3.11', lock_python_packages=True) \
+                    .requirements_file("requirements.txt")
+
+    @bentoml.service(
+        image=my_image, # Apply the specifications
+        envs=[{"name": "HF_TOKEN"}, {"name": "OPENAI_API_KEY"}, {"name": "OPENAI_BASE_URL"}],
+        ...
+    )
+    class ShieldAssistant:
+        ...
 
 Try it out
 ----------
@@ -203,7 +197,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
       bentoml secret create openaikey OPENAI_API_KEY=<your_openai_api_key>
       bentoml secret create openaibaseurl OPENAI_BASE_URL=https://api.openai.com/v1
 
-      bentoml deploy . --secret huggingface --secret openaikey --secret openaibaseurl
+      bentoml deploy --secret huggingface --secret openaikey --secret openaibaseurl service:ShieldAssistant
 
 4. Once it is up and running on BentoCloud, you can call the endpoint in the following ways:
 
@@ -243,7 +237,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
    .. code-block:: bash
 
-      bentoml deploy . --scaling-min 0 --scaling-max 3 # Set your desired count
+      bentoml deploy --scaling-min 0 --scaling-max 3 service:ShieldAssistant # Set your desired count
 
    If it's already deployed, update its allowed replicas as follows:
 
@@ -278,7 +272,7 @@ BentoML allows you to run and test your code locally, so that you can quickly va
 
    .. code-block:: bash
 
-        bentoml serve .
+        bentoml serve service:ShieldAssistant
 
 3. Visit or send API requests to `http://localhost:3000 <http://localhost:3000/>`_.
 

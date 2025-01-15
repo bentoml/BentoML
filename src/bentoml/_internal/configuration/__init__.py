@@ -28,6 +28,8 @@ CONFIG_OVERRIDE_ENV_VAR = "BENTOML_CONFIG_OPTIONS"
 CONFIG_OVERRIDE_JSON_ENV_VAR = "BENTOML_CONFIG_OVERRIDES"
 # https://github.com/grpc/grpc/blob/master/doc/environment_variables.md
 GRPC_DEBUG_ENV_VAR = "GRPC_VERBOSITY"
+# The glibc version of python:3.11-slim image
+DEFAULT_LOCK_PLATFORM = "x86_64-manylinux_2_36"
 
 
 def get_bentoml_version() -> str:

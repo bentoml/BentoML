@@ -84,7 +84,7 @@ Install specific Python dependencies by listing them directly. It supports versi
 
 .. note::
 
-    You don't need to specify bentoml as a dependency in this field since the current version of BentoML will be added to the list by default. However, you can override this by specifying a different BentoML version.
+    You don't need to specify BentoML as a dependency in this field since the current version of BentoML will be added to the list by default. However, you can override this by specifying a different BentoML version.
 
 To include a package from a GitHub repository, use `the pip requirements file format <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_. You can specify the repository URL, the branch, tag, or commit to install from, and the subdirectory if the Python package is not in the root of the repository.
 

@@ -11,6 +11,7 @@ import attrs
 
 from bentoml._internal.bento.bento import ImageInfo
 from bentoml._internal.bento.build_config import BentoBuildConfig
+from bentoml._internal.configuration import DEFAULT_LOCK_PLATFORM
 from bentoml._internal.configuration import get_bentoml_requirement
 from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.configuration import get_quiet_mode
@@ -132,7 +133,7 @@ class Image:
                     "Locking packages for x86_64-unknown-linux-gnu. "
                     "Pass `--platform` option to specify the platform."
                 )
-                lock_args.extend(["--python-platform", "linux"])
+                lock_args.extend(["--python-platform", DEFAULT_LOCK_PLATFORM])
             cmd = [sys.executable, "-m", "uv", "pip", "compile", *lock_args]
             try:
                 subprocess.check_call(

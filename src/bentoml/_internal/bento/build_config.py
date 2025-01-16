@@ -20,6 +20,7 @@ from pathspec import PathSpec
 
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
+from ..configuration import DEFAULT_LOCK_PLATFORM
 from ..configuration import clean_bentoml_version
 from ..configuration import get_bentoml_requirement
 from ..configuration import get_debug_mode
@@ -670,7 +671,7 @@ class PythonOptions:
                     "Locking packages for x86_64-unknown-linux-gnu. "
                     "Pass `--platform` option to specify the platform."
                 )
-                pip_compile_args.extend(["--python-platform", "linux"])
+                pip_compile_args.extend(["--python-platform", DEFAULT_LOCK_PLATFORM])
             cmd = [sys.executable, "-m", "uv", "pip", "compile"]
             cmd.extend(pip_compile_args)
             try:

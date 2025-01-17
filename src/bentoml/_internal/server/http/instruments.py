@@ -207,6 +207,23 @@ class RunnerTrafficMetricsMiddleware:
             documentation="Total number of bytes sent to websocket",
             labelnames=["endpoint", "service_name", "service_version", "runner_name"],
         )
+        # place holder metrics to initialize endpoints with 0 to facilitate rate calculation
+        # otherwise, rate() can be 0 if the endpoint is hit for the first time
+        for endpoint in server_context.service_apis:
+            self.metrics_request_total.labels(
+                endpoint=endpoint,
+                service_name=server_context.bento_name,
+                service_version=server_context.bento_version,
+                http_response_code=200,
+                runner_name=server_context.service_name,
+            )
+            self.metrics_request_total.labels(
+                endpoint=endpoint,
+                service_name=server_context.bento_name,
+                service_version=server_context.bento_version,
+                http_response_code=500,
+                runner_name=server_context.service_name,
+            )
         self._is_setup = True
 
     async def __call__(

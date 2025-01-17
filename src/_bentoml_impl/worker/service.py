@@ -186,6 +186,7 @@ def main(
     BentoMLContainer.development_mode.set(development_mode)
 
     server_context.service_name = service.name
+    server_context.service_apis = [api for api in service.apis.keys()]
     if service.bento is None:
         server_context.bento_name = service.name
         server_context.bento_version = "not available"

@@ -225,7 +225,7 @@ class _ComponentContext:
     service_type: str | None = None
     service_name: str | None = None
     worker_index: int | None = None
-    service_apis: list[str] = attr.field(factory=list)
+    service_routes: list[str] = attr.field(factory=list)
 
     @property
     def component_type(self) -> str | None:

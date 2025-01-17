@@ -209,7 +209,7 @@ class RunnerTrafficMetricsMiddleware:
         )
         # place holder metrics to initialize endpoints with 0 to facilitate rate calculation
         # otherwise, rate() can be 0 if the endpoint is hit for the first time
-        for endpoint in server_context.service_apis:
+        for endpoint in server_context.service_routes:
             self.metrics_request_total.labels(
                 endpoint=endpoint,
                 service_name=server_context.bento_name,

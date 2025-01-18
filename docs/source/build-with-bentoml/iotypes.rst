@@ -38,7 +38,7 @@ Python's standard types such as strings, integers, floats, booleans, lists, and 
     class LanguageModel:
         @bentoml.api
         def generate(
-            self, prompt: int = Field(description="The prompt text"),
+            self, prompt: str = Field(description="The prompt text"),
             temperature: float = Field(default=0.0, description="A sampling temperature between 0 and 2"),
             max_tokens: int = Field(default=1000, description="max tokens to use"),
         ) -> Generator[str, None, None]:

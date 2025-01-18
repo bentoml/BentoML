@@ -16,7 +16,7 @@ from simple_di import inject
 
 from ...exceptions import InvalidArgument
 from ..configuration.containers import BentoMLContainer
-from ..utils import bentoml_cattr
+from ..utils.cattr import bentoml_cattr
 from .base import OCIBuilder
 from .generate import generate_containerfile
 

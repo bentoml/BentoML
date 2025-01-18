@@ -103,7 +103,6 @@ def bento_management_commands() -> click.Group:
     from bentoml._internal.configuration import get_quiet_mode
     from bentoml._internal.configuration.containers import BentoMLContainer
     from bentoml._internal.utils import human_readable_size
-    from bentoml._internal.utils import rich_console as console
     from bentoml.bentos import build_bentofile
     from bentoml.bentos import import_bento
     from bentoml_cli.utils import BentoMLCommandGroup
@@ -136,13 +135,13 @@ def bento_management_commands() -> click.Group:
         bento = bento_store.get(bento_tag)
 
         if output == "path":
-            console.print(bento.path)
+            rich.print(bento.path)
         elif output == "json":
             info = json.dumps(bento.info.to_dict(), indent=2, default=str)
-            console.print_json(info)
+            rich.print_json(info)
         else:
             info = yaml.dump(bento.info.to_dict(), indent=2, sort_keys=False)
-            console.print(Syntax(info, "yaml", background_color="default"))
+            rich.print(Syntax(info, "yaml", background_color="default"))
 
     @bentos.command(name="list")
     @click.argument("bento_name", type=click.STRING, required=False)
@@ -186,10 +185,10 @@ def bento_management_commands() -> click.Group:
 
         if output == "json":
             info = json.dumps(res, indent=2)
-            console.print(info)
+            rich.print(info)
         elif output == "yaml":
             info = t.cast(str, yaml.safe_dump(res, indent=2))
-            console.print(Syntax(info, "yaml", background_color="default"))
+            rich.print(Syntax(info, "yaml", background_color="default"))
         else:
             table = Table(box=None)
             table.add_column("Tag")
@@ -203,7 +202,7 @@ def bento_management_commands() -> click.Group:
                     bento["model_size"],
                     bento["creation_time"],
                 )
-            console.print(table)
+            rich.print(table)
 
     @bentos.command()
     @click.argument(

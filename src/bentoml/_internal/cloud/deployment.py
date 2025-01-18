@@ -38,10 +38,10 @@ from ...exceptions import BentoMLException
 from ...exceptions import NotFound
 from ..configuration.containers import BentoMLContainer
 from ..tag import Tag
-from ..utils import bentoml_cattr
 from ..utils import filter_control_codes
 from ..utils import is_jupyter
-from ..utils import resolve_user_filepath
+from ..utils.cattr import bentoml_cattr
+from ..utils.filesystem import resolve_user_filepath
 from .base import Spinner
 from .schemas.modelschemas import BentoManifestSchema
 from .schemas.modelschemas import DeploymentStatus
@@ -1501,7 +1501,7 @@ def _build_setup_script(bento_dir: str) -> bytes:
     content = b""
     config = BentoBuildConfig.from_bento_dir(bento_dir)
     if config.docker.system_packages:
-        content += f'apt-get update && apt-get install -y {" ".join(config.docker.system_packages)} || exit 1\n'.encode()
+        content += f"apt-get update && apt-get install -y {' '.join(config.docker.system_packages)} || exit 1\n".encode()
     if config.docker.setup_script and os.path.exists(
         fullpath := os.path.join(bento_dir, config.docker.setup_script)
     ):

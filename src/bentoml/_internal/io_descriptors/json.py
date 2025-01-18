@@ -16,9 +16,9 @@ from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import Schema
 from ..types import LazyType
-from ..utils import LazyLoader
-from ..utils import bentoml_cattr
+from ..utils.cattr import bentoml_cattr
 from ..utils.http import set_cookies
+from ..utils.lazy_loader import LazyLoader
 from ..utils.pkg import pkg_version_info
 from .base import IODescriptor
 

@@ -8,7 +8,7 @@ from bentoml.exceptions import InternalServerError
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import NotFound
 
-from ...utils import LazyLoader
+from ...utils.lazy_loader import LazyLoader
 from ...utils.pkg import pkg_version_info
 from .specification import Schema
 

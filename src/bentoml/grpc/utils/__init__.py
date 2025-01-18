@@ -7,7 +7,7 @@ from functools import lru_cache
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 
-from ..._internal.utils import resolve_user_filepath
+from ..._internal.utils.filesystem import resolve_user_filepath
 from ...exceptions import InvalidArgument
 from ._import_hook import LATEST_PROTOCOL_VERSION
 from ._import_hook import import_generated_stubs

@@ -11,7 +11,7 @@ from functools import partial
 import pytest
 
 from bentoml._internal.types import LazyType
-from bentoml._internal.utils import LazyLoader
+from bentoml._internal.utils.lazy_loader import LazyLoader
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml.grpc.utils import import_grpc
 from bentoml.testing.grpc import async_client_call

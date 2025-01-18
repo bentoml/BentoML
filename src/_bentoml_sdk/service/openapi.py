@@ -20,7 +20,7 @@ from bentoml._internal.service.openapi.specification import Schema
 from bentoml._internal.service.openapi.utils import exception_components_schema
 from bentoml._internal.service.openapi.utils import exception_schema
 from bentoml._internal.types import LazyType
-from bentoml._internal.utils import bentoml_cattr
+from bentoml._internal.utils.cattr import bentoml_cattr
 from bentoml.exceptions import InternalServerError
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import NotFound

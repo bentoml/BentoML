@@ -21,8 +21,8 @@ from simple_di import inject
 from ...cloud.config import CloudClientConfig
 from ...configuration import BENTOML_VERSION
 from ...configuration.containers import BentoMLContainer
-from ...utils import bentoml_cattr
 from ...utils import is_jupyter
+from ...utils.cattr import bentoml_cattr
 
 if t.TYPE_CHECKING:
     from pathlib import Path

@@ -18,49 +18,97 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from ._internal.configuration import BENTOML_VERSION as __version__
-from ._internal.configuration import load_config
-from ._internal.configuration import save_config
-from ._internal.configuration import set_serialization_strategy
 
-# Inject dependencies and configurations
-load_config()
+MODULE_ATTRS = {
+    "Field": "pydantic:Field",
+    # BentoML built-in types
+    "load_config": "._internal.configuration:load_config",
+    "save_config": "._internal.configuration:save_config",
+    "set_serialization_strategy": "._internal.configuration:set_serialization_strategy",
+    "Bento": "._internal.bento:Bento",
+    "BentoCloudClient": "._internal.cloud:BentoCloudClient",
+    "Context": "._internal.context:ServiceContext",
+    "server_context": "._internal.context:server_context",
+    "Model": "._internal.models:Model",
+    "monitor": "._internal.monitoring:monitor",
+    "Resource": "._internal.resource:Resource",
+    "Runnable": "._internal.runner:Runnable",
+    "Runner": "._internal.runner:Runner",
+    "Strategy": "._internal.runner.strategy:Strategy",
+    "Service": "._internal.service:Service",
+    "Tag": "._internal.tag:Tag",
+    "load": "._internal.service.loader:load",
+    "Cookie": "._internal.utils.http:Cookie",
+    # Bento management APIs
+    "get": ".bentos:get",
+    "build": ".bentos:build",
+    "delete": ".bentos:delete",
+    "export_bento": ".bentos:export_bento",
+    "import_bento": ".bentos:import_bento",
+    "list": ".bentos:list",
+    "pull": ".bentos:pull",
+    "push": ".bentos:push",
+    "serve": ".bentos:serve",
+    # Legacy APIs
+    "HTTPServer": ".server:HTTPServer",
+    "GrpcServer": ".server:GrpcServer",
+    # New SDK
+    "service": "_bentoml_sdk:service",
+    "runner_service": "_bentoml_sdk:runner_service",
+    "api": "_bentoml_sdk:api",
+    "task": "_bentoml_sdk:task",
+    "depends": "_bentoml_sdk:depends",
+    "on_shutdown": "_bentoml_sdk:on_shutdown",
+    "on_deployment": "_bentoml_sdk:on_deployment",
+    "asgi_app": "_bentoml_sdk:asgi_app",
+    "mount_asgi_app": "_bentoml_sdk:mount_asgi_app",
+    "get_current_service": "_bentoml_sdk:get_current_service",
+    "IODescriptor": "_bentoml_sdk:IODescriptor",
+    "importing": "_bentoml_impl.loader:importing",
+    "SyncHTTPClient": "_bentoml_impl.client:SyncHTTPClient",
+    "AsyncHTTPClient": "_bentoml_impl.client:AsyncHTTPClient",
+}
 
-from pydantic import Field
-
-# BentoML built-in types
-from ._internal.bento import Bento
-from ._internal.cloud import BentoCloudClient
-from ._internal.context import ServiceContext as Context
-from ._internal.context import server_context
-from ._internal.models import Model
-from ._internal.monitoring import monitor
-from ._internal.resource import Resource
-from ._internal.runner import Runnable
-from ._internal.runner import Runner
-from ._internal.runner.strategy import Strategy
-from ._internal.service import Service
-from ._internal.service.loader import load
-from ._internal.tag import Tag
-from ._internal.utils.http import Cookie
-
-# Bento management APIs
-from .bentos import build
-from .bentos import delete
-from .bentos import export_bento
-from .bentos import get
-from .bentos import import_bento
-from .bentos import list
-from .bentos import pull
-from .bentos import push
-from .bentos import serve
 
 if TYPE_CHECKING:
     # Framework specific modules
+    from pydantic import Field
+
     from _bentoml_impl.frameworks import catboost
     from _bentoml_impl.frameworks import lightgbm
     from _bentoml_impl.frameworks import mlflow
     from _bentoml_impl.frameworks import sklearn
     from _bentoml_impl.frameworks import xgboost
+
+    # BentoML built-in types
+    from ._internal.bento import Bento
+    from ._internal.cloud import BentoCloudClient
+    from ._internal.configuration import load_config
+    from ._internal.configuration import save_config
+    from ._internal.configuration import set_serialization_strategy
+    from ._internal.context import ServiceContext as Context
+    from ._internal.context import server_context
+    from ._internal.models import Model
+    from ._internal.monitoring import monitor
+    from ._internal.resource import Resource
+    from ._internal.runner import Runnable
+    from ._internal.runner import Runner
+    from ._internal.runner.strategy import Strategy
+    from ._internal.service import Service
+    from ._internal.service.loader import load
+    from ._internal.tag import Tag
+    from ._internal.utils.http import Cookie
+
+    # Bento management APIs
+    from .bentos import build
+    from .bentos import delete
+    from .bentos import export_bento
+    from .bentos import get
+    from .bentos import import_bento
+    from .bentos import list
+    from .bentos import pull
+    from .bentos import push
+    from .bentos import serve
 
     try:  # needs bentoml-unsloth package
         from _bentoml_impl.frameworks import unsloth
@@ -117,8 +165,7 @@ if TYPE_CHECKING:
 else:
     from _bentoml_impl.frameworks.importer import FrameworkImporter
 
-    from ._internal.utils import LazyLoader as _LazyLoader
-    from ._internal.utils.pkg import pkg_version_info
+    from ._internal.utils.lazy_loader import LazyLoader as _LazyLoader
 
     FrameworkImporter.install()
 
@@ -245,47 +292,14 @@ else:
     validators = _LazyLoader("bentoml.validators", globals(), "bentoml.validators")
     del _LazyLoader, FrameworkImporter
 
-    _NEW_SDK_ATTRS = [
-        "service",
-        "runner_service",
-        "api",
-        "task",
-        "depends",
-        "on_shutdown",
-        "on_deployment",
-        "asgi_app",
-        "mount_asgi_app",
-        "get_current_service",
-        "IODescriptor",
-    ]
-    _NEW_CLIENTS = ["SyncHTTPClient", "AsyncHTTPClient"]
-
-    if (ver := pkg_version_info("pydantic")) >= (2,):
-        import _bentoml_sdk
-    else:
-        _bentoml_sdk = None
-
     def __getattr__(name: str) -> Any:
-        if name in ("HTTPServer", "GrpcServer"):
-            return getattr(server, name)
+        if name in MODULE_ATTRS:
+            from importlib import import_module
 
-        if _bentoml_sdk is None:
-            raise ImportError(
-                f"The new SDK runs on pydantic>=2.0.0, but the you have {'.'.join(map(str, ver))}. "
-                "Please upgrade it."
-            )
-        if name == "importing":
-            from _bentoml_impl.loader import importing
-
-            return importing
-        elif name in _NEW_CLIENTS:
-            import _bentoml_impl.client
-
-            return getattr(_bentoml_impl.client, name)
-        elif name in _NEW_SDK_ATTRS:
-            return getattr(_bentoml_sdk, name)
-        else:
-            raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+            module_name, attr_name = MODULE_ATTRS[name].split(":")
+            module = import_module(module_name, __package__)
+            return getattr(module, attr_name)
+        raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 __all__ = [

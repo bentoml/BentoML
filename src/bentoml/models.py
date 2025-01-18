@@ -13,9 +13,9 @@ from ._internal.models import Model
 from ._internal.models import ModelContext
 from ._internal.models import ModelOptions
 from ._internal.tag import Tag
-from ._internal.utils import calc_dir_size
 from ._internal.utils.analytics import ModelSaveEvent
 from ._internal.utils.analytics import track
+from ._internal.utils.filesystem import calc_dir_size
 from .exceptions import BentoMLException
 
 if TYPE_CHECKING:

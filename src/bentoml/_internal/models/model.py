@@ -37,10 +37,10 @@ from ..store import StoreItem
 from ..tag import Tag
 from ..types import MetadataDict
 from ..types import ModelSignatureDict
-from ..utils import bentoml_cattr
 from ..utils import label_validator
 from ..utils import metadata_validator
 from ..utils import normalize_labels_value
+from ..utils.cattr import bentoml_cattr
 
 if t.TYPE_CHECKING:
     from ..runner import Runnable

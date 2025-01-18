@@ -5,12 +5,20 @@ import os
 import shutil
 import tarfile
 import tempfile
+import typing as t
 from collections import deque
 from functools import partial
 from pathlib import Path
 from threading import Lock
 
 import fs
+import fs.copy
+from fs.base import FS
+
+from bentoml._internal.utils.uri import encode_path_for_uri
+
+if t.TYPE_CHECKING:
+    from ..types import PathType
 
 logger = logging.getLogger(__name__)
 
@@ -91,3 +99,57 @@ def safe_extract_tarfile(tar: tarfile.TarFile, destination: str) -> None:
             fp.close()
             # Update the timestamp (useful for cython compiled files)
             tar.utime(member, path)
+
+
+def calc_dir_size(path: PathType) -> int:
+    return sum(f.stat().st_size for f in Path(path).glob("**/*") if f.is_file())
+
+
+def validate_or_create_dir(*path: PathType) -> None:
+    for p in path:
+        path_obj = Path(p)
+
+        if path_obj.exists():
+            if not path_obj.is_dir():
+                raise OSError(20, f"{path_obj} is not a directory")
+        else:
+            path_obj.mkdir(parents=True, exist_ok=True)
+
+
+def copy_file_to_fs_folder(
+    src_path: str,
+    dst_fs: FS,
+    dst_folder_path: str = ".",
+    dst_filename: t.Optional[str] = None,
+):
+    """Copy the given file at src_path to dst_fs filesystem, under its dst_folder_path
+    folder with dst_filename as file name. When dst_filename is None, keep the original
+    file name.
+    """
+    src_path = os.path.realpath(os.path.expanduser(src_path))
+    dir_name, file_name = os.path.split(src_path)
+    src_fs = fs.open_fs(encode_path_for_uri(dir_name))
+    dst_filename = file_name if dst_filename is None else dst_filename
+    dst_path = fs.path.join(dst_folder_path, dst_filename)
+    dst_fs.makedir(dst_folder_path, recreate=True)
+    fs.copy.copy_file(src_fs, file_name, dst_fs, dst_path)
+
+
+def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
+    """Resolve the abspath of a filepath provided by user. User provided file path can:
+    * be a relative path base on ctx dir
+    * contain leading "~" for HOME directory
+    * contain environment variables such as "$HOME/workspace"
+    """
+    # Return if filepath exist after expanduser
+
+    _path = os.path.expanduser(os.path.expandvars(filepath))
+
+    # Try finding file in ctx if provided
+    if not os.path.isabs(_path) and ctx:
+        _path = os.path.expanduser(os.path.join(ctx, filepath))
+
+    if os.path.exists(_path):
+        return os.path.realpath(_path)
+
+    raise FileNotFoundError(f"file {filepath} not found")

@@ -11,7 +11,7 @@ from simple_di import inject
 
 from ...exceptions import CloudRESTApiClientError
 from ..configuration.containers import BentoMLContainer
-from ..utils import bentoml_cattr
+from ..utils.cattr import bentoml_cattr
 from .client import RestApiClient
 
 logger = logging.getLogger(__name__)

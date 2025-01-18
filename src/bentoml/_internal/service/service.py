@@ -329,7 +329,7 @@ class Service:
 
     def __repr__(self):
         if self.bento:
-            return f'bentoml.Service(tag="{self.tag}", ' f'path="{self.bento.path}")'
+            return f'bentoml.Service(tag="{self.tag}", path="{self.bento.path}")'
 
         try:
             import_str, working_dir = self.get_service_import_origin()
@@ -341,7 +341,7 @@ class Service:
         except BentoMLException:
             return (
                 f'bentoml.Service(name="{self.name}", '
-                f'runners=[{",".join([r.name for r in self.runners])}])'
+                f"runners=[{','.join([r.name for r in self.runners])}])"
             )
 
     def __str__(self) -> str:

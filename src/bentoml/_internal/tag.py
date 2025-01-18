@@ -10,7 +10,7 @@ import attr
 import fs
 
 from ..exceptions import BentoMLException
-from .utils import bentoml_cattr
+from .utils.cattr import bentoml_cattr
 
 logger = logging.getLogger(__name__)
 

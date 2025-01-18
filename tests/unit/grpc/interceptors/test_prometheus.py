@@ -12,7 +12,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.utils import LazyLoader
+from bentoml._internal.utils.lazy_loader import LazyLoader
 from bentoml.grpc.interceptors.prometheus import PrometheusServerInterceptor
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml.grpc.utils import import_grpc

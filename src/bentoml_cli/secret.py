@@ -14,8 +14,7 @@ from simple_di import Provide
 from simple_di import inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.utils import resolve_user_filepath
-from bentoml._internal.utils import rich_console as console
+from bentoml._internal.utils.filesystem import resolve_user_filepath
 from bentoml.exceptions import BentoMLException
 from bentoml_cli.utils import BentoMLCommandGroup
 
@@ -75,15 +74,15 @@ def list_command(
                 ", ".join(keys),
                 secret.content.path if secret.content.path else "-",
             )
-        console.print(table)
+        rich.print(table)
     elif output == "json":
         res: t.List[dict[str, t.Any]] = [s.to_dict() for s in secrets]
         info = json.dumps(res, indent=2, default=str)
-        console.print(info)
+        rich.print(info)
     elif output == "yaml":
         res: t.List[dict[str, t.Any]] = [s.to_dict() for s in secrets]
         info = yaml.dump(res, indent=2, sort_keys=False)
-        console.print(Syntax(info, "yaml", background_color="default"))
+        rich.print(Syntax(info, "yaml", background_color="default"))
 
 
 def parse_kvs_argument_callback(

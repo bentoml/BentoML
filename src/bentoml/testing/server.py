@@ -19,9 +19,9 @@ from typing import TYPE_CHECKING
 import psutil
 
 from bentoml._internal.tag import Tag
-from bentoml._internal.utils import LazyLoader
 from bentoml._internal.utils import cached_contextmanager
 from bentoml._internal.utils import reserve_free_port
+from bentoml._internal.utils.lazy_loader import LazyLoader
 from bentoml.grpc.utils import import_grpc
 
 from ..grpc.utils import LATEST_PROTOCOL_VERSION
@@ -469,7 +469,7 @@ def host_bento(
         else:
             bento = bentoml.get(bento_name)
         print(
-            f"Hosting BentoServer '{bento.tag}' in {deployment_mode} mode at '{project_path}'{' with config file '+config_file if config_file else ''}."
+            f"Hosting BentoServer '{bento.tag}' in {deployment_mode} mode at '{project_path}'{' with config file ' + config_file if config_file else ''}."
         )
         if deployment_mode == "standalone":
             with run_bento_server_standalone(

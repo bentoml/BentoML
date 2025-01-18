@@ -10,7 +10,7 @@ from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 
 from ..configuration.containers import BentoMLContainer
-from ..utils import resolve_user_filepath
+from ..utils.filesystem import resolve_user_filepath
 from .frontend.dockerfile import DistroSpec
 
 logger = logging.getLogger(__name__)

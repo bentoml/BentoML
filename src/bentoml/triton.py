@@ -19,7 +19,7 @@ from ._internal.runner.runner_handle.remote import TRITON_EXC_MSG as _TRITON_EXC
 from ._internal.runner.runner_handle.remote import (
     handle_triton_exception as _handle_triton_exception,
 )
-from ._internal.utils import LazyLoader as _LazyLoader
+from ._internal.utils.lazy_loader import LazyLoader as _LazyLoader
 from .exceptions import StateException as _StateException
 
 if t.TYPE_CHECKING:

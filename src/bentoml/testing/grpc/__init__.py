@@ -7,9 +7,9 @@ from contextlib import ExitStack
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
-from ..._internal.utils import LazyLoader
 from ..._internal.utils import cached_contextmanager
 from ..._internal.utils import reserve_free_port
+from ..._internal.utils.lazy_loader import LazyLoader
 from ...exceptions import BentoMLException
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
 from ...grpc.utils import import_generated_stubs
@@ -145,17 +145,17 @@ async def async_client_call(
         details = call.details()
         trailing_metadata = call.trailing_metadata()
     if assert_code is not None:
-        assert (
-            return_code == assert_code
-        ), f"Method '{method}' returns {return_code} while expecting {assert_code}."
+        assert return_code == assert_code, (
+            f"Method '{method}' returns {return_code} while expecting {assert_code}."
+        )
     if assert_details is not None:
-        assert (
-            assert_details == details
-        ), f"Details '{assert_details}' is not in '{details}'."
+        assert assert_details == details, (
+            f"Details '{assert_details}' is not in '{details}'."
+        )
     if assert_trailing_metadata is not None:
-        assert (
-            trailing_metadata == assert_trailing_metadata
-        ), f"Trailing metadata '{trailing_metadata}' while expecting '{assert_trailing_metadata}'."
+        assert trailing_metadata == assert_trailing_metadata, (
+            f"Trailing metadata '{trailing_metadata}' while expecting '{assert_trailing_metadata}'."
+        )
     return res
 
 

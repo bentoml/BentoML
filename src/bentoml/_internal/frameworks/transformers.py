@@ -22,7 +22,7 @@ from ..models.model import ModelOptions as BaseModelOptions
 from ..models.model import ModelSignature
 from ..tag import Tag
 from ..types import LazyType
-from ..utils import LazyLoader
+from ..utils.lazy_loader import LazyLoader
 from ..utils.pkg import get_pkg_version
 from ..utils.pkg import pkg_version_info
 from .utils.transformers import extract_commit_hash

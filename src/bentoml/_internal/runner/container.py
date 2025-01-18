@@ -9,7 +9,7 @@ import typing as t
 from typing import Any
 
 from ..types import LazyType
-from ..utils import LazyLoader
+from ..utils.lazy_loader import LazyLoader
 from ..utils.pickle import fixed_torch_loads
 from ..utils.pickle import pep574_dumps
 from ..utils.pickle import pep574_loads

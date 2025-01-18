@@ -24,7 +24,6 @@ from bentoml._internal.cloud.deployment import DeploymentConfigParameters
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStatus
 from bentoml._internal.cloud.schemas.modelschemas import DeploymentStrategy
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.utils import rich_console as console
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import CLIException
 from bentoml_cli.utils import BentoMLCommandGroup
@@ -695,10 +694,10 @@ def get(  # type: ignore
     d = bentoml.deployment.get(name, cluster=cluster)
     if output == "json":
         info = json.dumps(d.to_dict(), indent=2, default=str)
-        console.print_json(info)
+        rich.print_json(info)
     else:
         info = yaml.dump(d.to_dict(), indent=2, sort_keys=False)
-        console.print(Syntax(info, "yaml", background_color="default"))
+        rich.print(Syntax(info, "yaml", background_color="default"))
 
 
 @deployment_command.command()
@@ -785,13 +784,13 @@ def list_command(  # type: ignore
                 info.get_status(refetch=False).status,
                 info.cluster,
             )
-        console.print(table)
+        rich.print(table)
     elif output == "json":
         info = json.dumps(res, indent=2, default=str)
-        console.print_json(info)
+        rich.print_json(info)
     else:
         info = yaml.dump(res, indent=2, sort_keys=False)
-        console.print(Syntax(info, "yaml", background_color="default"))
+        rich.print(Syntax(info, "yaml", background_color="default"))
 
 
 @deployment_command.command()
@@ -832,13 +831,13 @@ def list_instance_types(  # type: ignore
                 info.gpu,
                 info.gpu_type,
             )
-        console.print(table)
+        rich.print(table)
     elif output == "json":
         info = json.dumps(res, indent=2, default=str)
-        console.print_json(info)
+        rich.print_json(info)
     else:
         info = yaml.dump(res, indent=2, sort_keys=False)
-        console.print(Syntax(info, "yaml", background_color="default"))
+        rich.print(Syntax(info, "yaml", background_color="default"))
 
 
 @inject

@@ -17,7 +17,7 @@ from ...grpc.utils import load_from_file
 from .. import io_descriptors
 from ..service import Service
 from ..service.inference_api import InferenceAPI
-from ..utils import LazyLoader
+from ..utils.lazy_loader import LazyLoader
 from . import AsyncClient
 from . import Client
 from . import SyncClient

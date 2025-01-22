@@ -31,6 +31,7 @@ from bentoml.exceptions import ServiceUnavailable
 
 from ..tasks import ResultStatus
 from ..tasks import Sqlite3Store
+from .mount import PassiveMount
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
@@ -178,7 +179,7 @@ class ServiceAppFactory(BaseAppFactory):
         app.add_route("/schema.json", self.schema_view, name="schema")
 
         for mount_app, path, name in self.service.mount_apps:
-            app.mount(app=mount_app, path=path, name=name)
+            app.router.routes.append(PassiveMount(path, mount_app, name=name))
 
         if self.is_main:
             if BentoMLContainer.new_index:

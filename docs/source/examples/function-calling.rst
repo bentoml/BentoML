@@ -329,7 +329,7 @@ BentoML allows you to run and test your code locally, so that you can quickly va
 
    .. code-block:: bash
 
-        bentoml serve .
+        bentoml serve service:ExchangeAssistant
 
 3. Visit or send API requests to `http://localhost:3000 <http://localhost:3000/>`_.
 

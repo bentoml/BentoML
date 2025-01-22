@@ -17,7 +17,7 @@ You can deploy a new project through either the command line interface (CLI) or 
 
         .. code-block:: bash
 
-           bentoml deploy . -n <deployment_name>
+           bentoml deploy -n <deployment_name> <service:class_name>
 
         .. note::
 

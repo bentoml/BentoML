@@ -172,3 +172,12 @@ Run custom commands during the build process. It supports chaining with other me
         .run('echo "System packages installed"') \
         .python_packages("pillow", "fastapi") \
         .run('echo "Python packages installed"')
+
+.. note:: 
+
+   ``run()`` is context-sensitive. For example, commands added before ``python_packages()`` are executed before installing Python dependencies.
+
+Next step
+---------
+
+After you've configured the environment specifications, you can :doc:`build a Bento </get-started/packaging-for-deployment>` or :doc:`deploy your Service to BentoCloud </get-started/cloud-deployment>`.

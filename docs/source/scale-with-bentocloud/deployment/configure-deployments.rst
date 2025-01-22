@@ -24,7 +24,7 @@ You can set the minimum and maximum scaling replicas to ensure efficient resourc
 
         .. code-block:: bash
 
-            bentoml deploy . --scaling-min 1 --scaling-max 2
+            bentoml deploy --scaling-min 1 --scaling-max 2 <service:class_name>
 
     .. tab-item:: Python API
 
@@ -70,7 +70,7 @@ To list available instance types on your BentoCloud account, run:
 
         .. code-block:: bash
 
-            bentoml deploy . --instance-type "gpu.a100.1"
+            bentoml deploy --instance-type "gpu.a100.1" <service:class_name>
 
     .. tab-item:: Python API
 
@@ -106,7 +106,7 @@ You can set environment variables for your deployment to configure the behavior 
 
         .. code-block:: bash
 
-            bentoml deploy . --env FIRST_VAR_NAME=value --env SECOND_VAR_NAME=value
+            bentoml deploy --env FIRST_VAR_NAME=value --env SECOND_VAR_NAME=value <service:class_name>
 
     .. tab-item:: Python API
 
@@ -143,7 +143,7 @@ Enabling authorization for a Deployment in BentoCloud is essential for security 
 
         .. code-block:: bash
 
-            bentoml deploy . --access-authorization true
+            bentoml deploy --access-authorization true <service:class_name>
 
     .. tab-item:: Python API
 
@@ -258,7 +258,7 @@ Available strategies include:
 
         .. code-block:: bash
 
-            bentoml deploy . --strategy Recreate
+            bentoml deploy --strategy Recreate <service:class_name>
 
     .. tab-item:: Python API
 

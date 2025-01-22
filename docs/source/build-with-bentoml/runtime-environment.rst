@@ -173,7 +173,7 @@ Run custom commands during the build process. It supports chaining with other me
         .python_packages("pillow", "fastapi") \
         .run('echo "Python packages installed"')
 
-.. note:: 
+.. note::
 
    ``run()`` is context-sensitive. For example, commands added before ``python_packages()`` are executed before installing Python dependencies.
 

@@ -89,6 +89,7 @@ class BentoManifestSchema:
     version: t.Optional[str] = attr.field(default=None, eq=False)
     dev: bool = attr.field(default=False, eq=False)
     image: t.Optional[ImageInfo] = None
+    spec: int = attr.field(default=1)
 
     @property
     def tag(self) -> Tag:

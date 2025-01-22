@@ -227,6 +227,7 @@ class Bento(StoreItem):
             version=info.version,
             dev=dev,
             image=image,
+            image_spec=info.spec,
         )
 
     @classmethod

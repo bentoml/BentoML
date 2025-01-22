@@ -94,7 +94,10 @@ def get_bentoml_requirement() -> str | None:
     if direct_url_data.get("dir_info", {}).get("editable", False):
         return None
     if vcs_info := direct_url_data.get("vcs_info", None):
-        res = f"bentoml @ {vcs_info['vcs']}+{direct_url_data['url']}@{vcs_info['commit_id']}"
+        # NOTE: uv 0.5.22 installs direct_url.json without commit_id key
+        # This is a workaround to handle this case and should be removed in future
+        commit_id = vcs_info.get("commit_id") or vcs_info.get("requested_revision")
+        res = f"bentoml @ {vcs_info['vcs']}+{direct_url_data['url']}@{commit_id}"
     else:
         res = f"bentoml @ {direct_url_data['url']}"
     if subdirectory := direct_url_data.get("subdirectory", None):

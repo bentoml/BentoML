@@ -18,7 +18,6 @@ if TYPE_CHECKING:
         param: str
 
 
-os.environ["BENTOML_ENABLE_FEATURES"] = "no_image"
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 

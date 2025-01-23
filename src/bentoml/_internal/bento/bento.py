@@ -254,7 +254,6 @@ class Bento(StoreItem):
             if build_ctx is None
             else os.path.realpath(os.path.expanduser(build_ctx))
         )
-        enable_image = "bento_image" in enabled_features
         if not os.path.isdir(build_ctx):
             raise InvalidArgument(
                 f"Bento build context {build_ctx} does not exist or is not a directory."
@@ -283,7 +282,7 @@ class Bento(StoreItem):
             build_config.envs.extend(svc.envs)
             if svc.image is not None:
                 image = svc.image
-        if image is None and enable_image:
+        if image is None:
             image = get_image_from_build_config(build_config)
         build_config = build_config.with_defaults()
         tag = Tag(bento_name, version)

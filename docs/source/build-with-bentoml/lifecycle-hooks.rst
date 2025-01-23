@@ -64,6 +64,57 @@ After the Service starts, you can see the following output on the server side in
     This runs on Service startup, once for each worker, so it runs 4 times.
     This runs on Service startup, once for each worker, so it runs 4 times.
 
+Startup hooks
+^^^^^^^^^^^^^
+
+Startup hooks are executed during Service initialization, after deployment hooks but before any API endpoints become available. These hooks run once per worker, making them ideal for worker-specific initialization tasks such as establishing database connections or loading resources.
+
+Use the ``@bentoml.on_startup`` decorator to specify a method as a startup hook. For example:
+
+.. code-block:: python
+
+    import bentoml
+
+    @bentoml.service(workers=4)
+    class HookService:
+        @bentoml.on_deployment
+        def prepare():
+            print("Global preparation, runs once before workers start.")
+
+        @bentoml.on_startup
+        def init_resources(self):
+            # This runs once per worker
+            print("Initializing resources for worker.")
+            self.db_connection = setup_database()
+
+        @bentoml.on_startup
+        async def init_async_resources(self):
+            # For async initialization tasks
+            print("Async resource initialization for worker.")
+            self.cache = await setup_cache()
+
+        @bentoml.api
+        def predict(self, text) -> str:
+            # Use initialized resources in API endpoints
+            return self.db_connection.query(text)
+
+When you start this Service, you'll see the following output:
+
+.. code-block:: bash
+
+    $ bentoml serve service:HookService
+
+    Global preparation, runs once before workers start. # on_deployment hook
+    2024-03-13T03:12:33+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:HookService" listening on http://localhost:3000
+    Initializing resources for worker. # First worker's startup hooks
+    Async resource initialization for worker.
+    Initializing resources for worker. # Second worker's startup hooks
+    Async resource initialization for worker.
+    Initializing resources for worker. # Third worker's startup hooks
+    Async resource initialization for worker.
+    Initializing resources for worker. # Fourth worker's startup hooks
+    Async resource initialization for worker.
+
 Shutdown hooks
 ^^^^^^^^^^^^^^
 

@@ -265,6 +265,7 @@ class Bento(StoreItem):
         is_legacy = isinstance(svc, Service)
         # Apply default build options
         image: Image | None = None
+        disable_image = "no_image" in enabled_features
 
         if isinstance(svc, Service):
             # for < 1.2
@@ -282,7 +283,7 @@ class Bento(StoreItem):
             build_config.envs.extend(svc.envs)
             if svc.image is not None:
                 image = svc.image
-        if image is None:
+        if image is None and not disable_image:
             image = get_image_from_build_config(build_config)
         build_config = build_config.with_defaults()
         tag = Tag(bento_name, version)

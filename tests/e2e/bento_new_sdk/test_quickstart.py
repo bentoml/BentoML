@@ -37,7 +37,7 @@ def test_local_prediction(examples: Path) -> None:
 
 
 def test_build_and_prediction(examples: Path) -> None:
-    bento = bentoml.bentos.build(
+    bento = bentoml.build(
         "service.py:Summarization", build_ctx=str(examples / "quickstart")
     )
 

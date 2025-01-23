@@ -284,7 +284,7 @@ class Bento(StoreItem):
             if svc.image is not None:
                 image = svc.image
         if image is None and not disable_image:
-            image = get_image_from_build_config(build_config)
+            image = get_image_from_build_config(build_config, build_ctx)
         build_config = build_config.with_defaults()
         tag = Tag(bento_name, version)
         if version is None:

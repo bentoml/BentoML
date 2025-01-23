@@ -186,7 +186,11 @@ class PythonImage(Image):
         return self
 
 
-def get_image_from_build_config(build_config: BentoBuildConfig) -> Image | None:
+def get_image_from_build_config(
+    build_config: BentoBuildConfig, build_ctx: str
+) -> Image | None:
+    from bentoml._internal.utils.filesystem import resolve_user_filepath
+
     if not build_config.conda.is_empty():
         logger.warning(
             "conda options are not supported by bento v2, fallback to bento v1"
@@ -243,7 +247,9 @@ def get_image_from_build_config(build_config: BentoBuildConfig) -> Image | None:
             *(f"--find-links {link}" for link in python_options.find_links)
         )
     if python_options.requirements_txt:
-        image.requirements_file(python_options.requirements_txt)
+        image.requirements_file(
+            resolve_user_filepath(python_options.requirements_txt, build_ctx)
+        )
     if python_options.packages:
         image.python_packages(*python_options.packages)
     return image

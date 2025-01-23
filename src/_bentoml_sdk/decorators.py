@@ -27,6 +27,12 @@ def on_shutdown(func: F) -> F:
     return func
 
 
+def on_startup(func: F) -> F:
+    """Mark a method as a startup hook for the service."""
+    setattr(func, "__bentoml_startup_hook__", True)
+    return func
+
+
 def on_deployment(func: t.Callable[P, R] | staticmethod[P, R]) -> staticmethod[P, R]:
     inner = func.__func__ if isinstance(func, staticmethod) else func
     setattr(inner, "__bentoml_deployment_hook__", True)

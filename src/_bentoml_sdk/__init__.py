@@ -14,7 +14,7 @@ if (ver := pkg_version_info("pydantic")) < (2,):
 
 # ruff: noqa
 
-from .decorators import api, on_shutdown, asgi_app, on_deployment, task
+from .decorators import api, on_shutdown, on_startup, asgi_app, on_deployment, task
 from .service import get_current_service
 from .service import depends
 from .service import Service, ServiceConfig
@@ -36,6 +36,7 @@ __all__ = [
     "api",
     "task",
     "on_shutdown",
+    "on_startup",
     "on_deployment",
     "asgi_app",
     "mount_asgi_app",

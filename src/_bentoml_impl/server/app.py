@@ -278,6 +278,19 @@ class ServiceAppFactory(BaseAppFactory):
         self._service_instance = self.service()
         self.service.gradio_app_startup_hook(max_concurrency=self.max_concurrency)
         logger.info("Service %s initialized", self.service.name)
+
+        # Call on_startup hook with optional ctx or context parameter
+        for name, member in vars(self.service.inner).items():
+            if callable(member) and getattr(member, "__bentoml_startup_hook__", False):
+                logger.info("Running startup hook: %s", name)
+                result = getattr(
+                    self._service_instance, name
+                )()  # call the bound method
+                if inspect.isawaitable(result):
+                    await result
+                    logger.info("Completed async startup hook: %s", name)
+                else:
+                    logger.info("Completed startup hook: %s", name)
         if deployment_url := os.getenv("BENTOCLOUD_DEPLOYMENT_URL"):
             proxy = RemoteProxy(
                 deployment_url, service=self.service, media_type="application/json"

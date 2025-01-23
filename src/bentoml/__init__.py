@@ -59,6 +59,7 @@ MODULE_ATTRS = {
     "task": "_bentoml_sdk:task",
     "depends": "_bentoml_sdk:depends",
     "on_shutdown": "_bentoml_sdk:on_shutdown",
+    "on_startup": "_bentoml_sdk:on_startup",
     "on_deployment": "_bentoml_sdk:on_deployment",
     "asgi_app": "_bentoml_sdk:asgi_app",
     "mount_asgi_app": "_bentoml_sdk:mount_asgi_app",
@@ -159,6 +160,7 @@ if TYPE_CHECKING:
     from _bentoml_sdk import mount_asgi_app
     from _bentoml_sdk import on_deployment
     from _bentoml_sdk import on_shutdown
+    from _bentoml_sdk import on_startup
     from _bentoml_sdk import runner_service
     from _bentoml_sdk import service
     from _bentoml_sdk import task
@@ -373,6 +375,7 @@ __all__ = [
     "task",
     "images",
     "on_shutdown",
+    "on_startup",
     "on_deployment",
     "depends",
     "IODescriptor",

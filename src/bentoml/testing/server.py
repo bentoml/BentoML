@@ -334,7 +334,7 @@ def run_bento_server_distributed(
     path = bento_service.path
     with open(os.path.join(path, "bento.yaml"), "r", encoding="utf-8") as f:
         bentofile = yaml.safe_load(f)
-    for runner in bentofile["runners"]:
+    for runner in bentofile.get("runners", []):
         with reserve_free_port(enable_so_reuseport=use_grpc) as port:
             runner_map[runner["name"]] = f"tcp://127.0.0.1:{port}"
             cmd = [
@@ -363,7 +363,7 @@ def run_bento_server_distributed(
         )
     runner_args = [
         ("--depends", f"{runner['name']}={runner_map[runner['name']]}")
-        for runner in bentofile["runners"]
+        for runner in bentofile.get("runners", [])
     ]
     cmd = [
         sys.executable,

@@ -59,15 +59,24 @@ def get_local_bentoml_dependency() -> str:
         ).strip()
     except subprocess.CalledProcessError:
         branch_name = "main"
-
-    try:
-        remote = subprocess.check_output(
-            ["git", "config", "--get", f"branch.{branch_name}.remote"],
+    # Precise checkout only returns "HEAD" as branch name
+    if branch_name == "HEAD":
+        ref = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
             cwd=src_dir,
             text=True,
         ).strip()
-    except subprocess.CalledProcessError:
         remote = "origin"
+    else:
+        ref = branch_name
+        try:
+            remote = subprocess.check_output(
+                ["git", "config", "--get", f"branch.{branch_name}.remote"],
+                cwd=src_dir,
+                text=True,
+            ).strip()
+        except subprocess.CalledProcessError:
+            remote = "origin"
 
     try:
         remote_url = subprocess.check_output(
@@ -78,4 +87,4 @@ def get_local_bentoml_dependency() -> str:
     except subprocess.CalledProcessError:
         remote_url = DEFAULT_BENTOML_GIT_URL
 
-    return f"git+{remote_url}@{branch_name}"
+    return f"git+{remote_url}@{ref}"

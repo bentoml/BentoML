@@ -177,9 +177,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: pipx install pdm && pipx install nox
-      - name: Set environment
-        if: ${{ matrix.suite == 'bento_server_http' }}
-        run: echo "BENTOML_ENABLE_FEATURES=no_image" >> ${GITHUB_ENV}
       - name: Run ${{ matrix.suite }} tests
         run: nox -s "e2e-testing-${{ matrix.python-version }}(suite='${{ matrix.suite }}')"
       - name: Disambiguate coverage filename

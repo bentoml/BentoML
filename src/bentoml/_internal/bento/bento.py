@@ -265,7 +265,7 @@ class Bento(StoreItem):
         is_legacy = isinstance(svc, Service)
         # Apply default build options
         image: Image | None = None
-        disable_image = "no_image" in enabled_features
+        disable_image = "no_image" in enabled_features or is_legacy
 
         if isinstance(svc, Service):
             # for < 1.2

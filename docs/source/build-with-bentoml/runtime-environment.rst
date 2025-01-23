@@ -15,12 +15,12 @@ Essentially, the runtime environment contains a set of Bento build options, such
 
 .. important::
 
-   We recommend you use the new Python SDK to configure the runtime environment. If you prefer the previous methods using ``bentofile.yaml`` or ``pyproject.toml``, refer to the :doc:`/reference/bentoml/bento-build-options` document.
+   We recommend you use the new Python SDK to configure the runtime environment. It allows you to integrate all build configurations in a single file and leverage Python's dynamic features like subclassing for more customization. If you prefer the previous methods using ``bentofile.yaml`` or ``pyproject.toml``, refer to the :doc:`/reference/bentoml/bento-build-options` document.
 
 Basic usage
 -----------
 
-Create a ``PythonImage`` instance with the necessary configurations and attach it to your Service:
+Create a ``PythonImage`` instance with the desired configurations and attach it to your Service:
 
 .. code-block:: python
 
@@ -38,12 +38,16 @@ This example specifies:
 - Python 3.11 as the runtime version
 - Installation of PyTorch and Transformers libraries
 
+.. note::
+
+   Currently, it's not possible to define unique runtime environments for each Service in a multi-Service Bento deployment, but it's on our roadmap.
+
 Constructor parameters
 ----------------------
 
 You can initialize a ``PythonImage`` instance with the following parameters:
 
-- ``python_version``: The Python version to use. It defaults to the Python version in your build environment.
+- ``python_version``: The Python version to use. If not specified, it defaults to the Python version in your current build environment.
 - ``distro``: The Linux distribution for the base image. It defaults to ``debian``.
 - ``base_image``: A custom Docker base image, which overrides all other attributes of the image.
 - ``lock_python_packages``: Whether to lock all package versions and dependencies. It defaults to ``True``. You can set it to ``False`` if you have already specified versions for all packages.
@@ -160,7 +164,9 @@ Install system-level dependencies in the runtime environment.
 ``run()``
 ^^^^^^^^^^
 
-Run custom commands during the build process. It supports chaining with other methods.
+Run custom commands during the build process. It supports chaining with other methods. This means you can freely combine all the above methods to create custom runtime environments.
+
+Here is an example:
 
 .. code-block:: python
 
@@ -173,9 +179,7 @@ Run custom commands during the build process. It supports chaining with other me
         .python_packages("pillow", "fastapi") \
         .run('echo "Python packages installed"')
 
-.. note::
-
-   ``run()`` is context-sensitive. For example, commands added before ``python_packages()`` are executed before installing Python dependencies.
+``run()`` is context-sensitive. For example, commands placed before ``.python_packages()`` are executed before installing Python dependencies, while those placed after are executed after installation. This allows you to perform certain tasks in the correct order.
 
 Next step
 ---------

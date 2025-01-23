@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 import platform
 import subprocess
@@ -36,6 +37,7 @@ class Image:
     lock_python_packages: bool = True
     python_requirements: str = ""
     post_commands: t.List[str] = attrs.field(factory=list)
+    scripts: t.Dict[str, str] = attrs.field(factory=dict, init=False)
     _after_pip_install: bool = attrs.field(init=False, default=False, repr=False)
 
     def requirements_file(self, file_path: str) -> t.Self:
@@ -79,6 +81,18 @@ class Image:
         commands.append(command)
         return self
 
+    def run_script(self, script: str) -> t.Self:
+        """Run a script in the image. Supports chaining call."""
+        commands = self.post_commands if self._after_pip_install else self.commands
+        script = Path(script).resolve().as_posix()
+        # Files under /env/docker will be copied into the env image layer
+        target_script = (
+            f"./env/docker/script__{hashlib.md5(script.encode()).hexdigest()}"
+        )
+        commands.append(f"chmod +x {target_script} && {target_script}")
+        self.scripts[script] = target_script
+        return self
+
     def freeze(self, platform_: str | None = None) -> ImageInfo:
         """Freeze the image to an ImageInfo object for build."""
         if not self.lock_python_packages:
@@ -91,6 +105,7 @@ class Image:
             commands=self.commands,
             python_requirements=python_requirements,
             post_commands=self.post_commands,
+            scripts=self.scripts,
         )
 
     def _freeze_python_requirements(self, platform_: str | None = None) -> str:
@@ -203,11 +218,6 @@ def get_image_from_build_config(build_config: BentoBuildConfig) -> Image | None:
             "docker.dockerfile_template is not supported by bento v2, fallback to bento v1"
         )
         return None
-    if docker_options.setup_script is not None:
-        logger.warning(
-            "docker.setup_script is not supported by bento v2, fallback to bento v1"
-        )
-        return None
     image_params = {}
     if docker_options.base_image is not None:
         image_params["base_image"] = docker_options.base_image
@@ -246,4 +256,6 @@ def get_image_from_build_config(build_config: BentoBuildConfig) -> Image | None:
         image.requirements_file(python_options.requirements_txt)
     if python_options.packages:
         image.python_packages(*python_options.packages)
+    if docker_options.setup_script:
+        image.run_script(docker_options.setup_script)
     return image

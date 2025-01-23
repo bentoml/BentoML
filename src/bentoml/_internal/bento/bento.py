@@ -839,6 +839,7 @@ class ImageInfo:
     commands: t.List[str] = attr.field(factory=list)
     python_requirements: str = ""
     post_commands: t.List[str] = attr.field(factory=list)
+    scripts: t.Dict[str, str] = attr.field(factory=dict)
 
     def write_to_bento(self, bento_fs: FS, envs: list[BentoEnvSchema]) -> None:
         from importlib import resources
@@ -857,6 +858,8 @@ class ImageInfo:
             dockerfile_path,
             generate_dockerfile(self, bento_fs, enable_buildkit=False, envs=envs),
         )
+        for script_name, target_path in self.scripts.items():
+            copy_file_to_fs_folder(script_name, bento_fs, dst_filename=target_path)
 
         with resources.path(
             "bentoml._internal.container.frontend.dockerfile", "entrypoint.sh"

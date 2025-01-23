@@ -463,7 +463,6 @@ class Deployment:
 
         return result
 
-
     def to_yaml(self):
         return yaml.dump(self.to_dict(), sort_keys=False)
 

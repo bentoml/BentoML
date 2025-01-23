@@ -442,11 +442,10 @@ class Deployment:
         return self._schema.manifest is not None and self._schema.manifest.dev
 
     def to_dict(self) -> dict[str, t.Any]:
-        return {
+        result = {
             "name": self.name,
             "bento": self.get_bento(refetch=False),
             "cluster": self.cluster,
-            "endpoint_urls": self._urls if self._urls else None,
             "admin_console": self.admin_console,
             "created_at": self.created_at,
             "created_by": self.created_by,
@@ -457,6 +456,12 @@ class Deployment:
             ),
             "status": self.get_status(refetch=False).to_dict(),
         }
+
+        # Add "endpoint_urls" only if it's not None
+        if self._urls:
+            result["endpoint_urls"] = self._urls
+
+        return result
 
     def to_yaml(self):
         return yaml.dump(self.to_dict(), sort_keys=False)

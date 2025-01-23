@@ -222,7 +222,6 @@ def pytest_sessionstart(session: Session) -> None:
         session,
         ("PROMETHEUS_MULTIPROC_DIR", _PYTEST_MULTIPROC_DIR),
         ("BENTOML_BUNDLE_LOCAL_BUILD", "True"),
-        ("SETUPTOOLS_USE_DISTUTILS", "stdlib"),
         ("__BENTOML_DEBUG_USAGE", "False"),
         ("BENTOML_DO_NOT_TRACK", "True"),
     )
@@ -247,7 +246,6 @@ def pytest_sessionfinish(session: Session, exitstatus: int | ExitCode) -> None:
         session,
         "BENTOML_BUNDLE_LOCAL_BUILD",
         "PROMETHEUS_MULTIPROC_DIR",
-        "SETUPTOOLS_USE_DISTUTILS",
         "__BENTOML_DEBUG_USAGE",
         "BENTOML_DO_NOT_TRACK",
     )

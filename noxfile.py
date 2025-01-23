@@ -43,7 +43,7 @@ FRAMEWORK_DEPENDENCIES = {
 
 @nox.session(python=PYTHON_VERSIONS, name="unit")
 def run_unittest(session: nox.Session):
-    session.run("pdm", "sync", "--no-editable", "-G", "grpc,io,testing", external=True)
+    session.run("pdm", "sync", "-G", "grpc,io,testing", external=True)
     session.run(*TEST_ARGS, "-n", "auto", "tests/unit")
 
 
@@ -73,7 +73,7 @@ def run_framework_integration_test(session: nox.Session, framework: str):
 @nox.session(name="e2e-testing", python=PYTHON_VERSIONS)
 @nox.parametrize("suite", ["bento_server_http", "bento_server_grpc", "bento_new_sdk"])
 def run_e2e_test(session: nox.Session, suite: str):
-    session.run("pdm", "sync", "--no-editable", "-G", "io,testing", external=True)
+    session.run("pdm", "sync", "-G", "io,testing", external=True)
     test_folder = os.path.join("tests/e2e", suite)
     requirements = os.path.join(test_folder, "requirements.txt")
     if os.path.exists(requirements):

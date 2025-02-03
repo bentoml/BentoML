@@ -217,9 +217,9 @@ class Service:
         if runners is not None:
             runner_names: t.Set[str] = set()
             for r in runners:
-                assert isinstance(
-                    r, AbstractRunner
-                ), f'Service runners list can only contain bentoml.Runner instances, type "{type(r)}" found.'
+                assert isinstance(r, AbstractRunner), (
+                    f'Service runners list can only contain bentoml.Runner instances, type "{type(r)}" found.'
+                )
 
                 if r.name in runner_names:
                     raise ValueError(
@@ -230,9 +230,9 @@ class Service:
         # validate models list contains Model instances
         if models is not None:
             for model in models:
-                assert isinstance(
-                    model, Model
-                ), f'Service models list can only contain bentoml.Model instances, type "{type(model)}" found.'
+                assert isinstance(model, Model), (
+                    f'Service models list can only contain bentoml.Model instances, type "{type(model)}" found.'
+                )
 
         self.__attrs_init__(  # type: ignore
             name=name,

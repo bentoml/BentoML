@@ -50,7 +50,7 @@ def test_bentoml_configuration_runner_override(
     container_from_file: t.Callable[[str], ConfigDictType], version: int | None
 ):
     OVERRIDE_RUNNERS = f"""\
-{'version: %d' % version if version else ''}
+{"version: %d" % version if version else ""}
 runners:
     batching:
         enabled: False

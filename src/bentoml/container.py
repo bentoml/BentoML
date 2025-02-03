@@ -446,7 +446,7 @@ def get_containerfile(
         if output_path is not None:
             if os.path.isdir(output_path):
                 output_path = output_path = os.path.join(
-                    output_path, f"{bento.tag.path().replace(os.sep,'_')}.dockerfile"
+                    output_path, f"{bento.tag.path().replace(os.sep, '_')}.dockerfile"
                 )
             logger.info(
                 "Writting Containerfile for '%s' to '%s'.", bento.tag, output_path

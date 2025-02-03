@@ -86,9 +86,9 @@ class AsyncGrpcClient(AsyncClient):
         self._interceptors = interceptors
         self._credentials = None
         if ssl:
-            assert (
-                ssl_client_credentials is not None
-            ), "'ssl=True' requires 'ssl_client_credentials'"
+            assert ssl_client_credentials is not None, (
+                "'ssl=True' requires 'ssl_client_credentials'"
+            )
             self._credentials = grpc.ssl_channel_credentials(
                 **{
                     k: load_from_file(v) if isinstance(v, str) else v
@@ -124,9 +124,9 @@ class AsyncGrpcClient(AsyncClient):
         compression: grpc.Compression | None = None,
     ) -> GrpcAsyncChannel:
         if ssl:
-            assert (
-                ssl_client_credentials is not None
-            ), "'ssl=True' requires 'ssl_client_credentials'"
+            assert ssl_client_credentials is not None, (
+                "'ssl=True' requires 'ssl_client_credentials'"
+            )
             return aio.secure_channel(
                 server_url,
                 credentials=grpc.ssl_channel_credentials(
@@ -447,9 +447,9 @@ class SyncGrpcClient(SyncClient):
         self._interceptors = interceptors
         self._credentials = None
         if ssl:
-            assert (
-                ssl_client_credentials is not None
-            ), "'ssl=True' requires 'ssl_client_credentials'"
+            assert ssl_client_credentials is not None, (
+                "'ssl=True' requires 'ssl_client_credentials'"
+            )
             self._credentials = grpc.ssl_channel_credentials(
                 **{
                     k: load_from_file(v) if isinstance(v, str) else v
@@ -483,9 +483,9 @@ class SyncGrpcClient(SyncClient):
         compression: grpc.Compression | None = None,
     ) -> GrpcSyncChannel:
         if ssl:
-            assert (
-                ssl_client_credentials is not None
-            ), "'ssl=True' requires 'ssl_client_credentials'"
+            assert ssl_client_credentials is not None, (
+                "'ssl=True' requires 'ssl_client_credentials'"
+            )
             return grpc.secure_channel(
                 server_url,
                 credentials=grpc.ssl_channel_credentials(

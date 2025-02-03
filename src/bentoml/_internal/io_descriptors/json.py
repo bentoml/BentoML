@@ -191,9 +191,9 @@ class JSON(
         json_encoder: type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
-            assert issubclass(
-                pydantic_model, pydantic.BaseModel
-            ), "'pydantic_model' must be a subclass of 'pydantic.BaseModel'."
+            assert issubclass(pydantic_model, pydantic.BaseModel), (
+                "'pydantic_model' must be a subclass of 'pydantic.BaseModel'."
+            )
 
         self._pydantic_model = pydantic_model
         self._json_encoder = json_encoder

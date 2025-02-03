@@ -140,9 +140,9 @@ def split_with_quotes(
     ['a', 'b', 'c,d', 'e']
     """
     if use_regex:
-        assert (
-            "(" not in sep and ")" not in sep
-        ), "sep cannot contain '(' or ')' when using regex"
+        assert "(" not in sep and ")" not in sep, (
+            "sep cannot contain '(' or ')' when using regex"
+        )
         reg = "({quote}[^{quote}]*{quote})|({sep})".format(
             quote=quote,
             sep=sep,

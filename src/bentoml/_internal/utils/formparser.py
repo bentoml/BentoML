@@ -58,9 +58,9 @@ class MultiPartException(Exception):
 
 class FormParser:
     def __init__(self, headers: Headers, stream: t.AsyncGenerator[bytes, None]) -> None:
-        assert (
-            multipart is not None
-        ), "The `python-multipart` library must be installed to use form parsing."
+        assert multipart is not None, (
+            "The `python-multipart` library must be installed to use form parsing."
+        )
         self.headers = headers
         self.stream = stream
         self.messages: list[tuple[FormMessage, bytes]] = []
@@ -137,9 +137,9 @@ class MultiPartParser:
         max_files: int | float = 1000,
         max_fields: int | float = 1000,
     ) -> None:
-        assert (
-            multipart is not None
-        ), "The `python-multipart` library must be installed to use form parsing."
+        assert multipart is not None, (
+            "The `python-multipart` library must be installed to use form parsing."
+        )
         self.headers = headers
         self.stream = stream
         self.max_files = max_files
@@ -207,7 +207,7 @@ class MultiPartParser:
             )
         except KeyError:
             raise MultiPartException(
-                'The Content-Disposition header field "name" must be ' "provided."
+                'The Content-Disposition header field "name" must be provided.'
             )
         if b"filename" in options:
             self._current_files += 1

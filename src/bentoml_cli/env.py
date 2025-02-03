@@ -60,7 +60,7 @@ def _format_dropdown(title: str, content: t.Iterable[str]) -> str:
 
 <br>
 
-```{ 'yaml' if title == conda_packages_name else '' }
+```{"yaml" if title == conda_packages_name else ""}
 {processed}
 ```
 
@@ -148,9 +148,9 @@ def env_command(ctx: click.Context, output: t.Literal["md", "bash"]) -> None:  #
             if shutil.which(possible_exec) is not None:
                 conda_like = possible_exec
                 break
-        assert (
-            conda_like is not None
-        ), "couldn't find a conda-like executable, while CONDA_PREFIX is set."
+        assert conda_like is not None, (
+            "couldn't find a conda-like executable, while CONDA_PREFIX is set."
+        )
         conda_packages = run_cmd([conda_like, "env", "export"])
 
         # user is currently in a conda environment,

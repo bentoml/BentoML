@@ -176,7 +176,7 @@ class Multipart(
         self._inputs = inputs
 
     def __repr__(self) -> str:
-        return f"Multipart({','.join([f'{k}={v}' for k,v in zip(self._inputs, map(repr, self._inputs.values()))])})"
+        return f"Multipart({','.join([f'{k}={v}' for k, v in zip(self._inputs, map(repr, self._inputs.values()))])})"
 
     def _from_sample(cls, sample: dict[str, t.Any]) -> t.Any:
         raise NotImplementedError("'from_sample' is not supported for Multipart.")

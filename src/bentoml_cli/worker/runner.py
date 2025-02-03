@@ -67,15 +67,15 @@ def main(
     """
 
     # setting up the environment for the worker process
-    assert (
-        "bentoml" not in sys.modules
-    ), "bentoml should not be imported before setting up the environment, otherwise some of the environment may not take effect"
+    assert "bentoml" not in sys.modules, (
+        "bentoml should not be imported before setting up the environment, otherwise some of the environment may not take effect"
+    )
     if worker_env_map is not None:
         env_map: dict[str, dict[str, t.Any]] = json.loads(worker_env_map)
         worker_key = str(worker_id - 1)  # the worker ID is 1-based
-        assert (
-            worker_key in env_map
-        ), f"worker_id {repr(worker_key)} not found in worker_env_map: {worker_env_map}"
+        assert worker_key in env_map, (
+            f"worker_id {repr(worker_key)} not found in worker_env_map: {worker_env_map}"
+        )
         os.environ.update(env_map[worker_key])
 
     import socket

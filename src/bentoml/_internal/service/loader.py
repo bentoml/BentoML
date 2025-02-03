@@ -194,9 +194,9 @@ def import_service(
                     "define only service instance per python module/file"
                 )
 
-        assert isinstance(
-            instance, tuple(service_types)
-        ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
+        assert isinstance(instance, tuple(service_types)), (
+            f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
+        )
 
         # set import_str for retrieving the service import origin
         object.__setattr__(instance, "_import_str", f"{module_name}:{attrs_str}")

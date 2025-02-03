@@ -332,7 +332,7 @@ class BytesIOFile(File, descriptor_id=None):
                         )
                 except KeyError:
                     raise BadInput(
-                        f"{field.kind} is not a valid File kind. Accepted file kind: {[names for names,_ in pb_v1alpha1.File.FileType.items()]}",
+                        f"{field.kind} is not a valid File kind. Accepted file kind: {[names for names, _ in pb_v1alpha1.File.FileType.items()]}",
                     ) from None
             content = field.content
             if not content:

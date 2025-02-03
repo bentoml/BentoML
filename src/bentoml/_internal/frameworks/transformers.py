@@ -453,9 +453,9 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
 
         kwargs.setdefault("pipeline_class", pipeline.__class__ if pipeline else None)
 
-        assert (
-            task in get_supported_tasks()
-        ), f"Task '{task}' is not a valid task for pipeline (available: {get_supported_tasks()})."
+        assert task in get_supported_tasks(), (
+            f"Task '{task}' is not a valid task for pipeline (available: {get_supported_tasks()})."
+        )
 
         return (
             transformers.pipeline(task=task, model=bento_model.path, **kwargs)
@@ -474,9 +474,9 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
                 protocol: PreTrainedProtocol = cloudpickle.load(f)
             return protocol.from_pretrained(bento_model.path, *args, **kwargs)
         else:
-            assert (
-                len(args) == 0
-            ), "Positional args are not supported for pipeline. Make sure to only use kwargs instead."
+            assert len(args) == 0, (
+                "Positional args are not supported for pipeline. Make sure to only use kwargs instead."
+            )
             with open(bento_model.path_of(PIPELINE_PICKLE_NAME), "rb") as f:
                 pipeline_class: type[transformers.Pipeline] = cloudpickle.load(f)
 
@@ -504,9 +504,9 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
 
             kwargs.setdefault("pipeline_class", pipeline_class)
 
-            assert (
-                task in get_supported_tasks()
-            ), f"Task '{task}' is not a valid task for pipeline (available: {get_supported_tasks()})."
+            assert task in get_supported_tasks(), (
+                f"Task '{task}' is not a valid task for pipeline (available: {get_supported_tasks()})."
+            )
 
             kwargs.update(options.kwargs)
             if len(kwargs) > 0:
@@ -860,7 +860,9 @@ def import_model(
     pretrained = t.cast("PreTrainedProtocol", model)
     assert all(
         hasattr(pretrained, defn) for defn in ("save_pretrained", "from_pretrained")
-    ), f"'pretrained={pretrained}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
+    ), (
+        f"'pretrained={pretrained}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
+    )
     if metadata is None:
         metadata = {}
 
@@ -1001,9 +1003,9 @@ def save_model(
         )
         pretrained_or_pipeline = pipeline
 
-    assert (
-        pretrained_or_pipeline is not None
-    ), "Please provide a pipeline or a pretrained object as a second argument."
+    assert pretrained_or_pipeline is not None, (
+        "Please provide a pipeline or a pretrained object as a second argument."
+    )
 
     # The below API are introduced since 4.18
     if pkg_version_info("transformers")[:2] >= (4, 18):
@@ -1087,13 +1089,13 @@ def save_model(
                     task_name,
                 )
 
-            assert (
-                task_name in get_supported_tasks()
-            ), f"Task '{task_name}' failed to register into pipeline registry."
+            assert task_name in get_supported_tasks(), (
+                f"Task '{task_name}' failed to register into pipeline registry."
+            )
         else:
-            assert (
-                task_definition is None
-            ), "'task_definition' must be None if 'task_name' is not provided."
+            assert task_definition is None, (
+                "'task_definition' must be None if 'task_name' is not provided."
+            )
 
             # if task_name is None, then we derive the task from pipeline.task
             options_args = t.cast(
@@ -1124,7 +1126,9 @@ def save_model(
         pretrained = t.cast("PreTrainedProtocol", pretrained_or_pipeline)
         assert all(
             hasattr(pretrained, defn) for defn in ("save_pretrained", "from_pretrained")
-        ), f"'pretrained={pretrained}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
+        ), (
+            f"'pretrained={pretrained}' is not a valid Transformers object. It must have 'save_pretrained' and 'from_pretrained' methods."
+        )
         if metadata is None:
             metadata = {}
 

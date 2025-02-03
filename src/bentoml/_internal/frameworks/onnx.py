@@ -262,9 +262,9 @@ def save_model(
             break
         except PackageNotFoundError:
             pass
-    assert (
-        _onnxruntime_pkg is not None and _onnxruntime_version is not None
-    ), "Failed to find onnxruntime package version."
+    assert _onnxruntime_pkg is not None and _onnxruntime_version is not None, (
+        "Failed to find onnxruntime package version."
+    )
 
     assert _onnxruntime_version is not None, "onnxruntime is not installed"
     if not isinstance(model, onnx.ModelProto):
@@ -291,7 +291,7 @@ def save_model(
         provided_methods = list(signatures.keys())
         if provided_methods != ["run"]:
             raise BentoMLException(
-                f"Provided method names {[m for m  in provided_methods if m != 'run']} are invalid. 'bentoml.onnx' will load ONNX model into an 'onnxruntime.InferenceSession' for inference, so the only supported method name is 'run'."
+                f"Provided method names {[m for m in provided_methods if m != 'run']} are invalid. 'bentoml.onnx' will load ONNX model into an 'onnxruntime.InferenceSession' for inference, so the only supported method name is 'run'."
             )
 
     run_input_specs = [MessageToDict(inp) for inp in model.graph.input]

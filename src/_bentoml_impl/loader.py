@@ -179,16 +179,16 @@ def import_service(
     try:
         module_name, _, attrs_str = service_identifier.partition(":")
 
-        assert (
-            module_name and attrs_str
-        ), f'Invalid import target "{service_identifier}", must format as "<module>:<attribute>"'
+        assert module_name and attrs_str, (
+            f'Invalid import target "{service_identifier}", must format as "<module>:<attribute>"'
+        )
         module = importlib.import_module(module_name)
         root_service_name, _, depend_path = attrs_str.partition(".")
         root_service = t.cast("Service[t.Any]", getattr(module, root_service_name))
 
-        assert isinstance(
-            root_service, Service
-        ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
+        assert isinstance(root_service, Service), (
+            f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
+        )
 
         if not depend_path:
             svc = root_service

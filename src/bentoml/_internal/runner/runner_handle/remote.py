@@ -502,9 +502,9 @@ class TritonRunnerHandle(RunnerHandle):
     ) -> tritongrpcclient.InferResult | tritonhttpclient.InferResult:
         from ..container import AutoContainer
 
-        assert (
-            (len(args) == 0) ^ (len(kwargs) == 0)
-        ), f"Inputs for model '{__bentoml_method.name}' can be given either as positional (args) or keyword arguments (kwargs), but not both. See https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#model-configuration"
+        assert (len(args) == 0) ^ (len(kwargs) == 0), (
+            f"Inputs for model '{__bentoml_method.name}' can be given either as positional (args) or keyword arguments (kwargs), but not both. See https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#model-configuration"
+        )
 
         pass_args = args if len(args) > 0 else kwargs
 

@@ -60,9 +60,9 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
     equivalent: tuple[str, str] = attrs.pop("equivalent", ())
     factory = attrs.pop("factory", click)
 
-    assert (
-        equivalent is not None and len(equivalent) == 2
-    ), "'equivalent' must be a tuple of (new_option, usage)"
+    assert equivalent is not None and len(equivalent) == 2, (
+        "'equivalent' must be a tuple of (new_option, usage)"
+    )
 
     prepend_msg = "(Equivalent to ``--%s %s``):" % equivalent
 

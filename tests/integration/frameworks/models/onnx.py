@@ -151,9 +151,9 @@ onnx_pytorch_model = FrameworkTestModel(
 
 
 # sklearn random forest with multiple outputs
-def make_rf_onnx_model() -> (
-    tuple[onnx.ModelProto, tuple[ext.NpNDArray, tuple[ext.NpNDArray, ext.NpNDArray]]]
-):
+def make_rf_onnx_model() -> tuple[
+    onnx.ModelProto, tuple[ext.NpNDArray, tuple[ext.NpNDArray, ext.NpNDArray]]
+]:
     iris: sklearn.utils.Bunch = load_iris()
     X: ext.NpNDArray = iris.data
     y: ext.NpNDArray = iris.target

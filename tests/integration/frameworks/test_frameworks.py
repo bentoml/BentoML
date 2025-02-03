@@ -185,15 +185,15 @@ def test_get_runnable(
         pytest.skip(f"No get_runnable for framework '{framework.__name__}'")
     runnable = framework.get_runnable(saved_model)
 
-    assert isinstance(
-        runnable, t.Type
-    ), "get_runnable for {bento_model.info.name} does not return a type"
-    assert issubclass(
-        runnable, bentoml.Runnable
-    ), "get_runnable for {bento_model.info.name} doesn't return a subclass of bentoml.Runnable"
-    assert (
-        len(runnable.bentoml_runnable_methods__) > 0
-    ), "get_runnable for {bento_model.info.name} gives a runnable with no methods"
+    assert isinstance(runnable, t.Type), (
+        "get_runnable for {bento_model.info.name} does not return a type"
+    )
+    assert issubclass(runnable, bentoml.Runnable), (
+        "get_runnable for {bento_model.info.name} doesn't return a subclass of bentoml.Runnable"
+    )
+    assert len(runnable.bentoml_runnable_methods__) > 0, (
+        "get_runnable for {bento_model.info.name} gives a runnable with no methods"
+    )
 
 
 def test_get_service(framework: types.ModuleType, saved_model: bentoml.Model):

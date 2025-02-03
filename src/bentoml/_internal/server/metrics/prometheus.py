@@ -56,9 +56,9 @@ class PrometheusClient:
         else:
             if self.multiproc:
                 assert self._pid is not None
-                assert (
-                    os.getpid() == self._pid
-                ), "The current process's different than the process which the prometheus client gets created"
+                assert os.getpid() == self._pid, (
+                    "The current process's different than the process which the prometheus client gets created"
+                )
 
         return self._registry
 
@@ -68,9 +68,9 @@ class PrometheusClient:
     def mark_process_dead(self) -> None:
         if self.multiproc:
             assert self._pid is not None
-            assert (
-                os.getpid() == self._pid
-            ), "The current process's different than the process which the prometheus client gets created"
+            assert os.getpid() == self._pid, (
+                "The current process's different than the process which the prometheus client gets created"
+            )
             self.prometheus_client.multiprocess.mark_process_dead(self._pid)
 
     def start_http_server(self, port: int, addr: str = "") -> None:

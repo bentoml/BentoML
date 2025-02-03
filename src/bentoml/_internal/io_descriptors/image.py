@@ -428,7 +428,7 @@ class Image(
                         )
                 except KeyError:
                     raise BadInput(
-                        f"{field.kind} is not a valid File kind. Accepted file kind: {[names for names,_ in pb_v1alpha1.File.FileType.items()]}",
+                        f"{field.kind} is not a valid File kind. Accepted file kind: {[names for names, _ in pb_v1alpha1.File.FileType.items()]}",
                     ) from None
             if not field.content:
                 raise BadInput("Content is empty!") from None

@@ -101,15 +101,15 @@ async def test_serve_with_lifecycle_hooks(
             )
 
             assert response.status_code == 200
-            assert (
-                await response.aread() == b"hello"
-            ), "The state data can't be read correctly"
+            assert await response.aread() == b"hello", (
+                "The state data can't be read correctly"
+            )
 
     data_files = list(tmp_path.glob("data-*.txt"))
     assert len(data_files) == 4, "on_startup should be run 4 times"
     for f in data_files:
         assert f.read_text().strip() == "closed"
 
-    assert (
-        len(list(tmp_path.glob("deployment-*.txt"))) == 1
-    ), "on_deployment should only be run once"
+    assert len(list(tmp_path.glob("deployment-*.txt"))) == 1, (
+        "on_deployment should only be run once"
+    )

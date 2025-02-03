@@ -670,7 +670,7 @@ class PandasDataFrame(
                 # large tabular data
                 if len(content.ListFields()) != 1:
                     raise BadInput(
-                        f"Array contents can only be one of given values key. Use one of '{list(map(lambda f: f[0].name,content.ListFields()))}' instead."
+                        f"Array contents can only be one of given values key. Use one of '{list(map(lambda f: f[0].name, content.ListFields()))}' instead."
                     ) from None
                 return {str(i): c for i, c in enumerate(content.ListFields()[0][1])}
 

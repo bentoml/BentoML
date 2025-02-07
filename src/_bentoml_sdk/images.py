@@ -64,7 +64,9 @@ class Image:
                 .python_packages("numpy", "pandas")\
                 .requirements_file("requirements.txt")
         """
-        self.python_requirements += "\n".join(packages)
+        if not packages:
+            raise BentoMLConfigException("No packages provided")
+        self.python_requirements += "\n".join(packages) + "\n"
         self._after_pip_install = True
         return self
 
@@ -82,7 +84,14 @@ class Image:
         return self
 
     def run_script(self, script: str) -> t.Self:
-        """Run a script in the image. Supports chaining call."""
+        """Run a script in the image. Supports chaining call.
+
+        Example:
+
+        .. code-block:: python
+
+            image = Image("debian:latest").run_script("script.sh")
+        """
         commands = self.post_commands if self._after_pip_install else self.commands
         script = Path(script).resolve().as_posix()
         # Files under /env/docker will be copied into the env image layer

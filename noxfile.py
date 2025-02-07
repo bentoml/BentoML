@@ -52,7 +52,7 @@ def run_unittest(session: nox.Session):
 def run_framework_integration_test(session: nox.Session, framework: str):
     session.run("pdm", "sync", "-G", "testing", external=True)
     session.install(
-        "torch",
+        "torch<2.6",
         "torchaudio",
         "torchvision",
         "-i",

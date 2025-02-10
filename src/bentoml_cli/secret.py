@@ -59,6 +59,7 @@ def list_command(
         table.add_column("Mount_As", overflow="fold")
         table.add_column("Keys", overflow="fold")
         table.add_column("Path", overflow="fold")
+        table.add_column("Cluster", overflow="fold")
 
         for secret in secrets:
             keys = [item.key for item in secret.content.items]
@@ -73,6 +74,7 @@ def list_command(
                 mountAs,
                 ", ".join(keys),
                 secret.content.path if secret.content.path else "-",
+                secret.cluster.name,
             )
         rich.print(table)
     elif output == "json":
@@ -132,6 +134,8 @@ def raise_secret_error(err: BentoMLException, action: str) -> t.NoReturn:
         raise BentoMLException(
             f"{err}\n* BentoCloud API token is required for authorization. Run `bentoml cloud login` command to login"
         ) from None
+    elif err.error_code == HTTPStatus.NOT_FOUND:
+        raise BentoMLException("Secret not found") from None
     raise BentoMLException(f"Failed to {action} secret due to: {err}")
 
 
@@ -168,6 +172,11 @@ def map_choice_to_type(ctx: Context, params: Parameter, value: t.Any):
     callback=map_choice_to_type,
 )
 @click.option(
+    "--cluster",
+    type=click.STRING,
+    help="Name of the cluster",
+)
+@click.option(
     "-p",
     "--path",
     type=click.STRING,
@@ -193,6 +202,7 @@ def create(
     name: str,
     description: str | None,
     type: t.Literal["env", "mountfile"],
+    cluster: str | None,
     path: str | None,
     key_vals: t.List[tuple[str, str]],
     from_literal: bool,
@@ -220,8 +230,9 @@ def create(
             path = "$BENTOML_HOME"
         secret = _cloud_client.secret.create(
             name=name,
-            description=description,
             type=type,
+            cluster=cluster,
+            description=description,
             path=path,
             key_vals=key_vals,
         )
@@ -237,14 +248,20 @@ def create(
     type=click.STRING,
     required=True,
 )
+@click.option(
+    "--cluster",
+    type=click.STRING,
+    help="Name of the cluster",
+)
 @inject
 def delete(
     name: str,
+    cluster: str | None,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     """Delete a secret on BentoCloud."""
     try:
-        _cloud_client.secret.delete(name=name)
+        _cloud_client.secret.delete(name=name, cluster=cluster)
         rich.print(f"Secret [green]{name}[/] deleted successfully")
     except BentoMLException as e:
         raise_secret_error(e, "delete")
@@ -256,6 +273,11 @@ def delete(
     nargs=1,
     type=click.STRING,
     required=True,
+)
+@click.option(
+    "--cluster",
+    type=click.STRING,
+    help="Name of the cluster",
 )
 @click.argument(
     "key_vals",
@@ -302,6 +324,7 @@ def delete(
 def apply(
     name: str,
     description: str | None,
+    cluster: str | None,
     type: t.Literal["env", "mountfile"],
     path: str | None,
     key_vals: t.List[t.Tuple[str, str]],
@@ -330,8 +353,9 @@ def apply(
             path = "$BENTOML_HOME"
         secret = _cloud_client.secret.update(
             name=name,
-            description=description,
             type=type,
+            cluster=cluster,
+            description=description,
             path=path,
             key_vals=key_vals,
         )

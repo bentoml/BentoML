@@ -339,6 +339,7 @@ class SecretSchema(ResourceSchema):
     description: str
     creator: UserSchema
     content: SecretContentSchema
+    cluster: ClusterSchema
 
 
 @attr.define
@@ -353,13 +354,13 @@ class CreateSecretSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
     name: str
-    description: str
     content: SecretContentSchema
+    description: t.Optional[str] = attr.field(default=None)
 
 
 @attr.define
 class UpdateSecretSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    description: str
     content: SecretContentSchema
+    description: t.Optional[str] = attr.field(default=None)

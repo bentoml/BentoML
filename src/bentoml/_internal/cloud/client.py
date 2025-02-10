@@ -523,30 +523,43 @@ class RestApiClientV1(BaseRestApiClient):
                 "q": q,
                 "search": search,
                 "start": start,
+                "all": "true",
             },
         )
         self._check_resp(resp)
         return schema_from_object(resp.json(), SecretListSchema)
 
-    def create_secret(self, secret: CreateSecretSchema) -> SecretSchema:
+    def create_secret(
+        self, secret: CreateSecretSchema, cluster: str | None = None
+    ) -> SecretSchema:
         url = "/api/v1/org_secrets"
+        if cluster:
+            url = f"{url}?cluster={cluster}"
         resp = self.session.post(url, json=schema_to_object(secret))
         self._check_resp(resp)
         return schema_from_object(resp.json(), SecretSchema)
 
-    def get_secret(self, name: str) -> SecretSchema:
+    def get_secret(self, name: str, cluster: str | None = None) -> SecretSchema:
         url = f"/api/v1/org_secrets/{name}"
+        if cluster:
+            url = f"{url}?cluster={cluster}"
         resp = self.session.get(url)
         self._check_resp(resp)
         return schema_from_object(resp.json(), SecretSchema)
 
-    def delete_secret(self, name: str) -> None:
+    def delete_secret(self, name: str, cluster: str | None = None) -> None:
         url = f"/api/v1/org_secrets/{name}"
+        if cluster:
+            url = f"{url}?cluster={cluster}"
         resp = self.session.delete(url)
         self._check_resp(resp)
 
-    def update_secret(self, name: str, secret: UpdateSecretSchema) -> SecretSchema:
+    def update_secret(
+        self, name: str, secret: UpdateSecretSchema, cluster: str | None = None
+    ) -> SecretSchema:
         url = f"/api/v1/org_secrets/{name}"
+        if cluster:
+            url = f"{url}?cluster={cluster}"
         resp = self.session.patch(url, json=schema_to_object(secret))
         self._check_resp(resp)
         return schema_from_object(resp.json(), SecretSchema)

@@ -668,8 +668,8 @@ class PythonOptions:
                 pip_compile_args.extend(["--python-platform", platform_])
             elif platform.system() != "Linux" or platform.machine() != "x86_64":
                 logger.info(
-                    "Locking packages for x86_64-unknown-linux-gnu. "
-                    "Pass `--platform` option to specify the platform."
+                    "Locking packages for %s. Pass `--platform` option to specify the platform.",
+                    DEFAULT_LOCK_PLATFORM,
                 )
                 pip_compile_args.extend(["--python-platform", DEFAULT_LOCK_PLATFORM])
             cmd = [sys.executable, "-m", "uv", "pip", "compile"]

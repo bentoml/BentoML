@@ -426,7 +426,7 @@ def build_bentofile(
 
     if labels:
         if not build_config.labels:
-            build_config.labels = labels
+            object.__setattr__(build_config, "labels", labels)
         build_config.labels.update(labels)
 
     bento = Bento.create(

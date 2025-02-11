@@ -66,6 +66,15 @@ def import_service(
     """
     from bentoml import Service
 
+    if not svc_import_path:
+        from _bentoml_impl.loader import import_service as import_1_2_service
+        from _bentoml_impl.loader import normalize_identifier
+
+        _bento_identifier, _working_dir = normalize_identifier(
+            svc_import_path, working_dir
+        )
+        return import_1_2_service(_bento_identifier, _working_dir)
+
     from ..context import server_context
 
     service_types: list[type] = [Service]

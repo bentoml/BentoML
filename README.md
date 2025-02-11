@@ -62,7 +62,7 @@ Run the service code locally (serving at http://localhost:3000 by default):
 ```bash
 pip install torch transformers  # additional dependencies for local run
 
-bentoml serve service.py:Summarization
+bentoml serve
 ```
 
 Now you can run inference from your browser at http://localhost:3000 or with a Python script:
@@ -102,7 +102,7 @@ Then, choose one of the following ways for deployment:
 Run `bentoml build` to package necessary code, models, dependency configs into a Bento - the standardized deployable artifact in BentoML:
 
 ```bash
-bentoml build service:Summarization
+bentoml build
 ```
 
 Ensure [Docker](https://docs.docker.com/) is running. Generate a Docker container image for deployment:
@@ -132,7 +132,7 @@ docker run --rm -p 3000:3000 summarization:latest
 bentoml cloud login
 
 # Deploy from current directory:
-bentoml deploy service:Summarization
+bentoml deploy
 ```
 
 ![bentocloud-ui](./docs/source/_static/img/get-started/cloud-deployment/first-bento-on-bentocloud.png)

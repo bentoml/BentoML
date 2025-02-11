@@ -234,12 +234,12 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
         # Use Mistral 7B
         cd BentoLangGraph/langgraph-mistral
         bentoml secret create huggingface HF_TOKEN=$HF_TOKEN
-        bentoml deploy --secret huggingface service:SearchAgentService
+        bentoml deploy --secret huggingface
 
         # Use Claude 3.5 Sonnet
         cd BentoLangGraph/langgraph-anthropic
         bentoml secret create anthropic ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
-        bentoml deploy --secret anthropic service:SearchAgentService
+        bentoml deploy --secret anthropic
 
 3. Once it is up and running on BentoCloud, you can call the endpoint in the following ways:
 
@@ -276,7 +276,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
    .. code-block:: bash
 
-      bentoml deploy --secret huggingface --scaling-min 0 --scaling-max 3 service:SearchAgentService # Set your desired count
+      bentoml deploy --secret huggingface --scaling-min 0 --scaling-max 3 # Set your desired count
 
    If it's already deployed, update its allowed replicas as follows:
 
@@ -319,7 +319,7 @@ BentoML allows you to run and test your code locally, so that you can quickly va
 
    .. code-block:: bash
 
-        bentoml serve service:SearchAgentService
+        bentoml serve
 
    .. note::
 

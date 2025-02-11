@@ -122,7 +122,7 @@ Run ``bentoml serve`` in your project directory to start the Service.
 
 .. code-block:: bash
 
-    $ bentoml serve service:IrisClassifier
+    $ bentoml serve
 
     2024-06-19T10:25:31+0000 [WARNING] [cli] Converting 'IrisClassifier' to lowercase: 'irisclassifier'.
     2024-06-19T10:25:31+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:IrisClassifier" listening on http://localhost:3000 (Press CTRL+C to quit)
@@ -191,7 +191,7 @@ Here is an example:
 
 .. code-block:: bash
 
-    bentoml deploy service:IrisClassifier
+    bentoml deploy
 
 Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
 

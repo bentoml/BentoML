@@ -39,11 +39,11 @@ See more :doc:`available fields </build-with-bentoml/runtime-environment>` to cu
 Build a Bento
 -------------
 
-Run the following command in the same directory as your ``service.py`` file. Replace ``<service_name>`` with the name of your Service (for example, ``Summarization`` from the earlier example).
+Run the following command in the same directory as your ``service.py`` file.
 
 .. code-block:: bash
 
-   bentoml build service:<service_name>
+   bentoml build
 
 .. note::
 

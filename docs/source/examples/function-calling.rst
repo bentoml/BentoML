@@ -251,7 +251,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
       git clone https://github.com/bentoml/BentoFunctionCalling.git
       cd BentoFunctionCalling
-      bentoml deploy service:ExchangeAssistant
+      bentoml deploy
 
 3. Once it is up and running on BentoCloud, you can call the endpoint in the following ways:
 
@@ -290,7 +290,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
    .. code-block:: bash
 
-      bentoml deploy --scaling-min 0 --scaling-max 3 service:ExchangeAssistant # Set your desired count
+      bentoml deploy --scaling-min 0 --scaling-max 3 # Set your desired count
 
    If it's already deployed, update its allowed replicas as follows:
 
@@ -329,7 +329,7 @@ BentoML allows you to run and test your code locally, so that you can quickly va
 
    .. code-block:: bash
 
-        bentoml serve service:ExchangeAssistant
+        bentoml serve
 
 3. Visit or send API requests to `http://localhost:3000 <http://localhost:3000/>`_.
 

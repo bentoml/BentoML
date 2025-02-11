@@ -44,7 +44,7 @@ Test your Service by using ``bentoml serve``, which starts a model server locall
 
 .. code-block:: bash
 
-    bentoml serve <service:class_name>
+    bentoml serve
 
 By default, the server is accessible at `http://localhost:3000/ <http://localhost:3000/>`_. Specifically, ``bentoml serve`` does the following:
 

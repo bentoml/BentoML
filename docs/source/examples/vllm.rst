@@ -128,7 +128,7 @@ Run ``bentoml serve`` in your project directory to start the Service.
 
 .. code-block:: bash
 
-    $ bentoml serve service:VLLM
+    $ bentoml serve
 
     2024-01-29T13:10:50+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:VLLM" listening on http://localhost:3000 (Press CTRL+C to quit)
 
@@ -273,7 +273,7 @@ After the Service is ready, you can deploy the project to BentoCloud for better 
    .. code-block:: bash
 
         bentoml secret create huggingface HF_TOKEN=<your_hf_token>
-        bentoml deploy --secret huggingface service:VLLM
+        bentoml deploy --secret huggingface
 
 4. Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
 

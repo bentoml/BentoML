@@ -130,7 +130,7 @@ Run ``bentoml serve`` in your project directory to start the BentoML server.
 
 .. code-block:: bash
 
-    $ bentoml serve service:ControlNet
+    $ bentoml serve
 
     2024-01-09T04:33:24+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:ControlNet" listening on http://localhost:3000 (Press CTRL+C to quit)
 
@@ -213,7 +213,7 @@ Here is an example:
 
 .. code-block:: bash
 
-    bentoml deploy service:ControlNet
+    bentoml deploy
 
 Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
 

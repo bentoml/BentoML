@@ -54,7 +54,7 @@ After the Service starts, you can see the following output on the server side in
 
 .. code-block:: bash
 
-    $ bentoml serve service:HookService
+    $ bentoml serve
 
     Do some preparation work, running only once. # First on_deployment hook
     Do more preparation work if needed, also running only once. # Second on_deployment hook

@@ -92,7 +92,7 @@ Run ``bentoml serve`` to start the BentoML server.
 
 .. code-block:: bash
 
-    $ bentoml serve service:SDXLTurbo
+    $ bentoml serve
 
     2024-01-19T07:20:29+0000 [WARNING] [cli] Converting 'SDXLTurbo' to lowercase: 'sdxlturbo'.
     2024-01-19T07:20:29+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:SDXLTurbo" listening on http://localhost:3000 (Press CTRL+C to quit)
@@ -167,7 +167,7 @@ Here is an example:
 
 .. code-block:: bash
 
-    bentoml deploy service:SDXLTurbo
+    bentoml deploy
 
 Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
 

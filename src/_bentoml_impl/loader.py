@@ -141,26 +141,21 @@ def import_service(
         # a project under current directory
         extra_python_path = None
 
-    # patch model store if needed
-    if (
-        bento_path.with_name(BENTO_YAML_FILENAME).exists()
-        and bento_path.with_name("models").exists()
-    ):
+    original_model_store = None
+    original_path = None
+    if bento_path.with_name(BENTO_YAML_FILENAME).exists():
         from bentoml._internal.models import ModelStore
 
         original_path = os.getcwd()
-        original_model_store = BentoMLContainer.model_store.get()
         # cwd into this for relative path to work
         os.chdir(bento_path.absolute())
 
-        # check in bento source
-
-        BentoMLContainer.model_store.set(
-            ModelStore((bento_path.with_name("models").absolute()))
-        )
-    else:
-        original_path = None
-        original_model_store = None
+        # patch model store if needed
+        if bento_path.with_name("models").exists():
+            original_model_store = BentoMLContainer.model_store.get()
+            BentoMLContainer.model_store.set(
+                ModelStore((bento_path.with_name("models").absolute()))
+            )
 
     # load model aliases
     bento: Bento | None = None

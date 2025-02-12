@@ -104,10 +104,7 @@ class Image:
 
     def freeze(self, platform_: str | None = None) -> ImageInfo:
         """Freeze the image to an ImageInfo object for build."""
-        if not self.lock_python_packages:
-            python_requirements = self.python_requirements
-        else:
-            python_requirements = self._freeze_python_requirements(platform_)
+        python_requirements = self._freeze_python_requirements(platform_)
         return ImageInfo(
             base_image=self.base_image,
             python_version=self.python_version,
@@ -136,6 +133,8 @@ class Image:
                 if not has_bentoml_req:
                     req = get_bentoml_requirement() or get_local_bentoml_dependency()
                     f.write(f"{req}\n")
+            if not self.lock_python_packages:
+                return requirements_in.read_text()
             lock_args = [
                 str(requirements_in),
                 "--allow-unsafe",

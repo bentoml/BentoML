@@ -203,7 +203,7 @@ class DeploymentConfigParameters:
                 if self.secrets:
                     secret_api = SecretAPI(BentoMLContainer.rest_api_client.get())
                     for secret_name in self.secrets:
-                        secret = secret_api.get(secret_name)
+                        secret = secret_api.get(secret_name, cluster=self.cluster)
                         if secret.content.type == "env":
                             provided_envs.extend(
                                 item.key for item in secret.content.items

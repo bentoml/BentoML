@@ -41,6 +41,7 @@ class Secret(SecretSchema):
             description=secret_schema.description,
             creator=secret_schema.creator,
             content=secret_schema.content,
+            cluster=secret_schema.cluster,
         )
 
 
@@ -63,9 +64,10 @@ class SecretAPI:
 
     def create(
         self,
-        name: str | None = None,
+        name: str,
+        type: str,
+        cluster: str | None = None,
         description: str | None = None,
-        type: str | None = None,
         path: str | None = None,
         key_vals: t.List[t.Tuple[str, str]] = [],
     ) -> Secret:
@@ -76,6 +78,7 @@ class SecretAPI:
             name (str | None): Name of the secret.
             description (str | None): Description of the secret.
             type (str | None): Type of the secret.
+            cluster (str | None): Cluster name where the secret is created.
             path (str | None): Path of the secret.
             key_vals (List[Tuple[str, str]]): List of key-value pairs for the secret content.
 
@@ -84,7 +87,6 @@ class SecretAPI:
         """
         secret_schema = CreateSecretSchema(
             name=name,
-            description=description,
             content=SecretContentSchema(
                 type=type,
                 path=path,
@@ -92,11 +94,12 @@ class SecretAPI:
                     SecretItem(key=key_val[0], value=key_val[1]) for key_val in key_vals
                 ],
             ),
+            description=description,
         )
-        secret = self._client.v1.create_secret(secret_schema)
+        secret = self._client.v1.create_secret(secret_schema, cluster)
         return Secret.from_secret_schema(secret)
 
-    def delete(self, name: str | None = None):
+    def delete(self, name: str | None = None, cluster: str | None = None):
         """
         Delete a secret.
 
@@ -108,13 +111,14 @@ class SecretAPI:
         """
         if name is None:
             raise ValueError("name is required")
-        self._client.v1.delete_secret(name)
+        self._client.v1.delete_secret(name, cluster)
 
     def update(
         self,
-        name: str | None = None,
+        name: str,
+        type: str,
+        cluster: str | None = None,
         description: str | None = None,
-        type: str | None = None,
         path: str | None = None,
         key_vals: t.List[t.Tuple[str, str]] = [],
     ) -> Secret:
@@ -132,7 +136,6 @@ class SecretAPI:
             SecretInfo: A SecretInfo object representing the updated secret.
         """
         secret_schema = UpdateSecretSchema(
-            description=description,
             content=SecretContentSchema(
                 type=type,
                 path=path,
@@ -140,13 +143,14 @@ class SecretAPI:
                     SecretItem(key=key_val[0], value=key_val[1]) for key_val in key_vals
                 ],
             ),
+            description=description,
         )
-        secret = self._client.v1.update_secret(name, secret_schema)
+        secret = self._client.v1.update_secret(name, secret_schema, cluster)
         return Secret.from_secret_schema(secret)
 
-    def get(self, name: str) -> Secret:
+    def get(self, name: str, cluster: str | None = None) -> Secret:
         """
         Get a secret by name.
         """
-        secret = self._client.v1.get_secret(name)
+        secret = self._client.v1.get_secret(name, cluster)
         return Secret.from_secret_schema(secret)

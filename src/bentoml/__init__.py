@@ -81,6 +81,8 @@ if TYPE_CHECKING:
     from _bentoml_impl.frameworks import sklearn
     from _bentoml_impl.frameworks import xgboost
 
+    from . import bentos
+
     # BentoML built-in types
     from ._internal.bento import Bento
     from ._internal.cloud import BentoCloudClient
@@ -170,6 +172,8 @@ else:
     from ._internal.utils.lazy_loader import LazyLoader as _LazyLoader
 
     FrameworkImporter.install()
+
+    bentos = _LazyLoader("bentoml.bentos", globals(), "bentoml.bentos")
 
     # ML Frameworks
     catboost = _LazyLoader(
@@ -309,6 +313,7 @@ __all__ = [
     "Context",
     "Cookie",
     "Service",
+    "bentos",
     "models",
     "batch",
     "metrics",

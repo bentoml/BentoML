@@ -418,11 +418,7 @@ def build_bentofile(
                 build_config = BentoBuildConfig.from_file(bentofile)
                 break
         else:
-            if service is None:
-                raise InvalidArgument(
-                    "No build config file found and no service specified"
-                )
-            build_config = BentoBuildConfig(service=service)
+            build_config = BentoBuildConfig(service=service or "")
 
     if labels:
         if not build_config.labels:

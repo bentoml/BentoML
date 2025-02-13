@@ -72,6 +72,10 @@ def normalize_identifier(
                 if path.joinpath(filename).is_file()
             )
             bento_path = pathlib.Path(working_dir) if working_dir is not None else path
+        elif path.joinpath("service.py").is_file():
+            return "service", pathlib.Path(
+                working_dir
+            ) if working_dir is not None else path
         else:
             raise ValueError(f"found a path but not a bento: {service_identifier}")
 
@@ -133,7 +137,7 @@ def import_service(
     bento_path = bento_path.absolute()
 
     # patch python path if needed
-    if bento_path != pathlib.Path(".").absolute():
+    if str(bento_path) not in sys.path:
         # a project
         extra_python_path = str(bento_path)
         sys.path.insert(0, extra_python_path)
@@ -170,14 +174,23 @@ def import_service(
                 model_aliases = build_config.model_aliases
                 break
     BentoMLContainer.model_aliases.set(model_aliases)
+    from bentoml.exceptions import ImportServiceError
 
     try:
-        module_name, _, attrs_str = service_identifier.partition(":")
-
-        assert module_name and attrs_str, (
-            f'Invalid import target "{service_identifier}", must format as "<module>:<attribute>"'
-        )
+        module_name, has_attr, attrs_str = service_identifier.partition(":")
         module = importlib.import_module(module_name)
+        if not has_attr:
+            all_services = {o for o in vars(module).values() if isinstance(o, Service)}
+            for svc in list(all_services):
+                for dep in svc.dependencies.values():
+                    if dep.on is not None:
+                        all_services.discard(dep.on)
+            if not all_services:
+                raise ImportServiceError("No service found in the module")
+            if len(all_services) > 1:
+                raise ImportServiceError("Multiple root services found in the module")
+            return all_services.pop()
+
         root_service_name, _, depend_path = attrs_str.partition(".")
         root_service = t.cast("Service[t.Any]", getattr(module, root_service_name))
 
@@ -205,8 +218,6 @@ def import_service(
 
         if original_path is not None:
             os.chdir(original_path)
-
-        from bentoml.exceptions import ImportServiceError
 
         message = f'Failed to import service "{service_identifier}": {e}, sys.path: {sys_path}, cwd: {pathlib.Path.cwd()}'
         if (

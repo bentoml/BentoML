@@ -94,33 +94,29 @@ class DeploymentConfigParameters:
 
         from .secret import SecretAPI
 
-        deploy_by_param = (
-            self.name
-            or self.bento
-            or self.cluster
-            or self.access_authorization
-            or self.scaling_min
-            or self.scaling_max
-            or self.instance_type
-            or self.strategy
-            or self.envs
-            or self.secrets
-            or self.extras
-        )
-
-        if (
-            self.config_dict
-            and self.config_file
-            or self.config_dict
-            and deploy_by_param
-            or self.config_file
-            and deploy_by_param
-        ):
-            raise BentoMLException(
-                "Configure a deployment can only use one of the following: config_dict, config_file, or the other parameters"
-            )
-
-        if deploy_by_param:
+        if self.config_dict:
+            self.cfg_dict = self.config_dict
+        elif isinstance(self.config_file, str):
+            real_path = resolve_user_filepath(self.config_file, self.path_context)
+            try:
+                with open(real_path, "r") as file:
+                    self.cfg_dict = yaml.safe_load(file)
+            except FileNotFoundError:
+                raise ValueError(f"File not found: {real_path}")
+            except yaml.YAMLError as exc:
+                logger.error("Error while parsing YAML file: %s", exc)
+                raise
+            except Exception as e:
+                raise ValueError(
+                    f"An error occurred while reading the file: {real_path}\n{e}"
+                )
+        elif self.config_file:
+            try:
+                self.cfg_dict = yaml.safe_load(self.config_file)
+            except yaml.YAMLError as exc:
+                logger.error("Error while parsing YAML config-file stream: %s", exc)
+                raise
+        else:
             self.cfg_dict = {
                 k: v
                 for k, v in [
@@ -146,37 +142,13 @@ class DeploymentConfigParameters:
                 ]
                 if v is not None
             }
-        elif self.config_dict:
-            self.cfg_dict = self.config_dict
-        elif isinstance(self.config_file, str):
-            real_path = resolve_user_filepath(self.config_file, self.path_context)
-            try:
-                with open(real_path, "r") as file:
-                    self.cfg_dict = yaml.safe_load(file)
-            except FileNotFoundError:
-                raise ValueError(f"File not found: {real_path}")
-            except yaml.YAMLError as exc:
-                logger.error("Error while parsing YAML file: %s", exc)
-                raise
-            except Exception as e:
-                raise ValueError(
-                    f"An error occurred while reading the file: {real_path}\n{e}"
-                )
-        elif self.config_file:
-            try:
-                self.cfg_dict = yaml.safe_load(self.config_file)
-            except yaml.YAMLError as exc:
-                logger.error("Error while parsing YAML config-file stream: %s", exc)
-                raise
-        else:
-            raise BentoMLException(
-                "Must provide either config_dict, config_file, or the other parameters"
-            )
 
         if self.cfg_dict is None:
             self.cfg_dict = {}
 
         bento_name = self.cfg_dict.get("bento")
+        if bento_name is None and create:
+            bento_name = os.getcwd()
         # determine if bento is a path or a name
         if bento_name:
             if isinstance(bento_name, str) and os.path.exists(bento_name):

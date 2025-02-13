@@ -75,6 +75,7 @@ class Service(t.Generic[T]):
     inner: type[T]
     image: t.Optional[Image] = None
     envs: t.List[BentoEnvSchema] = attrs.field(factory=list, converter=convert_envs)
+    labels: t.Dict[str, t.Any] = attrs.field(factory=dict)
     bento: t.Optional[Bento] = attrs.field(init=False, default=None)
     models: list[Model[t.Any]] = attrs.field(factory=list)
     apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict)
@@ -424,6 +425,7 @@ def service(
     *,
     image: Image | None = None,
     envs: list[dict[str, t.Any]] | None = None,
+    labels: dict[str, t.Any] | None = None,
     **kwargs: Unpack[Config],
 ) -> _ServiceDecorator: ...
 
@@ -434,6 +436,7 @@ def service(
     *,
     image: Image | None = None,
     envs: list[dict[str, t.Any]] | None = None,
+    labels: dict[str, t.Any] | None = None,
     **kwargs: Unpack[Config],
 ) -> t.Any:
     """Mark a class as a BentoML service.
@@ -451,7 +454,13 @@ def service(
     def decorator(inner: type[T]) -> Service[T]:
         if isinstance(inner, Service):
             raise TypeError("service() decorator can only be applied once")
-        return Service(config=config, inner=inner, image=image, envs=envs or [])
+        return Service(
+            config=config,
+            inner=inner,
+            image=image,
+            envs=envs or [],
+            labels=labels or {},
+        )
 
     return decorator(inner) if inner is not None else decorator
 

@@ -822,7 +822,7 @@ class BentoBuildConfig:
     service: str
     name: t.Optional[str] = None
     description: t.Optional[str] = None
-    labels: t.Optional[t.Dict[str, t.Any]] = None
+    labels: t.Dict[str, t.Any] = attr.field(factory=dict)
     include: t.Optional[t.List[str]] = None
     exclude: t.Optional[t.List[str]] = None
     docker: DockerOptions = attr.field(
@@ -917,7 +917,7 @@ class BentoBuildConfig:
             self.service,
             self.name,
             self.description,
-            {} if self.labels is None else self.labels,
+            self.labels,
             ["*"] if self.include is None else self.include,
             [] if self.exclude is None else self.exclude,
             self.docker.with_defaults(self.envs),

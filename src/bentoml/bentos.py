@@ -27,6 +27,7 @@ if t.TYPE_CHECKING:
     from ._internal.bento import BentoStore
     from ._internal.bento.build_config import CondaOptions
     from ._internal.bento.build_config import DockerOptions
+    from ._internal.bento.build_config import EnvironmentEntry
     from ._internal.bento.build_config import ModelSpec
     from ._internal.bento.build_config import PythonOptions
     from ._internal.cloud import BentoCloudClient
@@ -278,7 +279,7 @@ def build(
     description: str | None = None,
     include: t.List[str] | None = None,
     exclude: t.List[str] | None = None,
-    envs: t.List[t.Dict[str, str]] | None = None,
+    envs: t.List[EnvironmentEntry] | None = None,
     docker: DockerOptions | dict[str, t.Any] | None = None,
     python: PythonOptions | dict[str, t.Any] | None = None,
     conda: CondaOptions | dict[str, t.Any] | None = None,
@@ -354,7 +355,7 @@ def build(
         service=service,
         name=name,
         description=description,
-        labels=labels,
+        labels=labels or {},
         include=include,
         exclude=exclude,
         envs=envs or [],

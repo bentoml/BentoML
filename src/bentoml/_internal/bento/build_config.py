@@ -17,6 +17,8 @@ import jinja2
 import psutil
 import yaml
 from pathspec import PathSpec
+from typing_extensions import NotRequired
+from typing_extensions import TypedDict
 
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
@@ -44,6 +46,11 @@ if t.TYPE_CHECKING:
     from fs.base import FS
 
 logger = logging.getLogger(__name__)
+
+
+class EnvironmentEntry(TypedDict):
+    name: str
+    value: NotRequired[str]
 
 
 # Docker defaults
@@ -822,7 +829,7 @@ class BentoBuildConfig:
     service: str
     name: t.Optional[str] = None
     description: t.Optional[str] = None
-    labels: t.Optional[t.Dict[str, t.Any]] = None
+    labels: t.Dict[str, str] = attr.field(factory=dict)
     include: t.Optional[t.List[str]] = None
     exclude: t.Optional[t.List[str]] = None
     docker: DockerOptions = attr.field(
@@ -841,33 +848,6 @@ class BentoBuildConfig:
         factory=list, converter=convert_models_config
     )
     envs: t.List[BentoEnvSchema] = attr.field(factory=list)
-
-    if t.TYPE_CHECKING:
-        # NOTE: This is to ensure that BentoBuildConfig __init__
-        # satisfies type checker. docker, python, and conda accepts
-        # dict[str, t.Any] since our converter will handle the conversion.
-        # There is no way to tell type checker signatures of the converter from attrs
-        # if given attribute is already has a type annotation.
-        from typing_extensions import TypedDict
-
-        class EnvironmentEntry(TypedDict):
-            name: str
-            value: str
-
-        def __init__(
-            self,
-            service: str,
-            name: str | None = ...,
-            description: str | None = ...,
-            labels: dict[str, t.Any] | None = ...,
-            include: list[str] | None = ...,
-            exclude: list[str] | None = ...,
-            envs: list[EnvironmentEntry] | None = ...,
-            docker: DockerOptions | dict[str, t.Any] | None = ...,
-            python: PythonOptions | dict[str, t.Any] | None = ...,
-            conda: CondaOptions | dict[str, t.Any] | None = ...,
-            models: list[ModelSpec | str | dict[str, t.Any]] | None = ...,
-        ) -> None: ...
 
     def __attrs_post_init__(self) -> None:
         use_conda = not self.conda.is_empty()
@@ -914,17 +894,17 @@ class BentoBuildConfig:
             BentoBuildConfig: a new copy of self, with default values filled
         """
         return FilledBentoBuildConfig(
-            self.service,
-            self.name,
-            self.description,
-            {} if self.labels is None else self.labels,
-            ["*"] if self.include is None else self.include,
-            [] if self.exclude is None else self.exclude,
-            self.docker.with_defaults(self.envs),
-            self.python.with_defaults(),
-            self.conda.with_defaults(),
-            self.models,
-            self.envs,
+            service=self.service,
+            name=self.name,
+            description=self.description,
+            labels=self.labels,
+            include=["*"] if self.include is None else self.include,
+            exclude=[] if self.exclude is None else self.exclude,
+            docker=self.docker.with_defaults(self.envs),
+            python=self.python.with_defaults(),
+            conda=self.conda.with_defaults(),
+            models=self.models,
+            envs=self.envs,
         )
 
     @property
@@ -1052,7 +1032,7 @@ class FilledBentoBuildConfig(BentoBuildConfig):
     service: str
     name: t.Optional[str]
     description: t.Optional[str]
-    labels: t.Dict[str, t.Any]
+    labels: t.Dict[str, str]
     include: t.List[str]
     exclude: t.List[str]
     docker: DockerOptions

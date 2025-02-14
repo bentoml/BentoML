@@ -281,6 +281,7 @@ class Bento(StoreItem):
                 else to_snake_case(svc.name)
             )
             build_config.envs.extend(svc.envs)
+            build_config.labels.update(svc.labels)
             if svc.image is not None:
                 image = svc.image
         if image is None and not disable_image:

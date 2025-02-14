@@ -108,7 +108,7 @@ class Image:
         return ImageInfo(
             base_image=self.base_image,
             python_version=self.python_version,
-            commands=self.commands,
+            commands=["export UV_COMPILE_BYTECODE=1", *self.commands],
             python_requirements=python_requirements,
             post_commands=self.post_commands,
             scripts=self.scripts,

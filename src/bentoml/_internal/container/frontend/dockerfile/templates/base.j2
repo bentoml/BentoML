@@ -64,6 +64,7 @@ WORKDIR $BENTO_PATH
 
 RUN pip install uv && UV_PYTHON_INSTALL_DIR=/app/python/ uv venv {% if __options__python_version %}-p {{ __options__python_version }}{% endif %} /app/.venv
 ENV VIRTUAL_ENV=/app/.venv
+ENV UV_COMPILE_BYTECODE=1
 
 {% set __pip_cache__ = common.mount_cache("/root/.cache/uv") %}
 {% if __pip_preheat_packages__ %}

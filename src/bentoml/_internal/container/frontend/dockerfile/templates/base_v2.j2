@@ -61,6 +61,7 @@ RUN {{ command }}
 
 RUN pip install uv && UV_PYTHON_INSTALL_DIR=/app/python/ uv venv --python {{ __options__python_version }} /app/.venv
 ENV VIRTUAL_ENV=/app/.venv
+ENV UV_COMPILE_BYTECODE=1
 {% set __pip_cache__ = common.mount_cache("/root/.cache/") %}
 {% if __pip_preheat_packages__ %}
 {% for value in __pip_preheat_packages__ -%}

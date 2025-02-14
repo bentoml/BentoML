@@ -208,6 +208,16 @@ def import_service(
 
     except (ImportError, AttributeError, KeyError, AssertionError) as e:
         sys_path = sys.path.copy()
+        message = f'Failed to import service "{service_identifier}": {e}, sys.path: {sys_path}, cwd: {pathlib.Path.cwd()}'
+        if (
+            isinstance(e, ImportError)
+            and server_context.worker_index is None
+            and not (e.name or "").startswith(("bentoml", "_bentoml_"))
+        ):
+            message += "\nIf you are trying to import a runtime-only module, try wrapping it inside `with bentoml.importing():`"
+
+        raise ImportServiceError(message) from None
+    finally:
         if extra_python_path is not None:
             sys.path.remove(extra_python_path)
 
@@ -218,16 +228,6 @@ def import_service(
 
         if original_path is not None:
             os.chdir(original_path)
-
-        message = f'Failed to import service "{service_identifier}": {e}, sys.path: {sys_path}, cwd: {pathlib.Path.cwd()}'
-        if (
-            isinstance(e, ImportError)
-            and server_context.worker_index is None
-            and not (e.name or "").startswith(("bentoml", "_bentoml_"))
-        ):
-            message += "\nIf you are trying to import a runtime-only module, try wrapping it inside `with bentoml.importing():`"
-
-        raise ImportServiceError(message) from None
 
 
 def normalize_package(service_identifier: str) -> str:

@@ -142,7 +142,11 @@ class IOMixin:
         from ._pydantic import patch_annotation
 
         for _, info in cls.model_fields.items():
-            info.annotation = patch_annotation(info.annotation, cls.model_config)
+            ann, metadata = patch_annotation(
+                info.annotation, cls.model_config, info.metadata
+            )
+            info.annotation = ann
+            info.metadata = metadata
 
         return super().__get_pydantic_core_schema__(source, handler)
 

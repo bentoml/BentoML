@@ -211,22 +211,30 @@ SUPPORTED_CONTAINER_TYPES = [
 ]
 
 
-def patch_annotation(annotation: t.Any, model_config: ConfigDict) -> t.Any:
+def patch_annotation(
+    annotation: t.Any, model_config: ConfigDict, metadata: t.Iterable[t.Any] = ()
+) -> tuple[t.Any, list[t.Any]]:
     import typing_extensions as te
 
     origin, args = te.get_origin(annotation), te.get_args(annotation)
     if origin in SUPPORTED_CONTAINER_TYPES:
-        patched_args = [patch_annotation(arg, model_config) for arg in args]
-        return origin[tuple(patched_args)]
+        patched_args: list[t.Any] = []
+        for arg in args:
+            ann, extras = patch_annotation(arg, model_config)
+            if extras:
+                ann = te.Annotated[(ann, *extras)]
+            patched_args.append(ann)
+        return origin[tuple(patched_args)], list(metadata)
 
     if is_annotated(annotation):
         source, *annotations = args
+        metadata = [*annotations, *metadata]
     else:
         source = annotation
-        annotations = []
+        metadata = list(metadata)
     for method in CUSTOM_PREPARE_METHODS:
-        result = method(source, annotations, model_config)
+        result = method(source, metadata, model_config)
         if result is None:
             continue
-        return t.Annotated[(result[0], *result[1])]  # type: ignore
-    return annotation
+        return result
+    return annotation, list(metadata)

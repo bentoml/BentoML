@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import shutil
+import time
 import typing as t
 from functools import cached_property
 
@@ -21,9 +23,68 @@ from .base import Model
 
 if t.TYPE_CHECKING:
     from huggingface_hub import HfApi
+    from tqdm import tqdm
 
 CONFIG_FILE = "config.json"
 DEFAULT_HF_ENDPOINT = "https://huggingface.co"
+
+
+def simple_tqdm_class() -> type[tqdm[t.Any]]:
+    # returns a simple class that removes the progress bar to avoid polutting log viewers
+    # makes it easier to stop polutting Grafana log viewer
+    from tqdm import tqdm
+
+    class SimpleTqdm(tqdm[t.Any]):
+        def __init__(
+            self,
+            *args,
+            desc=None,
+            logger=None,
+            log_interval=5.0,
+            min_delta_percent=5,
+            **kwargs,
+        ):
+            # Disable the standard tqdm bar
+            super().__init__(*args, desc=desc, disable=True, **kwargs)
+            self.logger = logger or logging.getLogger(__name__)
+            self.log_interval = log_interval
+            self.min_delta_percent = min_delta_percent
+
+            self.last_log_time = time.time()
+            self.start_time = self.last_log_time
+            self.last_log_percent = 0
+
+            self.logger.info(f"[{self.desc}] Starting. Total: {self.total}")
+
+        def update(self, n=1):
+            super().update(n)
+            now = time.time()
+            elapsed = now - self.last_log_time
+
+            # Calculate % progress if total is known
+            current_percent = (self.n / self.total) * 100 if self.total else 0
+
+            # Log if enough time or percent has elapsed, or if we're complete
+            if (
+                elapsed >= self.log_interval
+                or (current_percent - self.last_log_percent) >= self.min_delta_percent
+                or (self.total and self.n >= self.total)
+            ):
+                self.logger.info(
+                    f"[{self.desc}] Progress: {self.n}/{self.total} "
+                    f"({current_percent:.1f}%)"
+                )
+                self.last_log_time = now
+                self.last_log_percent = current_percent
+
+        def close(self):
+            super().close()
+            total_time = time.time() - self.start_time
+            self.logger.info(
+                f"[{self.desc}] Completed: {self.n}/{self.total} in {total_time:.2f}s"
+            )
+
+    return SimpleTqdm
 
 
 @attrs.define(unsafe_hash=True)
@@ -73,6 +134,7 @@ class HuggingFaceModel(Model[str]):
             cache_dir=os.getenv("BENTOML_HF_CACHE_DIR"),
             allow_patterns=self.include,
             ignore_patterns=self.exclude,
+            tqdm_class=simple_tqdm_class(),
         )
         if base_path is not None:
             model_path = os.path.dirname(os.path.dirname(snapshot_path))

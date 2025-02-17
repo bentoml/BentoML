@@ -46,6 +46,12 @@ Test your Service by using ``bentoml serve``, which starts a model server locall
 
     bentoml serve
 
+By convention, BentoML Services are often defined in a ``service.py`` file, but you can specify any module and attribute name using the format ``<module_name>:<attribute_name>``. The attribute name corresponds to the Service class defined in your module. If your Service is in a different module, update the command accordingly, for example:
+
+.. code-block:: bash
+
+    bentoml serve mymodule:MyService
+
 By default, the server is accessible at `http://localhost:3000/ <http://localhost:3000/>`_. Specifically, ``bentoml serve`` does the following:
 
 - Turns API code into a REST API endpoint. ``POST`` is the default HTTP method.

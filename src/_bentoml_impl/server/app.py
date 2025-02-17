@@ -638,6 +638,7 @@ class ServiceAppFactory(BaseAppFactory):
     async def api_endpoint(self, name: str, request: Request) -> Response:
         from _bentoml_sdk.io_models import ARGS
         from _bentoml_sdk.io_models import KWARGS
+        from _bentoml_sdk.io_models import IORootModel
         from bentoml._internal.utils import get_original_func
         from bentoml._internal.utils.http import set_cookies
 
@@ -649,14 +650,21 @@ class ServiceAppFactory(BaseAppFactory):
         method = self.service.apis[name]
         func = getattr(self._service_instance, name).local
         ctx = self.service.context
-        serde = ALL_SERDE[media_type]()
+        serde = ALL_SERDE.get(media_type, ALL_SERDE["application/json"])()
         input_data = await method.input_spec.from_http_request(request, serde)
         input_args: tuple[t.Any, ...] = ()
-        input_params = {k: getattr(input_data, k) for k in input_data.model_fields}
+        input_params: dict[str, t.Any] = {}
         if method.ctx_param is not None:
             input_params[method.ctx_param] = ctx
+        if getattr(method.input_spec, "__root_input__", False):
+            if isinstance(input_data, IORootModel):
+                input_args = t.cast(t.Tuple[t.Any], (input_data.root,))
+            else:
+                input_args = (input_data,)
+        else:
+            input_params = {k: getattr(input_data, k) for k in input_data.model_fields}
         if ARGS in input_params:
-            input_args = tuple(input_params.pop(ARGS))
+            input_args = (*input_args, input_params.pop(ARGS))
         if KWARGS in input_params:
             input_params.update(input_params.pop(KWARGS))
 

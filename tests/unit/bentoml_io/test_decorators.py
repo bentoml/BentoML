@@ -8,6 +8,7 @@ from starlette.testclient import TestClient
 from typing_extensions import Annotated
 
 import bentoml
+from _bentoml_sdk.validators import TensorSchema
 from bentoml.validators import DataframeSchema
 from bentoml.validators import DType
 from bentoml.validators import Shape
@@ -100,10 +101,16 @@ def test_api_decorator_numpy():
     ) -> Annotated[npt.NDArray[np.int64], DType("int64"), Shape((1,))]:
         return arr.astype(np.int64)
 
-    numpy_func.input_spec.model_fields["arr"].annotation is npt.NDArray[np.float64]
-    numpy_func.output_spec.model_fields["root"].annotation is Annotated[
-        npt.NDArray[np.int64], DType("int64"), Shape((1,))
-    ]
+    assert (
+        numpy_func.input_spec.model_fields["arr"].annotation == npt.NDArray[np.float64]
+    )
+    assert (
+        numpy_func.output_spec.model_fields["root"].annotation == npt.NDArray[np.int64]
+    )
+    assert (
+        TensorSchema(format="numpy-array", dtype="int64")
+        in numpy_func.output_spec.model_fields["root"].metadata
+    )
 
     with pytest.raises(
         TypeError,
@@ -130,12 +137,25 @@ def test_api_decorator_pandas():
     ]:
         return pd.concat([df1, df2], axis=1)
 
-    pandas_func.input_spec.model_fields["df1"].annotation is pd.DataFrame
-    pandas_func.input_spec.model_fields["df2"].annotation is Annotated[
-        pd.DataFrame,
-        DataframeSchema(columns=("b",)),
-    ]
-    pandas_func.output_spec.model_fields["root"].annotation is Annotated[
-        pd.DataFrame,
-        DataframeSchema(orient="columns", columns=("a", "b")),
-    ]
+    assert pandas_func.input_spec.model_fields["df1"].annotation is pd.DataFrame
+    assert pandas_func.input_spec.model_fields["df2"].annotation is pd.DataFrame
+    assert (
+        DataframeSchema(columns=("b",))
+        in pandas_func.input_spec.model_fields["df2"].metadata
+    )
+    assert pandas_func.output_spec.model_fields["root"].annotation is pd.DataFrame
+    assert (
+        DataframeSchema(orient="columns", columns=("a", "b"))
+        in pandas_func.output_spec.model_fields["root"].metadata
+    )
+
+
+def test_api_root_input():
+    from _bentoml_sdk.io_models import IORootModel
+
+    @bentoml.api
+    def root_input(_, name: str, /) -> str:
+        return name
+
+    assert issubclass(root_input.input_spec, IORootModel)
+    assert root_input.input_spec.model_fields["root"].annotation is str

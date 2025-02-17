@@ -22,6 +22,7 @@ import httpx
 from _bentoml_sdk import IODescriptor
 from _bentoml_sdk.typing_utils import is_image_type
 from bentoml import __version__
+from bentoml._internal.utils.uri import is_http_url
 from bentoml._internal.utils.uri import uri_to_path
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import NotFound
@@ -49,10 +50,6 @@ C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
 AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
 logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
-
-
-def is_http_url(url: str) -> bool:
-    return urlparse(url).scheme in {"http", "https"}
 
 
 def to_async_iterable(iterable: t.Iterable[A]) -> t.AsyncIterable[A]:
@@ -222,12 +219,23 @@ class HTTPClient(AbstractClient, t.Generic[C]):
     ) -> httpx.Request:
         from opentelemetry import propagate
 
+        from _bentoml_sdk.io_models import IORootModel
+
         headers = httpx.Headers({"Content-Type": self.media_type, **headers})
         propagate.inject(headers)
         if endpoint.input_spec is not None:
             model = endpoint.input_spec.from_inputs(*args, **kwargs)
-            if model.multipart_fields and self.media_type == "application/json":
+            if (
+                not isinstance(model, IORootModel)
+                and model.multipart_fields
+                and self.media_type == "application/json"
+            ):
                 return self._build_multipart(endpoint, model, headers)
+            elif isinstance(rendered := model.model_dump(), (str, bytes)):
+                headers.update({"content-type": model.mime_type()})
+                return self.client.build_request(
+                    "POST", endpoint.route, content=rendered, headers=headers
+                )
             else:
                 payload = self.serde.serialize_model(model)
                 headers.update(payload.headers)
@@ -238,6 +246,47 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     content=to_async_iterable(payload.data)
                     if self.client_cls is httpx.AsyncClient
                     else payload.data,
+                )
+        assert self.media_type == "application/json", (
+            "Non-JSON request is not supported"
+        )
+        if endpoint.input.get("root_input", False):
+            if len(args) > 1 or kwargs:
+                raise TypeError("Expected one positional argument for root input")
+            if not args:
+                return self.client.build_request(
+                    "POST", endpoint.route, headers=headers
+                )
+            value = args[0]
+            passthrough = False
+            content = None
+            if "properties" in endpoint.input:
+                kwargs = value
+                args = ()
+                passthrough = True
+            elif endpoint.input.get("type") == "file":
+                file = self._get_file(value)
+                if isinstance(file, str):
+                    content = file
+                else:
+                    file_io, content_type = file[1:]
+                    content = iter(lambda: file_io.read(4096), b"")
+                    if content_type:
+                        headers.update({"content-type": content_type})
+            elif isinstance(value, (str, bytes)):
+                content = value.encode("utf-8") if isinstance(value, str) else value
+                headers.update({"content-type": "text/plain"})
+            else:
+                payload = self.serde.serialize(value, endpoint.input)
+                headers.update(payload.headers)
+                content = (
+                    to_async_iterable(payload.data)
+                    if self.client_cls is httpx.AsyncClient
+                    else payload.data
+                )
+            if not passthrough:
+                return self.client.build_request(
+                    "POST", endpoint.route, content=content, headers=headers
                 )
 
         for name, value in zip(endpoint.input["properties"], args):
@@ -263,7 +312,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             and schema["items"].get("type") == "file"
             for schema in endpoint.input["properties"].values()
         )
-        if has_file and self.media_type == "application/json":
+        if has_file:
             return self._build_multipart(endpoint, kwargs, headers)
         payload = self.serde.serialize(kwargs, endpoint.input)
         headers.update(payload.headers)
@@ -291,6 +340,30 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 except (httpx.TimeoutException, httpx.ConnectError):
                     pass
         raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
+
+    def _get_file(self, value: t.Any) -> str | tuple[str, t.IO[bytes], str | None]:
+        if isinstance(value, str) and not is_http_url(value):
+            value = pathlib.Path(value)
+        if is_image_type(type(value)):
+            fp = getattr(value, "_fp", value.fp)
+            fname = getattr(fp, "name", None)
+            fmt = value.format.lower()
+            return (
+                pathlib.Path(fname).name if fname else f"upload-image.{fmt}",
+                fp,
+                f"image/{fmt}",
+            )
+        elif isinstance(value, pathlib.PurePath):
+            file = open(value, "rb")
+            self._opened_files.append(file)
+            return (value.name, file, mimetypes.guess_type(value)[0])
+        elif isinstance(value, str):
+            return value
+        else:
+            assert isinstance(value, t.BinaryIO)
+            filename = pathlib.Path(getattr(value, "name", "upload-file")).name
+            content_type = mimetypes.guess_type(filename)[0]
+            return (filename, value, content_type)
 
     def _build_multipart(
         self,
@@ -322,35 +395,11 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 value = [value]
 
             for v in value:
-                if isinstance(v, str) and not is_http_url(v):
-                    v = pathlib.Path(v)
-                if is_image_type(type(v)):
-                    fp = getattr(v, "_fp", v.fp)
-                    fname = getattr(fp, "name", None)
-                    fmt = v.format.lower()
-                    files.append(
-                        (
-                            name,
-                            (
-                                pathlib.Path(fname).name
-                                if fname
-                                else f"upload-image.{fmt}",
-                                fp,
-                                f"image/{fmt}",
-                            ),
-                        )
-                    )
-                elif isinstance(v, pathlib.PurePath):
-                    file = open(v, "rb")
-                    files.append((name, (v.name, file, mimetypes.guess_type(v)[0])))
-                    self._opened_files.append(file)
-                elif isinstance(v, str):
-                    data.setdefault(name, []).append(v)
+                file = self._get_file(v)
+                if isinstance(file, str):
+                    data[name] = file
                 else:
-                    assert isinstance(v, t.BinaryIO)
-                    filename = pathlib.Path(getattr(v, "name", "upload-file")).name
-                    content_type = mimetypes.guess_type(filename)[0]
-                    files.append((name, (filename, v, content_type)))
+                    files.append((name, file))
         headers.pop("content-type", None)
         return self.client.build_request(
             "POST", endpoint.route, data=data, files=files, headers=headers

@@ -22,6 +22,11 @@ from bentoml._internal.utils.pkg import get_local_bentoml_dependency
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
 logger = logging.getLogger("bentoml.build")
 
 DEFAULT_PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
@@ -50,6 +55,22 @@ class Image:
             image = Image("debian:latest").requirements_file("requirements.txt")
         """
         self.python_requirements += Path(file_path).read_text()
+        self._after_pip_install = True
+        return self
+
+    def pyproject_toml(self, file_path: str) -> t.Self:
+        """Add a pyproject.toml to the image. Supports chaining call.
+
+        Example:
+
+        .. code-block:: python
+
+            image = Image("debian:latest").pyproject_toml("pyproject.toml")
+        """
+        with Path(file_path).open("rb") as f:
+            pyproject_toml = tomllib.load(f)
+        dependencies = pyproject_toml.get("project", {}).get("dependencies", {})
+        self.python_requirements += "\n".join(dependencies) + "\n"
         self._after_pip_install = True
         return self
 

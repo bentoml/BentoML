@@ -159,3 +159,17 @@ def test_api_root_input():
 
     assert issubclass(root_input.input_spec, IORootModel)
     assert root_input.input_spec.model_fields["root"].annotation is str
+
+
+def test_api_root_input_illegal():
+    with pytest.raises(TypeError):
+
+        @bentoml.api
+        def root_input(_, name: str, age: int, /) -> str:
+            return name
+
+    with pytest.raises(TypeError):
+
+        @bentoml.api
+        def root_input(_, name: str, /, age: int) -> str:
+            return name

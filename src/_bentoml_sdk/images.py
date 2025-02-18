@@ -70,8 +70,7 @@ class Image:
         with Path(file_path).open("rb") as f:
             pyproject_toml = tomllib.load(f)
         dependencies = pyproject_toml.get("project", {}).get("dependencies", {})
-        self.python_requirements += "\n".join(dependencies) + "\n"
-        self._after_pip_install = True
+        self.python_packages(*dependencies)
         return self
 
     def python_packages(self, *packages: str) -> t.Self:

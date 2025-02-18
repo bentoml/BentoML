@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pydantic
 from starlette.testclient import TestClient
 
@@ -20,6 +22,10 @@ class RootInput:
     @bentoml.api()
     def get(self, key: str, /) -> str:
         return f"root-{key}"
+
+    @bentoml.api()
+    def read(self, path: Path, /) -> str:
+        return path.read_text()
 
 
 class InputModel(pydantic.BaseModel):
@@ -58,12 +64,18 @@ def test_composed_service():
         assert resp.json() == {"value": "world"}
 
 
-def test_service_root_input():
+def test_service_root_input(tmp_path: Path):
     with TestClient(app=RootInput.to_asgi()) as client:
         resp = client.post("/get", content="hello")
 
         assert resp.status_code == 200
         assert resp.text == "root-hello"
+
+        tmp_path.joinpath("test.txt").write_text("hello")
+        resp = client.post("/read", content=tmp_path.joinpath("test.txt").read_bytes())
+
+        assert resp.status_code == 200
+        assert resp.text == "hello"
 
     with TestClient(app=RootModelInput.to_asgi()) as client:
         resp = client.post("/get", json={"key": "hello"})

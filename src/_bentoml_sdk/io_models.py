@@ -94,6 +94,13 @@ class IOMixin:
     media_type: ClassVar[t.Optional[str]] = None
 
     @classmethod
+    def model_json_schema(cls, *args: t.Any, **kwargs: t.Any) -> dict[str, t.Any]:
+        schema = super().model_json_schema(*args, **kwargs)
+        if getattr(cls, "__root_input__", False):
+            schema["root_input"] = True
+        return schema
+
+    @classmethod
     def openapi_components(cls, name: str) -> dict[str, Schema]:
         from .service.openapi import REF_TEMPLATE
 
@@ -174,6 +181,16 @@ class IOMixin:
     @classmethod
     def from_inputs(cls, *args: t.Any, **kwargs: t.Any) -> IODescriptor:
         assert issubclass(cls, IODescriptor)
+        if getattr(cls, "__root_input__", False):
+            if len(args) > 1:
+                raise TypeError("Expected exactly 1 argument")
+            if len(args) < 1:
+                return cls()
+            arg = args[0]
+            if issubclass(cls, IORootModel) or not isinstance(arg, dict):
+                return cls(arg)
+            else:
+                return cls(**arg)
         model_fields = list(cls.model_fields)
         for i, arg in enumerate(args):
             if i < len(model_fields) and model_fields[i] == ARGS:
@@ -336,7 +353,8 @@ class IODescriptor(IOMixin, BaseModel):
         parameter_tuples = iter(signature.parameters.items())
         if skip_self:
             next(parameter_tuples)
-
+        positional_only_param: t.Any = None
+        positional_only_default: t.Any = signature.empty
         for name, param in parameter_tuples:
             if name in skip_names:
                 # Reserved name for context object passed in
@@ -346,6 +364,16 @@ class IODescriptor(IOMixin, BaseModel):
                 annotation = t.Any
             else:
                 annotation = eval_type_lenient(annotation, global_ns, None)
+            if param.kind == param.POSITIONAL_ONLY:
+                if positional_only_param is None:
+                    positional_only_param = annotation
+                    positional_only_default = param.default
+                    continue
+
+            if positional_only_param is not None:
+                raise TypeError(
+                    "When positional-only argument is used, no other parameters can be specified"
+                )
             if param.kind == param.VAR_KEYWORD:
                 name = KWARGS
                 annotation = t.Dict[str, t.Any]
@@ -358,6 +386,23 @@ class IODescriptor(IOMixin, BaseModel):
             fields[name] = (annotation, default)
 
         try:
+            if positional_only_param is not None:
+                content_type = None
+                if is_annotated(positional_only_param):
+                    content_type = next(
+                        (
+                            a
+                            for a in get_args(positional_only_param)
+                            if isinstance(a, ContentType)
+                        ),
+                        None,
+                    )
+                typ_ = ensure_io_descriptor(
+                    positional_only_param, positional_only_default
+                )
+                typ_.__root_input__ = True
+                typ_.media_type = content_type.content_type if content_type else None
+                return typ_
             return t.cast(
                 t.Type[IODescriptor],
                 create_model(
@@ -429,7 +474,11 @@ class IORootModel(IODescriptor, t.Generic[RootModelRootType]):
     def model_validate_json(
         cls, json_data: str | bytes | bytearray, **kwargs: t.Any
     ) -> t.Self:
-        return cls.model_validate(json.loads(json_data), **kwargs)
+        if getattr(cls, "__root_input__", False):
+            parsed = json_data
+        else:
+            parsed = json.loads(json_data)
+        return cls.model_validate(parsed, **kwargs)
 
     @classmethod
     def model_json_schema(cls, *args: t.Any, **kwargs: t.Any) -> dict[str, t.Any]:
@@ -438,10 +487,15 @@ class IORootModel(IODescriptor, t.Generic[RootModelRootType]):
             typ_ = t.Annotated[(field.annotation, *field.metadata)]
         else:
             typ_ = field.annotation
-        return TypeAdapter(typ_).json_schema(*args, **kwargs)
+        schema = TypeAdapter(typ_).json_schema(*args, **kwargs)
+        if getattr(cls, "__root_input__", False):
+            schema["root_input"] = True
+        return schema
 
 
-def ensure_io_descriptor(typ_: type) -> type[IODescriptor]:
+def ensure_io_descriptor(
+    typ_: type, root_default: t.Any = inspect.Signature.empty
+) -> type[IODescriptor]:
     from pydantic._internal._utils import lenient_issubclass
 
     type_name = getattr(typ_, "__name__", "")
@@ -453,4 +507,13 @@ def ensure_io_descriptor(typ_: type) -> type[IODescriptor]:
                 create_model(f"{type_name}IODescriptor", __base__=(IOMixin, typ_)),
             )
         return typ_
-    return IORootModel[typ_]
+
+    if root_default is inspect.Signature.empty:
+        extras = {}
+    else:
+        extras = {"root": (typ_, root_default)}
+
+    return t.cast(
+        t.Type[IODescriptor],
+        create_model(f"{type_name}IODescriptor", __base__=IORootModel[typ_], **extras),
+    )

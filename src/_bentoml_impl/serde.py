@@ -20,6 +20,7 @@ from _bentoml_sdk.typing_utils import is_list_type
 from _bentoml_sdk.typing_utils import is_union_type
 from _bentoml_sdk.validators import DataframeSchema
 from _bentoml_sdk.validators import TensorSchema
+from bentoml._internal.utils.uri import is_http_url
 
 if t.TYPE_CHECKING:
     from starlette.requests import Request
@@ -155,6 +156,20 @@ class JSONSerde(GenericSerde, Serde):
             )
         )
 
+    async def parse_request(self, request: Request, cls: type[T]) -> T:
+        import httpx
+
+        from _bentoml_sdk.io_models import IORootModel
+
+        body = await request.body()
+        if issubclass(cls, IORootModel) and cls.multipart_fields:
+            if is_http_url(url := body.decode("utf-8", "ignore")):
+                async with httpx.AsyncClient() as client:
+                    logger.debug("Request with URL, downloading file from %s", url)
+                    resp = await client.get(url)
+                    body = await resp.aread()
+        return self.deserialize_model(Payload((body,), metadata=request.headers), cls)
+
     def deserialize_model(self, payload: Payload, cls: type[T]) -> T:
         return cls.model_validate_json(b"".join(payload.data) or b"{}")
 
@@ -168,7 +183,8 @@ class JSONSerde(GenericSerde, Serde):
 class MultipartSerde(JSONSerde):
     media_type = "multipart/form-data"
 
-    async def ensure_file(self, obj: str | UploadFile) -> UploadFile:
+    @staticmethod
+    async def ensure_file(obj: str | UploadFile) -> UploadFile:
         import httpx
 
         if isinstance(obj, UploadFile):

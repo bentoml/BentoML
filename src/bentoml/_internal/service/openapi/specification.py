@@ -118,6 +118,7 @@ class Schema:
     externalDocs: t.Optional[ExternalDocumentation] = None
     example: t.Optional[t.Any] = None
     deprecated: t.Optional[bool] = None
+    root_input: bool = False
     # not yet supported: xml
 
 

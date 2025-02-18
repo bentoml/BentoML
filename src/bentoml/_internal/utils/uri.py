@@ -46,3 +46,7 @@ def uri_to_path(uri: str) -> str:
 def encode_path_for_uri(path: str) -> str:
     """Percent-encode non-URL characters in a path."""
     return quote(path.replace(os.sep, "/"))
+
+
+def is_http_url(url: str) -> bool:
+    return urlparse(url).scheme in {"http", "https"}

@@ -7,7 +7,7 @@ DEFAULT_BUCKET = (
     0.01,
     0.025,
     0.05,
-    0.075,
+    0.075,  # Keep existing small buckets
     0.1,
     0.25,
     0.5,
@@ -17,6 +17,14 @@ DEFAULT_BUCKET = (
     5.0,
     7.5,
     10.0,
+    15.0,
+    30.0,
+    45.0,
+    60.0,  # Add medium buckets for small/medium models
+    90.0,
+    120.0,
+    150.0,
+    180.0,  # Add large buckets for large models
     INF,
 )
 

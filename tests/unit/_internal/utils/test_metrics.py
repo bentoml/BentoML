@@ -15,9 +15,29 @@ def _assert_equal(actual: tuple[float, ...], expected: tuple[float, ...]):
 
 
 def test_exponential_buckets():
+    # Test with extended range for LLM workloads
     _assert_equal(
-        exponential_buckets(0.005, 2.0, 10.0),
-        (0.005, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.0, INF),
+        exponential_buckets(0.005, 2.0, 180.0),
+        (
+            0.005,
+            0.01,
+            0.02,
+            0.04,
+            0.08,
+            0.16,
+            0.32,
+            0.64,
+            1.28,
+            2.56,
+            5.12,
+            10.24,
+            20.48,
+            40.96,
+            81.92,
+            163.84,
+            180.0,
+            INF,
+        ),
     )
     _assert_equal(
         exponential_buckets(1, 1.5, 100.0),
@@ -185,6 +205,24 @@ def test_linear_buckets():
             INF,
         ),
     )
+
+
+def test_default_bucket():
+    # Verify DEFAULT_BUCKET covers appropriate ranges for both fast APIs and LLM workloads
+    from bentoml._internal.utils.metrics import DEFAULT_BUCKET
+
+    # Test smallest bucket
+    assert DEFAULT_BUCKET[0] == 0.005  # 5ms for fast APIs
+
+    # Test largest finite bucket
+    assert DEFAULT_BUCKET[-2] == 180.0  # 180s for LLM workloads
+
+    # Test infinity is present
+    assert DEFAULT_BUCKET[-1] == float("inf")
+
+    # Test monotonic increase
+    for i in range(len(DEFAULT_BUCKET) - 1):
+        assert DEFAULT_BUCKET[i] < DEFAULT_BUCKET[i + 1]
 
 
 def test_metric_name():

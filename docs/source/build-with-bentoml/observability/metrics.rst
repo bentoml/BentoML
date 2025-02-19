@@ -132,7 +132,7 @@ You can customize the `duration bucket size <https://prometheus.io/docs/practice
     - ``duration.factor`` must be greater than 1 to ensure each subsequent bucket is larger than the previous one.
     - The buckets for the ``adaptive_batch_size`` Histogram are calculated based on the ``max_batch_size`` defined. The bucket sizes start at 1 and increase exponentially up to the ``max_batch_size`` with a factor of 2.
 
-By default, BentoML uses the `duration buckets <https://github.com/prometheus/client_python/blob/f17a8361ad3ed5bc47f193ac03b00911120a8d81/prometheus_client/metrics.py#L544>`_ provided by Prometheus.
+By default, BentoML provides histogram buckets ranging from 5ms to 180s to accommodate both fast API calls and long-running LLM/GenAI inference requests. These buckets are optimized to cover typical latency ranges for various model sizes, from quick API responses to large language model inference.
 
 Create custom metrics
 ---------------------
@@ -176,9 +176,12 @@ To define custom metrics, use the metric classes from the ``prometheus_client`` 
               documentation="Time taken for inference",
               labelnames=["endpoint"],
               buckets=(
-                0.005, 0.01, 0.025, 0.05, 0.075,
+                0.005, 0.01, 0.025, 0.05, 0.075,  # Fast API calls
                 0.1, 0.25, 0.5, 0.75, 1.0,
-                2.5, 5.0, 7.5, 10.0, float("inf"),
+                2.5, 5.0, 7.5, 10.0,
+                15.0, 30.0, 45.0, 60.0,           # Medium LLM models
+                90.0, 120.0, 150.0, 180.0,        # Large LLM models
+                float("inf"),
               ),
           )
 

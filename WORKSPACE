@@ -1,5 +1,6 @@
-# TODO: Migrate to bzlmod once 6.0.0 is released.
+load
 workspace(name = "com_github_bentoml_bentoml")
+
 
 load("//bazel:deps.bzl", "internal_deps")
 

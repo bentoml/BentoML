@@ -16,12 +16,11 @@ One-command LLM deployment with `OpenLLM <https://github.com/bentoml/OpenLLM>`_:
 
 Deploy an OpenAI-compatible LLM API service with BentoML and vLLM:
 
-- `Llama 3.3 70B <https://github.com/bentoml/BentoVLLM/tree/main/llama3.3-70b-instruct-function-calling>`_
-- `Llama 3.2 90B <https://github.com/bentoml/BentoVLLM/tree/main/llama3.2-90b-instruct>`_
-- `Llama 3.1 70B <https://github.com/bentoml/BentoVLLM/tree/main/llama3.1-70b-instruct-awq>`_
-- `Mistral 7B <https://github.com/bentoml/BentoVLLM/tree/main/mistral-7b-instruct>`_
-- `Pixtral 12B <https://github.com/bentoml/BentoVLLM/tree/main/pixtral-12b>`_
-- `Phi 3 mini <https://github.com/bentoml/BentoVLLM/tree/main/phi-3-mini-4k-instruct>`_
+- `DeepSeek R1 Distill of Llama 3.3 70B <https://github.com/bentoml/BentoVLLM/tree/main/deepseek-r1-distill-llama3.3-70b>`_
+- `Llama 3.2 11B Vision <https://github.com/bentoml/BentoVLLM/tree/main/llama3.2-11b-vision-instruct>`_
+- `Pixtral 12B <https://github.com/bentoml/BentoVLLM/tree/main/pixtral-12b-2409>`_
+- `Mistral Small 24B <https://github.com/bentoml/BentoVLLM/tree/main/mistral-small-24b-instruct-2501>`_
+- Check out the `BentoVLLM project <https://github.com/bentoml/BentoVLLM/#featured-models>`_ to see more supported models.
 
 Customize your LLM inference runtime:
 
@@ -50,12 +49,11 @@ Image and video
 
 Serve text-to-image and image-to-image models with BentoML:
 
+- `ComfyUI workflows as APIs <https://github.com/bentoml/comfy-pack>`_
 - `Stable Diffusion 3.5 Large Turbo <https://github.com/bentoml/BentoDiffusion/tree/main/sd3.5-large-turbo>`_
 - `Stable Diffusion 3 Medium <https://github.com/bentoml/BentoDiffusion/tree/main/sd3-medium>`_
 - `Stable Diffusion XL Turbo <https://github.com/bentoml/BentoDiffusion/tree/main/sdxl-turbo>`_
-- `Stable Video Diffusion <https://github.com/bentoml/BentoDiffusion/tree/main/svd>`_
 - `ControlNet <https://github.com/bentoml/BentoDiffusion/tree/main/controlnet>`_
-- `ComfyUI workflows as APIs <https://github.com/bentoml/comfy-pack>`_
 - Check out the `BentoDiffusion project <https://github.com/bentoml/BentoDiffusion>`_ to see more examples
 
 Audio

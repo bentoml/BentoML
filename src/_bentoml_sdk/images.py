@@ -145,7 +145,7 @@ class Image:
             # XXX: RequirementsFile.from_string() does not work due to bugs
             requirements_file = RequirementsFile.from_file(str(requirements_in))
             has_bentoml_req = any(
-                req.name and req.name.lower() == "bentoml"
+                req.name and req.name.lower() == "bentoml" and req.link is not None
                 for req in requirements_file.requirements
             )
             with requirements_in.open("w") as f:

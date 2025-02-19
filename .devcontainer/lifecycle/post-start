@@ -2,7 +2,7 @@
 
 git config --global pull.rebase true
 git config --global pull.ff only
-
+~\local
 # fetch all tags
 git fetch upstream --tags && git pull
 

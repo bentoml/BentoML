@@ -1,8 +1,0 @@
-{% extends "base_debian.j2" %}
-{% block SETUP_BENTO_COMPONENTS %}
-{% set environment_yml=expands_bento_path("env", "conda", "environment.yml", bento_path=bento__path) %}
-ADD ./env/conda/environment.yml {{ environment_yml }}
-{{ common.setup_conda(__conda_python_version__, bento__path, enable_buildkit=__enable_buildkit__) }}
-RUN rm -rf /var/lib/{apt,cache,log}
-{{ super() }}
-{% endblock %}

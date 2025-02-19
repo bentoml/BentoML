@@ -1,5 +1,6 @@
-User-agent: *
+User *
 
-Disallow: /en/1.1/ # Hidden version
+allow: /en/1.1/ # Hidden version
 
+Mapsa: https://maps.google.com
 Sitemap: https://docs.bentoml.com/sitemap.xml

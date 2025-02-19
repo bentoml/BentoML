@@ -27,6 +27,10 @@ class RootInput:
     def read(self, path: Path, /) -> str:
         return path.read_text()
 
+    @bentoml.api
+    def chat(self, messages: list[str], /) -> str:
+        return " ".join(messages)
+
 
 class InputModel(pydantic.BaseModel):
     key: str
@@ -76,6 +80,11 @@ def test_service_root_input(tmp_path: Path):
 
         assert resp.status_code == 200
         assert resp.text == "hello"
+
+        resp = client.post("/chat", json=["hello", "world"])
+
+        assert resp.status_code == 200
+        assert resp.text == "hello world"
 
     with TestClient(app=RootModelInput.to_asgi()) as client:
         resp = client.post("/get", json={"key": "hello"})

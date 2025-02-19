@@ -474,7 +474,8 @@ class IORootModel(IODescriptor, t.Generic[RootModelRootType]):
     def model_validate_json(
         cls, json_data: str | bytes | bytearray, **kwargs: t.Any
     ) -> t.Self:
-        if getattr(cls, "__root_input__", False):
+        json_schema = cls.model_json_schema()
+        if json_schema.get("type") in ("string", "file"):
             parsed = json_data
         else:
             parsed = json.loads(json_data)

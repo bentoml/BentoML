@@ -72,6 +72,10 @@ def normalize_identifier(
                 if path.joinpath(filename).is_file()
             )
             bento_path = pathlib.Path(working_dir) if working_dir is not None else path
+        elif path.is_file() and path.suffix == ".py":
+            return path.stem, pathlib.Path(
+                working_dir
+            ) if working_dir is not None else path.parent
         elif path.joinpath("service.py").is_file():
             return "service", pathlib.Path(
                 working_dir
@@ -188,7 +192,12 @@ def import_service(
             if not all_services:
                 raise ImportServiceError("No service found in the module")
             if len(all_services) > 1:
-                raise ImportServiceError("Multiple root services found in the module")
+                service_names = [s.__class__.__name__ for s in all_services]
+                raise ImportServiceError(
+                    f"Multiple services found in the module. Please specify the service "
+                    f"you'd like to use with '{module_name}:SERVICE_NAME'. "
+                    f"Available services: {', '.join(service_names)}"
+                )
             return all_services.pop()
 
         root_service_name, _, depend_path = attrs_str.partition(".")

@@ -1,6 +1,6 @@
 Env:
 
-B
+B.C
 
 After, getting started, check out the `#bentoml-contributors` channel in the [BentoML community slack](https://l.bentoml.com/join-slack).
 

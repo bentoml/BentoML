@@ -132,7 +132,7 @@ You can customize the `duration bucket size <https://prometheus.io/docs/practice
     - ``duration.factor`` must be greater than 1 to ensure each subsequent bucket is larger than the previous one.
     - The buckets for the ``adaptive_batch_size`` Histogram are calculated based on the ``max_batch_size`` defined. The bucket sizes start at 1 and increase exponentially up to the ``max_batch_size`` with a factor of 2.
 
-By default, BentoML provides histogram buckets ranging from 5ms to 180s to accommodate both fast API calls and long-running LLM/GenAI inference requests. These buckets are optimized to cover typical latency ranges for various model sizes, from quick API responses to large language model inference.
+By default, BentoML provides optimized histogram buckets ranging from 5ms to 180s, carefully distributed to monitor both fast API calls and long-running LLM/GenAI inference requests. The buckets are strategically placed to cover key latency ranges: fast API calls (5ms-50ms), regular API calls (100ms-1s), long API calls (2.5s-10s), and LLM inference (30s-180s).
 
 Create custom metrics
 ---------------------
@@ -176,11 +176,10 @@ To define custom metrics, use the metric classes from the ``prometheus_client`` 
               documentation="Time taken for inference",
               labelnames=["endpoint"],
               buckets=(
-                0.005, 0.01, 0.025, 0.05, 0.075,  # Fast API calls
-                0.1, 0.25, 0.5, 0.75, 1.0,
-                2.5, 5.0, 7.5, 10.0,
-                15.0, 30.0, 45.0, 60.0,           # Medium LLM models
-                90.0, 120.0, 150.0, 180.0,        # Large LLM models
+                0.005, 0.01, 0.025, 0.05,         # Fast API calls (5ms - 50ms)
+                0.1, 0.25, 0.5, 1.0,              # Regular API calls (100ms - 1s)
+                2.5, 5.0, 10.0,                   # Long API calls (2.5s - 10s)
+                30.0, 60.0, 120.0, 180.0,         # LLM models (30s - 180s)
                 float("inf"),
               ),
           )

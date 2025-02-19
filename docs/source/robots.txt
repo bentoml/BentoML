@@ -1,5 +1,5 @@
 User-agent: *
 
-Disallow: /en/1.1/ # Hidden version
+allow: /en/1.1/ # Hidden version
 
 Sitemap: https://docs.bentoml.com/sitemap.xml

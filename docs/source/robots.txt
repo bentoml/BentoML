@@ -1,4 +1,4 @@
-User-agent: *
+User *
 
 allow: /en/1.1/ # Hidden version
 

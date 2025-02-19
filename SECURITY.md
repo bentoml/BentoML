@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-BentoML is currently under active development and releases a new version
+Different development and releases a new version
 every 2-3 weeks. We always recommend users to move to a newer version
 when it became available, and we only provide security updates in the
 latest version.

@@ -1,5 +1,0 @@
-{% extends "base_amazonlinux.j2" %}
-{% block SETUP_BENTO_ENTRYPOINT %}
-RUN rm -rf /var/cache/yum
-{{ super() }}
-{% endblock %}

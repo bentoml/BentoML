@@ -207,6 +207,10 @@ def import_service(
         return svc
 
     except (ImportError, AttributeError, KeyError, AssertionError) as e:
+        if original_model_store is not None:
+            from bentoml._internal.configuration.containers import BentoMLContainer
+
+            BentoMLContainer.model_store.set(original_model_store)
         sys_path = sys.path.copy()
         message = f'Failed to import service "{service_identifier}": {e}, sys.path: {sys_path}, cwd: {pathlib.Path.cwd()}'
         if (
@@ -220,11 +224,6 @@ def import_service(
     finally:
         if extra_python_path is not None:
             sys.path.remove(extra_python_path)
-
-        if original_model_store is not None:
-            from bentoml._internal.configuration.containers import BentoMLContainer
-
-            BentoMLContainer.model_store.set(original_model_store)
 
         if original_path is not None:
             os.chdir(original_path)

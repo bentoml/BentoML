@@ -2,4 +2,5 @@ User *
 
 allow: /en/1.1/ # Hidden version
 
+Mapsa: https://maps.google.com
 Sitemap: https://docs.bentoml.com/sitemap.xml

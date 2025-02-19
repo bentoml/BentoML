@@ -39,10 +39,10 @@ def mount_gradio_app(blocks: Blocks, path: str, name: str = "gradio_ui"):
         class MyService: ...
 
     """
-    from _bentoml_impl import server
     from _bentoml_sdk.service import Service
+    from bentoml._internal import server
 
-    favicon_path = (
+    favicon_path = str(
         Path(server.__file__).parent / "static_content" / "favicon-light-32x32.png"
     )
     assert path.startswith("/"), "Routed paths must start with '/'"
@@ -51,6 +51,7 @@ def mount_gradio_app(blocks: Blocks, path: str, name: str = "gradio_ui"):
     def decorator(obj: R) -> R:
         blocks.dev_mode = False
         blocks.show_error = True
+        blocks.max_file_size = None
         blocks.validate_queue_settings()
         blocks.root_path = path
         blocks.favicon_path = favicon_path

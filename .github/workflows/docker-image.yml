@@ -1,5 +1,5 @@
 name: Docker Image CI
-AL/ML
+
 on:
   push:
     branches: [ "main" ]

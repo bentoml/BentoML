@@ -122,6 +122,7 @@ You can use a token with **Protected Endpoint Access** to access a protected Ben
 
       4. Click **Save**.
       5. Access the exposed URL of your Protected Deployment again and you should be able to access it.
+
 Use environment variables for API authentication
 =============================================
 
@@ -135,7 +136,7 @@ Example:
 .. code-block:: bash
 
     export BENTO_CLOUD_API_KEY=cur7h***************
-    export BENTO_CLOUD_API_ENDPOINT=https://ss-org-1.cloud.bentoml.com
+    export BENTO_CLOUD_API_ENDPOINT=https://organization_name.cloud.bentoml.com
 
 .. note::
 

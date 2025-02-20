@@ -202,26 +202,25 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
             else:
                 return "Unable to use the available tools."
 
-bentofile.yaml
-^^^^^^^^^^^^^^
+Define the runtime environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This configuration file defines the build options for a :doc:`Bento </reference/bentoml/bento-build-options>`, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
+:doc:`Define the runtime environment </build-with-bentoml/runtime-environment>` for building a Bento, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
 
-Here is an example file:
+Here is an example:
 
-.. code-block:: yaml
+.. code-block:: python
+    :caption: `service.py`
 
-   service: 'service:ExchangeAssistant'
-   labels:
-     owner: bentoml-team
-     stage: demo
-   include:
-     - '*.py'
-   python:
-     requirements_txt: './requirements.txt'
-     lock_packages: false
-   docker:
-     python_version: "3.11"
+    my_image = bentoml.images.PythonImage(python_version='3.11') \
+                    .requirements_file("requirements.txt")
+
+    @bentoml.service(
+        image=my_image, # Apply the specifications
+        ...
+    )
+    class ExchangeAssistant:
+        ...
 
 Try it out
 ----------
@@ -252,7 +251,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
       git clone https://github.com/bentoml/BentoFunctionCalling.git
       cd BentoFunctionCalling
-      bentoml deploy .
+      bentoml deploy
 
 3. Once it is up and running on BentoCloud, you can call the endpoint in the following ways:
 
@@ -291,7 +290,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
    .. code-block:: bash
 
-      bentoml deploy . --scaling-min 0 --scaling-max 3 # Set your desired count
+      bentoml deploy --scaling-min 0 --scaling-max 3 # Set your desired count
 
    If it's already deployed, update its allowed replicas as follows:
 
@@ -330,7 +329,7 @@ BentoML allows you to run and test your code locally, so that you can quickly va
 
    .. code-block:: bash
 
-        bentoml serve .
+        bentoml serve
 
 3. Visit or send API requests to `http://localhost:3000 <http://localhost:3000/>`_.
 

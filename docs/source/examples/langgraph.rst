@@ -181,29 +181,26 @@ The ``service.py`` file defines the ``SearchAgentService``, a BentoML Service th
 
    For more information about the ``astream_events`` API, see `the LangGraph documentation <https://langchain-ai.github.io/langgraph/how-tos/streaming-content/>`_.
 
-bentofile.yaml
-^^^^^^^^^^^^^^
+Define the runtime environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This configuration file defines the build options for a :doc:`Bento </reference/bentoml/bento-build-options>`, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
+:doc:`Define the runtime environment </build-with-bentoml/runtime-environment>` for building a Bento, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
 
-Here is an example file for `BentoLangGraph/langgraph-mistral <https://github.com/bentoml/BentoLangGraph/tree/main/langgraph-mistral>`_:
+Here is an example:
 
-.. code-block:: yaml
+.. code-block:: python
+    :caption: `service.py`
 
-    service: "service:SearchAgentService"
-    labels:
-      author: "bentoml-team"
-      project: "langgraph-example"
-    include:
-      - "*.py"
-    python:
-      requirements_txt: "./requirements.txt"
-      lock_packages: false
-    envs:
-      # Set HF environment variable here or use BentoCloud secret
-      - name: HF_TOKEN
-    docker:
-      python_version: "3.11"
+    my_image = bentoml.images.PythonImage(python_version='3.11', lock_python_packages=False) \
+                    .requirements_file("requirements.txt")
+
+    @bentoml.service(
+        image=my_image, # Apply the specifications
+        envs=[{"name": "HF_TOKEN"}],
+        ...
+    )
+    class SearchAgentService:
+        ...
 
 Try it out
 ----------
@@ -237,12 +234,12 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
         # Use Mistral 7B
         cd BentoLangGraph/langgraph-mistral
         bentoml secret create huggingface HF_TOKEN=$HF_TOKEN
-        bentoml deploy . --secret huggingface
+        bentoml deploy --secret huggingface
 
         # Use Claude 3.5 Sonnet
         cd BentoLangGraph/langgraph-anthropic
         bentoml secret create anthropic ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
-        bentoml deploy . --secret anthropic
+        bentoml deploy --secret anthropic
 
 3. Once it is up and running on BentoCloud, you can call the endpoint in the following ways:
 
@@ -279,7 +276,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
    .. code-block:: bash
 
-      bentoml deploy . --secret huggingface --scaling-min 0 --scaling-max 3 # Set your desired count
+      bentoml deploy --secret huggingface --scaling-min 0 --scaling-max 3 # Set your desired count
 
    If it's already deployed, update its allowed replicas as follows:
 
@@ -322,7 +319,7 @@ BentoML allows you to run and test your code locally, so that you can quickly va
 
    .. code-block:: bash
 
-        bentoml serve .
+        bentoml serve
 
    .. note::
 

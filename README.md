@@ -62,7 +62,7 @@ Run the service code locally (serving at http://localhost:3000 by default):
 ```bash
 pip install torch transformers  # additional dependencies for local run
 
-bentoml serve service.py:Summarization
+bentoml serve
 ```
 
 Now you can run inference from your browser at http://localhost:3000 or with a Python script:
@@ -77,18 +77,20 @@ with bentoml.SyncHTTPClient('http://localhost:3000') as client:
 
 ### Deploying your first Bento
 
-To deploy your BentoML Service code, first create a `bentofile.yaml` file to define its dependencies and environments. Find the full list of bentofile options [here](https://docs.bentoml.com/en/latest/reference/bentoml/bento-build-options.html).
+To deploy your BentoML Service code, configure the [runtime environment](https://docs.bentoml.com/en/latest/build-with-bentoml/runtime-environment.html) in `service.py`.
 
-```yaml
-service: 'service:Summarization' # Entry service import path
-include:
-  - '*.py' # Include all .py files in current directory
-python:
-  packages: # Python dependencies to include
-    - torch
-    - transformers
-docker:
-  python_version: "3.11"
+```python
+...
+my_image = bentoml.images.PythonImage(python_version="3.11") \
+        .requirements_file("requirements.txt")
+
+
+@bentoml.service(
+    image=my_image,
+    resources={"cpu": "4"},
+    traffic={"timeout": 30},
+)
+...
 ```
 
 Then, choose one of the following ways for deployment:
@@ -130,7 +132,7 @@ docker run --rm -p 3000:3000 summarization:latest
 bentoml cloud login
 
 # Deploy from current directory:
-bentoml deploy .
+bentoml deploy
 ```
 
 ![bentocloud-ui](./docs/source/_static/img/get-started/cloud-deployment/first-bento-on-bentocloud.png)

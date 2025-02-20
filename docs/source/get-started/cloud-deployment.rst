@@ -46,7 +46,11 @@ Deploy your first model
 
    .. code-block:: bash
 
-      bentoml deploy . -n my-first-bento
+      bentoml deploy -n my-first-bento
+
+   .. note::
+
+      By default, this command packages all files under the directory from which it is executed. To exclude specific files or directories, define them in a ``.bentoignore`` file.
 
    Sample output:
 

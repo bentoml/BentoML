@@ -13,7 +13,7 @@ With Codespaces, you can connect your local development environment to BentoClou
 Create a Codespace
 ------------------
 
-1. Navigate to the directory where your ``bentofile.yaml`` file is located. You can use the :doc:`Hello World project </get-started/hello-world>` as an example.
+1. :doc:`Define the runtime environment </build-with-bentoml/runtime-environment>` for your project. For testing purposes, you can use the :doc:`Hello World project </get-started/hello-world>` as an example.
 2. Run the following command to create a Codespace:
 
    .. code-block:: bash

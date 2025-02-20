@@ -4,44 +4,50 @@ Packaging for deployment
 
 BentoML provides a standardized format called Bentos for packaging AI/ML services. A Bento includes all the components required to run AI services, such as source code, Python dependencies, model artifacts, and configurations. This ensures your AI services are consistent and reproducible across different environments.
 
-Common build options
---------------------
+Define the runtime environment
+------------------------------
 
-Build options refer to a set of configurations for building a BentoML project into a Bento. These options can be defined in a ``pyproject.toml`` file under the ``[tool.bentoml.build]`` section or a YAML file (typically named ``bentofile.yaml``).
+Before building a Bento, you need to define the runtime environment of it. Here's an example:
 
-Here's an example ``bentofile.yaml`` file for :doc:`/get-started/hello-world`.
+.. code-block:: python
+    :caption: `service.py`
 
-.. code-block:: yaml
+    import bentoml
 
-    service: "service.py:Summarization"
-    include:
-      - "*.py"
-    python:
-      packages:
-        - torch
-        - transformers
+    my_image = bentoml.images.PythonImage(python_version="3.11") \
+        .python_packages("torch", "transformers")
 
-Key fields:
+    @bentoml.service(
+        image=my_image,
+        envs=[
+            {"name": "HF_TOKEN"},  # You can omit value and set it when deploying the Service
+            {"name": "DB_HOST", "value": "localhost"}
+        ]
+    )
+    class Summarization:
+        ...
 
-- ``service`` (Required): Points to your ``service.py`` file and the Service class defined.
-- ``include``: Includes specific files in the Bento. It supports wildcard characters (for example, ``"*.py”`` and ``"path/to/file.csv"``).
-- ``python.packages``: Lists required Python packages. Alternatively, reference a separate `requirements.txt <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_ file:
+Key environment fields:
 
-  .. code-block:: bash
+- ``python_version``: Specifies the Python version to use. It defaults to the Python version in your build environment.
+- ``python_packages``: Lists the required Python packages. Alternatively, reference a requirements file using ``.requirements_file("requirements.txt")``.
 
-     python:
-       requirements_txt: "./requirements.txt"
+In the ``@bentoml.service`` decorator, apply the runtime environment to your Service via ``image``. Optionally, use the ``envs`` parameter to specify required environment variables.
 
-For more information on available fields, see :doc:`/reference/bentoml/bento-build-options`.
+See more :doc:`available fields </build-with-bentoml/runtime-environment>` to customize your build.
 
 Build a Bento
 -------------
 
-To build a Bento, run the following command in the same directory as your ``bentofile.yaml`` file:
+Run the following command in the same directory as your ``service.py`` file.
 
 .. code-block:: bash
 
    bentoml build
+
+.. note::
+
+    By default, this command packages all files under the directory from which it is executed. To exclude specific files or directories, define them in a ``.bentoignore`` file.
 
 After building, each Bento is automatically assigned a unique version. You can list all available Bentos using:
 

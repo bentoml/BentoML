@@ -90,11 +90,11 @@ The ``bentoml.importing()`` context manager is used to handle import statements 
 Serve the model locally
 -----------------------
 
-1. Run ``bentoml serve service:<service_class_name>`` to start the BentoML server.
+1. Run ``bentoml serve`` to start the BentoML server.
 
    .. code-block:: bash
 
-      $ bentoml serve service:Summarization
+      $ bentoml serve
 
       2024-02-02T07:16:14+0000 [WARNING] [cli] Converting 'Summarization' to lowercase: 'summarization'.
       2024-02-02T07:16:15+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:Summarization" listening on http://localhost:3000 (Press CTRL+C to quit)

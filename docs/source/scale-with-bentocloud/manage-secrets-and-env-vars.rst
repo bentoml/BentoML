@@ -78,7 +78,7 @@ To attach a secret to a deployment, use the ``--secret`` flag when creating a De
 
 .. code-block:: bash
 
-   bentoml deploy . --secret my-secret
+   bentoml deploy --secret my-secret
 
 
 To attach a secret through a deployment YAML configuration file, add the secret name to the ``secrets`` field.

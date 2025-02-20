@@ -90,11 +90,11 @@ Follow the steps below to integrate Gradio with a BentoML Service.
         class Summarization:
               ...
 
-5. Start the Service using ``bentoml serve``, and access the Gradio UI at ``http://localhost:3000/ui``. You can also call BentoML’s API endpoint ``summarize`` at ``http://localhost:3000/``.
+5. Start the Service using ``bentoml serve``, and access the Gradio UI at ``http://localhost:3000/ui``. You can also call BentoML's API endpoint ``summarize`` at ``http://localhost:3000/``.
 
    .. code-block:: python
 
-        bentoml serve service:Summarization
+        bentoml serve
 
    .. image:: ../../_static/img/build-with-bentoml/gradio/gradio-ui-bentoml.png
       :alt: Gradio UI for a BentoML Service

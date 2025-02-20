@@ -334,7 +334,7 @@ Run this Service locally:
 
 .. code-block:: bash
 
-    bentoml serve service:Summarization
+    bentoml serve
 
 Make sure you have sent some requests to the ``summarize`` endpoint, then view the custom metrics by running the following command. You need to replace ``inference_time_seconds`` and ``summary_requests_total`` with your own metric names.
 

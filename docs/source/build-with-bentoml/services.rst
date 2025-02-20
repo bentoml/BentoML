@@ -44,7 +44,13 @@ Test your Service by using ``bentoml serve``, which starts a model server locall
 
 .. code-block:: bash
 
-    bentoml serve <service:class_name>
+    bentoml serve
+
+By convention, BentoML Services are often defined in a ``service.py`` file, but you can specify any module and attribute name using the format ``<module_name>:<attribute_name>``. The attribute name corresponds to the Service class defined in your module. If your Service is in a different module, update the command accordingly, for example:
+
+.. code-block:: bash
+
+    bentoml serve mymodule:MyService
 
 By default, the server is accessible at `http://localhost:3000/ <http://localhost:3000/>`_. Specifically, ``bentoml serve`` does the following:
 
@@ -55,7 +61,7 @@ By default, the server is accessible at `http://localhost:3000/ <http://localhos
 Service configurations
 ----------------------
 
-You use the ``@bentoml.service`` decorator to specify Service-level configurations like resource requirements and timeout. These configurations are applied both when you serve the Service locally and deploy the resulting Bento on BentoCloud (or the Bento image as containers in environments like Kubernetes). For example:
+You use the ``@bentoml.service`` decorator to specify :doc:`Service-level configurations </reference/bentoml/configurations>` like resource requirements and timeout. These configurations are applied both when you serve the Service locally and deploy the resulting Bento on BentoCloud (or the Bento image as containers in environments like Kubernetes). For example:
 
 .. code-block:: python
 
@@ -66,7 +72,7 @@ You use the ``@bentoml.service`` decorator to specify Service-level configuratio
     class Summarization:
         # Service definition here
 
-All configuration fields are optional with default values. This allows for fine-tuning and optimization of Services according to specific use cases and deployment environments.
+All configuration fields are optional with default values. This allows you to fine-tune and optimize a Service according to your specific use cases and deployment environments.
 
 Service APIs
 ------------

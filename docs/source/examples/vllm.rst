@@ -128,7 +128,7 @@ Run ``bentoml serve`` in your project directory to start the Service.
 
 .. code-block:: bash
 
-    $ bentoml serve .
+    $ bentoml serve
 
     2024-01-29T13:10:50+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:VLLM" listening on http://localhost:3000 (Press CTRL+C to quit)
 
@@ -247,22 +247,20 @@ Deploy to BentoCloud
 
 After the Service is ready, you can deploy the project to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $10 in free credits.
 
-1. First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for your application. It is used for packaging your application into a Bento. Here is an example file in the project:
+1. :doc:`Define the runtime environment </build-with-bentoml/runtime-environment>` for building a Bento, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
 
-   .. code-block:: yaml
-        :caption: `bentofile.yaml`
+   .. code-block:: python
+       :caption: `service.py`
 
-        service: "service:VLLM"
-        labels:
-          owner: bentoml-team
-          stage: demo
-        include:
-          - "*.py"
-          - "bentovllm_openai/*.py"
-        python:
-          requirements_txt: "./requirements.txt"
-        envs:
-          - name: HF_TOKEN
+       my_image = bentoml.images.PythonImage(python_version='3.11') \
+                    .requirements_file("requirements.txt")
+
+       @bentoml.service(
+           image=my_image, # Apply the specifications
+           ...
+       )
+       class VLLM:
+           ...
 
 2. :ref:`Log in to BentoCloud <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>`.
 
@@ -275,7 +273,7 @@ After the Service is ready, you can deploy the project to BentoCloud for better 
    .. code-block:: bash
 
         bentoml secret create huggingface HF_TOKEN=<your_hf_token>
-        bentoml deploy . --secret huggingface
+        bentoml deploy --secret huggingface
 
 4. Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
 

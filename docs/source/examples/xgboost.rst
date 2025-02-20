@@ -16,9 +16,13 @@ Prerequisites
 Install dependencies
 --------------------
 
+Clone the project repository and install all the dependencies.
+
 .. code-block:: bash
 
-    pip install xgboost bentoml scikit-learn
+    git clone https://github.com/bentoml/BentoXGBoost.git
+    cd BentoXGBoost
+    pip install -r requirements.txt
 
 Train and save a model
 ----------------------
@@ -146,7 +150,7 @@ Run ``bentoml serve`` in your project directory to start the Service.
 
 .. code-block:: bash
 
-    $ bentoml serve service:CancerClassifier
+    $ bentoml serve
 
     2024-06-19T08:37:31+0000 [WARNING] [cli] Converting 'CancerClassifier' to lowercase: 'cancerclassifier'.
     2024-06-19T08:37:31+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:CancerClassifier" listening on http://localhost:3000 (Press CTRL+C to quit)
@@ -202,26 +206,28 @@ Deploy to BentoCloud
 
 After the Service is ready, you can deploy it to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $10 in free credits.
 
-First, specify a configuration YAML file (``bentofile.yaml``) to define the build options for a :doc:`Bento </reference/bentoml/bento-build-options>`, the unified distribution format in BentoML containing source code, Python packages, model references, and so on. Here is an example file:
+First, :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for building a Bento, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
 
-.. code-block:: yaml
+Here is an example:
 
-    service: "service:CancerClassifier"
-    labels:
-      owner: bentoml-team
-      stage: demo
-    include:
-      - "*.py"
-    python:
-      packages:
-        - xgboost
-        - scikit-learn
+.. code-block:: python
+    :caption: `service.py`
+
+    my_image = bentoml.images.PythonImage(python_version="3.11") \
+                .requirements_file("requirements.txt") \
+
+    @bentoml.service(
+        image=my_image, # Apply the specifications
+        ...
+    )
+    class CancerClassifier:
+        ...
 
 :ref:`Log in to BentoCloud <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
 
 .. code-block:: bash
 
-    bentoml deploy .
+    bentoml deploy
 
 Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
 

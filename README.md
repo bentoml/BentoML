@@ -79,18 +79,17 @@ with bentoml.SyncHTTPClient('http://localhost:3000') as client:
 
 To deploy your BentoML Service code, configure the [runtime environment](https://docs.bentoml.com/en/latest/build-with-bentoml/runtime-environment.html) in `service.py`.
 
-```python
-...
-my_image = bentoml.images.PythonImage(python_version="3.11") \
-        .requirements_file("requirements.txt")
+```diff
+
++ my_image = bentoml.images.PythonImage(python_version="3.11") \
++        .requirements_file("requirements.txt")
 
 
 @bentoml.service(
-    image=my_image,
++    image=my_image,
     resources={"cpu": "4"},
     traffic={"timeout": 30},
 )
-...
 ```
 
 Then, choose one of the following ways for deployment:

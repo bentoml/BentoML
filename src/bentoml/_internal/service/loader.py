@@ -64,13 +64,13 @@ def import_service(
         import_service("fraud_detector")
     """
 
-    prev_cwd = None
     sys_path_modified = False
-    prev_cwd = os.getcwd()
+    prev_cwd = None
     global_model_store = BentoMLContainer.model_store.get()
 
     try:
         if working_dir is not None:
+            prev_cwd = os.getcwd()
             working_dir = os.path.realpath(os.path.expanduser(working_dir))
             # Set cwd(current working directory) to the Bento's project directory,
             # which allows user code to read files using relative path
@@ -92,7 +92,8 @@ def import_service(
         if sys_path_modified and working_dir:
             # Undo changes to sys.path
             sys.path.remove(working_dir)
-        os.chdir(prev_cwd)
+        if prev_cwd is not None:
+            os.chdir(prev_cwd)
 
 
 def _do_import(
@@ -347,10 +348,10 @@ def load(
     if isinstance(bento_identifier, (Bento, Tag)):
         # Load from local BentoStore
         return load_bento(bento_identifier)
-
-    if os.path.isdir(os.path.expanduser(bento_identifier)):
-        bento_path = os.path.abspath(os.path.expanduser(bento_identifier))
-
+    bento_path = os.path.expanduser(
+        os.path.abspath(os.path.join(working_dir or ".", bento_identifier))
+    )
+    if os.path.isdir(bento_path):
         if os.path.isfile(
             os.path.expanduser(os.path.join(bento_path, BENTO_YAML_FILENAME))
         ):

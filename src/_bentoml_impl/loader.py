@@ -192,7 +192,7 @@ def import_service(
             if not all_services:
                 raise ImportServiceError("No service found in the module")
             if len(all_services) > 1:
-                service_names = [type(s).__name__ for s in all_services]
+                service_names = [s.__class__.__wrapped__.__name__ for s in all_services]
                 raise ImportServiceError(
                     f"Multiple services found in the module. Please specify the service "
                     f"you'd like to use with '{module_name}:SERVICE_NAME'. "

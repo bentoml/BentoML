@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import typing as t
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import fs
@@ -68,22 +69,28 @@ def import_service(
     prev_cwd = None
     global_model_store = BentoMLContainer.model_store.get()
 
+    if working_dir is not None:
+        prev_cwd = os.getcwd()
+        working_dir = os.path.realpath(os.path.expanduser(working_dir))
+        # Set cwd(current working directory) to the Bento's project directory,
+        # which allows user code to read files using relative path
+        os.chdir(working_dir)
+    else:
+        working_dir = os.getcwd()
+
+    if working_dir not in sys.path:
+        sys.path.insert(0, working_dir)
+        sys_path_modified = True
+
+    if model_store is not global_model_store:
+        BentoMLContainer.model_store.set(model_store)
+    elif (
+        Path(working_dir).with_name(BENTO_YAML_FILENAME).exists()
+        and (bento_models := Path(working_dir).with_name("models")).exists()
+    ):
+        if Path(model_store._fs.getsyspath("/")).absolute() != bento_models.absolute():
+            BentoMLContainer.model_store.set(ModelStore(bento_models))
     try:
-        if working_dir is not None:
-            prev_cwd = os.getcwd()
-            working_dir = os.path.realpath(os.path.expanduser(working_dir))
-            # Set cwd(current working directory) to the Bento's project directory,
-            # which allows user code to read files using relative path
-            os.chdir(working_dir)
-        else:
-            working_dir = os.getcwd()
-
-        if working_dir not in sys.path:
-            sys.path.insert(0, working_dir)
-            sys_path_modified = True
-
-        if model_store is not global_model_store:
-            BentoMLContainer.model_store.set(model_store)
         return _do_import(svc_import_path, working_dir, reload)
     except ImportServiceError:
         BentoMLContainer.model_store.set(global_model_store)

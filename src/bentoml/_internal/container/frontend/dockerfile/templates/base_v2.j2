@@ -55,6 +55,7 @@ WORKDIR $BENTO_PATH
 {% endblock %}
 
 {% block SETUP_BENTO_COMPONENTS %}
+COPY --chown={{ bento__user }}:{{ bento__user }} ./env/docker ./env/docker/
 {% for command in __options__commands %}
 RUN {{ command }}
 {% endfor %}

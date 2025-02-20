@@ -184,11 +184,7 @@ def import_service(
         module_name, has_attr, attrs_str = service_identifier.partition(":")
         module = importlib.import_module(module_name)
         if not has_attr:
-            all_services = {
-                o
-                for o in vars(module).values()
-                if isinstance(o, type) and issubclass(o, Service)
-            }
+            all_services = {o for o in vars(module).values() if isinstance(o, Service)}
             for svc in list(all_services):
                 for dep in svc.dependencies.values():
                     if dep.on is not None:
@@ -196,7 +192,7 @@ def import_service(
             if not all_services:
                 raise ImportServiceError("No service found in the module")
             if len(all_services) > 1:
-                service_names = [s.__name__ for s in all_services]
+                service_names = [type(s).__name__ for s in all_services]
                 raise ImportServiceError(
                     f"Multiple services found in the module. Please specify the service "
                     f"you'd like to use with '{module_name}:SERVICE_NAME'. "

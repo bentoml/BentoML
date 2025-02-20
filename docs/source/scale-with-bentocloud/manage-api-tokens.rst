@@ -122,3 +122,22 @@ You can use a token with **Protected Endpoint Access** to access a protected Ben
 
       4. Click **Save**.
       5. Access the exposed URL of your Protected Deployment again and you should be able to access it.
+
+Use environment variables for API authentication
+=============================================
+
+When calling BentoCloud API using Python, you can set the following environment variables for authentication:
+
+- ``BENTO_CLOUD_API_KEY``: Your BentoCloud API token
+- ``BENTO_CLOUD_API_ENDPOINT``: Your organization-specific BentoCloud endpoint
+
+Example:
+
+.. code-block:: bash
+
+    export BENTO_CLOUD_API_KEY=cur7h***************
+    export BENTO_CLOUD_API_ENDPOINT=https://organization_name.cloud.bentoml.com
+
+.. note::
+
+    When using environment variables, make sure to set both ``BENTO_CLOUD_API_KEY`` and ``BENTO_CLOUD_API_ENDPOINT`` as they are both required for authentication.

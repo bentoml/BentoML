@@ -50,6 +50,8 @@ If you have an existing model on disk, you can import it into the BentoML Model 
         shutil.copytree(local_model_dir, model_ref.path, dirs_exist_ok=True)
         print(f"Model saved: {model_ref}")
 
+.. _load-models:
+
 Load a model
 ------------
 

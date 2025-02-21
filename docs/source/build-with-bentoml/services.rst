@@ -22,9 +22,11 @@ Here is a Service definition example from :doc:`/get-started/hello-world`.
         traffic={"timeout": 10},
     )
     class Summarization:
+        model_path = bentoml.models.HuggingFaceModel("sshleifer/distilbart-cnn-12-6")
+
         def __init__(self) -> None:
             # Load model into pipeline
-            self.pipeline = pipeline('summarization')
+            self.pipeline = pipeline('summarization', model=self.model_path)
 
         @bentoml.api
         def summarize(self, text: str) -> str:
@@ -35,7 +37,7 @@ Methods within the class which are defined as accessible HTTP API endpoints are 
 
 .. note::
 
-    This Service downloads a pre-trained model from Hugging Face. It is possible to use your own model within the Service class. For more information, see :doc:`/build-with-bentoml/model-loading-and-management`.
+    This Service downloads a pre-trained model from Hugging Face using the ``HuggingFaceModel`` method. It is possible to use your own model within the Service class. For more information, see :doc:`/build-with-bentoml/model-loading-and-management`.
 
 Test the Service code
 ---------------------
@@ -156,11 +158,13 @@ Basic usage
 For synchronous logic, BentoML creates a pool of workers of optimal size to handle the execution. Synchronous APIs are straightforward and suitable for most of the model serving scenarios. Here's an example of a synchronous API:
 
 .. code-block:: python
-   :emphasize-lines: 11, 12, 13
+   :emphasize-lines: 13, 14, 15
+
+    import bentoml
 
     @bentoml.service(name="iris_classifier", resources={"cpu": "200m", "memory": "512Mi"})
     class IrisClassifier:
-        iris_model = bentoml.models.get("iris_sklearn:latest")
+        iris_model = bentoml.models.BentoModel("iris_sklearn:latest")
         preprocessing = bentoml.depends(Preprocessing)
 
         def __init__(self):
@@ -175,7 +179,7 @@ For synchronous logic, BentoML creates a pool of workers of optimal size to hand
 However, for scenarios where you want to maximize performance and throughput, synchronous APIs may not suffice. Asynchronous APIs are ideal when the processing logic is IO-bound and async model execution is supported. Here is an example:
 
 .. code-block:: python
-   :emphasize-lines: 15, 16, 17, 18, 19, 20
+   :emphasize-lines: 17, 18, 19, 20, 21, 22
 
     import bentoml
 
@@ -183,11 +187,13 @@ However, for scenarios where you want to maximize performance and throughput, sy
     from typing import Optional, AsyncGenerator, List
 
     SAMPLING_PARAM = SamplingParams(max_tokens=4096)
-    ENGINE_ARGS = AsyncEngineArgs(model='meta-llama/Llama-2-7b-chat-hf')
 
-    @bentoml.service(workers=1, resources={"gpu": "1"})
+    @bentoml.service(workers=1, resources={"gpu": "1"}, envs=[{"name": "HF_TOKEN"}])
     class VLLMService:
+        model = bentoml.models.HuggingFaceModel("meta-llama/Meta-Llama-3.1-8B-Instruct")
+
         def __init__(self) -> None:
+            ENGINE_ARGS = AsyncEngineArgs(model=self.model)
             self.engine = AsyncLLMEngine.from_engine_args(ENGINE_ARGS)
             self.request_id = 0
 

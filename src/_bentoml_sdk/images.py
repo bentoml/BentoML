@@ -139,6 +139,8 @@ class Image:
 
         from pip_requirements_parser import RequirementsFile
 
+        from bentoml._internal.configuration import get_uv_command
+
         with TemporaryDirectory(prefix="bento-reqs-") as parent:
             requirements_in = Path(parent).joinpath("requirements.in")
             requirements_in.write_text(self.python_requirements)
@@ -177,7 +179,7 @@ class Image:
                     DEFAULT_LOCK_PLATFORM,
                 )
                 lock_args.extend(["--python-platform", DEFAULT_LOCK_PLATFORM])
-            cmd = [sys.executable, "-m", "uv", "pip", "compile", *lock_args]
+            cmd = [*get_uv_command(), "pip", "compile", *lock_args]
             try:
                 subprocess.check_call(
                     cmd,

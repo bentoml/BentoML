@@ -541,6 +541,7 @@ class PythonOptions:
     ) -> None:
         import platform
 
+        from ..configuration import get_uv_command
         from .bentoml_builder import build_bentoml_sdist
 
         py_folder = fs.path.join("env", "python")
@@ -679,7 +680,7 @@ class PythonOptions:
                     DEFAULT_LOCK_PLATFORM,
                 )
                 pip_compile_args.extend(["--python-platform", DEFAULT_LOCK_PLATFORM])
-            cmd = [sys.executable, "-m", "uv", "pip", "compile"]
+            cmd = [*get_uv_command(), "pip", "compile"]
             cmd.extend(pip_compile_args)
             try:
                 subprocess.check_call(

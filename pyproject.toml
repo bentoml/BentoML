@@ -65,7 +65,6 @@ dependencies = [
     "tomli-w",
     "httpx-ws>=0.6.0",
     "aiosqlite>=0.20.0",
-    "uv>=0.5",
     "questionary>=2.0.1",
     "a2wsgi>=1.10.7",
     "python-dotenv>=1.0.1",

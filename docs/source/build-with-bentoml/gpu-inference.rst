@@ -18,11 +18,19 @@ When a single GPU is available, frameworks like PyTorch and TensorFlow default t
 
 .. code-block:: python
 
+    import bentoml
+
     @bentoml.service(resources={"gpu": 1})
     class MyService:
+        # Use a Hugging Face model
+        model_path = bentoml.models.HuggingFaceModel("org_name/model_id")
+
+        # Use a model from the Model Store or BentoCloud
+        # model_path = bentoml.models.BentoModel("model_name:latest")
+
         def __init__(self):
             import torch
-            self.model = torch.load('model.pth').to('cuda:0')
+            self.model = torch.load(self.model_path).to("cuda:0")
 
 Multiple devices
 ^^^^^^^^^^^^^^^^
@@ -31,14 +39,23 @@ In systems with multiple GPUs, each GPU is assigned an index starting from 0 (``
 
 To use a specific GPU:
 
-.. code-block::
+.. code-block:: python
+
+    import bentoml
 
     @bentoml.service(resources={"gpu": 2})
     class MultiGPUService:
+        # Load Hugging Face models
+        model1_path = bentoml.models.HuggingFaceModel("org_name/model1_id")
+        model2_path = bentoml.models.HuggingFaceModel("org_name/model2_id")
+
+        # Use a model from the Model Store or BentoCloud
+        # model_path = bentoml.models.BentoModel("model_name:latest")
+
         def __init__(self):
             import torch
-            self.model1 = torch.load('model1.pth').to("cuda:0")  # Using the first GPU
-            self.model2 = torch.load('model2.pth').to("cuda:1")  # Using the second GPU
+            self.model1 = torch.load(self.model1_path).to("cuda:0")  # Using the first GPU
+            self.model2 = torch.load(self.model2_path).to("cuda:1")  # Using the second GPU
 
 This image explains how different models use the GPUs assigned to them.
 

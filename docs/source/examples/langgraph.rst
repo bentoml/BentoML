@@ -218,7 +218,7 @@ BentoCloud
 
 BentoCloud provides fast and scalable infrastructure for building and scaling AI applications with BentoML in the cloud.
 
-1. Install BentoML and :doc:`log in to BentoCloud </scale-with-bentocloud/manage-api-tokens>` through the BentoML CLI. If you don't have a BentoCloud account, `sign up here for free <https://www.bentoml.com/>`_ and get $10 in free credits.
+1. Install BentoML and :doc:`log in to BentoCloud </scale-with-bentocloud/manage-api-tokens>` through the BentoML CLI. If you don't have a BentoCloud account, `sign up here for free <https://www.bentoml.com/>`_.
 
    .. code-block:: bash
 

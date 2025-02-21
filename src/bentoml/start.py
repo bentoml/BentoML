@@ -48,7 +48,7 @@ def start_runner_server(
     from .serving import find_triton_binary
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-    svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
+    svc = load(bento_identifier, working_dir=working_dir)
     timeout_args = ["--timeout", str(timeout)] if timeout else []
 
     from circus.sockets import CircusSocket  # type: ignore
@@ -179,7 +179,7 @@ def start_http_server(
     from .serving import create_watcher
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-    svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
+    svc = load(bento_identifier, working_dir=working_dir)
     timeout_args = ["--timeout", str(timeout)] if timeout else []
     runner_requirements = {runner.name for runner in svc.runners}
     if not runner_requirements.issubset(set(runner_map)):
@@ -297,7 +297,7 @@ def start_grpc_server(
     from .serving import create_watcher
 
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
-    svc = load(bento_identifier, working_dir=working_dir, standalone_load=True)
+    svc = load(bento_identifier, working_dir=working_dir)
     runner_requirements = {runner.name for runner in svc.runners}
     if not runner_requirements.issubset(set(runner_map)):
         raise ValueError(

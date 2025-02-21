@@ -186,25 +186,19 @@ def serve_http(
     from bentoml.serving import ensure_prometheus_dir
     from bentoml.serving import make_reload_plugin
 
-    from ..loader import import_service
-    from ..loader import normalize_identifier
+    from ..loader import load
     from .allocator import ResourceAllocator
 
     env = {"PROMETHEUS_MULTIPROC_DIR": ensure_prometheus_dir()}
     if isinstance(bento_identifier, Service):
         svc = bento_identifier
-        bento_identifier = svc.import_string
         assert working_dir is None, (
             "working_dir should not be set when passing a service in process"
         )
-        # use cwd
-        bento_path = pathlib.Path(".")
     else:
-        bento_identifier, bento_path = normalize_identifier(
-            bento_identifier, working_dir
-        )
-
-        svc = import_service(bento_identifier, bento_path)
+        svc = load(bento_identifier, working_dir)
+    bento_identifier = svc.import_string
+    bento_path = pathlib.Path(svc.working_dir)
 
     watchers: list[Watcher] = []
     sockets: list[CircusSocket] = []

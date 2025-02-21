@@ -31,7 +31,6 @@ if t.TYPE_CHECKING:
     import grpc
 
     import bentoml
-    from _bentoml_sdk import Service as NewService
     from bentoml.grpc.types import AddServicerFn
     from bentoml.grpc.types import ServicerClass
     from bentoml.triton import _TritonRunner
@@ -478,10 +477,5 @@ class Service:
     def add_grpc_handlers(self, handlers: list[grpc.GenericRpcHandler]) -> None:
         self.grpc_handlers.extend(handlers)
 
-
-def on_load_bento(svc: Service | NewService[t.Any], bento: Bento):
-    if isinstance(svc, Service):
-        svc.bento = bento
-        svc.tag = bento.info.tag
-    else:
-        svc.bento = bento
+    def on_load_bento(self, bento: Bento) -> None:
+        self.bento = bento

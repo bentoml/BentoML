@@ -148,7 +148,7 @@ def main(
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
     if timeout is not None:
         BentoMLContainer.api_server_config.traffic.timeout.set(timeout)
-    svc = bentoml.load(bento_identifier, working_dir=working_dir, standalone_load=True)
+    svc = bentoml.load(bento_identifier, working_dir=working_dir)
 
     # setup context
     server_context.service_name = svc.name

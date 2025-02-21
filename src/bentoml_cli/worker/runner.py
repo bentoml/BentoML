@@ -104,7 +104,7 @@ def main(
 
     from bentoml._internal.server.runner_app import RunnerAppFactory
 
-    service = load(bento_identifier, working_dir=working_dir, standalone_load=True)
+    service = load(bento_identifier, working_dir=working_dir)
 
     # setup context
     if service.tag is None:

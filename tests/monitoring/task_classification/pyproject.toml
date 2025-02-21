@@ -3,7 +3,7 @@ name = "task_classification"
 dependencies = [
     "scikit-learn",
     "pandas",
-    "bentoml[monitor-otlp]>=1.0.19",
+    "bentoml[monitor-otlp]",
 ]
 
 [dependency-groups]

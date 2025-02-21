@@ -55,7 +55,7 @@ Build your Bento
 
 Once development is complete, you can build your Bento directly from a Codespace. To do this, click the **Build Bento** button.
 
-.. image:: ../../_static/img/bentocloud/how-to/codespaces/codespace-detail-page.png
+.. image:: ../BentoML Codespaces interface showing summarization-1w9e project details with operators, endpoint URL, and build options.
 
 After the build is successful, you can view the Bento and create a Deployment with it.
 

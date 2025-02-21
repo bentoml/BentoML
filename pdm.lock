@@ -5,7 +5,7 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:e0710dd29ee52bf852501a95993d4b21b0736ab3d7d5f1c0ba934d0f2e19da9b"
+content_hash = "sha256:f44d3b1d0e3fff42fae6792b9c729eb7b1d69f850a46a9c14b1c622d821c8d34"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -219,7 +219,7 @@ files = [
 name = "appdirs"
 version = "1.4.4"
 summary = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
-groups = ["default", "all", "aws"]
+groups = ["default", "aws"]
 files = [
     {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},
     {file = "appdirs-1.4.4.tar.gz", hash = "sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41"},
@@ -309,7 +309,7 @@ name = "boto3"
 version = "1.35.8"
 requires_python = ">= 3.8"
 summary = "The AWS SDK for Python"
-groups = ["all", "aws"]
+groups = ["aws"]
 dependencies = [
     "botocore<1.36.0,>=1.35.8",
     "jmespath<2.0.0,>=0.7.1",
@@ -325,7 +325,7 @@ name = "botocore"
 version = "1.35.8"
 requires_python = ">= 3.8"
 summary = "Low-level, data-driven core of boto 3."
-groups = ["all", "aws"]
+groups = ["aws"]
 dependencies = [
     "jmespath<2.0.0,>=0.7.1",
     "python-dateutil<3.0.0,>=2.1",
@@ -370,7 +370,7 @@ name = "certifi"
 version = "2024.7.4"
 requires_python = ">=3.6"
 summary = "Python package for providing Mozilla's CA Bundle."
-groups = ["default", "all", "docs", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "docs", "monitor-otlp", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "certifi-2024.7.4-py3-none-any.whl", hash = "sha256:c198e21b1289c2ab85ee4e67bb4b4ef3ead0892059901a8d5b622f24a1101e90"},
     {file = "certifi-2024.7.4.tar.gz", hash = "sha256:5a1e7645bc0ec61a09e26c36f6106dd4cf40c6db3a1fb6352b0244e7fb057c7b"},
@@ -464,7 +464,7 @@ name = "charset-normalizer"
 version = "3.3.2"
 requires_python = ">=3.7.0"
 summary = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
-groups = ["all", "docs", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin"]
+groups = ["docs", "monitor-otlp", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "charset-normalizer-3.3.2.tar.gz", hash = "sha256:f30c3cb33b24454a82faecaf01b19c18562b1e89558fb6c56de4d9118a032fd5"},
     {file = "charset_normalizer-3.3.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:25baf083bf6f6b341f4121c2f3c548875ee6f5339300e08be3f2b2ba1721cdd3"},
@@ -697,25 +697,11 @@ files = [
 ]
 
 [[package]]
-name = "deepmerge"
-version = "2.0"
-requires_python = ">=3.8"
-summary = "A toolset for deeply merging Python dictionaries."
-groups = ["default"]
-dependencies = [
-    "typing-extensions; python_version <= \"3.9\"",
-]
-files = [
-    {file = "deepmerge-2.0-py3-none-any.whl", hash = "sha256:6de9ce507115cff0bed95ff0ce9ecc31088ef50cbdf09bc90a09349a318b3d00"},
-    {file = "deepmerge-2.0.tar.gz", hash = "sha256:5c3d86081fbebd04dd5de03626a0607b809a98fb6ccba5770b62466fe940ff20"},
-]
-
-[[package]]
 name = "deprecated"
 version = "1.2.14"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 summary = "Python @deprecated decorator to deprecate old python classes, functions or methods."
-groups = ["default", "all", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "grpc", "monitor-otlp", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "wrapt<2,>=1.10",
 ]
@@ -870,7 +856,7 @@ files = [
 name = "fs"
 version = "2.4.16"
 summary = "Python's filesystem abstraction layer"
-groups = ["default", "all", "aws"]
+groups = ["default", "aws"]
 dependencies = [
     "appdirs~=1.4.3",
     "backports-os~=0.1; python_version < \"3.0\"",
@@ -888,7 +874,7 @@ files = [
 name = "fs-s3fs"
 version = "1.1.1"
 summary = "Amazon S3 filesystem for PyFilesystem2"
-groups = ["all", "aws"]
+groups = ["aws"]
 dependencies = [
     "boto3~=1.9",
     "fs~=2.4",
@@ -957,7 +943,7 @@ name = "googleapis-common-protos"
 version = "1.56.2"
 requires_python = ">=3.6"
 summary = "Common protobufs used in Google APIs"
-groups = ["all", "docs", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp"]
+groups = ["docs", "monitor-otlp", "tracing-jaeger", "tracing-otlp"]
 dependencies = [
     "protobuf<4.0.0dev,>=3.15.0",
 ]
@@ -971,7 +957,7 @@ name = "grpcio"
 version = "1.68.1"
 requires_python = ">=3.8"
 summary = "HTTP/2-based RPC framework"
-groups = ["all", "docs", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp"]
+groups = ["docs", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing-jaeger", "tracing-otlp"]
 files = [
     {file = "grpcio-1.68.1-cp310-cp310-linux_armv7l.whl", hash = "sha256:d35740e3f45f60f3c37b1e6f2f4702c23867b9ce21c6410254c9c682237da68d"},
     {file = "grpcio-1.68.1-cp310-cp310-macosx_12_0_universal2.whl", hash = "sha256:d99abcd61760ebb34bdff37e5a3ba333c5cc09feda8c1ad42547bea0416ada78"},
@@ -1026,7 +1012,7 @@ name = "grpcio-channelz"
 version = "1.48.2"
 requires_python = ">=3.6"
 summary = "Channel Level Live Debug Information Service for gRPC"
-groups = ["all", "grpc-channelz"]
+groups = ["grpc-channelz"]
 dependencies = [
     "grpcio>=1.48.2",
     "protobuf>=3.12.0",
@@ -1041,7 +1027,7 @@ name = "grpcio-health-checking"
 version = "1.48.2"
 requires_python = ">=3.6"
 summary = "Standard Health Checking Service for gRPC"
-groups = ["all", "grpc", "grpc-channelz", "grpc-reflection"]
+groups = ["grpc"]
 dependencies = [
     "grpcio>=1.48.2",
     "protobuf>=3.12.0",
@@ -1056,7 +1042,7 @@ name = "grpcio-reflection"
 version = "1.48.2"
 requires_python = ">=3.6"
 summary = "Standard Protobuf Reflection Service for gRPC"
-groups = ["all", "grpc-reflection"]
+groups = ["grpc-reflection"]
 dependencies = [
     "grpcio>=1.48.2",
     "protobuf>=3.12.0",
@@ -1191,7 +1177,7 @@ name = "idna"
 version = "3.8"
 requires_python = ">=3.6"
 summary = "Internationalized Domain Names in Applications (IDNA)"
-groups = ["default", "all", "docs", "monitor-otlp", "testing", "tracing", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "docs", "monitor-otlp", "testing", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "idna-3.8-py3-none-any.whl", hash = "sha256:050b4e5baadcd44d760cedbd2b8e639f2ff89bbc7a5730fcc662954303377aac"},
     {file = "idna-3.8.tar.gz", hash = "sha256:d838c2c0ed6fced7693d5e8ab8e734d5f8fda53a039c0164afb0b82e771e3603"},
@@ -1213,7 +1199,7 @@ name = "importlib-metadata"
 version = "6.11.0"
 requires_python = ">=3.8"
 summary = "Read metadata from Python packages"
-groups = ["default", "all", "docs", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "docs", "grpc", "monitor-otlp", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "typing-extensions>=3.6.4; python_version < \"3.8\"",
     "zipp>=0.5",
@@ -1264,7 +1250,7 @@ name = "jmespath"
 version = "1.0.1"
 requires_python = ">=3.7"
 summary = "JSON Matching Expressions"
-groups = ["all", "aws"]
+groups = ["aws"]
 files = [
     {file = "jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980"},
     {file = "jmespath-1.0.1.tar.gz", hash = "sha256:90261b206d6defd58fdd5e85f478bf633a2901798906be2ad389150c5c60edbe"},
@@ -1784,7 +1770,7 @@ name = "numpy"
 version = "2.0.2"
 requires_python = ">=3.9"
 summary = "Fundamental package for array computing in Python"
-groups = ["default", "all", "io", "io-pandas", "testing", "tooling"]
+groups = ["default", "io-pandas", "testing", "tooling"]
 files = [
     {file = "numpy-2.0.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:51129a29dbe56f9ca83438b706e2e69a39892b5eda6cedcb6b0c9fdc9b0d3ece"},
     {file = "numpy-2.0.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:f15975dfec0cf2239224d80e32c3170b1d168335eaedee69da84fbe9f1f9cd04"},
@@ -1879,7 +1865,7 @@ name = "opentelemetry-api"
 version = "1.27.0"
 requires_python = ">=3.8"
 summary = "OpenTelemetry Python API"
-groups = ["default", "all", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "grpc", "monitor-otlp", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "deprecated>=1.2.6",
     "importlib-metadata<=8.4.0,>=6.0",
@@ -1894,7 +1880,7 @@ name = "opentelemetry-exporter-jaeger"
 version = "1.21.0"
 requires_python = ">=3.7"
 summary = "Jaeger Exporters for OpenTelemetry"
-groups = ["all", "tracing", "tracing-jaeger"]
+groups = ["tracing-jaeger"]
 dependencies = [
     "opentelemetry-exporter-jaeger-proto-grpc==1.21.0",
     "opentelemetry-exporter-jaeger-thrift==1.21.0",
@@ -1909,7 +1895,7 @@ name = "opentelemetry-exporter-jaeger-proto-grpc"
 version = "1.21.0"
 requires_python = ">=3.7"
 summary = "Jaeger Protobuf Exporter for OpenTelemetry"
-groups = ["all", "tracing", "tracing-jaeger"]
+groups = ["tracing-jaeger"]
 dependencies = [
     "googleapis-common-protos<1.60.0,~=1.52",
     "grpcio<2.0.0,>=1.0.0",
@@ -1926,7 +1912,7 @@ name = "opentelemetry-exporter-jaeger-thrift"
 version = "1.21.0"
 requires_python = ">=3.7"
 summary = "Jaeger Thrift Exporter for OpenTelemetry"
-groups = ["all", "tracing", "tracing-jaeger"]
+groups = ["tracing-jaeger"]
 dependencies = [
     "opentelemetry-api~=1.3",
     "opentelemetry-sdk~=1.11",
@@ -1942,7 +1928,7 @@ name = "opentelemetry-exporter-otlp"
 version = "1.27.0"
 requires_python = ">=3.8"
 summary = "OpenTelemetry Collector Exporters"
-groups = ["all", "tracing", "tracing-otlp"]
+groups = ["tracing-otlp"]
 dependencies = [
     "opentelemetry-exporter-otlp-proto-grpc==1.27.0",
     "opentelemetry-exporter-otlp-proto-http==1.27.0",
@@ -1957,7 +1943,7 @@ name = "opentelemetry-exporter-otlp-proto-common"
 version = "1.27.0"
 requires_python = ">=3.8"
 summary = "OpenTelemetry Protobuf encoding"
-groups = ["all", "monitor-otlp", "tracing", "tracing-otlp"]
+groups = ["monitor-otlp", "tracing-otlp"]
 dependencies = [
     "opentelemetry-proto==1.27.0",
 ]
@@ -1971,7 +1957,7 @@ name = "opentelemetry-exporter-otlp-proto-grpc"
 version = "1.27.0"
 requires_python = ">=3.8"
 summary = "OpenTelemetry Collector Protobuf over gRPC Exporter"
-groups = ["all", "monitor-otlp", "tracing", "tracing-otlp"]
+groups = ["monitor-otlp", "tracing-otlp"]
 dependencies = [
     "deprecated>=1.2.6",
     "googleapis-common-protos~=1.52",
@@ -1991,7 +1977,7 @@ name = "opentelemetry-exporter-otlp-proto-http"
 version = "1.27.0"
 requires_python = ">=3.8"
 summary = "OpenTelemetry Collector Protobuf over HTTP Exporter"
-groups = ["all", "monitor-otlp", "tracing", "tracing-otlp"]
+groups = ["monitor-otlp", "tracing-otlp"]
 dependencies = [
     "deprecated>=1.2.6",
     "googleapis-common-protos~=1.52",
@@ -2011,7 +1997,7 @@ name = "opentelemetry-exporter-zipkin"
 version = "1.29.0"
 requires_python = ">=3.8"
 summary = "Zipkin Span Exporters for OpenTelemetry"
-groups = ["all", "tracing", "tracing-zipkin"]
+groups = ["tracing-zipkin"]
 dependencies = [
     "opentelemetry-exporter-zipkin-json==1.29.0",
     "opentelemetry-exporter-zipkin-proto-http==1.29.0",
@@ -2026,7 +2012,7 @@ name = "opentelemetry-exporter-zipkin-json"
 version = "1.29.0"
 requires_python = ">=3.8"
 summary = "Zipkin Span JSON Exporter for OpenTelemetry"
-groups = ["all", "tracing", "tracing-zipkin"]
+groups = ["tracing-zipkin"]
 dependencies = [
     "opentelemetry-api~=1.3",
     "opentelemetry-sdk~=1.11",
@@ -2042,7 +2028,7 @@ name = "opentelemetry-exporter-zipkin-proto-http"
 version = "1.29.0"
 requires_python = ">=3.8"
 summary = "Zipkin Span Protobuf Exporter for OpenTelemetry"
-groups = ["all", "tracing", "tracing-zipkin"]
+groups = ["tracing-zipkin"]
 dependencies = [
     "opentelemetry-api~=1.3",
     "opentelemetry-exporter-zipkin-json==1.29.0",
@@ -2060,7 +2046,7 @@ name = "opentelemetry-instrumentation"
 version = "0.48b0"
 requires_python = ">=3.8"
 summary = "Instrumentation Tools & Auto Instrumentation for OpenTelemetry Python"
-groups = ["default", "all", "grpc", "grpc-channelz", "grpc-reflection"]
+groups = ["default", "grpc"]
 dependencies = [
     "opentelemetry-api~=1.4",
     "setuptools>=16.0",
@@ -2112,7 +2098,7 @@ name = "opentelemetry-instrumentation-grpc"
 version = "0.48b0"
 requires_python = ">=3.8"
 summary = "OpenTelemetry gRPC instrumentation"
-groups = ["all", "grpc", "grpc-channelz", "grpc-reflection"]
+groups = ["grpc"]
 dependencies = [
     "opentelemetry-api~=1.12",
     "opentelemetry-instrumentation==0.48b0",
@@ -2129,7 +2115,7 @@ name = "opentelemetry-proto"
 version = "1.27.0"
 requires_python = ">=3.8"
 summary = "OpenTelemetry Python Proto"
-groups = ["all", "monitor-otlp", "tracing", "tracing-otlp"]
+groups = ["monitor-otlp", "tracing-otlp"]
 dependencies = [
     "protobuf<5.0,>=3.19",
 ]
@@ -2143,7 +2129,7 @@ name = "opentelemetry-sdk"
 version = "1.27.0"
 requires_python = ">=3.8"
 summary = "OpenTelemetry Python SDK"
-groups = ["default", "all", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "monitor-otlp", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "opentelemetry-api==1.27.0",
     "opentelemetry-semantic-conventions==0.48b0",
@@ -2159,7 +2145,7 @@ name = "opentelemetry-semantic-conventions"
 version = "0.48b0"
 requires_python = ">=3.8"
 summary = "OpenTelemetry Semantic Conventions"
-groups = ["default", "all", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "grpc", "monitor-otlp", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "deprecated>=1.2.6",
     "opentelemetry-api==1.27.0",
@@ -2267,7 +2253,7 @@ name = "pandas"
 version = "2.2.3"
 requires_python = ">=3.9"
 summary = "Powerful data structures for data analysis, time series, and statistics"
-groups = ["all", "io", "io-pandas", "testing"]
+groups = ["io-pandas", "testing"]
 dependencies = [
     "numpy>=1.22.4; python_version < \"3.11\"",
     "numpy>=1.23.2; python_version == \"3.11\"",
@@ -2352,7 +2338,7 @@ name = "pillow"
 version = "11.0.0"
 requires_python = ">=3.9"
 summary = "Python Imaging Library (Fork)"
-groups = ["all", "io", "io-image"]
+groups = ["io-image"]
 files = [
     {file = "pillow-11.0.0-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:6619654954dc4936fcff82db8eb6401d3159ec6be81e33c6000dfd76ae189947"},
     {file = "pillow-11.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:b3c5ac4bed7519088103d9450a1107f76308ecf91d6dabc8a33a2fcfb18d0fba"},
@@ -2622,7 +2608,7 @@ name = "protobuf"
 version = "3.20.3"
 requires_python = ">=3.7"
 summary = "Protocol Buffers"
-groups = ["all", "docs", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["docs", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "protobuf-3.20.3-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:f4bd856d702e5b0d96a00ec6b307b0f51c1982c2bf9c0052cf9019e9a544ba99"},
     {file = "protobuf-3.20.3-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:9aae4406ea63d825636cc11ffb34ad3379335803216ee3a856787bcf5ccc751e"},
@@ -2685,7 +2671,7 @@ name = "pyarrow"
 version = "18.1.0"
 requires_python = ">=3.9"
 summary = "Python library for Apache Arrow"
-groups = ["all", "io", "io-pandas"]
+groups = ["io-pandas"]
 files = [
     {file = "pyarrow-18.1.0-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:e21488d5cfd3d8b500b3238a6c4b075efabc18f0f6d80b29239737ebd69caa6c"},
     {file = "pyarrow-18.1.0-cp310-cp310-macosx_12_0_x86_64.whl", hash = "sha256:b516dad76f258a702f7ca0250885fc93d1fa5ac13ad51258e39d402bd9e2e1e4"},
@@ -3019,7 +3005,7 @@ name = "python-dateutil"
 version = "2.9.0.post0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 summary = "Extensions to the standard Python datetime module"
-groups = ["default", "all", "aws", "io", "io-pandas", "testing"]
+groups = ["default", "aws", "io-pandas", "testing"]
 dependencies = [
     "six>=1.5",
 ]
@@ -3068,7 +3054,7 @@ files = [
 name = "pytz"
 version = "2024.1"
 summary = "World timezone definitions, modern and historical"
-groups = ["all", "io", "io-pandas", "testing"]
+groups = ["io-pandas", "testing"]
 files = [
     {file = "pytz-2024.1-py2.py3-none-any.whl", hash = "sha256:328171f4e3623139da4983451950b28e95ac706e13f3f2630a879749e7a8b319"},
     {file = "pytz-2024.1.tar.gz", hash = "sha256:2a29735ea9c18baf14b448846bde5a48030ed267578472d8955cd0e7443a9812"},
@@ -3349,7 +3335,7 @@ name = "requests"
 version = "2.32.3"
 requires_python = ">=3.8"
 summary = "Python HTTP for Humans."
-groups = ["all", "docs", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin"]
+groups = ["docs", "monitor-otlp", "tracing-otlp", "tracing-zipkin"]
 dependencies = [
     "certifi>=2017.4.17",
     "charset-normalizer<4,>=2",
@@ -3497,7 +3483,7 @@ name = "s3transfer"
 version = "0.10.2"
 requires_python = ">= 3.8"
 summary = "An Amazon S3 Transfer Manager"
-groups = ["all", "aws"]
+groups = ["aws"]
 dependencies = [
     "botocore<2.0a.0,>=1.33.2",
 ]
@@ -3606,7 +3592,7 @@ name = "setuptools"
 version = "74.0.0"
 requires_python = ">=3.8"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
-groups = ["default", "all", "aws", "grpc", "grpc-channelz", "grpc-reflection", "tooling"]
+groups = ["default", "aws", "grpc", "tooling"]
 files = [
     {file = "setuptools-74.0.0-py3-none-any.whl", hash = "sha256:0274581a0037b638b9fc1c6883cc71c0210865aaa76073f7882376b641b84e8f"},
     {file = "setuptools-74.0.0.tar.gz", hash = "sha256:a85e96b8be2b906f3e3e789adec6a9323abf79758ecfa3065bd740d81158b11e"},
@@ -3649,7 +3635,7 @@ name = "six"
 version = "1.16.0"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 summary = "Python 2 and 3 compatibility utilities"
-groups = ["default", "all", "aws", "docs", "io", "io-pandas", "testing", "tracing", "tracing-jaeger"]
+groups = ["default", "aws", "docs", "io-pandas", "testing", "tracing-jaeger"]
 files = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
@@ -4018,7 +4004,7 @@ files = [
 name = "thrift"
 version = "0.20.0"
 summary = "Python bindings for the Apache Thrift RPC system"
-groups = ["all", "tracing", "tracing-jaeger"]
+groups = ["tracing-jaeger"]
 dependencies = [
     "six>=1.7.2",
 ]
@@ -4115,7 +4101,7 @@ name = "typing-extensions"
 version = "4.12.2"
 requires_python = ">=3.8"
 summary = "Backported and Experimental Type Hints for Python 3.8+"
-groups = ["default", "all", "docs", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "docs", "monitor-otlp", "testing", "tooling", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "typing_extensions-4.12.2-py3-none-any.whl", hash = "sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d"},
     {file = "typing_extensions-4.12.2.tar.gz", hash = "sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8"},
@@ -4126,7 +4112,7 @@ name = "tzdata"
 version = "2024.1"
 requires_python = ">=2"
 summary = "Provider of IANA time zone data"
-groups = ["all", "io", "io-pandas", "testing"]
+groups = ["io-pandas", "testing"]
 files = [
     {file = "tzdata-2024.1-py2.py3-none-any.whl", hash = "sha256:9068bc196136463f5245e51efda838afa15aaeca9903f49050dfa2679db4d252"},
     {file = "tzdata-2024.1.tar.gz", hash = "sha256:2674120f8d891909751c38abcdfd386ac0a5a1127954fbc332af6b5ceae07efd"},
@@ -4149,7 +4135,7 @@ name = "urllib3"
 version = "1.26.20"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 summary = "HTTP library with thread-safe connection pooling, file post, and more."
-groups = ["all", "aws", "docs", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin"]
+groups = ["aws", "docs", "monitor-otlp", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "urllib3-1.26.20-py2.py3-none-any.whl", hash = "sha256:0ed14ccfbf1c30a9072c7ca157e4319b70d65f623e91e7b32fadb2853431016e"},
     {file = "urllib3-1.26.20.tar.gz", hash = "sha256:40c2dc0c681e47eb8f90e7e27bf6ff7df2e677421fd46756da1161c39ca70d32"},
@@ -4451,7 +4437,7 @@ name = "wrapt"
 version = "1.16.0"
 requires_python = ">=3.6"
 summary = "Module for decorators, wrappers and monkey patching."
-groups = ["default", "all", "docs", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "docs", "grpc", "monitor-otlp", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "wrapt-1.16.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:ffa565331890b90056c01db69c0fe634a776f8019c143a5ae265f9c6bc4bd6d4"},
     {file = "wrapt-1.16.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e4fdb9275308292e880dcbeb12546df7f3e0f96c6b41197e0cf37d2826359020"},
@@ -4627,7 +4613,7 @@ name = "zipp"
 version = "3.20.1"
 requires_python = ">=3.8"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
-groups = ["default", "all", "docs", "grpc", "grpc-channelz", "grpc-reflection", "monitor-otlp", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
+groups = ["default", "docs", "grpc", "monitor-otlp", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 files = [
     {file = "zipp-3.20.1-py3-none-any.whl", hash = "sha256:9960cd8967c8f85a56f920d5d507274e74f9ff813a0ab8889a5b5be2daf44064"},
     {file = "zipp-3.20.1.tar.gz", hash = "sha256:c22b14cc4763c5a5b04134207736c107db42e9d3ef2d9779d465f5f1bcba572b"},

@@ -4,7 +4,6 @@ import typing as t
 from http import HTTPStatus
 
 import pydantic
-from deepmerge.merger import Merger
 
 from bentoml._internal.service.openapi import APP_TAG
 from bentoml._internal.service.openapi import INFRA_TAG
@@ -21,6 +20,7 @@ from bentoml._internal.service.openapi.utils import exception_components_schema
 from bentoml._internal.service.openapi.utils import exception_schema
 from bentoml._internal.types import LazyType
 from bentoml._internal.utils.cattr import bentoml_cattr
+from bentoml._internal.utils.merge import deep_merge
 from bentoml.exceptions import InternalServerError
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import NotFound
@@ -30,14 +30,9 @@ if t.TYPE_CHECKING:
 
     from .factory import Service
 
-merger = Merger(
-    # merge dicts
-    [(dict, "merge")],
-    # override all other types
-    ["override"],
-    # override conflicting types
-    ["override"],
-)
+merger = {
+    "merge": deep_merge,
+}
 
 REF_TEMPLATE = "#/components/schemas/{model}"
 

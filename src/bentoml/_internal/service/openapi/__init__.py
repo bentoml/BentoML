@@ -5,14 +5,13 @@ from functools import lru_cache
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 
-from deepmerge.merger import Merger
-
 from bentoml.exceptions import InternalServerError
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import NotFound
 
 from ...types import LazyType
 from ...utils.cattr import bentoml_cattr
+from ...utils.merge import deep_merge
 from .specification import Contact
 from .specification import Info
 from .specification import MediaType
@@ -49,14 +48,9 @@ APP_TAG = Tag(
     name="Service APIs", description="BentoML Service API endpoints for inference."
 )
 
-merger = Merger(
-    # merge dicts
-    [(dict, "merge")],
-    # override all other types
-    ["override"],
-    # override conflicting types
-    ["override"],
-)
+merger = {
+    "merge": deep_merge,
+}
 
 
 def make_api_path(api: InferenceAPI[t.Any]) -> str:

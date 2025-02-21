@@ -32,7 +32,6 @@ dependencies = [
     "click>=7.0",
     "click-option-group",
     "cloudpickle>=2.0.0",
-    "deepmerge",
     "fs",
     "httpx",
     "inflection",

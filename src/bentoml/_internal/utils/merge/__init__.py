@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 import typing as t
+from typing import Any
+from typing import Dict
+from typing import TypeVar
+
+T = TypeVar("T", bound=Dict[str, Any])
+MergeDict = Dict[str, Any]
 
 
-def deep_merge(base: dict[str, t.Any], update: dict[str, t.Any]) -> dict[str, t.Any]:
+def deep_merge(base: T, update: Dict[str, Any]) -> T:
     """Recursively merge two dictionaries, with values from update taking precedence.
 
     This function implements the same merge behavior as the deepmerge package:
@@ -16,12 +22,14 @@ def deep_merge(base: dict[str, t.Any], update: dict[str, t.Any]) -> dict[str, t.
         update: The dictionary to merge on top of base
 
     Returns:
-        The merged dictionary
+        The merged dictionary with the same type as base
     """
-    result = base.copy()
+    result = t.cast(T, base.copy())
     for key, value in update.items():
         if isinstance(value, dict) and key in result and isinstance(result[key], dict):
-            result[key] = deep_merge(result[key], value)
+            result[key] = deep_merge(
+                t.cast(T, result[key]), t.cast(Dict[str, Any], value)
+            )
         else:
             result[key] = value
     return result

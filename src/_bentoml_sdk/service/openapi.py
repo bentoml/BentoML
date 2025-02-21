@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pydantic
 
@@ -30,24 +31,36 @@ if t.TYPE_CHECKING:
 
     from .factory import Service
 
-merger = {
-    "merge": deep_merge,
-}
+Components = dict[str, dict[str, Schema]]
+OpenAPIDict = dict[str, t.Any]
+MergeDict = dict[str, t.Any]
+
+if TYPE_CHECKING:
+    import fastapi
+    from cattrs import Converter
+    from fastapi.openapi.utils import get_openapi
+
+    bentoml_cattr: Converter
+
+FastAPIApp = t.TypeVar("FastAPIApp", bound="fastapi.FastAPI")
 
 REF_TEMPLATE = "#/components/schemas/{model}"
 
 
-def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
+def generate_spec(
+    svc: Service[t.Any], *, openapi_version: str = "3.0.2"
+) -> OpenAPISpecification:
     """Generate a OpenAPI specification for a service."""
-    mounted_app_paths = {}
-    schema_components: dict[str, dict[str, Schema]] = {}
+    mounted_app_paths: dict[str, PathItem] = {}
+    schema_components: Components = {}
+    openapi: OpenAPIDict = {}
 
     def join_path(prefix: str, path: str) -> str:
         return f"{prefix.rstrip('/')}/{path.lstrip('/')}"
 
     for app, path, _ in svc.mount_apps:
         if LazyType["fastapi.FastAPI"]("fastapi.FastAPI").isinstance(app):
-            from fastapi.openapi.utils import get_openapi
+            app = t.cast("fastapi.FastAPI", app)
 
             openapi = get_openapi(
                 title=app.title,
@@ -62,9 +75,9 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
             )
 
             if "components" in openapi:
-                merger.merge(schema_components, openapi["components"])
+                schema_components = deep_merge(schema_components, openapi["components"])
 
-    merger.merge(schema_components, generate_service_components(svc))
+    schema_components = deep_merge(schema_components, generate_service_components(svc))
 
     return OpenAPISpecification(
         openapi=openapi_version,

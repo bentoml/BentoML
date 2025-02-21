@@ -10,6 +10,10 @@ import typing as t
 from pathlib import Path
 from threading import Event
 from threading import Thread
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    pass
 
 import attr
 import fs
@@ -57,9 +61,8 @@ from .schemas.schemasv2 import UploadDeploymentFilesSchema
 
 logger = logging.getLogger(__name__)
 
-config_merger = {
-    "merge": deep_merge,
-}
+if TYPE_CHECKING:
+    pass
 
 
 @attr.define
@@ -1264,7 +1267,7 @@ class DeploymentAPI:
             orig_dict.get("bento"),
         )
 
-        config_merger.merge(orig_dict, config_params)
+        orig_dict = deep_merge(orig_dict, config_params)
         config_struct = bentoml_cattr.structure(orig_dict, UpdateDeploymentSchemaV2)
 
         self._fix_and_validate_schema(config_struct)

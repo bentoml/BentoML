@@ -9,6 +9,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    pass
+
 import schema as s
 import yaml
 from simple_di import Provide
@@ -43,9 +46,8 @@ if TYPE_CHECKING:
 
     SerializationStrategy = t.Literal["EXPORT_BENTO", "LOCAL_BENTO", "REMOTE_BENTO"]
 
-config_merger = {
-    "merge": deep_merge,
-}
+if TYPE_CHECKING:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +73,7 @@ class BentoMLConfiguration:
                 override_defaults = migration(
                     override_config=dict(flatten_dict(override_defaults)),
                 )
-            config_merger.merge(self.config, override_defaults)
+            self.config = deep_merge(self.config, override_defaults)
 
         # User override configuration
         if override_config_file is not None:
@@ -84,7 +86,7 @@ class BentoMLConfiguration:
                 override = migration(
                     override_config=dict(flatten_dict(override)),
                 )
-            config_merger.merge(self.config, override)
+            self.config = deep_merge(self.config, override)
 
         if override_config_json is not None:
             logger.info(
@@ -95,7 +97,7 @@ class BentoMLConfiguration:
                 override_config_json = migration(
                     override_config=dict(flatten_dict(override_config_json)),
                 )
-            config_merger.merge(self.config, override_config_json)
+            self.config = deep_merge(self.config, override_config_json)
 
         if override_config_values is not None:
             logger.info(
@@ -125,7 +127,7 @@ class BentoMLConfiguration:
                 raise BentoMLConfigException(
                     f"Failed to parse config options from the env var:\n{e}.\n*** Note: You can use '\"' to quote the key if it contains special characters. ***"
                 ) from None
-            config_merger.merge(self.config, override)
+            self.config = deep_merge(self.config, override)
 
         if finalize_config := getattr(spec_module, "finalize_config", None):
             finalize_config(self.config)

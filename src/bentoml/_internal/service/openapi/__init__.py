@@ -4,6 +4,15 @@ import typing as t
 from functools import lru_cache
 from http import HTTPStatus
 from typing import TYPE_CHECKING
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import TypeVar
+from typing import Union
+
+import fastapi
+from fastapi.openapi.utils import get_openapi
 
 from bentoml.exceptions import InternalServerError
 from bentoml.exceptions import InvalidArgument
@@ -11,7 +20,8 @@ from bentoml.exceptions import NotFound
 
 from ...types import LazyType
 from ...utils.cattr import bentoml_cattr
-from ...utils.merge import deep_merge
+from ...utils.merge import deep_merge as _deep_merge
+from .specification import Components
 from .specification import Contact
 from .specification import Info
 from .specification import MediaType
@@ -28,6 +38,26 @@ from .utils import exception_schema
 if TYPE_CHECKING:
     from .. import Service
     from ..inference_api import InferenceAPI
+    from .specification import Schema
+
+# Type hints for external functions
+OpenAPIRoutes = List[Any]  # FastAPI route type is complex, use Any for now
+GetOpenAPIFunc = Callable[[str, str, List[Any]], Dict[str, Any]]
+_get_openapi: GetOpenAPIFunc = t.cast(GetOpenAPIFunc, get_openapi)
+
+# Type hints for cattrs converter
+T = TypeVar("T")
+StructureFunc = Callable[[Any, type[T]], T]
+bentoml_cattr: Any  # type: ignore # Complex cattrs type, ignore for now
+
+# Type hints for deep_merge
+MergeDict = Dict[str, Any]
+DeepMergeFunc = Callable[[MergeDict, MergeDict], MergeDict]
+_deep_merge: DeepMergeFunc = t.cast(DeepMergeFunc, _deep_merge)
+
+OpenAPIDict = dict[str, t.Any]
+OpenAPIPaths = dict[str, PathItem]
+OpenAPIPathsDict = dict[str, dict[str, t.Any]]
 
 SUCCESS_DESCRIPTION = "Successful Response"
 
@@ -48,10 +78,6 @@ APP_TAG = Tag(
     name="Service APIs", description="BentoML Service API endpoints for inference."
 )
 
-merger = {
-    "merge": deep_merge,
-}
-
 
 def make_api_path(api: InferenceAPI[t.Any]) -> str:
     return api.route if api.route.startswith("/") else f"/{api.route}"
@@ -71,54 +97,97 @@ def make_infra_endpoints() -> dict[str, PathItem]:
     }
 
 
-def generate_service_components(svc: Service) -> dict[str, t.Any]:
-    components: dict[str, t.Any] = {}
+def generate_service_components(svc: Service) -> Components:
+    components = Components(schemas={})
     for api in svc.apis.values():
-        api_components = {}
+        api_components = Components(schemas={})
         input_components = api.input.openapi_components()
-        if input_components:
-            merger.merge(api_components, input_components)
-        output_components = api.output.openapi_components()
-        if output_components:
-            merger.merge(api_components, output_components)
+        if input_components and isinstance(input_components, dict):
+            merged_schemas = t.cast(
+                Dict[str, Dict[str, Union[Schema, Reference]]],
+                _deep_merge({"schemas": api_components.schemas}, input_components),
+            ).get("schemas", {})
+            api_components = Components(schemas=merged_schemas)
 
-        merger.merge(components, api_components)
+        output_components = api.output.openapi_components()
+        if output_components and isinstance(output_components, dict):
+            merged_schemas = t.cast(
+                Dict[str, Dict[str, Union[Schema, Reference]]],
+                _deep_merge({"schemas": api_components.schemas}, output_components),
+            ).get("schemas", {})
+            api_components = Components(schemas=merged_schemas)
+
+        merged_schemas = t.cast(
+            Dict[str, Dict[str, Union[Schema, Reference]]],
+            _deep_merge(
+                {"schemas": components.schemas}, {"schemas": api_components.schemas}
+            ),
+        ).get("schemas", {})
+        components = Components(schemas=merged_schemas)
 
     # merge exception at last
-    return merger.merge(components, {"schemas": exception_components_schema()})
+    merged_schemas = t.cast(
+        Dict[str, Dict[str, Union[Schema, Reference]]],
+        _deep_merge(
+            {"schemas": components.schemas}, {"schemas": exception_components_schema()}
+        ),
+    ).get("schemas", {})
+    return Components(schemas=merged_schemas)
 
 
-def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
+def generate_spec(
+    svc: Service, *, openapi_version: str = "3.0.2"
+) -> OpenAPISpecification:
     """Generate a OpenAPI specification for a service."""
-    mounted_app_paths = {}
-    schema_components = {}
+    mounted_app_paths: OpenAPIPaths = {}
+    schema_components = Components(schemas={})
+    openapi: OpenAPIDict = {}
+    paths: OpenAPIPathsDict = {}
+    app: t.Any
 
     for app, _, _ in svc.mount_apps:
         if LazyType["fastapi.FastAPI"]("fastapi.FastAPI").isinstance(app):
-            from fastapi.openapi.utils import get_openapi
-
-            openapi = get_openapi(
-                title=app.title,
-                version=app.version,
-                routes=app.routes,
+            app = t.cast("fastapi.FastAPI", app)
+            routes: OpenAPIRoutes = list(app.routes)
+            openapi_dict: OpenAPIDict = _get_openapi(
+                str(app.title), str(app.version), routes
             )
 
-            mounted_app_paths.update(
-                {
-                    k: bentoml_cattr.structure(v, PathItem)
-                    for k, v in openapi["paths"].items()
-                }
-            )
+            paths = t.cast(OpenAPIPathsDict, openapi_dict["paths"])
+            path_items: Dict[str, PathItem] = {
+                str(k): bentoml_cattr.structure(v, PathItem) for k, v in paths.items()
+            }
+            mounted_app_paths.update(path_items)
 
             if "components" in openapi:
-                merger.merge(schema_components, openapi["components"])
+                merged_schemas = t.cast(
+                    Dict[str, Dict[str, Union[Schema, Reference]]],
+                    _deep_merge(
+                        {"schemas": schema_components.schemas},
+                        {"schemas": openapi["components"].get("schemas", {})},
+                    ),
+                ).get("schemas", {})
+                schema_components = Components(schemas=merged_schemas)
 
-    merger.merge(schema_components, generate_service_components(svc))
+    service_components = generate_service_components(svc)
+    merged_schemas = t.cast(
+        Dict[str, Dict[str, Union[Schema, Reference]]],
+        _deep_merge(
+            {"schemas": schema_components.schemas},
+            {"schemas": service_components.schemas},
+        ),
+    ).get("schemas", {})
+    schema_components = Components(schemas=merged_schemas)
+    components = (
+        Components(schemas=schema_components.schemas)
+        if schema_components.schemas
+        else None
+    )
 
     return OpenAPISpecification(
         openapi=openapi_version,
         tags=[APP_TAG, INFRA_TAG],
-        components=schema_components,
+        components=components,
         info=Info(
             title=svc.name,
             description=svc.doc,

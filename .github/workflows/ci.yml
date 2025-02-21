@@ -35,6 +35,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -84,6 +86,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -123,6 +127,8 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         id: buildx
         uses: docker/setup-buildx-action@v3
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -170,6 +176,8 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         id: buildx
         uses: docker/setup-buildx-action@v3
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

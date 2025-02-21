@@ -125,6 +125,7 @@ def build_git_repo(url: str, ref: str, subdirectory: str | None, dst_path: str) 
     import subprocess
 
     from ...exceptions import BentoMLException
+    from ..configuration import get_uv_command
 
     name = os.path.splitext(os.path.basename(url))[0]
 
@@ -157,7 +158,7 @@ def build_git_repo(url: str, ref: str, subdirectory: str | None, dst_path: str) 
                 f"Failed to clone git repository {url}: {e.stderr}"
             ) from e
         source_dir = os.path.join(dest_dir, subdirectory) if subdirectory else dest_dir
-        build_cmd = [sys.executable, "-m", "uv", "build", "--sdist"]
+        build_cmd = [*get_uv_command(), "build", "--sdist"]
         subprocess.check_call(build_cmd, cwd=source_dir)
         sdist = next(Path(source_dir).glob("dist/*.tar.gz"))
         logger.info(f"Built sdist {sdist.name}")

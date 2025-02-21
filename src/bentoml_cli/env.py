@@ -121,6 +121,8 @@ def pretty_format(
 )
 @click.pass_context
 def env_command(ctx: click.Context, output: t.Literal["md", "bash"]) -> None:  # type: ignore (unused warning)
+    from bentoml._internal.configuration import get_uv_command
+
     if output not in ["md", "bash"]:
         raise CLIException(f"Unknown output format: {output}")
 
@@ -165,6 +167,6 @@ def env_command(ctx: click.Context, output: t.Literal["md", "bash"]) -> None:  #
         info_dict["conda_packages"] = conda_packages
 
     # process info from `pip freeze`
-    pip_packages = run_cmd([sys.executable, "-m", "uv", "pip", "freeze"])
+    pip_packages = run_cmd([*get_uv_command(), "pip", "freeze"])
     info_dict["pip_packages"] = pip_packages
     rich.print(pretty_format(info_dict, output=output))

@@ -225,3 +225,37 @@ def set_serialization_strategy(serialization_strategy: SerializationStrategy):
     from ..configuration.containers import BentoMLContainer
 
     BentoMLContainer.serialization_strategy.set(serialization_strategy)
+
+
+@lru_cache(maxsize=1)
+def get_uv_command() -> list[str]:
+    """
+    Get the uv command
+    """
+    import shutil
+    import subprocess
+    import sys
+
+    if uv := shutil.which("uv"):
+        return [uv]
+
+    try:
+        importlib.metadata.version("uv")
+    except importlib.metadata.PackageNotFoundError:
+        install_cmd = [sys.executable, "-m", "pip", "install", "-q", "uv"]
+        logger.info(
+            "uv is not installed, installing it with: %s", " ".join(install_cmd)
+        )
+        try:
+            subprocess.run(
+                install_cmd,
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+            )
+        except subprocess.CalledProcessError as e:
+            raise BentoMLConfigException(
+                f"Failed to install uv: {e.stderr.decode()}"
+            ) from None
+
+    return [sys.executable, "-m", "uv"]

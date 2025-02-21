@@ -40,7 +40,7 @@ This example specifies:
 
 .. note::
 
-   Currently, it's not possible to define unique runtime environments for each Service in a multi-Service Bento deployment, but it's on our roadmap.
+   Currently, it's not possible to define unique runtime environments for each Service in a multi-Service Bento deployment, but it's on our roadmap. For now, you only need to configure the runtime image of the entry Service (the one that calls other Services as dependencies).
 
 Constructor parameters
 ----------------------

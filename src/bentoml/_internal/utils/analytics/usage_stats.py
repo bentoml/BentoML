@@ -175,7 +175,8 @@ def _track_serve_init(
                 if svc.name in seen:
                     return set()
                 seen.add(svc.name)
-                models = set(svc.models)
+                # Fix: Ensure models are hashable by using id()
+                models = {id(model) for model in svc.models} if isinstance(svc.models, list) else {id(svc.models)}
                 for dep in svc.dependencies.values():
                     if dep.on is not None:
                         models.update(_get_models(dep.on, seen))

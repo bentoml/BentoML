@@ -19,6 +19,7 @@ When a single GPU is available, frameworks like PyTorch and TensorFlow default t
 .. code-block:: python
 
     import bentoml
+    import os
 
     @bentoml.service(resources={"gpu": 1})
     class MyService:
@@ -30,7 +31,9 @@ When a single GPU is available, frameworks like PyTorch and TensorFlow default t
 
         def __init__(self):
             import torch
-            self.model = torch.load(self.model_path).to("cuda:0")
+            # Specify the exact path to the weights file
+            weights_file = os.path.join(self.model_path, "weight.pt")
+            self.model = torch.load(weights_file).to('cuda:0')
 
 Multiple devices
 ^^^^^^^^^^^^^^^^
@@ -42,6 +45,7 @@ To use a specific GPU:
 .. code-block:: python
 
     import bentoml
+    import os
 
     @bentoml.service(resources={"gpu": 2})
     class MultiGPUService:
@@ -54,8 +58,12 @@ To use a specific GPU:
 
         def __init__(self):
             import torch
-            self.model1 = torch.load(self.model1_path).to("cuda:0")  # Using the first GPU
-            self.model2 = torch.load(self.model2_path).to("cuda:1")  # Using the second GPU
+            # Specify the exact paths to the weights files
+            weights_file1 = os.path.join(self.model1_path, "weight1.pt")
+            weights_file2 = os.path.join(self.model2_path, "weight2.pt")
+
+            self.model1 = torch.load(weights_file1).to("cuda:0") # Use the first GPU
+            self.model2 = torch.load(weights_file2).to("cuda:1") # Use the second GPU
 
 This image explains how different models use the GPUs assigned to them.
 

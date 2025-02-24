@@ -111,19 +111,19 @@ You can find `the source code in GitHub <https://github.com/bentoml/BentoDiffusi
              # Move the pipeline to GPU
              self.pipe.to(device="cuda")
 
-      @bentoml.api
-      def txt2img(
-              self,
-              prompt: str = sample_prompt,
-              num_inference_steps: Annotated[int, Ge(1), Le(10)] = 1,
-              guidance_scale: float = 0.0,
-      ) -> Image:
-          image = self.pipe(
-              prompt=prompt,
-              num_inference_steps=num_inference_steps,
-              guidance_scale=guidance_scale,
-          ).images[0]
-          return image
+         @bentoml.api
+         def txt2img(
+                self,
+                prompt: str = sample_prompt,
+                num_inference_steps: Annotated[int, Ge(1), Le(10)] = 1,
+                guidance_scale: float = 0.0,
+         ) -> Image:
+            image = self.pipe(
+                prompt=prompt,
+                num_inference_steps=num_inference_steps,
+                guidance_scale=guidance_scale,
+            ).images[0]
+            return image
 
 Try it out
 ----------
@@ -189,6 +189,8 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
           print(f"Image saved at {output_path}")
 
     .. tab-item:: CURL
+
+       Make sure you replace the Deployment URL with your own on BentoCloud. Refer to :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:obtain the endpoint url` for details.
 
        .. code-block:: bash
 

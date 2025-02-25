@@ -206,10 +206,12 @@ You can create more complex workflows that combine both parallel and sequential 
         resources={"gpu": 1, "memory": "4Gi"}
     )
     class GPT2:
+        model_path = bentoml.models.HuggingFaceModel("openai-community/gpt2")
+
         def __init__(self):
             self.generation_pipeline_1 = transformers.pipeline(
                 task="text-generation",
-                model="gpt2",
+                model=self.model_path,
             )
 
         @bentoml.api
@@ -220,10 +222,12 @@ You can create more complex workflows that combine both parallel and sequential 
         resources={"gpu": 1, "memory": "4Gi"}
     )
     class DistilGPT2:
+        model_path = bentoml.models.HuggingFaceModel("distilbert/distilgpt2")
+
         def __init__(self):
             self.generation_pipeline_2 = transformers.pipeline(
                 task="text-generation",
-                model="distilgpt2",
+                model=self.model_path,
             )
 
         @bentoml.api
@@ -234,11 +238,13 @@ You can create more complex workflows that combine both parallel and sequential 
         resources={"cpu": "2", "memory": "2Gi"}
     )
     class BertBaseUncased:
+        model_path = bentoml.models.HuggingFaceModel("google-bert/bert-base-uncased")
+
         def __init__(self):
             self.classification_pipeline = transformers.pipeline(
                 task="text-classification",
-                model="bert-base-uncased",
-                tokenizer="bert-base-uncased",
+                model=self.model_path,
+                tokenizer=self.model_path,
             )
 
         @bentoml.api

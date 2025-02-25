@@ -652,34 +652,34 @@ class ServiceAppFactory(BaseAppFactory):
         ctx = self.service.context
         serde = ALL_SERDE.get(media_type, ALL_SERDE["application/json"])()
         input_data = await method.input_spec.from_http_request(request, serde)
-        input_args: tuple[t.Any, ...] = ()
-        input_params: dict[str, t.Any] = {}
-        if method.ctx_param is not None:
-            input_params[method.ctx_param] = ctx
+        call_args: tuple[t.Any, ...] = ()
+        call_kwargs: dict[str, t.Any] = {}
         if getattr(method.input_spec, "__root_input__", False):
             if isinstance(input_data, IORootModel):
-                input_args = t.cast(t.Tuple[t.Any], (input_data.root,))
+                call_args = t.cast(t.Tuple[t.Any], (input_data.root,))
             else:
-                input_args = (input_data,)
+                call_args = (input_data,)
         else:
-            input_params = {k: getattr(input_data, k) for k in input_data.model_fields}
-        if ARGS in input_params:
-            input_args = (*input_args, input_params.pop(ARGS))
-        if KWARGS in input_params:
-            input_params.update(input_params.pop(KWARGS))
+            call_kwargs = {k: getattr(input_data, k) for k in input_data.model_fields}
+        if method.ctx_param is not None:
+            call_kwargs[method.ctx_param] = ctx
+        if ARGS in call_kwargs:
+            call_args = (*call_args, call_kwargs.pop(ARGS))
+        if KWARGS in call_kwargs:
+            call_kwargs.update(call_kwargs.pop(KWARGS))
 
         original_func = get_original_func(func)
 
         if method.batchable:
-            output = await self.batch_infer(name, input_args, input_params)
+            output = await self.batch_infer(name, call_args, call_kwargs)
         elif inspect.iscoroutinefunction(original_func):
-            output = await func(*input_args, **input_params)
+            output = await func(*call_args, **call_kwargs)
         elif inspect.isasyncgenfunction(original_func):
-            output = func(*input_args, **input_params)
+            output = func(*call_args, **call_kwargs)
         elif inspect.isgeneratorfunction(original_func):
 
             async def inner() -> t.AsyncGenerator[t.Any, None]:
-                gen = func(*input_args, **input_params)
+                gen = func(*call_args, **call_kwargs)
                 while True:
                     try:
                         yield await self._to_thread(next, gen)
@@ -692,7 +692,7 @@ class ServiceAppFactory(BaseAppFactory):
 
             output = inner()
         else:
-            output = await self._to_thread(func, *input_args, **input_params)
+            output = await self._to_thread(func, *call_args, **call_kwargs)
 
         if isinstance(output, Response):
             response = output

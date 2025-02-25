@@ -9,6 +9,7 @@ import attrs
 import pydantic
 
 from bentoml._internal.service.openapi import SUCCESS_DESCRIPTION
+from bentoml._internal.service.openapi.specification import Encoding
 from bentoml._internal.service.openapi.specification import MediaType
 from bentoml._internal.service.openapi.specification import Schema
 from bentoml._internal.utils import dict_filter_none
@@ -205,9 +206,18 @@ class APIMethod(t.Generic[P, R]):
             {},
             max_depth=1,
         )
+        encoding: dict[str, Encoding] = {}
+        if self.input_spec.mime_type() == "multipart/form-data":
+            for field in self.input_spec.model_fields:
+                if field not in self.input_spec.multipart_fields:
+                    encoding[field] = Encoding(contentType="application/json")
 
         return {
-            "content": {self.input_spec.mime_type(): MediaType(schema=Schema(**input))},
+            "content": {
+                self.input_spec.mime_type(): MediaType(
+                    schema=Schema(**input), encoding=encoding or None
+                )
+            },
         }
 
     def openapi_response(self) -> dict[str, t.Any]:

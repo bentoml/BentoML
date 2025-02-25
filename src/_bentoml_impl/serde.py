@@ -217,7 +217,9 @@ class MultipartSerde(JSONSerde):
                 elif len(value) >= 1:
                     data[k] = value[0]
             else:
-                assert isinstance(v := form[k], str)
+                v = form[k]
+                if isinstance(v, UploadFile):
+                    v = await v.read()
                 try:
                     data[k] = json.loads(v)
                 except json.JSONDecodeError:

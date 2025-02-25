@@ -167,15 +167,13 @@ def _track_serve_init(
                 )
             )
         else:
-            from _bentoml_sdk.models import Model
 
-            def _get_models(
-                svc: NewService[t.Any], seen: set[str]
-            ) -> t.Set[Model[t.Any]]:
+            def _get_models(svc: NewService[t.Any], seen: set[str]) -> set[int]:
                 if svc.name in seen:
                     return set()
                 seen.add(svc.name)
-                models = set(svc.models)
+                # Fix: Ensure models are hashable by using id()
+                models = {id(model) for model in svc.models}
                 for dep in svc.dependencies.values():
                     if dep.on is not None:
                         models.update(_get_models(dep.on, seen))

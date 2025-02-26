@@ -317,7 +317,7 @@ class Service(t.Generic[T]):
     def inject_config(self) -> None:
         from bentoml._internal.configuration import load_config
         from bentoml._internal.configuration.containers import BentoMLContainer
-        from bentoml._internal.configuration.containers import config_merger
+        from bentoml._internal.utils import deep_merge
 
         # XXX: ensure at least one item to make `flatten_dict` work
         override_defaults = {
@@ -347,7 +347,7 @@ class Service(t.Generic[T]):
             k: main_config[k] for k in main_config if k not in api_server_keys
         }
         existing = t.cast(t.Dict[str, t.Any], BentoMLContainer.config.get())
-        config_merger.merge(existing, {"api_server": api_server_config, **rest_config})
+        deep_merge(existing, {"api_server": api_server_config, **rest_config})
         BentoMLContainer.config.set(existing)  # type: ignore
 
     @with_config

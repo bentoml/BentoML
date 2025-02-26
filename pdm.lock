@@ -5,7 +5,7 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d99029b5afa022fc6dfb231de1797103c517927ad87cb11ba00e00c6ae5edf89"
+content_hash = "sha256:a4448a03611e2422c667958dec1ed42f30da3bd19281aaea7deebe8090126a36"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -694,20 +694,6 @@ files = [
     {file = "coverage-7.2.6-cp39-cp39-win_amd64.whl", hash = "sha256:6b9f64526286255735847aed0221b189486e0b9ed943446936e41b7e44b08783"},
     {file = "coverage-7.2.6-pp37.pp38.pp39-none-any.whl", hash = "sha256:6babcbf1e66e46052442f10833cfc4a0d3554d8276aa37af8531a83ed3c1a01d"},
     {file = "coverage-7.2.6.tar.gz", hash = "sha256:2025f913f2edb0272ef15d00b1f335ff8908c921c8eb2013536fcaf61f5a683d"},
-]
-
-[[package]]
-name = "deepmerge"
-version = "2.0"
-requires_python = ">=3.8"
-summary = "A toolset for deeply merging Python dictionaries."
-groups = ["default"]
-dependencies = [
-    "typing-extensions; python_version <= \"3.9\"",
-]
-files = [
-    {file = "deepmerge-2.0-py3-none-any.whl", hash = "sha256:6de9ce507115cff0bed95ff0ce9ecc31088ef50cbdf09bc90a09349a318b3d00"},
-    {file = "deepmerge-2.0.tar.gz", hash = "sha256:5c3d86081fbebd04dd5de03626a0607b809a98fb6ccba5770b62466fe940ff20"},
 ]
 
 [[package]]

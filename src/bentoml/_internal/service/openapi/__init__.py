@@ -5,13 +5,12 @@ from functools import lru_cache
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 
-from deepmerge.merger import Merger
-
 from bentoml.exceptions import InternalServerError
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import NotFound
 
 from ...types import LazyType
+from ...utils import deep_merge
 from ...utils.cattr import bentoml_cattr
 from .specification import Contact
 from .specification import Info
@@ -49,15 +48,6 @@ APP_TAG = Tag(
     name="Service APIs", description="BentoML Service API endpoints for inference."
 )
 
-merger = Merger(
-    # merge dicts
-    [(dict, "merge")],
-    # override all other types
-    ["override"],
-    # override conflicting types
-    ["override"],
-)
-
 
 def make_api_path(api: InferenceAPI[t.Any]) -> str:
     return api.route if api.route.startswith("/") else f"/{api.route}"
@@ -83,15 +73,15 @@ def generate_service_components(svc: Service) -> dict[str, t.Any]:
         api_components = {}
         input_components = api.input.openapi_components()
         if input_components:
-            merger.merge(api_components, input_components)
+            deep_merge(api_components, input_components)
         output_components = api.output.openapi_components()
         if output_components:
-            merger.merge(api_components, output_components)
+            deep_merge(api_components, output_components)
 
-        merger.merge(components, api_components)
+        deep_merge(components, api_components)
 
     # merge exception at last
-    return merger.merge(components, {"schemas": exception_components_schema()})
+    return deep_merge(components, {"schemas": exception_components_schema()})
 
 
 def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
@@ -117,9 +107,9 @@ def generate_spec(svc: Service, *, openapi_version: str = "3.0.2"):
             )
 
             if "components" in openapi:
-                merger.merge(schema_components, openapi["components"])
+                deep_merge(schema_components, openapi["components"])
 
-    merger.merge(schema_components, generate_service_components(svc))
+    deep_merge(schema_components, generate_service_components(svc))
 
     return OpenAPISpecification(
         openapi=openapi_version,

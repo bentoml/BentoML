@@ -15,7 +15,6 @@ import attr
 import fs
 import rich
 import yaml
-from deepmerge.merger import Merger
 from pathspec import PathSpec
 from rich.console import Console
 from simple_di import Provide
@@ -38,6 +37,7 @@ from ...exceptions import BentoMLException
 from ...exceptions import NotFound
 from ..configuration.containers import BentoMLContainer
 from ..tag import Tag
+from ..utils import deep_merge
 from ..utils import filter_control_codes
 from ..utils import is_jupyter
 from ..utils.cattr import bentoml_cattr
@@ -56,15 +56,6 @@ from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV
 from .schemas.schemasv2 import UploadDeploymentFilesSchema
 
 logger = logging.getLogger(__name__)
-
-config_merger = Merger(
-    # merge dicts
-    type_strategies=[(dict, "merge")],
-    # override all other types
-    fallback_strategies=["override"],
-    # override conflicting types
-    type_conflict_strategies=["override"],
-)
 
 
 @attr.define
@@ -1269,7 +1260,7 @@ class DeploymentAPI:
             orig_dict.get("bento"),
         )
 
-        config_merger.merge(orig_dict, config_params)
+        deep_merge(orig_dict, config_params)
         config_struct = bentoml_cattr.structure(orig_dict, UpdateDeploymentSchemaV2)
 
         self._fix_and_validate_schema(config_struct)

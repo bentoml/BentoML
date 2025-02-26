@@ -4,7 +4,6 @@ import typing as t
 from http import HTTPStatus
 
 import pydantic
-from deepmerge.merger import Merger
 
 from bentoml._internal.service.openapi import APP_TAG
 from bentoml._internal.service.openapi import INFRA_TAG
@@ -20,6 +19,7 @@ from bentoml._internal.service.openapi.specification import Schema
 from bentoml._internal.service.openapi.utils import exception_components_schema
 from bentoml._internal.service.openapi.utils import exception_schema
 from bentoml._internal.types import LazyType
+from bentoml._internal.utils import deep_merge
 from bentoml._internal.utils.cattr import bentoml_cattr
 from bentoml.exceptions import InternalServerError
 from bentoml.exceptions import InvalidArgument
@@ -29,15 +29,6 @@ if t.TYPE_CHECKING:
     import fastapi as fastapi
 
     from .factory import Service
-
-merger = Merger(
-    # merge dicts
-    [(dict, "merge")],
-    # override all other types
-    ["override"],
-    # override conflicting types
-    ["override"],
-)
 
 REF_TEMPLATE = "#/components/schemas/{model}"
 
@@ -67,9 +58,9 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
             )
 
             if "components" in openapi:
-                merger.merge(schema_components, openapi["components"])
+                deep_merge(schema_components, openapi["components"])
 
-    merger.merge(schema_components, generate_service_components(svc))
+    deep_merge(schema_components, generate_service_components(svc))
 
     return OpenAPISpecification(
         openapi=openapi_version,

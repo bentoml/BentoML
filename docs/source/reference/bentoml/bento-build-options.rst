@@ -210,7 +210,7 @@ You can specify the model to be used for building a Bento using a string model t
 
 - ``tag``: The name and version of the model, separated by a colon.
 - ``filter``: This field uses the same filter syntax in BentoCloud. You use a filter to list specific models, such as the models with the same label. You can add multiple comma-separated filters to a model.
-- ``alias``: An alias for the model. If this is specified, you can use it directly in code like ``bentoml.models.get(alias)``.
+- ``alias``: An alias for the model. If this is specified, you can use it directly in code like ``bentoml.models.BentoModel(alias)``.
 
 Python packages
 ^^^^^^^^^^^^^^^

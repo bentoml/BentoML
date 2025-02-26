@@ -6,219 +6,269 @@ ControlNet is a neural network architecture designed to enhance the precision an
 
 This document demonstrates how to use ControlNet and Stable Diffusion XL to create an image generation application for specific user requirements.
 
-All the source code in this tutorial is available in the `BentoDiffusion GitHub repository <https://github.com/bentoml/BentoDiffusion>`_.
+.. raw:: html
 
-Prerequisites
--------------
+    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-right: 10px; text-align: center;">
+            <img src="https://docs.bentoml.com/en/latest/_static/img/github-mark.png" alt="GitHub" style="vertical-align: middle; width: 24px; height: 24px;">
+            <a href="https://github.com/bentoml/BentoDiffusion" style="margin-left: 5px; vertical-align: middle;">Source Code</a>
+        </div>
+        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-left: 10px; text-align: center;">
+            <img src="https://docs.bentoml.com/en/latest/_static/img/bentocloud-logo.png" alt="BentoCloud" style="vertical-align: middle; width: 24px; height: 24px;">
+            <a href="#bentocloud" style="margin-left: 5px; vertical-align: middle;">Deploy to BentoCloud</a>
+        </div>
+        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-left: 10px; text-align: center;">
+            <img src="https://docs.bentoml.com/en/latest/_static/img/bentoml-icon.png" alt="BentoML" style="vertical-align: middle; width: 24px; height: 24px;">
+            <a href="#localserving" style="margin-left: 5px; vertical-align: middle;">Serve with BentoML</a>
+        </div>
+    </div>
 
-- Python 3.9+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
-- You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/hello-world` first.
-- (Optional) We recommend you create a virtual environment for dependency isolation. See the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_ or the `Python documentation <https://docs.python.org/3/library/venv.html>`_ for details.
-
-Install dependencies
---------------------
-
-Clone the project repository and install all the dependencies.
-
-.. code-block:: bash
-
-    git clone https://github.com/bentoml/BentoDiffusion.git
-    cd BentoDiffusion/controlnet
-    pip install -r requirements.txt
-
-Define the model serving logic
-------------------------------
-
-Create BentoML :doc:`Services </build-with-bentoml/services>` in a ``service.py`` file to specify the serving logic of this BentoML project. In the cloned repository, you can find an example ``service.py`` file that uses the following models:
-
-- `diffusers/controlnet-canny-sdxl-1.0 <https://huggingface.co/diffusers/controlnet-canny-sdxl-1.0>`_: Offers enhanced control in the image generation process. It allows for precise modifications based on text and image inputs, making sure the generated images are more aligned with specific user requirements (for example, replicating certain compositions).
-- `madebyollin/sdxl-vae-fp16-fix <https://huggingface.co/madebyollin/sdxl-vae-fp16-fix>`_: This Variational Autoencoder (VAE) is responsible for encoding and decoding images within the pipeline.
-- `stabilityai/stable-diffusion-xl-base-1.0 <https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0>`_: Takes text prompts and image inputs, processes them through the above two integrated models, and generates images that reflect the given prompts.
-
-.. code-block:: python
-    :caption: `service.py`
-
-    from __future__ import annotations
-
-    import typing as t
-
-    import numpy as np
-    import PIL
-    from PIL.Image import Image as PIL_Image
-
-    from pydantic import BaseModel
-
-    import bentoml
-
-    CONTROLNET_MODEL_ID = "diffusers/controlnet-canny-sdxl-1.0"
-    VAE_MODEL_ID = "madebyollin/sdxl-vae-fp16-fix"
-    BASE_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
-
-    @bentoml.service(
-        traffic={
-            "timeout": 600,
-            "external_queue": True,
-            "concurrency": 1,
-        },
-        workers=1,
-        resources={
-            "gpu": 1,
-            "gpu_type": "nvidia-l4",
-        }
-    )
-    class ControlNet:
-
-        def __init__(self) -> None:
-
-            import torch
-            from diffusers import StableDiffusionXLControlNetPipeline, ControlNetModel, AutoencoderKL
-
-            if torch.cuda.is_available():
-                self.device = "cuda"
-                self.dtype = torch.float16
-            else:
-                self.device = "cpu"
-                self.dtype = torch.float32
-
-            self.controlnet = ControlNetModel.from_pretrained(
-                CONTROLNET_MODEL_ID,
-                torch_dtype=self.dtype,
-            )
-
-            self.vae = AutoencoderKL.from_pretrained(
-                VAE_MODEL_ID,
-                torch_dtype=self.dtype,
-            )
-
-            self.pipe = StableDiffusionXLControlNetPipeline.from_pretrained(
-                BASE_MODEL_ID,
-                controlnet=self.controlnet,
-                vae=self.vae,
-                torch_dtype=self.dtype
-            ).to(self.device)
-
-        @bentoml.api
-        async def generate(self, image: PIL_Image, params: Params) -> PIL_Image:
-            import cv2
-
-            arr = np.array(image)
-            arr = cv2.Canny(arr, 100, 200)
-            arr = arr[:, :, None]
-            arr = np.concatenate([arr, arr, arr], axis=2)
-            params_d = params.dict()
-            prompt = params_d.pop("prompt")
-            image = PIL.Image.fromarray(arr)
-            return self.pipe(
-                prompt,
-                image=image,
-                **params_d
-            ).to_tuple()[0][0]
-
-    class Params(BaseModel):
-        prompt: str
-        negative_prompt: t.Optional[str]
-        controlnet_conditioning_scale: float = 0.5
-        num_inference_steps: int = 25
-
-This file defines a BentoML Service ``ControlNet`` with custom :doc:`configurations </reference/bentoml/configurations>` in timeout, worker count, and resources.
-
-- It loads the three pre-trained models and configures them to use GPU if available. The main pipeline (``StableDiffusionXLControlNetPipeline``) integrates these models.
-- It defines an asynchronous API endpoint ``generate``, which takes an image and a set of parameters as input. The parameters for the generation process are extracted from a ``Params`` instance, a Pydantic model that provides automatic data validation.
-- The ``generate`` method returns the generated image by calling the pipeline with the processed image and text prompts.
-
-Run ``bentoml serve`` in your project directory to start the BentoML server.
+You can invoke the ControlNet inference API with parameters specifying your desired image characteristics. For example, send the following query to generate a new scene replicating the pose from the provided reference image:
 
 .. code-block:: bash
 
-    $ bentoml serve
+     {
+        "prompt": "A young man walking in a park, wearing jeans.",
+        "negative_prompt": "ugly, disfigured, ill-structured, low resolution",
+        "controlnet_conditioning_scale": 0.5,
+        "num_inference_steps": 25,
+        "image": "example-image.png",
+     }
 
-    2024-01-09T04:33:24+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:ControlNet" listening on http://localhost:3000 (Press CTRL+C to quit)
-
-The server is active at `http://localhost:3000 <http://localhost:3000>`_. You can interact with it in different ways.
-
-.. tab-set::
-
-    .. tab-item:: CURL
-
-        .. code-block:: bash
-
-            curl -X 'POST' \
-                'http://localhost:3000/generate' \
-                -H 'accept: image/*' \
-                -H 'Content-Type: multipart/form-data' \
-                -F 'image=@example-image.png;type=image/png' \
-                -F 'params={
-                "prompt": "A young man walking in a park, wearing jeans.",
-                "negative_prompt": "ugly, disfigured, ill-structured, low resolution",
-                "controlnet_conditioning_scale": 0.5,
-                "num_inference_steps": 25
-                }'
-
-    .. tab-item:: Python client
-
-        .. code-block:: python
-
-            import bentoml
-            from pathlib import Path
-
-            with bentoml.SyncHTTPClient("http://localhost:3000") as client:
-                result = client.generate(
-                    image=Path("example-image.png"),
-                    params={
-                            "prompt": "A young man walking in a park, wearing jeans.",
-                            "negative_prompt": "ugly, disfigured, ill-structure, low resolution",
-                            "controlnet_conditioning_scale": 0.5,
-                            "num_inference_steps": 25
-                    },
-                )
-
-    .. tab-item:: Swagger UI
-
-        Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, specify the image and parameters, and click **Execute**.
-
-        .. image:: ../../_static/img/examples/controlnet/service-ui.png
-
-This is the example image used in the request:
+Input reference image:
 
 .. image:: ../../_static/img/examples/controlnet/example-image.png
+   :align: center
+   :width: 400px
 
-Expected output:
+This is the generated output image, replicating the pose in a new environment:
 
 .. image:: ../../_static/img/examples/controlnet/output-image.png
+   :align: center
+   :width: 400px
 
-Deploy to BentoCloud
---------------------
-
-After the Service is ready, you can deploy the project to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $10 in free credits.
-
-First, :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for building a Bento, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
-
-Here is an example:
-
-.. code-block:: python
-    :caption: `service.py`
-
-    my_image = bentoml.images.PythonImage(python_version='3.11', distro='debian') \
-                .system_packages("ffmpeg") \
-                .requirements_file("requirements.txt")
-
-    @bentoml.service(
-        image=my_image, # Apply the specifications
-        ...
-    )
-    class ControlNet:
-        ...
-
-:ref:`Log in to BentoCloud <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
-
-.. code-block:: bash
-
-    bentoml deploy
-
-Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
+This example is ready for quick deployment and scaling on BentoCloud. With a single command, you get a production-grade application with fast autoscaling, secure deployment in your cloud, and comprehensive observability.
 
 .. image:: ../../_static/img/examples/controlnet/controlnet-bentocloud.png
 
-.. note::
+Code explanations
+-----------------
 
-   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.
+You can find `the source code in GitHub <https://github.com/bentoml/BentoDiffusion/tree/main/controlnet>`_. Below is a breakdown of the key code implementations within this project.
+
+1. Set the model IDs used by the ControlNet and SDXL pipeline. You can switch to any other diffusion model as needed.
+
+   - `diffusers/controlnet-canny-sdxl-1.0 <https://huggingface.co/diffusers/controlnet-canny-sdxl-1.0>`_: Offers enhanced control in the image generation process. It allows for precise modifications based on text and image inputs, making sure the generated images are more aligned with specific user requirements (for example, replicating certain compositions).
+   - `madebyollin/sdxl-vae-fp16-fix <https://huggingface.co/madebyollin/sdxl-vae-fp16-fix>`_: This Variational Autoencoder (VAE) is responsible for encoding and decoding images within the pipeline.
+   - `stabilityai/stable-diffusion-xl-base-1.0 <https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0>`_: Takes text prompts and image inputs, processes them through the above two integrated models, and generates images that reflect the given prompts.
+
+   .. code-block:: python
+      :caption: `service.py`
+
+      CONTROLNET_MODEL_ID = "diffusers/controlnet-canny-sdxl-1.0"
+      VAE_MODEL_ID = "madebyollin/sdxl-vae-fp16-fix"
+      BASE_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
+
+2. Use the ``@bentoml.service`` decorator to define a BentoML Service, where you can customize how the model will be served. The decorator lets you set :doc:`configurations </reference/bentoml/configurations>` like timeout and GPU resources to use on BentoCloud. Note that these models require at least an NVIDIA L4 GPU for optimal performance.
+
+   .. code-block:: python
+      :caption: `service.py`
+
+      @bentoml.service(
+            traffic={"timeout": 600},
+            resources={
+                "gpu": 1,
+                "gpu_type": "nvidia-l4",
+            }
+      )
+      class ControlNet:
+          controlnet_path = bentoml.models.HuggingFaceModel(CONTROLNET_MODEL_ID)
+          vae_path = bentoml.models.HuggingFaceModel(VAE_MODEL_ID)
+          base_path = bentoml.models.HuggingFaceModel(BASE_MODEL_ID)
+          ...
+
+   Within the class, :ref:`load the model from Hugging Face <load-models>` and define it as a class variable. The ``HuggingFaceModel`` method provides an efficient mechanism for loading AI models to accelerate model deployment, reducing image build time and cold start time.
+
+3. The ``@bentoml.service`` decorator also allows you to :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for a Bento, the unified distribution format in BentoML. A Bento is packaged with all the source code, Python dependencies, model references, and environment setup, making it easy to deploy consistently across different environments.
+
+   Here is an example:
+
+   .. code-block:: python
+      :caption: `service.py`
+
+      my_image = bentoml.images.PythonImage(python_version="3.11", distro="debian") \
+                  .system_packages("ffmpeg") \
+                  .requirements_file("requirements.txt")
+
+      @bentoml.service(
+          image=my_image, # Apply the specifications
+          ...
+      )
+      class ControlNet:
+          ...
+
+4. Use the ``@bentoml.api`` decorator to define an asynchronous API endpoint ``generate``. It takes an image and a set of parameters as input, and returns the generated image by calling the pipeline with the processed image and text prompts.
+
+   .. code-block:: python
+      :caption: `service.py`
+
+      class ControlNet:
+          ...
+
+          def __init__(self) -> None:
+
+              import torch
+              from diffusers import StableDiffusionXLControlNetPipeline, ControlNetModel, AutoencoderKL
+              # Logic to initialize models here
+              ...
+
+          @bentoml.api
+          def generate(
+                  self,
+                  image: PIL_Image,
+                  prompt: str,
+                  negative_prompt: t.Optional[str] = None,
+                  controlnet_conditioning_scale: t.Optional[float] = 1.0,
+                  num_inference_steps: t.Optional[int] = 50,
+                  guidance_scale: t.Optional[float] = 5.0,
+          ) -> PIL_Image:
+              ...
+              return self.pipe(
+                  prompt,
+                  image=image,
+                  negative_prompt=negative_prompt,
+                  controlnet_conditioning_scale=controlnet_conditioning_scale,
+                  num_inference_steps=num_inference_steps,
+                  guidance_scale=guidance_scale,
+              ).to_tuple()[0][0]
+
+Try it out
+----------
+
+You can run `this example project <https://github.com/bentoml/BentoDiffusion/tree/main/controlnet>`_ on BentoCloud, or serve it locally, containerize it as an OCI-compliant image, and deploy it anywhere.
+
+.. _BentoCloud:
+
+BentoCloud
+^^^^^^^^^^
+
+.. raw:: html
+
+    <a id="bentocloud"></a>
+
+BentoCloud provides fast and scalable infrastructure for building and scaling AI applications with BentoML in the cloud.
+
+1. Install BentoML and :doc:`log in to BentoCloud </scale-with-bentocloud/manage-api-tokens>` through the BentoML CLI. If you don't have a BentoCloud account, `sign up here for free <https://www.bentoml.com/>`_.
+
+   .. code-block:: bash
+
+      pip install bentoml
+      bentoml cloud login
+
+2. Clone the `BentoDiffusion repository <https://github.com/bentoml/BentoDiffusion>`_ and deploy the project.
+
+   .. code-block:: bash
+
+      git clone https://github.com/bentoml/BentoDiffusion.git
+      cd BentoDiffusion/controlnet
+      bentoml deploy
+
+3. Once it is up and running on BentoCloud, you can call the endpoint in the following ways:
+
+   .. tab-set::
+
+    .. tab-item:: BentoCloud Playground
+
+		.. image:: ../../_static/img/examples/controlnet/controlnet-bentocloud.png
+
+    .. tab-item:: Python client
+
+       Create a :doc:`BentoML client </build-with-bentoml/clients>` to call the endpoint. Make sure you replace the Deployment URL with your own on BentoCloud. Refer to :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:obtain the endpoint url` for details.
+
+       .. code-block:: python
+
+          import bentoml
+          from pathlib import Path
+
+          # Define the path to save the generated image
+          output_path = Path("generated_image.png")
+
+          with bentoml.SyncHTTPClient("https://controlnet-new-testt-e3c1c7db.mt-guc1.bentoml.ai") as client:
+            result = client.generate(
+                controlnet_conditioning_scale=0.5,
+                guidance_scale=5,
+                image=Path("./example-image.png"),
+                negative_prompt="ugly, disfigured, ill-structure, low resolution",
+                num_inference_steps=25,
+                prompt="A young man walking in a park, wearing jeans.",
+          )
+
+          # The result should be a PIL.Image object
+          result.save(output_path)
+
+          print(f"Image saved at {output_path}")
+
+    .. tab-item:: CURL
+
+       Make sure you replace the Deployment URL with your own on BentoCloud. Refer to :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:obtain the endpoint url` for details.
+
+       .. code-block:: bash
+
+          curl -s -X POST \
+                'https://controlnet-new-testt-e3c1c7db.mt-guc1.bentoml.ai/generate' \
+                -F controlnet_conditioning_scale='0.5' \
+                -F guidance_scale='5' \
+                -F negative_prompt='"ugly, disfigured, ill-structure, low resolution"' \
+                -F num_inference_steps='25' \
+                -F prompt='"A young man walking in a park, wearing jeans."' \
+                -F 'image=@example-image.png' \
+                -o output.jpg
+
+4. To make sure the Deployment automatically scales within a certain replica range, add the scaling flags:
+
+   .. code-block:: bash
+
+      bentoml deploy --scaling-min 0 --scaling-max 3 # Set your desired count
+
+   If it's already deployed, update its allowed replicas as follows:
+
+   .. code-block:: bash
+
+      bentoml deployment update <deployment-name> --scaling-min 0 --scaling-max 3 # Set your desired count
+
+   For more information, see :doc:`how to configure concurrency and autoscaling </scale-with-bentocloud/scaling/autoscaling>`.
+
+.. _LocalServing:
+
+Local serving
+^^^^^^^^^^^^^
+
+.. raw:: html
+
+    <a id="localserving"></a>
+
+BentoML allows you to run and test your code locally, so that you can quickly validate your code with local compute resources.
+
+1. Clone the repository and choose your desired project.
+
+   .. code-block:: bash
+
+      git clone https://github.com/bentoml/BentoDiffusion.git
+      cd BentoDiffusion/controlnet
+
+      # Recommend Python 3.11
+      pip install -r requirements.txt
+
+2. Serve it locally.
+
+   .. code-block:: bash
+
+      bentoml serve
+
+   .. note::
+
+      To run this project locally, you need an Nvidia GPU with at least 12G VRAM.
+
+3. Visit or send API requests to `http://localhost:3000 <http://localhost:3000/>`_.
+
+For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.

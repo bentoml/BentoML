@@ -46,12 +46,12 @@ Set up the environment
 
       We recommend you create a virtual environment for dependency isolation. If you don't want to set up a local development environment, skip to the :doc:`BentoCloud deployment document <cloud-deployment>`.
 
-3. Install the dependencies.
+3. Install BentoML and the required dependencies for the model.
 
    .. code-block:: bash
 
       # Recommend Python 3.11
-      pip install -r requirements.txt
+      pip install bentoml torch transformers
 
 Create a BentoML Service
 ------------------------

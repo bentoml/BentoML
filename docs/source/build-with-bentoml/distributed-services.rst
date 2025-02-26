@@ -27,127 +27,44 @@ Distributed Services support complex, modular architectures through interservice
 - **Arbitrary dependency chains**: Services can form dependency chains of any length, enabling intricate Service orchestration.
 - **Diamond-shaped dependencies**: Support a diamond dependency pattern, where multiple Services depend on a single downstream Service, for maximizing Service reuse.
 
-The following is an example of two distributed Services with different hardware requirements and one Service depends on another using ``bentoml.depends()``.
+Basic usage
+-----------
 
-- ``SDXLControlNetService``: A high-resource demanding Service, requiring GPU support for image generation.
-- ``ControlNet``: A Service designed to handle incoming requests and route them appropriately. It calls a method of the ``SDXLControlNetService`` Service.
-
-This is the ``service.py`` file:
+The following ``service.py`` file contains two Services with different hardware requirements. To declare a dependency, use the ``bentoml.depends()`` function by passing the dependent Service class as an argument. This creates a direct link between Services for easy method invocation:
 
 .. code-block:: python
+   :caption: `service.py`
+   :emphasize-lines: 17, 26
 
-    from __future__ import annotations
-
-    import typing as t
-
-    import cv2
-    import numpy as np
-    import PIL
-    from PIL.Image import Image as PIL_Image
-
-    import torch
-    from diffusers import StableDiffusionXLControlNetPipeline, ControlNetModel, AutoencoderKL
-    from pydantic import BaseModel
-
-    import bentoml
-
-    CONTROLNET_MODEL_ID = "diffusers/controlnet-canny-sdxl-1.0"
-    VAE_MODEL_ID = "madebyollin/sdxl-vae-fp16-fix"
-    BASE_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
+   import bentoml
+   import numpy as np
 
 
-    @bentoml.service(
-        traffic={"timeout": 600},
-        workers=1,
-        resources={
-            "gpu": "1",
-            "gpu_type": "nvidia-l4",
-        }
-    )
-    class SDXLControlNetService:
+   @bentoml.service(resources={"cpu": "200m", "memory": "512Mi"})
+   class Preprocessing:
+       # A dummy prepocessing Service
+       @bentoml.api
+       def preprocess(self, input_series: np.ndarray) -> np.ndarray:
+           return input_series
 
-        def __init__(self) -> None:
+   @bentoml.service(resources={"cpu": "1", "memory": "2Gi"})
+   class IrisClassifier:
+       # Load the model from the Model Store
+       iris_model = bentoml.models.BentoModel("iris_sklearn:latest")
+       # Declare the preprocessing Service as a dependency
+       preprocessing = bentoml.depends(Preprocessing)
 
-            if torch.cuda.is_available():
-                self.device = "cuda"
-                self.dtype = torch.float16
-            else:
-                self.device = "cpu"
-                self.dtype = torch.float32
+       def __init__(self):
+           import joblib
 
-            self.controlnet = ControlNetModel.from_pretrained(
-                CONTROLNET_MODEL_ID,
-                torch_dtype=self.dtype,
-            )
+           self.model = joblib.load(self.iris_model.path_of("model.pkl"))
 
-            self.vae = AutoencoderKL.from_pretrained(
-                VAE_MODEL_ID,
-                torch_dtype=self.dtype,
-            )
+       @bentoml.api
+       def classify(self, input_series: np.ndarray) -> np.ndarray:
+           input_series = self.preprocessing.preprocess(input_series)
+           return self.model.predict(input_series)
 
-            self.pipe = StableDiffusionXLControlNetPipeline.from_pretrained(
-                BASE_MODEL_ID,
-                controlnet=self.controlnet,
-                vae=self.vae,
-                torch_dtype=self.dtype
-            ).to(self.device)
-
-
-        @bentoml.api
-        async def generate(
-                self,
-                prompt: str,
-                arr: np.ndarray[t.Any, np.uint8],
-                **kwargs,
-        ):
-            image = PIL.Image.fromarray(arr)
-            return self.pipe(prompt, image=image, **kwargs).to_tuple()
-
-
-    class Params(BaseModel):
-        prompt: str
-        negative_prompt: t.Optional[str]
-        controlnet_conditioning_scale: float = 0.5
-        num_inference_steps: int = 25
-
-
-    @bentoml.service(
-        traffic={"timeout": 600},
-        workers=8,
-    resources={"cpu": "1"}
-    )
-    class ControlNet:
-        # Pass the dependent Service class as an argument
-        controlnet_service = bentoml.depends(SDXLControlNetService)
-
-        @bentoml.api
-        async def generate(self, image: PIL_Image, params: Params) -> PIL_Image:
-            arr = np.array(image)
-            arr = cv2.Canny(arr, 100, 200)
-            arr = arr[:, :, None]
-            arr = np.concatenate([arr, arr, arr], axis=2)
-            params_d = params.dict()
-            prompt = params_d.pop("prompt")
-            # Invoke a class level function of another Service
-            res = await self.controlnet_service.generate(
-                prompt,
-                arr=arr,
-                **params_d
-            )
-            return res[0][0]
-
-To declare a dependency, you use the ``bentoml.depends()`` function by passing the dependent Service class as an argument. This creates a direct link between Services, facilitating easy method invocation. This example uses the following code to achieve this:
-
-.. code-block:: python
-
-    class ControlNet:
-        controlnet_service = bentoml.depends(SDXLControlNetService)
-
-Once a dependency is declared, invoking methods on the dependent Service is similar to calling a local method. In other words, Service ``A`` can call Service ``B`` as if Service ``A`` were invoking a class level function on Service ``B``. This abstracts away the complexities of network communication, serialization, and deserialization. In this example, the Service ``ControlNet`` invokes the ``generate`` function of ``SDXLControlNetService`` as below:
-
-.. code-block:: python
-
-    res = await self.controlnet_service.generate(prompt, arr=arr, **params_d)
+Once a dependency is declared, invoking methods on the dependent Service is similar to calling a local method. In other words, Service ``A`` can call Service ``B`` as if Service ``A`` were invoking a class level function on Service ``B``. This abstracts away the complexities of network communication, serialization, and deserialization.
 
 Using ``bentoml.depends()`` is a recommended way for creating a BentoML project with distributed Services. It enhances modularity as you can develop reusable, loosely coupled Services that can be maintained and scaled independently.
 
@@ -213,22 +130,21 @@ BentoML also allows you to set an external deployment as a dependency for a Serv
 Deploy distributed Services
 ---------------------------
 
-Deploying a project with distributed Services to BentoCloud is similar to deploying a single Service, with nuances in setting custom configurations.
+To deploy a project with distributed Services to BentoCloud, we recommend you use a separate configuration file and reference it in the BentoML CLI command or Python API for deployment.
 
-To set custom configurations for each, we recommend you use a separate configuration file and reference it in the BentoML CLI command or Python API for deployment.
-
-The following is an example file that defines some custom configurations for the above two Services. You set configurations of each Service in the ``services`` field. Refer to :doc:`/scale-with-bentocloud/deployment/configure-deployments` to see the available configuration fields.
+Here is an example:
 
 .. code-block:: yaml
+    :caption: `config-file.yaml`
 
-    # config-file.yaml
     name: "deployment-name"
-    description: "This project creates an image generation application based on users' requirements."
+    bento: .
+    description: "This project creates an AI agent application"
     envs: # Optional. If you specify environment variables here, they will be applied to all Services
       - name: "GLOBAL_ENV_VAR_NAME"
         value: "env_var_value"
     services: # Add the configs of each Service under this field
-      SDXLControlNetService: # Service one
+      Preprocessing: # Service one
         instance_type: "gpu.l4.1"
         scaling:
           max_replicas: 2
@@ -248,13 +164,13 @@ The following is an example file that defines some custom configurations for the
             memory: "1Gi"
           workers:
             - gpu: 1
-      ControlNet: # Service two
+      Inference: # Service two
         instance_type: "cpu.1"
         scaling:
           max_replicas: 5
           min_replicas: 1
 
-To deploy this Service to :doc:`BentoCloud </bentocloud/get-started>`, you can choose either the BentoML CLI or Python API:
+To deploy these Services to :doc:`BentoCloud </bentocloud/get-started>`, you can choose either the BentoML CLI or Python API:
 
 .. tab-set::
 
@@ -262,11 +178,13 @@ To deploy this Service to :doc:`BentoCloud </bentocloud/get-started>`, you can c
 
         .. code-block:: bash
 
-            bentoml deploy . -f config-file.yaml
+            bentoml deploy -f config-file.yaml
 
     .. tab-item:: Python API
 
         .. code-block:: python
 
             import bentoml
-            bentoml.deployment.create(bento = "./path_to_your_project", config_file="config-file.yaml")
+            bentoml.deployment.create(config_file="config-file.yaml")
+
+Refer to :doc:`/scale-with-bentocloud/deployment/configure-deployments` to see the available configuration fields.

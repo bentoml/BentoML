@@ -4,75 +4,120 @@ Stable Diffusion XL Turbo
 
 Stable Diffusion XL Turbo (SDXL Turbo) is a distilled version of SDXL 1.0 and is capable of creating images in a single step, with improved real-time text-to-image output quality and sampling fidelity.
 
-This document demonstrates how to create an image generation application with SDXL Turbo and BentoML.
+This document demonstrates how to serve SDXL Turbo with BentoML.
 
-All the source code in this tutorial is available in the `BentoDiffusion GitHub repository <https://github.com/bentoml/BentoDiffusion>`_.
+.. raw:: html
 
-Prerequisites
--------------
+    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-right: 10px; text-align: center;">
+            <img src="https://docs.bentoml.com/en/latest/_static/img/github-mark.png" alt="GitHub" style="vertical-align: middle; width: 24px; height: 24px;">
+            <a href="https://github.com/bentoml/BentoDiffusion" style="margin-left: 5px; vertical-align: middle;">Source Code</a>
+        </div>
+        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-left: 10px; text-align: center;">
+            <img src="https://docs.bentoml.com/en/latest/_static/img/bentocloud-logo.png" alt="BentoCloud" style="vertical-align: middle; width: 24px; height: 24px;">
+            <a href="#bentocloud" style="margin-left: 5px; vertical-align: middle;">Deploy to BentoCloud</a>
+        </div>
+        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-left: 10px; text-align: center;">
+            <img src="https://docs.bentoml.com/en/latest/_static/img/bentoml-icon.png" alt="BentoML" style="vertical-align: middle; width: 24px; height: 24px;">
+            <a href="#localserving" style="margin-left: 5px; vertical-align: middle;">Serve with BentoML</a>
+        </div>
+    </div>
 
-- Python 3.9+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
-- You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/hello-world` first.
-- To run this BentoML Service locally, you need a Nvidia GPU with at least 12G VRAM.
-- (Optional) We recommend you create a virtual environment for dependency isolation. See the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_ or the `Python documentation <https://docs.python.org/3/library/venv.html>`_ for details.
-
-Install dependencies
---------------------
-
-Clone the project repository and install all the dependencies.
+The resulting inference API accepts custom parameters for image generation. For example, you can send a query containing the following:
 
 .. code-block:: bash
 
-    git clone https://github.com/bentoml/BentoDiffusion.git
-    cd BentoDiffusion/sdxl-turbo
-    pip install -r requirements.txt
+     {
+        "guidance_scale": 0,
+        "num_inference_steps": 1,
+        "prompt": "A cinematic shot of a baby racoon wearing an intricate italian priest robe."
+     }
 
-Create a BentoML Service
-------------------------
+Example output:
 
-Create a BentoML :doc:`Service </build-with-bentoml/services>` in a ``service.py`` file to define the serving logic of the model. You can use this example file in the cloned project:
+.. image:: ../../_static/img/examples/sdxl-turbo/output-image.png
+   :align: center
 
-.. code-block:: python
-    :caption: `service.py`
+This example is ready for quick deployment and scaling on BentoCloud. With a single command, you get a production-grade application with fast autoscaling, secure deployment in your cloud, and comprehensive observability.
 
-    import bentoml
-    from PIL.Image import Image
+.. image:: ../../_static/img/examples/sdxl-turbo/sdxl-turbo-bentocloud.png
 
-    MODEL_ID = "stabilityai/sdxl-turbo"
+Code explanations
+-----------------
 
-    sample_prompt = "A cinematic shot of a baby racoon wearing an intricate italian priest robe."
+You can find `the source code in GitHub <https://github.com/bentoml/BentoDiffusion/tree/main/sdxl-turbo>`_. Below is a breakdown of the key code implementations within this project.
 
-    @bentoml.service(
-        traffic={
-            "timeout": 300,
-            "external_queue": True,
-            "concurrency": 1,
-        },
-        workers=1,
-        resources={
-            "gpu": 1,
-            "gpu_type": "nvidia-l4",
-        },
-    )
-    class SDXLTurbo:
-        def __init__(self) -> None:
-            from diffusers import AutoPipelineForText2Image
-            import torch
+1. Define the SDXL Turbo model ID. You can switch to any other diffusion model as needed.
 
-            self.pipe = AutoPipelineForText2Image.from_pretrained(
-                MODEL_ID,
-                torch_dtype=torch.float16,
-                variant="fp16",
-            )
-            self.pipe.to(device="cuda")
+   .. code-block:: python
+      :caption: `service.py`
 
-        @bentoml.api
-        def txt2img(
+      MODEL_ID = "stabilityai/sdxl-turbo"
+
+2. Use the ``@bentoml.service`` decorator to define a BentoML Service, where you can customize how the model will be served. The decorator lets you set :doc:`configurations </reference/bentoml/configurations>` like timeout and GPU resources to use on BentoCloud. Note that SDXL Turbo requires at least an NVIDIA L4 GPU for optimal performance.
+
+   .. code-block:: python
+      :caption: `service.py`
+
+      @bentoml.service(
+            traffic={"timeout": 300},
+            resources={
+                "gpu": 1,
+                "gpu_type": "nvidia-l4",
+            },
+      )
+      class SDXLTurbo:
+          model_path = bentoml.models.HuggingFaceModel(MODEL_ID)
+          ...
+
+   Within the class, :ref:`load the model from Hugging Face <load-models>` and define it as a class variable. The ``HuggingFaceModel`` method provides an efficient mechanism for loading AI models to accelerate model deployment, reducing image build time and cold start time.
+
+3. The ``@bentoml.service`` decorator also allows you to :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for a Bento, the unified distribution format in BentoML. A Bento is packaged with all the source code, Python dependencies, model references, and environment setup, making it easy to deploy consistently across different environments.
+
+   Here is an example:
+
+   .. code-block:: python
+      :caption: `service.py`
+
+      my_image = bentoml.images.PythonImage(python_version="3.11") \
+            .requirements_file("requirements.txt")
+
+      @bentoml.service(
+            image=my_image, # Apply the specifications
+            ...
+      )
+      class SDXLTurbo:
+            ...
+
+4. Use the ``@bentoml.api`` decorator to define an API endpoint for image generation inference. The ``txt2img`` method is an endpoint that takes a text prompt, number of inference steps, and a guidance scale as inputs. It uses the model pipeline to generate an image based on the given prompt and parameters.
+
+   .. code-block:: python
+      :caption: `service.py`
+
+      class SDXLTurbo:
+         model_path = bentoml.models.HuggingFaceModel(MODEL_ID)
+
+         def __init__(self) -> None:
+             from diffusers import AutoPipelineForText2Image
+             import torch
+
+             # Load the model
+             self.pipe = AutoPipelineForText2Image.from_pretrained(
+                 self.model_path,
+                 torch_dtype=torch.float16,
+                 variant="fp16",
+             )
+
+             # Move the pipeline to GPU
+             self.pipe.to(device="cuda")
+
+         @bentoml.api
+         def txt2img(
                 self,
                 prompt: str = sample_prompt,
-                num_inference_steps: int = 1,
+                num_inference_steps: Annotated[int, Ge(1), Le(10)] = 1,
                 guidance_scale: float = 0.0,
-        ) -> Image:
+         ) -> Image:
             image = self.pipe(
                 prompt=prompt,
                 num_inference_steps=num_inference_steps,
@@ -80,99 +125,134 @@ Create a BentoML :doc:`Service </build-with-bentoml/services>` in a ``service.py
             ).images[0]
             return image
 
-In the Service code, the ``@bentoml.service`` decorator is used to define the ``SDXLTurbo`` class as a BentoML Service. It loads the pre-trained model (``MODEL_ID``) using the ``torch.float16`` data type. The model pipeline (``self.pipe``) is moved to a CUDA-enabled GPU device for efficient computation.
+Try it out
+----------
 
-The ``txt2img`` method is an API endpoint that takes a text prompt, number of inference steps, and a guidance scale as inputs. It uses the model pipeline to generate an image based on the given prompt and parameters.
+You can run `this example project <https://github.com/bentoml/BentoDiffusion/tree/main/sdxl-turbo>`_ on BentoCloud, or serve it locally, containerize it as an OCI-compliant image, and deploy it anywhere.
 
-.. note::
+.. _BentoCloud:
 
-   SDXL Turbo is capable of performing inference with just a single step. Therefore, setting ``num_inference_steps`` to ``1`` is typically sufficient for generating high-quality images. Additionally, you need to set ``guidance_scale`` to ``0.0`` to deactivate it as the model was trained without it. See `the official release notes <https://github.com/huggingface/diffusers/releases/tag/v0.24.0>`_ to learn more.
+BentoCloud
+^^^^^^^^^^
 
-Run ``bentoml serve`` to start the BentoML server.
+.. raw:: html
 
-.. code-block:: bash
+    <a id="bentocloud"></a>
 
-    $ bentoml serve
+BentoCloud provides fast and scalable infrastructure for building and scaling AI applications with BentoML in the cloud.
 
-    2024-01-19T07:20:29+0000 [WARNING] [cli] Converting 'SDXLTurbo' to lowercase: 'sdxlturbo'.
-    2024-01-19T07:20:29+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:SDXLTurbo" listening on http://localhost:3000 (Press CTRL+C to quit)
+1. Install BentoML and :doc:`log in to BentoCloud </scale-with-bentocloud/manage-api-tokens>` through the BentoML CLI. If you don't have a BentoCloud account, `sign up here for free <https://www.bentoml.com/>`_.
 
-The server is active at `http://localhost:3000 <http://localhost:3000>`_. You can interact with it in different ways.
+   .. code-block:: bash
 
-.. tab-set::
+      pip install bentoml
+      bentoml cloud login
 
-    .. tab-item:: CURL
+2. Clone the `BentoDiffusion repository <https://github.com/bentoml/BentoDiffusion>`_ and deploy the project.
 
-        .. code-block:: bash
+   .. code-block:: bash
 
-            curl -X 'POST' \
-                'http://localhost:3000/txt2img' \
-                -H 'accept: image/*' \
-                -H 'Content-Type: application/json' \
-                --output output.png \
-                -d '{
-                "prompt": "A cinematic shot of a baby racoon wearing an intricate italian priest robe.",
-                "num_inference_steps": 1,
-                "guidance_scale": 0
-            }'
+      git clone https://github.com/bentoml/BentoDiffusion.git
+      cd BentoDiffusion/sdxl-turbo
+      bentoml deploy
+
+3. Once it is up and running on BentoCloud, you can call the endpoint in the following ways:
+
+   .. tab-set::
+
+    .. tab-item:: BentoCloud Playground
+
+		.. image:: ../../_static/img/examples/sdxl-turbo/sdxl-turbo-bentocloud.png
 
     .. tab-item:: Python client
 
-        This client returns the image as a ``Path`` object. You can use it to access, read, or process the file. See :doc:`/build-with-bentoml/clients` for details.
+       Create a :doc:`BentoML client </build-with-bentoml/clients>` to call the endpoint. Make sure you replace the Deployment URL with your own on BentoCloud. Refer to :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:obtain the endpoint url` for details.
 
-        .. code-block:: python
+       .. code-block:: python
 
-            import bentoml
+          import bentoml
+          from pathlib import Path
 
-            with bentoml.SyncHTTPClient("http://localhost:3000") as client:
-                    result = client.txt2img(
-                        prompt="A cinematic shot of a baby racoon wearing an intricate italian priest robe.",
-                        num_inference_steps=1,
-                        guidance_scale=0.0
-                    )
+          # Define the path to save the generated image
+          output_path = Path("generated_image.png")
 
-    .. tab-item:: Swagger UI
+          with bentoml.SyncHTTPClient("https://sdxl-turbo-nmsx-e3c1c7db.mt-guc1.bentoml.ai") as client:
+                result = client.txt2img(
+                    guidance_scale=0,
+                    num_inference_steps=1,
+                    prompt="A cinematic shot of a baby racoon wearing an intricate italian priest robe.",
+                )
 
-        Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, specify the parameters, and click **Execute**.
+          # The result should be a PIL.Image object
+          result.save(output_path)
 
-        .. image:: ../../_static/img/examples/sdxl-turbo/service-ui.png
+          print(f"Image saved at {output_path}")
 
-Expected output:
+    .. tab-item:: CURL
 
-.. image:: ../../_static/img/examples/sdxl-turbo/output-image.png
+       Make sure you replace the Deployment URL with your own on BentoCloud. Refer to :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:obtain the endpoint url` for details.
 
-Deploy to BentoCloud
---------------------
+       .. code-block:: bash
 
-After the Service is ready, you can deploy the project to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account and get $10 in free credits.
+          curl -s -X POST \
+            'https://sdxl-turbo-nmsx-e3c1c7db.mt-guc1.bentoml.ai/txt2img' \
+            -H 'Content-Type: application/json' \
+            -d '{
+                "guidance_scale": 0,
+                "num_inference_steps": 1,
+                "prompt": "A cinematic shot of a baby racoon wearing an intricate italian priest robe."
+            }' \
+            -o output.jpg
 
-First, :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for building a Bento, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
+   .. note::
 
-Here is an example:
+      SDXL Turbo is capable of performing inference with just a single step. Therefore, setting ``num_inference_steps`` to ``1`` is typically sufficient for generating high-quality images. Additionally, you need to set ``guidance_scale`` to ``0`` to deactivate it as the model was trained without it. See `the official release notes <https://github.com/huggingface/diffusers/releases/tag/v0.24.0>`_ to learn more.
 
-.. code-block:: python
-    :caption: `service.py`
+4. To make sure the Deployment automatically scales within a certain replica range, add the scaling flags:
 
-    my_image = bentoml.images.PythonImage(python_version="3.11") \
-                .requirements_file("requirements.txt") \
+   .. code-block:: bash
 
-    @bentoml.service(
-        image=my_image, # Apply the specifications
-        ...
-    )
-    class SDXLTurbo:
-        ...
+      bentoml deploy --scaling-min 0 --scaling-max 3 # Set your desired count
 
-:ref:`Log in to BentoCloud <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
+   If it's already deployed, update its allowed replicas as follows:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    bentoml deploy
+      bentoml deployment update <deployment-name> --scaling-min 0 --scaling-max 3 # Set your desired count
 
-Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
+   For more information, see :doc:`how to configure concurrency and autoscaling </scale-with-bentocloud/scaling/autoscaling>`.
 
-.. image:: ../../_static/img/examples/sdxl-turbo/sdxl-turbo-bentocloud.png
+.. _LocalServing:
 
-.. note::
+Local serving
+^^^^^^^^^^^^^
 
-   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.
+.. raw:: html
+
+    <a id="localserving"></a>
+
+BentoML allows you to run and test your code locally, so that you can quickly validate your code with local compute resources.
+
+1. Clone the repository and choose your desired project.
+
+   .. code-block:: bash
+
+      git clone https://github.com/bentoml/BentoDiffusion.git
+      cd BentoDiffusion/sdxl-turbo
+
+      # Recommend Python 3.11
+      pip install -r requirements.txt
+
+2. Serve it locally.
+
+   .. code-block:: bash
+
+      bentoml serve
+
+   .. note::
+
+      To run this project with SDXL Turbo, you need an Nvidia GPU with at least 12G VRAM.
+
+3. Visit or send API requests to `http://localhost:3000 <http://localhost:3000/>`_.
+
+For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.

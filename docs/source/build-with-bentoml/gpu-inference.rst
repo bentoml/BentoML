@@ -18,11 +18,22 @@ When a single GPU is available, frameworks like PyTorch and TensorFlow default t
 
 .. code-block:: python
 
+    import bentoml
+    import os
+
     @bentoml.service(resources={"gpu": 1})
     class MyService:
+        # Use a Hugging Face model
+        model_path = bentoml.models.HuggingFaceModel("org_name/model_id")
+
+        # Use a model from the Model Store or BentoCloud
+        # model_path = bentoml.models.BentoModel("model_name:latest")
+
         def __init__(self):
             import torch
-            self.model = torch.load('model.pth').to('cuda:0')
+            # Specify the exact path to the weights file
+            weights_file = os.path.join(self.model_path, "weight.pt")
+            self.model = torch.load(weights_file).to('cuda:0')
 
 Multiple devices
 ^^^^^^^^^^^^^^^^
@@ -31,14 +42,28 @@ In systems with multiple GPUs, each GPU is assigned an index starting from 0 (``
 
 To use a specific GPU:
 
-.. code-block::
+.. code-block:: python
+
+    import bentoml
+    import os
 
     @bentoml.service(resources={"gpu": 2})
     class MultiGPUService:
+        # Load Hugging Face models
+        model1_path = bentoml.models.HuggingFaceModel("org_name/model1_id")
+        model2_path = bentoml.models.HuggingFaceModel("org_name/model2_id")
+
+        # Use a model from the Model Store or BentoCloud
+        # model_path = bentoml.models.BentoModel("model_name:latest")
+
         def __init__(self):
             import torch
-            self.model1 = torch.load('model1.pth').to("cuda:0")  # Using the first GPU
-            self.model2 = torch.load('model2.pth').to("cuda:1")  # Using the second GPU
+            # Specify the exact paths to the weights files
+            weights_file1 = os.path.join(self.model1_path, "weight1.pt")
+            weights_file2 = os.path.join(self.model2_path, "weight2.pt")
+
+            self.model1 = torch.load(weights_file1).to("cuda:0") # Use the first GPU
+            self.model2 = torch.load(weights_file2).to("cuda:1") # Use the second GPU
 
 This image explains how different models use the GPUs assigned to them.
 

@@ -523,3 +523,15 @@ def is_jupyter() -> bool:  # pragma: no cover
         return False  # Terminal running IPython
     else:
         return False  # Other type (?)
+
+
+def deep_merge(base: t.Any, update: t.Any) -> dict[t.Any, t.Any]:
+    """Merge two dictionaries recursively in place. The base dict will be updated."""
+    if not isinstance(base, dict) or not isinstance(update, dict):
+        return update
+    for k, v in update.items():
+        if k in base and isinstance(base[k], dict) and isinstance(v, dict):
+            base[k] = deep_merge(base[k], v)
+        else:
+            base[k] = v
+    return base

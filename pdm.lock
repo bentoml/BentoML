@@ -5,7 +5,7 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d99029b5afa022fc6dfb231de1797103c517927ad87cb11ba00e00c6ae5edf89"
+content_hash = "sha256:457a6e7f6a78bc3dc899c3a32d123540689756eb2807cdeaf0b2bda6545c473b"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -697,20 +697,6 @@ files = [
 ]
 
 [[package]]
-name = "deepmerge"
-version = "2.0"
-requires_python = ">=3.8"
-summary = "A toolset for deeply merging Python dictionaries."
-groups = ["default"]
-dependencies = [
-    "typing-extensions; python_version <= \"3.9\"",
-]
-files = [
-    {file = "deepmerge-2.0-py3-none-any.whl", hash = "sha256:6de9ce507115cff0bed95ff0ce9ecc31088ef50cbdf09bc90a09349a318b3d00"},
-    {file = "deepmerge-2.0.tar.gz", hash = "sha256:5c3d86081fbebd04dd5de03626a0607b809a98fb6ccba5770b62466fe940ff20"},
-]
-
-[[package]]
 name = "deprecated"
 version = "1.2.14"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
@@ -1221,17 +1207,6 @@ dependencies = [
 files = [
     {file = "importlib_metadata-6.11.0-py3-none-any.whl", hash = "sha256:f0afba6205ad8f8947c7d338b5342d5db2afbfd82f9cbef7879a9539cc12eb9b"},
     {file = "importlib_metadata-6.11.0.tar.gz", hash = "sha256:1231cf92d825c9e03cfc4da076a16de6422c863558229ea0b22b675657463443"},
-]
-
-[[package]]
-name = "inflection"
-version = "0.5.1"
-requires_python = ">=3.5"
-summary = "A port of Ruby on Rails inflector to Python"
-groups = ["default"]
-files = [
-    {file = "inflection-0.5.1-py2.py3-none-any.whl", hash = "sha256:f38b2b640938a4f35ade69ac3d053042959b62a0f1076a5bbaa1b9526605a8a2"},
-    {file = "inflection-0.5.1.tar.gz", hash = "sha256:1a29730d366e996aaacffb2f1f1cb9593dc38e2ddd30c91250c6dde09ea9b417"},
 ]
 
 [[package]]

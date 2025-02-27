@@ -198,7 +198,7 @@ def migration(*, override_config: dict[str, t.Any]):
 
 
 def finalize_config(config: dict[str, t.Any]) -> dict[str, t.Any]:
-    from ..containers import config_merger
+    from ...utils import deep_merge
 
     SERVICE_CFG_KEYS = [
         "batching",
@@ -226,6 +226,6 @@ def finalize_config(config: dict[str, t.Any]) -> dict[str, t.Any]:
     for svc, service_config in config["services"].items():
         if svc in SERVICE_CFG_KEYS:
             continue
-        config["services"][svc] = config_merger.merge(
+        config["services"][svc] = deep_merge(
             deepcopy(default_service_config), service_config
         )

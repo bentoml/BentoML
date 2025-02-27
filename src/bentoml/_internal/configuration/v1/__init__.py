@@ -312,7 +312,7 @@ def migration(*, override_config: dict[str, t.Any]):
 
 
 def finalize_config(config: dict[str, t.Any]) -> None:
-    from ..containers import config_merger
+    from ...utils import deep_merge
 
     # 8. if runner is overriden, set the runner default values
     RUNNER_CFG_KEYS = [
@@ -331,6 +331,6 @@ def finalize_config(config: dict[str, t.Any]) -> None:
         if runner_name in RUNNER_CFG_KEYS:
             continue
         # key is a runner name
-        config["runners"][runner_name] = config_merger.merge(
+        config["runners"][runner_name] = deep_merge(
             deepcopy(default_runner_config), runner_cfg
         )

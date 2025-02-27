@@ -34,7 +34,6 @@ dependencies = [
     "cloudpickle>=2.0.0",
     "fs",
     "httpx",
-    "inflection",
     "numpy",
     "nvidia-ml-py",
     "opentelemetry-api~=1.20",

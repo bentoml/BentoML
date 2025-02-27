@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 
 import diffusers
-import inflection
 from huggingface_hub import model_info
 
 import bentoml
@@ -18,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 def construct_bentoml_model_name(model_name: str, model_id: str, backend: str = "pt"):
     name = "-".join([backend, model_name, model_id])
-    name = name.replace("/", "--")
-    name = inflection.dasherize(name)
+    name = name.replace("/", "--").replace("_", "-")
     return name
 
 

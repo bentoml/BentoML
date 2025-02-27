@@ -35,7 +35,7 @@ try:
     from diffusers.utils.import_utils import is_xformers_available
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "'diffusers' and 'transformers' is required in order to use module 'bentoml.diffusers', install diffusers and its dependencies with 'pip install --upgrade diffusers transformers accelerate'. For more information, refer to https://github.com/huggingface/diffusers",
+        "'diffusers' and 'transformers' are required in order to use module 'bentoml.diffusers', install diffusers and its dependencies with 'pip install --upgrade diffusers transformers accelerate'. For more information, refer to https://github.com/huggingface/diffusers",
     )
 
 

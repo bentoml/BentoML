@@ -11,7 +11,7 @@ try:
     )
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "'diffusers' and 'transformers' is required in order to use module 'bentoml.diffusers_runners', install diffusers and its dependencies with 'pip install --upgrade diffusers transformers accelerate'. For more information, refer to https://github.com/huggingface/diffusers",
+        "'diffusers' and 'transformers' are required in order to use module 'bentoml.diffusers_runners', install diffusers and its dependencies with 'pip install --upgrade diffusers transformers accelerate'. For more information, refer to https://github.com/huggingface/diffusers",
     )
 
 

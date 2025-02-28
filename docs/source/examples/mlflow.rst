@@ -4,32 +4,57 @@ MLflow
 
 `MLflow <https://mlflow.org/>`_ is an open-source platform, purpose-built to assist machine learning practitioners and teams in handling the complexities of the machine learning process. MLflow focuses on the full lifecycle for machine learning projects, ensuring that each phase is manageable, traceable, and reproducible.
 
-This document explains how to serve and deploy an MLflow model with BentoML. You can find all the source code `here <https://github.com/bentoml/BentoMLflow>`_.
+This document explains how to serve and deploy an MLflow model with BentoML.
 
-Prerequisites
--------------
+.. raw:: html
 
-- Python 3.9+ and ``pip`` installed. See the `Python downloads page <https://www.python.org/downloads/>`_ to learn more.
-- You have a basic understanding of key concepts in BentoML, such as Services. We recommend you read :doc:`/get-started/hello-world` first.
-- (Optional) We recommend you create a virtual environment for dependency isolation. See the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_ or the `Python documentation <https://docs.python.org/3/library/venv.html>`_ for details.
+    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-right: 10px; text-align: center;">
+            <img src="https://docs.bentoml.com/en/latest/_static/img/github-mark.png" alt="GitHub" style="vertical-align: middle; width: 24px; height: 24px;">
+            <a href="https://github.com/bentoml/BentoMLflow" style="margin-left: 5px; vertical-align: middle;">Source Code</a>
+        </div>
+        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-left: 10px; text-align: center;">
+            <img src="https://docs.bentoml.com/en/latest/_static/img/bentocloud-logo.png" alt="BentoCloud" style="vertical-align: middle; width: 24px; height: 24px;">
+            <a href="#bentocloud" style="margin-left: 5px; vertical-align: middle;">Deploy to BentoCloud</a>
+        </div>
+        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-left: 10px; text-align: center;">
+            <img src="https://docs.bentoml.com/en/latest/_static/img/bentoml-icon.png" alt="BentoML" style="vertical-align: middle; width: 24px; height: 24px;">
+            <a href="#localserving" style="margin-left: 5px; vertical-align: middle;">Serve with BentoML</a>
+        </div>
+    </div>
 
-Install dependencies
---------------------
-
-Clone the project repository and install all the dependencies.
+The example uses scikit-learn for demo purposes. You can submit a classification request to the endpoint like this:
 
 .. code-block:: bash
 
-    git clone https://github.com/bentoml/BentoMLflow.git
-    cd BentoMLflow
-    pip install -r requirements.txt
+   {
+        "input_data": [[5.9,3,5.1,1.8]]
+   }
 
-Train and save a model
-----------------------
+Expected output:
+
+.. code-block:: bash
+
+   ["virginica"]
+
+In addition to scikit-learn, both MLflow and BentoML support a wide variety of other frameworks, such as PyTorch, TensorFlow and XGBoost.
+
+This example is ready for quick deployment and scaling on BentoCloud. With a single command, you get a production-grade application with fast autoscaling, secure deployment in your cloud, and comprehensive observability.
+
+.. image:: ../../_static/img/examples/mlflow/mlflow-model-on-bentocloud.png
+
+Code explanations
+-----------------
+
+You can find `the source code in GitHub <https://github.com/bentoml/BentoMLflow>`_. Below is a breakdown of the key code implementations within this project.
+
+save_model.py
+^^^^^^^^^^^^^
 
 This example uses the ``scikit-learn`` framework to train a classification model and saves it with MLflow.
 
 .. code-block:: python
+    :caption: `save_model.py`
 
     from sklearn.datasets import load_iris
     from sklearn.neighbors import KNeighborsClassifier
@@ -45,7 +70,7 @@ This example uses the ``scikit-learn`` framework to train a classification model
     model.fit(X_train, Y_train)
     mlflow.sklearn.save_model(model, model_uri.resolve())
 
-Next, use the ``bentoml.mlflow.import_model`` API to save the model to the BentoML :doc:`Model Store </build-with-bentoml/model-loading-and-management>`, a local directory to store and manage models. You can retrieve this model later in other services to run predictions.
+After training, use the ``bentoml.mlflow.import_model`` API to save the model to the BentoML :doc:`Model Store </build-with-bentoml/model-loading-and-management>`, a local directory to store and manage models. You can retrieve this model later in other services to run predictions.
 
 .. code-block:: bash
 
@@ -64,18 +89,19 @@ To verify that the model has been successfully saved, run:
     Tag                      Module           Size       Creation Time
     iris:74px7hboeo25fjjt    bentoml.mlflow   10.07 KiB  2024-06-19 10:09:21
 
-Test the saved model
---------------------
+test.py
+^^^^^^^
 
 To ensure that the saved model works correctly, try loading it and running a prediction:
 
 .. code-block:: python
+    :caption: `test.py`
 
     import numpy as np
     import bentoml
 
-    # Load the model by specifying the model tag
-    iris_model = bentoml.mlflow.load_model("iris:74px7hboeo25fjjt")
+    # Load the latest version of iris model
+    iris_model = bentoml.mlflow.load_model("iris:latest")
 
     input_data = np.array([[5.9, 3, 5.1, 1.8]])
     res = iris_model.predict(input_data)
@@ -87,90 +113,42 @@ Expected result:
 
     [2] # The model thinks the category seems to be Virginica.
 
-Create a BentoML Service
-------------------------
+service.py
+^^^^^^^^^^
 
-Create a separate ``service.py`` file where you define a BentoML :doc:`Service </build-with-bentoml/services>` to expose the model as a web service.
+The ``service.py`` file is where you define the serving logic and expose the model as a web service.
 
 .. code-block:: python
+    :caption: `service.py`
 
     import bentoml
     import numpy as np
+
+    target_names = ['setosa', 'versicolor', 'virginica']
 
     @bentoml.service(
         resources={"cpu": "2"},
         traffic={"timeout": 10},
     )
     class IrisClassifier:
-        bento_model = bentoml.models.get("iris:latest")
+        # Declare the model as a class variable
+        bento_model = bentoml.models.BentoModel("iris:latest")
 
         def __init__(self):
             self.model = bentoml.mlflow.load_model(self.bento_model)
 
         @bentoml.api
-        def predict(self, input_data: np.ndarray) -> np.ndarray:
-            rv = self.model.predict(input_data)
-            return np.asarray(rv)
+        def predict(self, input_data: np.ndarray) -> list[str]:
+            preds = self.model.predict(input_data)
+            return [target_names[i] for i in preds]
 
 The Service code:
 
-- Uses the ``@bentoml.service`` decorator to define a BentoML Service. Optionally, you can set additional :doc:`configurations </reference/bentoml/configurations>` like resource allocation and traffic timeout.
+- Uses the ``@bentoml.service`` decorator to define a BentoML :doc:`Service </build-with-bentoml/services>`. Optionally, you can set additional :doc:`configurations </reference/bentoml/configurations>` like resource allocation on BentoCloud and traffic timeout.
 - Retrieves the model from the Model Store and defines it a class variable.
-- Uses the ``@bentoml.api`` decorator to expose the ``predict`` function as an API endpoint, which :doc:`takes a NumPy array as input and returns a NumPy array </build-with-bentoml/iotypes>`.
+- Uses the ``@bentoml.api`` decorator to expose the ``predict`` function as an API endpoint.
 
-Run ``bentoml serve`` in your project directory to start the Service.
-
-.. code-block:: bash
-
-    $ bentoml serve
-
-    2024-06-19T10:25:31+0000 [WARNING] [cli] Converting 'IrisClassifier' to lowercase: 'irisclassifier'.
-    2024-06-19T10:25:31+0000 [INFO] [cli] Starting production HTTP BentoServer from "service:IrisClassifier" listening on http://localhost:3000 (Press CTRL+C to quit)
-
-The server is active at `http://localhost:3000 <http://localhost:3000/>`_. You can interact with it in different ways.
-
-.. tab-set::
-
-    .. tab-item:: CURL
-
-        .. code-block:: bash
-
-            curl -X 'POST' \
-                'http://localhost:3000/predict' \
-                -H 'accept: application/json' \
-                -H 'Content-Type: application/json' \
-                -d '{
-                "input_data": [
-                    [5.9, 3, 5.1, 1.8]
-                ]
-            }'
-
-    .. tab-item:: Python client
-
-        .. code-block:: python
-
-            import bentoml
-
-            with bentoml.SyncHTTPClient("http://localhost:3000") as client:
-                result = client.predict(
-                    input_data=[
-                        [5.9, 3, 5.1, 1.8]
-                    ],
-                )
-                print(result)
-
-    .. tab-item:: Swagger UI
-
-        Visit `http://localhost:3000 <http://localhost:3000/>`_, scroll down to **Service APIs**, specify the data, and click **Execute**.
-
-        .. image:: ../../_static/img/examples/mlflow/service-ui.png
-
-Deploy to BentoCloud
---------------------
-
-After the Service is ready, you can deploy it to BentoCloud for better management and scalability. `Sign up <https://www.bentoml.com/>`_ for a BentoCloud account.
-
-First, :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for building a Bento, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
+The ``@bentoml.service`` decorator also allows you to :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for a Bento, the unified distribution format in BentoML. A Bento is packaged with all the source code, Python dependencies, model references, and environment setup, making it easy to deploy consistently across different environments.
 
 Here is an example:
 
@@ -178,7 +156,7 @@ Here is an example:
     :caption: `service.py`
 
     my_image = bentoml.images.PythonImage(python_version="3.11") \
-                .requirements_file("requirements.txt") \
+                .python_packages("mlflow", "scikit-learn")
 
     @bentoml.service(
         image=my_image, # Apply the specifications
@@ -187,16 +165,137 @@ Here is an example:
     class IrisClassifier:
         ...
 
-:ref:`Log in to BentoCloud <scale-with-bentocloud/manage-api-tokens:Log in to BentoCloud using the BentoML CLI>` by running ``bentoml cloud login``, then run the following command to deploy the project.
+Try it out
+----------
 
-.. code-block:: bash
+You can run `this example project <https://github.com/bentoml/BentoMLflow>`_ on BentoCloud, or serve it locally, containerize it as an OCI-compliant image and deploy it anywhere.
 
-    bentoml deploy
+.. _BentoCloud:
 
-Once the Deployment is up and running on BentoCloud, you can access it via the exposed URL.
+BentoCloud
+^^^^^^^^^^
 
-.. image:: ../../_static/img/examples/mlflow/bentocloud-ui.png
+.. raw:: html
 
-.. note::
+    <a id="bentocloud"></a>
 
-   For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.
+BentoCloud provides fast and scalable infrastructure for building and scaling AI applications with BentoML in the cloud.
+
+1. Install the dependencies and :doc:`log in to BentoCloud </scale-with-bentocloud/manage-api-tokens>` through the BentoML CLI. If you don't have a BentoCloud account, `sign up here for free <https://www.bentoml.com/>`_.
+
+   .. code-block:: bash
+
+      # Recommend Python 3.11
+      pip install bentoml mlflow scikit-learn
+
+      bentoml cloud login
+
+2. Clone the repository.
+
+   .. code-block:: bash
+
+      git clone https://github.com/bentoml/BentoMLflow.git
+      cd BentoMLflow
+
+3. Train and save the MLflow model to the BentoML Model Store.
+
+   .. code-block:: bash
+
+      python3 save_model.py
+
+4. Deploy the Service to BentoCloud.
+
+   .. code-block:: bash
+
+      bentoml deploy service.py:IrisClassifier
+
+5. Once it is up and running, you can call the endpoint in the following ways:
+
+   .. tab-set::
+
+    .. tab-item:: BentoCloud Playground
+
+		.. image:: ../../_static/img/examples/mlflow/mlflow-model-on-bentocloud.png
+
+    .. tab-item:: Python client
+
+       Create a :doc:`BentoML client </build-with-bentoml/clients>` to call the endpoint. Make sure you replace the Deployment URL with your own on BentoCloud. Refer to :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:obtain the endpoint url` for details.
+
+       .. code-block:: python
+
+          import bentoml
+
+          with bentoml.SyncHTTPClient("https://iris-classifier-bdbe-e3c1c7db.mt-guc1.bentoml.ai") as client:
+                result = client.predict(
+                    input_data=[
+                        [5.9, 3, 5.1, 1.8]
+                    ],
+                )
+                print(result)
+
+    .. tab-item:: CURL
+
+       Make sure you replace the Deployment URL with your own on BentoCloud. Refer to :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:obtain the endpoint url` for details.
+
+       .. code-block:: bash
+
+          curl -X 'POST' \
+                'https://iris-classifier-bdbe-e3c1c7db.mt-guc1.bentoml.ai/predict' \
+                -H 'accept: application/json' \
+                -H 'Content-Type: application/json' \
+                -d '{
+                "input_data": [
+                    [5.9, 3, 5.1, 1.8]
+                ]
+            }'
+
+6. To make sure the Deployment automatically scales within a certain replica range, add the scaling flags:
+
+   .. code-block:: bash
+
+      bentoml deploy --scaling-min 0 --scaling-max 3 # Set your desired count
+
+   If it's already deployed, update its allowed replicas as follows:
+
+   .. code-block:: bash
+
+      bentoml deployment update <deployment-name> --scaling-min 0 --scaling-max 3 # Set your desired count
+
+   For more information, see :doc:`how to configure concurrency and autoscaling </scale-with-bentocloud/scaling/autoscaling>`.
+
+.. _LocalServing:
+
+Local serving
+^^^^^^^^^^^^^
+
+.. raw:: html
+
+    <a id="localserving"></a>
+
+BentoML allows you to run and test your code locally, so that you can quickly validate your code with local compute resources.
+
+1. Clone the project repository and install the dependencies.
+
+   .. code-block:: bash
+
+      git clone https://github.com/bentoml/BentoMLflow.git
+      cd BentoMLflow
+
+      # Recommend Python 3.11
+      pip install bentoml mlflow scikit-learn
+
+2. Train and save the model to the BentoML Model Store.
+
+   .. code-block:: bash
+
+      python3 save_model.py
+
+3. Serve it locally.
+
+   .. code-block:: bash
+
+      bentoml serve service.py:IrisClassifier
+
+4. Visit or send API requests to `http://localhost:3000 <http://localhost:3000/>`_.
+
+For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.

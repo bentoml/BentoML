@@ -88,7 +88,7 @@ class BentoManifestSchema:
     schema: t.Dict[str, t.Any] = attr.field(factory=dict)
     version: t.Optional[str] = attr.field(default=None, eq=False)
     dev: bool = attr.field(default=False, eq=False)
-    image: t.Optional[ImageInfo] = None
+    image: t.Optional[ImageInfo] = attr.field(default=None, eq=False)
     spec: int = attr.field(default=1)
 
     @property

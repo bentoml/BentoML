@@ -220,6 +220,7 @@ def _do_import(
 @inject
 def load_bento(
     bento: str | Tag | Bento,
+    reload: bool = False,
     bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> AnyService:
     """Load a Service instance from a bento found in local bento store:
@@ -253,10 +254,10 @@ def load_bento(
                 info_bentoml_version,
                 BENTOML_VERSION,
             )
-    return _load_bento(bento)
+    return _load_bento(bento, reload=reload)
 
 
-def load_bento_dir(path: str) -> AnyService:
+def load_bento_dir(path: str, reload: bool = False) -> AnyService:
     """Load a Service instance from a bento directory
 
     Example usage:
@@ -269,10 +270,10 @@ def load_bento_dir(path: str) -> AnyService:
         bento.tag,
         path,
     )
-    return _load_bento(bento)
+    return _load_bento(bento, reload=reload)
 
 
-def _load_bento(bento: Bento) -> AnyService:
+def _load_bento(bento: Bento, reload: bool = False) -> AnyService:
     # Use Bento's user project path as working directory when importing the service
     working_dir = bento.path_of(BENTO_PROJECT_DIR_NAME)
 
@@ -293,6 +294,7 @@ def _load_bento(bento: Bento) -> AnyService:
         bento.info.service,
         working_dir=working_dir,
         model_store=model_store,
+        reload=reload,
     )
     svc.on_load_bento(bento)
     return svc
@@ -354,7 +356,7 @@ def load(
     """
     if isinstance(bento_identifier, (Bento, Tag)):
         # Load from local BentoStore
-        return load_bento(bento_identifier)
+        return load_bento(bento_identifier, reload=reload)
     bento_path = os.path.expanduser(
         os.path.abspath(os.path.join(working_dir or ".", bento_identifier))
     )
@@ -363,7 +365,7 @@ def load(
             os.path.expanduser(os.path.join(bento_path, BENTO_YAML_FILENAME))
         ):
             # Loading from path to a built Bento
-            svc = load_bento_dir(bento_path)
+            svc = load_bento_dir(bento_path, reload=reload)
             logger.info("Service loaded from Bento directory: %s", svc)
         else:
             for filename in DEFAULT_BENTO_BUILD_FILES:
@@ -374,13 +376,17 @@ def load(
                 ):
                     build_config = BentoBuildConfig.from_file(config_file)
                     BentoMLContainer.model_aliases.set(build_config.model_aliases)
-                    svc = import_service(build_config.service, working_dir=bento_path)
+                    svc = import_service(
+                        build_config.service, working_dir=bento_path, reload=reload
+                    )
                     logger.debug("'%s' loaded from '%s': %s", svc.name, bento_path, svc)
                     break
             else:
                 if os.path.isfile(os.path.join(bento_path, "service.py")):
                     logger.info("Loading service from default location 'service.py'")
-                    svc = import_service("service.py", working_dir=bento_path)
+                    svc = import_service(
+                        "service.py", working_dir=bento_path, reload=reload
+                    )
                 else:
                     raise ImportServiceError(
                         f"Failed to load bento or import service '{bento_identifier}'. "

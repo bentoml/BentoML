@@ -62,8 +62,9 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
 1. Begin by specifying the model to ensure safety for the project. This example uses `ShieldGemma 2B <https://huggingface.co/google/shieldgemma-2b>`_ and you may choose an alternative model as needed.
 
    .. code-block:: python
+      :caption: `service.py`
 
-    	MODEL_ID = "google/shieldgemma-2b"
+      MODEL_ID = "google/shieldgemma-2b"
 
 2. Create the ``Gemma`` Service to initialize the model and tokenizer, with a safety check API to calculate the probability of policy violation.
 
@@ -71,6 +72,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
    - The API ``check``, decorated with ``@bentoml.api``, functions as a web API endpoint. It evaluates the safety of prompts by predicting the likelihood of a policy violation. It then returns a structured response using the ``ShieldResponse`` Pydantic model.
 
    .. code-block:: python
+      :caption: `service.py`
 
       class ShieldResponse(pydantic.BaseModel):
         score: float
@@ -89,6 +91,9 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
         }
       )
       class Gemma:
+        # Declare the model as a class variable
+        model = bentoml.models.HuggingFaceModel(MODEL_ID)
+
         def __init__(self):
             # Code to load model and tokenizer with MODEL_ID
 
@@ -97,12 +102,33 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
         # Logic to evaluate the safety of a given prompt
         # Return the probability score
 
-3. Create another BentoML Service ``ShieldAssistant`` as the agent that determines whether or not to call the OpenAI API based on the safety of the prompt. It contains two main components:
+   Within the class, :ref:`load the model from Hugging Face <load-models>` and define it as a class variable. The ``HuggingFaceModel`` method provides an efficient mechanism for loading AI models to accelerate model deployment, reducing image build time and cold start time.
+
+3. The ``@bentoml.service`` decorator also allows you to :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for a Bento, the unified distribution format in BentoML. A Bento is packaged with all the source code, Python dependencies, model references, and environment setup, making it easy to deploy consistently across different environments.
+
+   Here is an example:
+
+   .. code-block:: python
+      :caption: `service.py`
+
+      IMAGE = bentoml.images.PythonImage(python_version='3.11') \
+                    .requirements_file("requirements.txt")
+
+      @bentoml.service(
+          image=IMAGE, # Apply the specifications
+          envs=[{"name": "HF_TOKEN"},
+          ...
+      )
+      class Gemma:
+           ...
+
+4. Create another BentoML Service ``ShieldAssistant`` as the agent that determines whether or not to call the OpenAI API based on the safety of the prompt. It contains two main components:
 
    - ``bentoml.depends()`` calls the ``Gemma`` Service as a dependency. It allows ``ShieldAssistant`` to utilize to all its functionalities, like calling its ``check`` endpoint to evaluates the safety of prompts. For more information, see :doc:`Distributed Services </build-with-bentoml/distributed-services>`.
    - The ``generate`` API endpoint is the front-facing part of this Service. It first checks the safety of the prompt using the ``Gemma`` Service. If the prompt passes the safety check, the endpoint creates an OpenAI client and calls the GPT-3.5 Turbo model to generate a response. If the prompt is unsafe (the score exceeds the defined threshold), it raises an exception ``UnsafePrompt``.
 
    .. code-block:: python
+      :caption: `service.py`
 
       from openai import AsyncOpenAI
 
@@ -114,7 +140,13 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
       class UnsafePrompt(bentoml.exceptions.InvalidArgument):
         pass
 
-      @bentoml.service(resources={"cpu": "1"})
+      @bentoml.service(
+          name='bentoshield-assistant',
+          resources={"cpu": "1"},
+          envs=[{'name': 'OPENAI_API_KEY'}, {'name': 'OPENAI_BASE_URL'}],
+          labels={'owner': 'bentoml-team', 'type': 'demo'},
+          image=IMAGE
+      )
       class ShieldAssistant:
         # Inject the Gemma Service as a dependency
         shield = bentoml.depends(Gemma)
@@ -137,27 +169,6 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
           messages = [{"role": "user", "content": prompt}]
           response = await self.client.chat.completions.create(model="gpt-3.5-turbo", messages=messages)
           return AssistantResponse(text=response.choices[0].message.content)
-
-Define the runtime environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-:doc:`Define the runtime environment </build-with-bentoml/runtime-environment>` for building a Bento, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
-
-Here is an example:
-
-.. code-block:: python
-    :caption: `service.py`
-
-    my_image = bentoml.images.PythonImage(python_version='3.11', lock_python_packages=True) \
-                    .requirements_file("requirements.txt")
-
-    @bentoml.service(
-        image=my_image, # Apply the specifications
-        envs=[{"name": "HF_TOKEN"}, {"name": "OPENAI_API_KEY"}, {"name": "OPENAI_BASE_URL"}],
-        ...
-    )
-    class ShieldAssistant:
-        ...
 
 Try it out
 ----------
@@ -233,7 +244,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
             "threshhold": 0.6
           }'
 
-4. To make sure the Deployment automatically scales within a certain replica range, add the scaling flags:
+5. To make sure the Deployment automatically scales within a certain replica range, add the scaling flags:
 
    .. code-block:: bash
 

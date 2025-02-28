@@ -64,9 +64,10 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
 
 1. Begin by specifying the LLM for the project. This example uses `Llama 3.1 70B Instruct AWQ in INT4 <https://huggingface.co/hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4>`_ and you may choose an alternative model as needed.
 
-   .. code-block:: bash
+   .. code-block:: python
+      :caption: `service.py`
 
-    	MODEL_ID = "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4"
+      MODEL_ID = "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4"
 
 2. Create a Python class (``Llama`` in the example) to initialize the model and tokenizer, and use the following decorators to add BentoML functionalities.
 
@@ -74,6 +75,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
    - ``@bentoml.asgi_app``: Mounts an `existing ASGI application <https://github.com/bentoml/BentoFunctionCalling/blob/main/openai_endpoints.py>`_ defined in the ``openai_endpoints.py`` file to this class. It sets the base path to ``/v1``, making it accessible via HTTP requests. The mounted ASGI application provides OpenAI-compatible APIs and can be served side-by-side with the LLM Service. For more information, see :doc:`/build-with-bentoml/asgi`.
 
    .. code-block:: python
+      :caption: `service.py`
 
       import bentoml
       from openai_endpoints import openai_api_app
@@ -89,11 +91,33 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
           },
       )
       class Llama:
+         # Declare the model as a class variable
+         hf_model = bentoml.models.HuggingFaceModel(MODEL_ID)
+
          def __init__(self) -> None:
          # Logic to initialize the model and tokenizer
          ...
 
-3. Next, use the ``@bentoml.service`` decorator to create another BentoML Service called ``ExchangeAssistant``. Different from the LLM, function calling does not require GPUs and can be run with a single CPU. Running them on separate instances also means you can scale them independently on BentoCloud later.
+   Within the class, :ref:`load the model from Hugging Face <load-models>` and define it as a class variable. The ``HuggingFaceModel`` method provides an efficient mechanism for loading AI models to accelerate model deployment, reducing image build time and cold start time.
+
+3. The ``@bentoml.service`` decorator also allows you to :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for a Bento, the unified distribution format in BentoML. A Bento is packaged with all the source code, Python dependencies, model references, and environment setup, making it easy to deploy consistently across different environments.
+
+   Here is an example:
+
+   .. code-block:: python
+      :caption: `service.py`
+
+      my_image = bentoml.images.PythonImage(python_version='3.11') \
+                    .requirements_file("requirements.txt")
+
+      @bentoml.service(
+          image=my_image, # Apply the specifications
+          ...
+      )
+      class Llama:
+          ...
+
+4. Next, use the ``@bentoml.service`` decorator to create another BentoML Service called ``ExchangeAssistant``. Different from the LLM, function calling does not require GPUs and can be run with a single CPU. Running them on separate instances also means you can scale them independently on BentoCloud later.
 
    Key elements within the ``ExchangeAssistant`` Service:
 
@@ -102,10 +126,14 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
    - A front-facing API ``/exchange``: Define the endpoint using the ``@bentoml.api`` decorator to handle currency exchange queries.
 
    .. code-block:: python
+      :caption: `service.py`
 
       from openai import OpenAI
 
-      @bentoml.service(resources={"cpu": "1"})
+      @bentoml.service(
+            image=my_image,
+            resources={"cpu": "1"}
+      )
       class ExchangeAssistant:
           # Declare dependency on the Llama class
           llm = bentoml.depends(Llama)
@@ -123,12 +151,13 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
           def exchange(self, query: str = "I want to exchange 42 US dollars to Canadian dollars") -> str:
             # Implementation logic
 
-4. The ``exchange`` method uses the OpenAI client to integrate function calling capabilities with the specified LLM. After parsing the query to determine the necessary function and extracts relevant parameters, it then invokes the identified exchange function to generate the results. For detailed information on OpenAI's function calling client APIs, see `the OpenAI documentation <https://platform.openai.com/docs/guides/function-calling>`_.
+5. The ``exchange`` method uses the OpenAI client to integrate function calling capabilities with the specified LLM. After parsing the query to determine the necessary function and extracts relevant parameters, it then invokes the identified exchange function to generate the results. For detailed information on OpenAI's function calling client APIs, see `the OpenAI documentation <https://platform.openai.com/docs/guides/function-calling>`_.
 
    .. code-block:: python
+      :caption: `service.py`
 
-        @bentoml.api
-        def exchange(self, query: str = "I want to exchange 42 US dollars to Canadian dollars") -> str:
+      @bentoml.api
+      def exchange(self, query: str = "I want to exchange 42 US dollars to Canadian dollars") -> str:
             tools = [
                 {
                     "type": "function",
@@ -158,9 +187,10 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
             ).choices[0].message
             tool_calls = response_message.tool_calls
 
-5. You can then call the function and add additional functions as needed. Ensure the function definitions in JSON match the corresponding Python function signatures.
+6. You can then call the function and add additional functions as needed. Ensure the function definitions in JSON match the corresponding Python function signatures.
 
    .. code-block:: python
+      :caption: `service.py`
 
             # Check if there are function calls from the LLM response
             if tool_calls:
@@ -201,26 +231,6 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
                 return final_response.choices[0].message.content
             else:
                 return "Unable to use the available tools."
-
-Define the runtime environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-:doc:`Define the runtime environment </build-with-bentoml/runtime-environment>` for building a Bento, the unified distribution format in BentoML, which contains source code, Python packages, model references, and environment setup. It helps ensure reproducibility across development and production environments.
-
-Here is an example:
-
-.. code-block:: python
-    :caption: `service.py`
-
-    my_image = bentoml.images.PythonImage(python_version='3.11') \
-                    .requirements_file("requirements.txt")
-
-    @bentoml.service(
-        image=my_image, # Apply the specifications
-        ...
-    )
-    class ExchangeAssistant:
-        ...
 
 Try it out
 ----------

@@ -46,6 +46,7 @@ Expected output:
 This example is ready for quick deployment and scaling on BentoCloud. With a single command, you get a production-grade application with fast autoscaling, secure deployment in your cloud, and comprehensive observability.
 
 .. image:: ../../_static/img/examples/xgboost/xgboost-model-running-on-bentocloud.png
+    :alt: Screenshot of the XGBoost breast cancer classifier model running on BentoCloud showing the prediction interface with input data and results
 
 Code explanations
 -----------------
@@ -245,6 +246,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 	   .. image:: ../../_static/img/examples/xgboost/xgboost-model-running-on-bentocloud.png
+	      :alt: Screenshot of the XGBoost breast cancer classifier model running on BentoCloud showing the prediction interface with input data and results
 
     .. tab-item:: Python client
 

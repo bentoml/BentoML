@@ -40,6 +40,7 @@ The application processes this request and responds by converting USD to CAD usi
 This example is ready for easy deployment and scaling on BentoCloud. With a single command, you can deploy a production-grade application with fast autoscaling, secure deployment in your cloud, and comprehensive observability.
 
 .. image:: ../../_static/img/examples/function-calling/function-calling-playground.gif
+    :alt: Animated GIF demonstrating the function calling capability in BentoCloud playground, showing currency conversion queries and responses
 
 Architecture
 ------------
@@ -47,6 +48,7 @@ Architecture
 This example includes two BentoML Services, a Currency Exchange Assistant and an LLM. The LLM Service exposes an OpenAI-compatible API, so that the Exchange Assistant can call the OpenAI client. Here is the general workflow of this example:
 
 .. image:: ../../_static/img/examples/function-calling/function-calling-diagram.png
+    :alt: Architecture diagram showing the workflow between Exchange Assistant and LLM services, illustrating how user queries are processed through function calling
 
 1. A user submits a query to the Exchange Assistant's Query API, which processes the query and forwards it to the LLM to determine the required function and extract parameters.
 2. With the extracted parameters, the Query API invokes the identified Exchange Function, which is responsible for the exchange conversion using the specified parameters.
@@ -270,6 +272,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 		.. image:: ../../_static/img/examples/function-calling/function-calling-playground.png
+		   :alt: Animated GIF demonstrating the function calling capability in BentoCloud playground, showing currency conversion queries and responses
 
     .. tab-item:: Python client
 

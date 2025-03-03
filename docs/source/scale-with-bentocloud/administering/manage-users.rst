@@ -23,6 +23,7 @@ Invite a new user
 
    .. image:: ../../_static/img/bentocloud/how-to/manage-users/invite-new-member.png
       :align: center
+      :alt: Screenshot of BentoCloud's invite new member dialog showing fields for name, email, and role selection
 
 4. Click **Submit**.
 

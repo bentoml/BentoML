@@ -40,16 +40,19 @@ Input reference image:
 .. image:: ../../_static/img/examples/controlnet/example-image.png
    :align: center
    :width: 400px
+   :alt: Reference image showing a person in a specific pose that will be used as input for the ControlNet model
 
 This is the generated output image, replicating the pose in a new environment:
 
 .. image:: ../../_static/img/examples/controlnet/output-image.png
    :align: center
    :width: 400px
+   :alt: Generated output image showing a person in the same pose as the reference image but in a park setting with different clothing as specified in the prompt
 
 This example is ready for quick deployment and scaling on BentoCloud. With a single command, you get a production-grade application with fast autoscaling, secure deployment in your cloud, and comprehensive observability.
 
 .. image:: ../../_static/img/examples/controlnet/controlnet-bentocloud.png
+    :alt: Screenshot of ControlNet application deployed on BentoCloud showing the image generation interface with prompt inputs and controls
 
 Code explanations
 -----------------
@@ -180,6 +183,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 		.. image:: ../../_static/img/examples/controlnet/controlnet-bentocloud.png
+		   :alt: Screenshot of ControlNet application deployed on BentoCloud showing the image generation interface with prompt inputs and controls
 
     .. tab-item:: Python client
 

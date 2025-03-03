@@ -30,7 +30,7 @@ Create a Codespace
 4. Follow the on-screen instructions to create a new Codespace (or attach to an existing one) as prompted. Once created, you can view it in the **Codespaces** section of BentoCloud.
 
    .. image:: ../../_static/img/bentocloud/how-to/codespaces/codespace-on-bentocloud.png
-      :alt: Screenshot of a Codespace running on BentoCloud interface showing deployment details
+      :alt: Screenshot of a Codespace running on BentoCloud
 
 Test your application
 ---------------------

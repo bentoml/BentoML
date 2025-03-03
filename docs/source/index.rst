@@ -63,7 +63,7 @@ What is BentoML
 BentoML is a **Unified Inference Platform** for deploying and scaling AI models with production-grade reliability, all without the complexity of managing infrastructure. It enables your developers to **build AI systems 10x faster with custom models, scale efficiently in your cloud, and maintain complete control over security and compliance**.
 
 .. image:: _static/img/homepage/bentoml-inference-platform.png
-    :alt: BentoML unified inference platform architecture diagram showing model deployment and scaling capabilities
+    :alt: The architecture diagram of the BentoML unified inference platform
 
 To get started with BentoML:
 
@@ -201,16 +201,11 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML
-   :alt: PyPI version badge showing current BentoML package version
 .. |actions_status| image:: https://github.com/bentoml/bentoml/actions/workflows/ci.yml/badge.svg?branch=main
    :target: https://github.com/bentoml/bentoml/actions
-   :alt: GitHub Actions CI status badge showing build status of the main branch
 .. |documentation_status| image:: https://readthedocs.org/projects/bentoml/badge/?version=latest&style=flat-square
    :target: https://docs.bentoml.com/
-   :alt: ReadTheDocs documentation status badge showing build status of the latest documentation
 .. |join_slack| image:: https://badgen.net/badge/Join/Community%20Slack/cyan?icon=slack&style=flat-square
    :target: https://l.bentoml.com/join-slack
-   :alt: Slack community badge with invitation to join the BentoML community
 .. |github_stars| image:: https://img.shields.io/github/stars/bentoml/BentoML?color=%23c9378a&label=github&logo=github&style=flat-square
    :target: https://github.com/bentoml/bentoml
-   :alt: GitHub stars badge showing the number of stars for the BentoML repository

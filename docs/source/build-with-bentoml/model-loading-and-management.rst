@@ -55,7 +55,7 @@ If you have an existing model on disk, you can import it into the BentoML Model 
 Load a model
 ------------
 
-BentoML provides an efficient mechanism for loading AI models to accelerate model deployment, reducing image build time and cold start time.
+BentoML provides an efficient mechanism for loading AI models to accelerate model deployment on BentoCloud, reducing image build time and cold start time.
 
 .. tab-set::
 

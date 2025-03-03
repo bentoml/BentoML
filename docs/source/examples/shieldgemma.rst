@@ -102,7 +102,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
         # Logic to evaluate the safety of a given prompt
         # Return the probability score
 
-   Within the class, :ref:`load the model from Hugging Face <load-models>` and define it as a class variable. The ``HuggingFaceModel`` method provides an efficient mechanism for loading AI models to accelerate model deployment, reducing image build time and cold start time.
+   Within the class, :ref:`load the model from Hugging Face <load-models>` and define it as a class variable. The ``HuggingFaceModel`` method provides an efficient mechanism for loading AI models to accelerate model deployment on BentoCloud, reducing image build time and cold start time.
 
 3. The ``@bentoml.service`` decorator also allows you to :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for a Bento, the unified distribution format in BentoML. A Bento is packaged with all the source code, Python dependencies, model references, and environment setup, making it easy to deploy consistently across different environments.
 

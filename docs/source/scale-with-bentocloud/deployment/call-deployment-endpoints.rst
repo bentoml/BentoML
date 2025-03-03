@@ -35,6 +35,7 @@ Choose one of the following ways to obtain the endpoint URL.
         3. On the details page, you can find the endpoint URL under the Deployment's name.
 
            .. image:: ../../_static/img/bentocloud/how-to/call-deployment-endpoints/deployment-endpoint-url.png
+              :alt: Screenshot of BentoCloud deployment details page highlighting where to find the endpoint URL
 
 Interact with the Deployment
 ----------------------------
@@ -86,6 +87,7 @@ Choose one of the following ways to access your Deployment with the endpoint URL
         Access the Deployment endpoint URL directly. The Swagger UI dynamically generates documentation and a user interface based on OpenAPI Specifications.
 
         .. image:: ../../_static/img/bentocloud/how-to/call-deployment-endpoints/swagger-ui.png
+           :alt: Screenshot of Swagger UI interface for a BentoML deployment showing API documentation and interactive testing capabilities
 
 Interact with protected endpoints
 ---------------------------------

@@ -20,6 +20,7 @@ Create an API token
 3. In the dialog that appears, specify the following fields. Note that you must select at least one of the token types.
 
    .. image:: ../../_static/img/bentocloud/how-to/manage-access-tokens/token-creation-dialog.png
+      :alt: Screenshot of BentoCloud API token creation dialog showing fields for name, description, access permissions, and expiration date
 
    - **Name**: The name of the API token.
    - **Description**: A description of the token, detailing its usage.
@@ -116,6 +117,7 @@ You can use a token with **Protected Endpoint Access** to access a protected Ben
       3. Select Header Inject, click **Add**, and specify **Header name** and **Header value**.
 
          .. image:: ../../_static/img/bentocloud/how-to/manage-access-tokens/header-inject.png
+            :alt: Screenshot of the Header Inject browser extension interface showing how to add Authorization headers for accessing protected BentoML deployments
 
          - **Header name**: Enter ``Authorization``.
          - **Header value**: Enter ``Bearer $YOUR_TOKEN``.

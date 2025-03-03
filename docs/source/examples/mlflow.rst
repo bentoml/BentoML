@@ -42,6 +42,7 @@ In addition to scikit-learn, both MLflow and BentoML support a wide variety of o
 This example is ready for quick deployment and scaling on BentoCloud. With a single command, you get a production-grade application with fast autoscaling, secure deployment in your cloud, and comprehensive observability.
 
 .. image:: ../../_static/img/examples/mlflow/mlflow-model-on-bentocloud.png
+    :alt: Screenshot of MLflow Iris classifier model deployed on BentoCloud showing the prediction interface with input data and classification results
 
 Code explanations
 -----------------
@@ -216,6 +217,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 		.. image:: ../../_static/img/examples/mlflow/mlflow-model-on-bentocloud.png
+		   :alt: Screenshot of MLflow Iris classifier in the BentoCloud Playground interface showing how to interact with the deployed model
 
     .. tab-item:: Python client
 

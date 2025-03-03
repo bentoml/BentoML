@@ -12,6 +12,7 @@ Architecture
 BYOC allows you to fully own your data infrastructure and network while we manage them for you. You can choose to host your services in any cloud account from providers such as AWS, Google Cloud, Microsoft Azure, or Oracle Cloud Infrastructure. The architecture diagram below illustrates the BYOC setup:
 
 .. image:: ../../_static/img/bentocloud/get-started/byoc/bentocloud-byoc-architecture.png
+    :alt: Architecture diagram of BentoCloud's Bring Your Own Cloud (BYOC) setup showing how services are deployed in the customer's VPC while being managed by BentoCloud
 
 In the BYOC model, Bento operators and Deployments are deployed in your Virtual Private Cloud (VPC), ensuring that all data is securely stored in your own environment.
 To create the necessary cloud resources required by operators within your account, BentoCloud requires relevant permissions to execute infrastructure-as-code automation.

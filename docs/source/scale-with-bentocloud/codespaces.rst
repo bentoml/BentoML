@@ -30,6 +30,7 @@ Create a Codespace
 4. Follow the on-screen instructions to create a new Codespace (or attach to an existing one) as prompted. Once created, you can view it in the **Codespaces** section of BentoCloud.
 
    .. image:: ../../_static/img/bentocloud/how-to/codespaces/codespace-on-bentocloud.png
+      :alt: Screenshot of a Codespace running on BentoCloud interface showing deployment details
 
 Test your application
 ---------------------
@@ -56,6 +57,7 @@ Build your Bento
 Once development is complete, you can build your Bento directly from a Codespace. To do this, click the **Build Bento** button.
 
 .. image:: ../../_static/img/bentocloud/how-to/codespaces/codespace-detail-page.png
+   :alt: Screenshot of Codespace detail page on BentoCloud showing the Build Bento button
 
 After the build is successful, you can view the Bento and create a Deployment with it.
 

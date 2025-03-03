@@ -41,6 +41,7 @@ Example output:
 This example is ready for quick deployment and scaling on BentoCloud. With a single command, you get a production-grade application with fast autoscaling, secure deployment in your cloud, and comprehensive observability.
 
 .. image:: ../../_static/img/examples/vllm/llama3-1-on-bentocloud.png
+    :alt: Screenshot of Llama 3.1 model deployed on BentoCloud showing the chat interface with example prompts and responses
 
 Code explanations
 -----------------
@@ -202,6 +203,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 		.. image:: ../../_static/img/examples/vllm/llama3-1-on-bentocloud.png
+		   :alt: Screenshot of Llama 3.1 model in the BentoCloud Playground interface showing the chat interface for testing the deployed model
 
     .. tab-item:: Python client
 

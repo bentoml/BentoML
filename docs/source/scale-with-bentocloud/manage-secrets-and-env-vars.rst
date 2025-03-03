@@ -21,6 +21,7 @@ From BentoCloud console
 3. On the setup page, provide the necessary information for the secret:
 
    .. image:: ../../_static/img/bentocloud/how-to/manage-secrets/create-a-secret-bentocloud.png
+      :alt: Screenshot of the BentoCloud interface for creating a new secret with fields for name, description, mounting options, and key-value pairs
 
    - **Name**: The name of the secret.
    - **Description**: A description of the secret, detailing its usage.
@@ -66,6 +67,7 @@ From BentoCloud console
 2. Attach the desired secret to your Deployment. It will be integrated either as an environment variable or a file, based on the configuration set when the secret was created.
 
    .. image:: ../../_static/img/bentocloud/how-to/manage-secrets/use-a-secret-for-deployment.png
+      :alt: Screenshot of BentoCloud deployment configuration showing how to select and attach a secret to a deployment
 
    .. warning::
 

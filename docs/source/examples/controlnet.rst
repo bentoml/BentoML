@@ -183,7 +183,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 		.. image:: ../../_static/img/examples/controlnet/controlnet-bentocloud.png
-		   :alt: Screenshot of ControlNet in the BentoCloud Playground interface showing the image upload form and generation controls
+		   :alt: Screenshot of ControlNet application deployed on BentoCloud showing the image generation interface with prompt inputs and controls
 
     .. tab-item:: Python client
 

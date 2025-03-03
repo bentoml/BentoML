@@ -272,7 +272,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 		.. image:: ../../_static/img/examples/function-calling/function-calling-playground.png
-		   :alt: Screenshot of function calling example in the BentoCloud Playground interface showing the currency conversion query input and response
+		   :alt: Animated GIF demonstrating the function calling capability in BentoCloud playground, showing currency conversion queries and responses
 
     .. tab-item:: Python client
 

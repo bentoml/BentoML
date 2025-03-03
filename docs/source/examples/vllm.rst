@@ -203,7 +203,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 		.. image:: ../../_static/img/examples/vllm/llama3-1-on-bentocloud.png
-		   :alt: Screenshot of Llama 3.1 model in the BentoCloud Playground interface showing the chat interface for testing the deployed model
+		   :alt: Screenshot of Llama 3.1 model deployed on BentoCloud showing the chat interface with example prompts and responses
 
     .. tab-item:: Python client
 

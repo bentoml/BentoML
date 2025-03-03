@@ -165,7 +165,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 		.. image:: ../../_static/img/examples/sdxl-turbo/sdxl-turbo-bentocloud.png
-		   :alt: Screenshot of SDXL Turbo in the BentoCloud Playground interface showing the image generation form with prompt input and parameter settings
+		   :alt: Screenshot of SDXL Turbo deployed on BentoCloud showing the image generation interface with prompt input and parameter controls
 
     .. tab-item:: Python client
 

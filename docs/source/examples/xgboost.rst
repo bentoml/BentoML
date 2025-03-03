@@ -246,7 +246,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 	   .. image:: ../../_static/img/examples/xgboost/xgboost-model-running-on-bentocloud.png
-	      :alt: Screenshot of XGBoost breast cancer classifier in the BentoCloud Playground interface showing how to interact with the deployed model
+	      :alt: Screenshot of the XGBoost breast cancer classifier model running on BentoCloud showing the prediction interface with input data and results
 
     .. tab-item:: Python client
 

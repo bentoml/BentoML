@@ -219,7 +219,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 		.. image:: ../../_static/img/examples/shieldgemma/shieldgemma-bentocloud.png
-		   :alt: Screenshot of ShieldGemma application in the BentoCloud Playground interface showing how to interact with the deployed model
+		   :alt: Screenshot of the ShieldGemma application deployed on BentoCloud showing the user interface for submitting prompts with safety threshold settings
 
     .. tab-item:: Python client
 

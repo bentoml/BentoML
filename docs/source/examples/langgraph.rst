@@ -250,7 +250,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
     .. tab-item:: BentoCloud Playground
 
 		.. image:: ../../_static/img/examples/langgraph/langgraph-agent-on-bentocloud.png
-		   :alt: Screenshot of LangGraph agent in the BentoCloud Playground interface showing the query input field and response area for testing the deployed agent
+		   :alt: Screenshot of LangGraph agent deployed on BentoCloud showing the query interface for asking questions with search capabilities
 
     .. tab-item:: Python client
 

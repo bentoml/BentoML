@@ -116,13 +116,18 @@ copybutton_selector = "div:not(.no-copybutton) > div.highlight > pre"
 # -- Options for HTML output -------------------------------------------------
 html_theme = "furo"
 html_theme_options = {
+    "announcement": "📢 Unlock all insights from the 2024 State of AI Inference Infrastructure Survey. <a href='https://www.bentoml.com/2024-ai-infra-report'>Download the full report now</a>.",
     "light_css_variables": {
         "color-brand-primary": "#4dad8c ",
         "color-brand-content": "#4dad8c ",
+        "color-announcement-background": "#4dad8c ",
+        "color-announcement-text": "#ffffff ",
     },
     "dark_css_variables": {
         "color-brand-primary": "#4dad8c ",
         "color-brand-content": "#4dad8c ",
+        "color-announcement-background": "#4dad8c ",
+        "color-announcement-text": "#ffffff ",
     },
     "source_repository": "https://github.com/bentoml/bentoml/",
     "source_branch": "main",

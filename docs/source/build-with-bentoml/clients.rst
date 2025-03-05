@@ -65,9 +65,11 @@ After you start the ``Summarization`` Service, you can create the following clie
 
             asyncio.run(async_client_operation())
 
-In the above synchronous and asynchronous clients, requests are sent to the ``summarize`` endpoint of the Service hosted at ``http://localhost:3000``. The BentoML client implementation supports methods corresponding to the Service APIs and they should be called with the same arguments (``text`` in this example) as defined in the Service. These methods are dynamically created based on the Service's endpoints, providing a direct mapping to the Service’s functionality.
+In the above synchronous and asynchronous clients, requests are sent to the ``summarize`` endpoint of the Service hosted at ``http://localhost:3000``. The BentoML client implementation supports methods corresponding to the Service APIs and they should be called with the same arguments (``text`` in this example) as defined in the Service. These methods are dynamically created based on the Service's endpoints, providing a direct mapping to the Service's functionality.
 
 In this example, the ``summarize`` method on the client is directly mapped to the ``summarize`` method in the ``Summarization`` Service. The data passed to the ``summarize`` method (``text="Your long text to summarize"``) conforms to the expected input of the Service.
+
+If you define :ref:`root input <root-input>` for an API endpoint, use only the positional argument in your client without specifying the parameter name.
 
 .. note::
 

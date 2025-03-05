@@ -102,6 +102,8 @@ Each API endpoint has a unique route (URL path). By default, the route is derive
         result = self.pipeline(text)
         return result[0]['summary_text']
 
+.. _inference-context:
+
 Inference context
 ^^^^^^^^^^^^^^^^^
 

@@ -14,6 +14,7 @@ Supported input and output types in BentoML include:
 - **Standard Python types**: Basic types like ``str``, ``int``, ``float``, ``boolean``, ``list``, and ``dict``.
 - **Pydantic field types**: BentoML extends its type support to `Pydantic field types <https://field-idempotency--pydantic-docs.netlify.app/usage/types/>`_, offering a more structured and validated approach to handling complex data schemas.
 - **ML specific types**: To meet the requirements of different ML use cases, BentoML supports types like ``numpy.ndarray``, ``torch.Tensor``, and ``tensorflow.Tensor`` for handling tensor data, ``pandas.DataFrame`` for working with tabular data, ``PIL.Image.Image`` for image data, and ``pathlib.Path`` for file path references.
+- **Root input**: BentoML supports root input, which allows the API to accept a single positional-only argument without requiring a key in the request payload.
 
 You use Python's type annotations to define the expected input and output types for each API endpoint. This not only helps validate the data against the specified schema but also enhances the clarity and readability of the code. The type annotations play an important role in generating the API, BentoML :doc:`client </build-with-bentoml/clients>`, and UI components, ensuring a consistent and predictable interaction with the Service.
 
@@ -397,6 +398,61 @@ BentoML Services can handle images through ``PIL.Image.Image`` and ``pathlib.Pat
                 @bentoml.api
                 def infer(self, input: Annotated[Path, ContentType('image/jpeg')]) -> int:
                     ...
+
+.. _root-input:
+
+Root input
+^^^^^^^^^^
+
+Root input is a special type of input that does not require a key in the API request body. Instead, the input data itself is passed directly in the request. This is particularly useful for handling binary data like images, audio, or raw text directly.
+
+To define root input, use positional-only arguments in Python, denoted with a ``/`` in the function signature.
+
+.. important::
+
+   - There should be at most ONE positional-only argument (arguments that come before ``/``).
+   - When you specify a positional-only argument, no other arguments are allowed except for :ref:`bentoml.Context <inference-context>`.
+
+Example implementation:
+
+.. code-block:: python
+
+   from PIL import Image
+   import bentoml
+
+   @bentoml.service
+   class ImageProcessor:
+       @bentoml.api
+       def upload_image(self, image: Image.Image, /) -> int:
+       # Process the image and return a result
+         ...
+
+In this example, the ``upload_image`` method has a positional-only argument (``image``), meaning it must be passed without a key. The client must send the image data directly in the HTTP request body without any JSON wrapper.
+
+Here is an example API call using ``curl``:
+
+.. code-block:: bash
+
+   curl -XPOST -sL http://localhost:3000/upload_image --data-binary=@myimage.png
+
+This is the HTTP request example:
+
+.. code-block:: bash
+
+   POST /upload_image HTTP/1.1
+   Content-Type: image/png
+
+   <image binary>
+
+When calling an API with a root input using a :doc:`BentoML client </build-with-bentoml/clients>`, you must use the positional argument without specifying the parameter name:
+
+.. code-block:: python
+
+   client = bentoml.SyncClient("http://localhost:3000")
+   image_path = Path("demo.png")
+
+   result = client.upload_image(image_path)  # CORRECT
+   result = client.upload_image(image=image_path)  # WRONG
 
 Compound
 ^^^^^^^^

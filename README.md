@@ -142,7 +142,7 @@ For detailed explanations, read the [Hello World example](https://docs.bentoml.c
 
 ## Examples
 
-- LLMs: [Llama 3.2](https://github.com/bentoml/BentoVLLM/tree/main/llama3.2-11b-vision-instruct), [Mixtral](https://github.com/bentoml/BentoVLLM/tree/main/ministral-8b-instruct-2410), [DeepSeek Distil](https://github.com/bentoml/BentoVLLM/tree/main/deepseek-r1-distill-llama3.1-8b-tool-calling), and more.
+- LLMs: [Llama 3.2](https://github.com/bentoml/BentoVLLM/tree/main/llama3.2-11b-vision-instruct), [Mistral](https://github.com/bentoml/BentoVLLM/tree/main/ministral-8b-instruct-2410), [DeepSeek Distil](https://github.com/bentoml/BentoVLLM/tree/main/deepseek-r1-distill-llama3.1-8b-tool-calling), and more.
 - Image Generation: [Stable Diffusion 3 Medium](https://github.com/bentoml/BentoDiffusion/tree/main/sd3-medium), [Stable Video Diffusion](https://github.com/bentoml/BentoDiffusion/tree/main/svd), [Stable Diffusion XL Turbo](https://github.com/bentoml/BentoDiffusion/tree/main/sdxl-turbo), [ControlNet](https://github.com/bentoml/BentoDiffusion/tree/main/controlnet), and [LCM LoRAs](https://github.com/bentoml/BentoDiffusion/tree/main/lcm).
 - Embeddings: [SentenceTransformers](https://github.com/bentoml/BentoSentenceTransformers) and [ColPali](https://github.com/bentoml/BentoColPali)
 - Audio: [ChatTTS](https://github.com/bentoml/BentoChatTTS), [XTTS](https://github.com/bentoml/BentoXTTS), [WhisperX](https://github.com/bentoml/BentoWhisperX), [Bark](https://github.com/bentoml/BentoBark)

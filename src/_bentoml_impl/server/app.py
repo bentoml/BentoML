@@ -296,7 +296,7 @@ class ServiceAppFactory(BaseAppFactory):
                 deployment_url, service=self.service, media_type="application/json"
             )
         else:
-            proxy = RemoteProxy("http://localhost:3000", service=self.service, app=app)
+            proxy = RemoteProxy("http://localhost:3000", service=self.service, app=app, media_type="application/json")
         self._service_instance.__self_proxy__ = proxy  # type: ignore[attr-defined]
         self._service_instance.to_async = proxy.to_async  # type: ignore[attr-defined]
         self._service_instance.to_sync = proxy.to_sync  # type: ignore[attr-defined]
@@ -641,11 +641,18 @@ class ServiceAppFactory(BaseAppFactory):
         from _bentoml_sdk.io_models import IORootModel
         from bentoml._internal.utils import get_original_func
         from bentoml._internal.utils.http import set_cookies
+        from http import HTTPStatus
 
         from ..serde import ALL_SERDE
 
         media_type = request.headers.get("Content-Type", "application/json")
         media_type = media_type.split(";")[0].strip()
+
+        if self.is_main and media_type == "application/vnd.bentoml+pickle":
+            raise BentoMLException(
+                "application/vnd.bentoml+pickle is not allowed in main server",
+                error_code=HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
+            )
 
         method = self.service.apis[name]
         func = getattr(self._service_instance, name).local

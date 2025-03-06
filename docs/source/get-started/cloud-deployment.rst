@@ -97,6 +97,17 @@ Call the Deployment endpoint
          )
       print(result)
 
+Update the Deployment
+---------------------
+
+To apply changes to your code, modify it locally and update the Deployment on BentoCloud by running:
+
+.. code-block:: bash
+
+   bentoml deployment update my-first-bento --bento ./project/directory
+
+For more information, see :doc:`/scale-with-bentocloud/deployment/manage-deployments`.
+
 Configure scaling
 -----------------
 

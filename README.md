@@ -55,7 +55,7 @@ class Summarization:
         return [item['summary_text'] for item in results]
 ```
 
-### Run Locally
+### 💻 Run locally
 
 Install PyTorch and Transformers packages to your Python virtual environment.
 
@@ -106,11 +106,7 @@ Run the generated image:
 docker run --rm -p 3000:3000 summarization:latest
 ```
 
-</details>
-
-<details>
-
-<summary>☁️ BentoCloud</summary>
+### ☁️ Deploy on BentoCloud
 
 [BentoCloud](www.bentoml.com) provides compute infrastructure for rapid and reliable GenAI adoption. It helps speed up your BentoML development process leveraging cloud compute resources, and simplify how you deploy, scale and operate BentoML in production.
 
@@ -125,8 +121,6 @@ bentoml deploy
 ```
 
 ![bentocloud-ui](./docs/source/_static/img/get-started/cloud-deployment/first-bento-on-bentocloud.png)
-
-</details>
 
 For detailed explanations, read the [Hello World example](https://docs.bentoml.com/en/latest/get-started/hello-world.html).
 

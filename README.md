@@ -36,12 +36,10 @@ pip install -U bentoml
 Define APIs in a `service.py` file.
 
 ```python
-from __future__ import annotations
-
 import bentoml
 
 @bentoml.service(
-    resources={"cpu": "4"}
+    image=bentoml.images.PythonImage(python_version="3.11").python_packages("torch", "transformers"),
 )
 class Summarization:
     def __init__(self) -> None:
@@ -57,12 +55,25 @@ class Summarization:
         return [item['summary_text'] for item in results]
 ```
 
-Run the service code locally (serving at http://localhost:3000 by default):
+### Run Locally
+
+Install PyTorch and Transformers packages to your Python virtual environment.
 
 ```bash
 pip install torch transformers  # additional dependencies for local run
+```
 
+Run the service code locally (serving at http://localhost:3000 by default):
+
+```bash
 bentoml serve
+```
+
+You should expect to see the following output.
+
+```
+[INFO] [cli] Starting production HTTP BentoServer from "service:Summarization" listening on http://localhost:3000 (Press CTRL+C to quit)
+[INFO] [entry_service:Summarization:1] Service Summarization initialized
 ```
 
 Now you can run inference from your browser at http://localhost:3000 or with a Python script:
@@ -75,28 +86,7 @@ with bentoml.SyncHTTPClient('http://localhost:3000') as client:
     print(f"Result: {summarized_text}")
 ```
 
-### Deploying your first Bento
-
-To deploy your BentoML Service code, configure the [runtime environment](https://docs.bentoml.com/en/latest/build-with-bentoml/runtime-environment.html) in `service.py`.
-
-```diff
-
-+ my_image = bentoml.images.PythonImage(python_version="3.11") \
-+        .requirements_file("requirements.txt")
-
-
-@bentoml.service(
-+    image=my_image,
-    resources={"cpu": "4"},
-    traffic={"timeout": 30},
-)
-```
-
-Then, choose one of the following ways for deployment:
-
-<details>
-
-<summary>🐳 Docker Container</summary>
+### 🐳 Deploy using Docker
 
 Run `bentoml build` to package necessary code, models, dependency configs into a Bento - the standardized deployable artifact in BentoML:
 

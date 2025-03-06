@@ -296,7 +296,12 @@ class ServiceAppFactory(BaseAppFactory):
                 deployment_url, service=self.service, media_type="application/json"
             )
         else:
-            proxy = RemoteProxy("http://localhost:3000", service=self.service, app=app, media_type="application/json")
+            proxy = RemoteProxy(
+                "http://localhost:3000",
+                service=self.service,
+                app=app,
+                media_type="application/json",
+            )
         self._service_instance.__self_proxy__ = proxy  # type: ignore[attr-defined]
         self._service_instance.to_async = proxy.to_async  # type: ignore[attr-defined]
         self._service_instance.to_sync = proxy.to_sync  # type: ignore[attr-defined]
@@ -636,12 +641,13 @@ class ServiceAppFactory(BaseAppFactory):
         return resp
 
     async def api_endpoint(self, name: str, request: Request) -> Response:
+        from http import HTTPStatus
+
         from _bentoml_sdk.io_models import ARGS
         from _bentoml_sdk.io_models import KWARGS
         from _bentoml_sdk.io_models import IORootModel
         from bentoml._internal.utils import get_original_func
         from bentoml._internal.utils.http import set_cookies
-        from http import HTTPStatus
 
         from ..serde import ALL_SERDE
 

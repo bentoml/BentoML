@@ -268,6 +268,27 @@ BentoML will lock the versions of all Python packages for the current platform a
     You don't need to specify ``bentoml`` as a dependency in this field since the current version of BentoML will be added to the list by default. However,
     you can override this by specifying a different BentoML version.
 
+If you already have a `requirements.txt <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_ file that defines Python packages for your project, you may also supply a path to the ``requirements.txt`` file directly:
+
+.. tab-set::
+
+   .. tab-item:: pyproject.toml
+
+      .. code-block:: toml
+
+         [tool.bentoml.build.python]
+         requirements_txt = "./project-a/ml-requirements.txt"
+
+   .. tab-item:: bentofile.yaml
+
+      .. code-block:: yaml
+
+         python:
+           requirements_txt: "./project-a/ml-requirements.txt"
+
+GitHub repositories
+"""""""""""""""""""
+
 To include a package from a GitHub repository, use the `pip requirements file format <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_. You can specify the repository URL, the branch, tag, or commit to install from, and the subdirectory if the Python package is not in the root of the repository.
 
 .. tab-set::
@@ -295,7 +316,7 @@ To include a package from a GitHub repository, use the `pip requirements file fo
              - "git+https://github.com/username/repository.git@abcdef1234567890abcdef1234567890abcdef12"
              - "git+https://github.com/username/repository.git@branch_name#subdirectory=package_dir"
 
-If your project depends on a private GitHub repository, you can include the Python package from the repository via SSH. Make sure that the environment where BentoML is running has the appropriate SSH keys configured and that `these keys are added to GitHub <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account>`_. In the following example, ``git@github.com:username/repository.git`` is the SSH URL for the repository.
+You can use the ``pack_git_packages`` option (it defaults to ``true``) to control whether these GitHub packages should be cloned and packaged during the build process. This is useful for dependencies that may not be available via standard PyPI sources or for ensuring consistency with specific versions (for example, tags and commits) of a dependency directly from a Git repository.
 
 .. tab-set::
 
@@ -304,36 +325,57 @@ If your project depends on a private GitHub repository, you can include the Pyth
       .. code-block:: toml
 
          [tool.bentoml.build.python]
-         packages = [
-             "git+ssh://git@github.com/username/repository.git@branch_name"
-         ]
-
-   .. tab-item:: bentofile.yaml
-
-      .. code-block:: yaml
-
-          python:
-            packages:
-              - "git+ssh://git@github.com/username/repository.git@branch_name"
-
-If you already have a `requirements.txt <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_
-file that defines Python packages for your project, you may also supply a path to the ``requirements.txt`` file directly:
-
-.. tab-set::
-
-   .. tab-item:: pyproject.toml
-
-      .. code-block:: toml
-
-         [tool.bentoml.build.python]
-         requirements_txt = "./project-a/ml-requirements.txt"
+         pack_git_packages = true
+         packages = ["git+https://github.com/username/repository.git@abcdef1234567890abcdef1234567890abcdef12"]
 
    .. tab-item:: bentofile.yaml
 
       .. code-block:: yaml
 
          python:
-           requirements_txt: "./project-a/ml-requirements.txt"
+           pack_git_packages: true  # Enable packaging of Git-based packages
+           packages:
+             - "git+https://github.com/username/repository.git@abcdef1234567890abcdef1234567890abcdef12"
+
+Note that ``lock_packages`` controls whether the versions of all dependencies, not just those from Git, are pinned at the time of building the Bento. Disabling ``pack_git_packages`` will also disable package locking (``lock_packages``) unless explicitly set.
+
+.. note::
+
+  BentoML will always try to lock the package versions against Linux x86_64 platform to match the deployment target. If the bento contains dependencies or transitive dependencies with environment markers, they will be resolved against Linux x86_64 platform.
+
+  For example, if the bento requires ``torch``, ``nvidia-*`` packages will also be picked up into the final lock result although they are only required for Linux x86_64 platform.
+
+  If you want to build a bento for a different platform, you can pass ``--platform`` option to ``bentoml build`` command with the name of the target platform. For example:
+
+  .. code-block:: bash
+
+    $ bentoml build --platform macos
+
+To use a private GitHub repository:
+
+1. Include the Python package from the repository via SSH. Make sure that the environment where BentoML is running has the appropriate SSH keys configured and that `these keys are added to GitHub <https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account>`_.
+
+   .. tab-set::
+
+      .. tab-item:: pyproject.toml
+
+         .. code-block:: toml
+
+            [tool.bentoml.build.python]
+            packages = [
+                "git+ssh://git@github.com/username/repository.git@branch_name"  # The SSH URL for the repository
+            ]
+
+      .. tab-item:: bentofile.yaml
+
+         .. code-block:: yaml
+
+            python:
+              packages:
+                - "git+ssh://git@github.com/username/repository.git@branch_name" # The SSH URL for the repository
+
+2. Make sure ``pack_git_packages`` is enabled so that your private package can be used for build.
+3. Set the environment variable ``BENTOML_ENABLE_FEATURES=no_image``.
 
 Pip install options
 """""""""""""""""""
@@ -416,41 +458,6 @@ this behavior by setting the ``lock_packages`` field to ``false``:
          python:
            requirements_txt: "./requirements.txt"
            lock_packages: false
-
-When including Python packages from GitHub repositories, use the ``pack_git_packages`` option (it defaults to ``true``) to control whether these packages should be cloned and packaged during the build process. This is useful for dependencies that may not be available via standard PyPI sources or for ensuring consistency with specific versions (for example, tags and commits) of a dependency directly from a Git repository.
-
-.. tab-set::
-
-   .. tab-item:: pyproject.toml
-
-      .. code-block:: toml
-
-         [tool.bentoml.build.python]
-         pack_git_packages = true
-         packages = ["git+https://github.com/username/repository.git@abcdef1234567890abcdef1234567890abcdef12"]
-
-   .. tab-item:: bentofile.yaml
-
-      .. code-block:: yaml
-
-         python:
-           pack_git_packages: true  # Enable packaging of Git-based packages
-           packages:
-             - "git+https://github.com/username/repository.git@abcdef1234567890abcdef1234567890abcdef12"
-
-Note that ``lock_packages`` controls whether the versions of all dependencies, not just those from Git, are pinned at the time of building the Bento. Disabling ``pack_git_packages`` will also disable package locking (``lock_packages``) unless explicitly set.
-
-.. note::
-
-  BentoML will always try to lock the package versions against Linux x86_64 platform to match the deployment target. If the bento contains dependencies or transitive dependencies with environment markers, they will be resolved against Linux x86_64 platform.
-
-  For example, if the bento requires ``torch``, ``nvidia-*`` packages will also be picked up into the final lock result although they are only required for Linux x86_64 platform.
-
-  If you want to build a bento for a different platform, you can pass ``--platform`` option to ``bentoml build`` command with the name of the target platform. For example:
-
-  .. code-block:: bash
-
-    $ bentoml build --platform macos
 
 Python wheels
 """""""""""""

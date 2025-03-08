@@ -8,6 +8,8 @@ import typing as t
 import click
 import rich
 
+from .deployment import convert_env_to_dict
+
 if t.TYPE_CHECKING:
     P = t.ParamSpec("P")
     F = t.Callable[P, t.Any]
@@ -192,6 +194,12 @@ def build_serve_command() -> click.Group:
         show_default=True,
         hidden=True,
     )
+    @click.option(
+        "--env",
+        type=click.STRING,
+        help="List of environment variables pass by --env key[=value] --env ...",
+        multiple=True,
+    )
     @env_manager
     def serve(  # type: ignore (unused warning)
         bento: str,
@@ -212,6 +220,7 @@ def build_serve_command() -> click.Group:
         ssl_ciphers: str | None,
         timeout_keep_alive: int | None,
         timeout_graceful_shutdown: int | None,
+        env: tuple[str] | None,
         **attrs: t.Any,
     ) -> None:
         """Start a HTTP BentoServer from a given 🍱
@@ -328,6 +337,7 @@ def build_serve_command() -> click.Group:
                 reload=reload,
                 timeout_keep_alive=timeout_keep_alive,
                 timeout_graceful_shutdown=timeout_graceful_shutdown,
+                command_env_vars=convert_env_to_dict(env),
             )
 
     @cli.command(name="serve-grpc", hidden=True)
@@ -447,6 +457,12 @@ def build_serve_command() -> click.Group:
         default=LATEST_PROTOCOL_VERSION,
         show_default=True,
     )
+    @click.option(
+        "--env",
+        type=click.STRING,
+        help="List of environment variables pass by --env key[=value] --env ...",
+        multiple=True,
+    )
     @env_manager
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
@@ -464,6 +480,7 @@ def build_serve_command() -> click.Group:
         enable_channelz: bool,
         max_concurrent_streams: int | None,
         protocol_version: str,
+        env: tuple[str] | None,
         **attrs: t.Any,
     ):
         """Start a gRPC BentoServer from a given 🍱

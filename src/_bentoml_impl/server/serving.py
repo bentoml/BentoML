@@ -173,6 +173,7 @@ def serve_http(
     dependency_map: dict[str, str] | None = None,
     service_name: str = "",
     threaded: bool = False,
+    command_env_vars: list[dict[str, str]] | None = None,
 ) -> Server:
     from circus.sockets import CircusSocket
 
@@ -201,14 +202,19 @@ def serve_http(
     bento_identifier = svc.import_string
     bento_path = pathlib.Path(svc.working_dir)
 
+    if command_env_vars:
+        env.update({env_var["name"]: env_var["value"] for env_var in command_env_vars})
+
     # Process environment variables from the service
     for env_var in svc.envs:
+        if env_var.name in env:
+            continue
+
         if env_var.value:
             env[env_var.name] = env_var.value
         elif env_var.name in os.environ:
             env[env_var.name] = os.environ[env_var.name]
         else:
-            # Raise an error if a required environment variable is not set
             raise BentoMLException(
                 f"Environment variable '{env_var.name}' is required but not set. "
                 f"Either set it in the environment or provide a default value in the service definition."
@@ -236,6 +242,9 @@ def serve_http(
                     # Process environment variables for dependency services
                     dependency_env = env.copy()
                     for env_var in dep_svc.envs:
+                        if env_var.name in dependency_env:
+                            continue
+
                         if env_var.value:
                             dependency_env[env_var.name] = env_var.value
                         elif env_var.name in os.environ:

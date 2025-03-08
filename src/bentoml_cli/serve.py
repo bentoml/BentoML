@@ -52,7 +52,6 @@ def build_serve_command() -> click.Group:
     from bentoml._internal.configuration.containers import BentoMLContainer
     from bentoml._internal.log import configure_server_logging
     from bentoml.grpc.utils import LATEST_PROTOCOL_VERSION
-    from bentoml_cli.env_manager import env_manager
     from bentoml_cli.utils import AliasCommand
     from bentoml_cli.utils import BentoMLCommandGroup
 
@@ -200,7 +199,6 @@ def build_serve_command() -> click.Group:
         help="List of environment variables pass by --env key[=value] --env ...",
         multiple=True,
     )
-    @env_manager
     def serve(  # type: ignore (unused warning)
         bento: str,
         development: bool,
@@ -463,7 +461,6 @@ def build_serve_command() -> click.Group:
         help="List of environment variables pass by --env key[=value] --env ...",
         multiple=True,
     )
-    @env_manager
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
         development: bool,

@@ -263,7 +263,7 @@ def serve_http(
                         backlog,
                         allocator,
                         str(bento_path.absolute()),
-                        env=dependency_env,
+                        env={k: str(v) for k,v in dependency_env.items()},
                     )
                     watchers.append(new_watcher)
                     sockets.append(new_socket)
@@ -341,7 +341,7 @@ def serve_http(
                 working_dir=str(bento_path.absolute()),
                 numprocesses=num_workers,
                 close_child_stdin=not development_mode,
-                env=env,
+                env={k: str(v) for k,v in env.items()},
             )
         )
 

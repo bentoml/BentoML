@@ -63,7 +63,8 @@ WORKDIR $BENTO_PATH
 {% block SETUP_BENTO_COMPONENTS %}
 
 RUN command -v uv >/dev/null || pip install uv
-RUN UV_PYTHON_INSTALL_DIR=/app/python/ uv venv {% if __options__python_version %}-p {{ __options__python_version }}{% endif %} /app/.venv
+RUN UV_PYTHON_INSTALL_DIR=/app/python/ uv venv {% if __options__python_version %}-p {{ __options__python_version }}{% endif %} /app/.venv && \
+    chown -R {{ bento__user }}:{{ bento__user }} /app/.venv
 ENV VIRTUAL_ENV=/app/.venv
 ENV UV_COMPILE_BYTECODE=1
 
@@ -96,7 +97,6 @@ EXPOSE 3000
 EXPOSE {{ __prometheus_port__ }}
 
 RUN chmod +x {{ bento__entrypoint }}
-RUN chown {{ bento__user }}:{{ bento__user }} -R $VIRTUAL_ENV
 
 USER bentoml
 

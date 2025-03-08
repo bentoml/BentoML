@@ -60,7 +60,8 @@ COPY --chown={{ bento__user }}:{{ bento__user }} ./env/docker ./env/docker/
 RUN {{ command }}
 {% endfor %}
 RUN command -v uv >/dev/null || pip install uv
-RUN UV_PYTHON_INSTALL_DIR=/app/python/ uv venv --python {{ __options__python_version }} /app/.venv
+RUN UV_PYTHON_INSTALL_DIR=/app/python/ uv venv --python {{ __options__python_version }} /app/.venv && \
+    chown -R {{ bento__user }}:{{ bento__user }} /app/.venv
 ENV VIRTUAL_ENV=/app/.venv
 ENV UV_COMPILE_BYTECODE=1
 {% set __pip_cache__ = common.mount_cache("/root/.cache/") %}
@@ -90,7 +91,6 @@ EXPOSE 3000
 EXPOSE {{ __prometheus_port__ }}
 
 RUN chmod +x {{ bento__entrypoint }}
-RUN chown {{ bento__user }}:{{ bento__user }} -R $VIRTUAL_ENV
 
 USER {{ bento__user }}
 

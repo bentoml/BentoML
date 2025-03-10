@@ -447,7 +447,6 @@ def build_serve_command() -> click.Group:
         default=LATEST_PROTOCOL_VERSION,
         show_default=True,
     )
-    @env_manager
     def serve_grpc(  # type: ignore (unused warning)
         bento: str,
         development: bool,

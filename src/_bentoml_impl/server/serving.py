@@ -180,6 +180,7 @@ def serve_http(
     from bentoml._internal.utils import reserve_free_port
     from bentoml._internal.utils.analytics.usage_stats import track_serve
     from bentoml._internal.utils.circus import create_standalone_arbiter
+    from bentoml.exceptions import BentoMLException
     from bentoml.serving import construct_ssl_args
     from bentoml.serving import construct_timeouts_args
     from bentoml.serving import create_watcher
@@ -200,6 +201,21 @@ def serve_http(
     bento_identifier = svc.import_string
     bento_path = pathlib.Path(svc.working_dir)
 
+    # Process environment variables from the service
+    for env_var in svc.envs:
+        if env_var.name in env:
+            continue
+
+        if env_var.value:
+            env[env_var.name] = env_var.value
+        elif env_var.name in os.environ:
+            env[env_var.name] = os.environ[env_var.name]
+        else:
+            raise BentoMLException(
+                f"Environment variable '{env_var.name}' is required but not set. "
+                f"Either set it in the environment or provide a default value in the service definition."
+            )
+
     watchers: list[Watcher] = []
     sockets: list[CircusSocket] = []
     allocator = ResourceAllocator()
@@ -218,6 +234,23 @@ def serve_http(
                         continue
                     if name in dependency_map:
                         continue
+
+                    # Process environment variables for dependency services
+                    dependency_env = env.copy()
+                    for env_var in dep_svc.envs:
+                        if env_var.name in dependency_env:
+                            continue
+
+                        if env_var.value:
+                            dependency_env[env_var.name] = env_var.value
+                        elif env_var.name in os.environ:
+                            dependency_env[env_var.name] = os.environ[env_var.name]
+                        else:
+                            raise BentoMLException(
+                                f"Environment variable '{env_var.name}' is required for service '{name}' but not set. "
+                                f"Either set it in the environment or provide a default value in the service definition."
+                            )
+
                     new_watcher, new_socket, uri = create_dependency_watcher(
                         bento_identifier,
                         dep_svc,
@@ -226,7 +259,7 @@ def serve_http(
                         backlog,
                         allocator,
                         str(bento_path.absolute()),
-                        env=env,
+                        env={k: str(v) for k, v in dependency_env.items()},
                     )
                     watchers.append(new_watcher)
                     sockets.append(new_socket)
@@ -304,7 +337,7 @@ def serve_http(
                 working_dir=str(bento_path.absolute()),
                 numprocesses=num_workers,
                 close_child_stdin=not development_mode,
-                env=env,
+                env={k: str(v) for k, v in env.items()},
             )
         )
 

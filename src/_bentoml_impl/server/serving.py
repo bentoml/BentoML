@@ -173,7 +173,6 @@ def serve_http(
     dependency_map: dict[str, str] | None = None,
     service_name: str = "",
     threaded: bool = False,
-    command_env_vars: list[dict[str, str]] | None = None,
 ) -> Server:
     from circus.sockets import CircusSocket
 
@@ -201,9 +200,6 @@ def serve_http(
         svc = load(bento_identifier, working_dir)
     bento_identifier = svc.import_string
     bento_path = pathlib.Path(svc.working_dir)
-
-    if command_env_vars:
-        env.update({env_var["name"]: env_var["value"] for env_var in command_env_vars})
 
     # Process environment variables from the service
     for env_var in svc.envs:

@@ -51,9 +51,7 @@ CLI_LOGGING_CONFIG: dict[str, t.Any] = {
     "root": {"level": logging.WARNING},
 }
 
-TRACED_LOG_FORMAT = (
-    "%(asctime)s %(levelname_bracketed)s %(component)s %(message)s%(trace_msg)s"
-)
+TRACED_LOG_FORMAT = "%(asctime)s %(levelname_bracketed)s %(component)s[%(name)s] %(message)s%(trace_msg)s"
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 
@@ -111,6 +109,11 @@ SERVER_LOGGING_CONFIG: dict[str, t.Any] = {
             "handlers": ["tracehandler"],
             "propagate": True,
         },
+        "circus": {
+            "level": logging.WARNING,
+            "handlers": ["tracehandler"],
+            "propagate": True,
+        },
     },
     "root": {
         "handlers": ["tracehandler"],
@@ -150,11 +153,14 @@ def _component_name():
 def configure_server_logging():
     if get_quiet_mode():
         SERVER_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.ERROR
+        SERVER_LOGGING_CONFIG["loggers"]["circus"]["level"] = logging.ERROR
         SERVER_LOGGING_CONFIG["root"]["level"] = logging.ERROR
     elif get_debug_mode():
         SERVER_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.DEBUG
+        SERVER_LOGGING_CONFIG["loggers"]["circus"]["level"] = logging.DEBUG
         SERVER_LOGGING_CONFIG["root"]["level"] = logging.DEBUG
     else:
         SERVER_LOGGING_CONFIG["loggers"]["bentoml"]["level"] = logging.INFO
+        SERVER_LOGGING_CONFIG["loggers"]["circus"]["level"] = logging.WARNING
         SERVER_LOGGING_CONFIG["root"]["level"] = logging.WARNING
     logging.config.dictConfig(SERVER_LOGGING_CONFIG)

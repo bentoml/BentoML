@@ -113,6 +113,7 @@ def create_watcher(
         stop_children=True,
         use_sockets=use_sockets,
         graceful_timeout=86400,
+        respawn=True,
         **kwargs,
     )
 

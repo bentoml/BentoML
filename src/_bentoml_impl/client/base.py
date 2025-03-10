@@ -78,19 +78,15 @@ class AbstractClient(abc.ABC):
         It takes the same arguments as the service method.
         """
 
-    @abc.abstractmethod
     def _get_task_status(self, __endpoint: ClientEndpoint, /, task_id: str) -> t.Any:
         """Get the status of a task."""
 
-    @abc.abstractmethod
     def _cancel_task(self, __endpoint: ClientEndpoint, /, task_id: str) -> t.Any:
         """Cancel a task."""
 
-    @abc.abstractmethod
     def _get_task_result(self, __endpoint: ClientEndpoint, /, task_id: str) -> t.Any:
         """Get the result of a task."""
 
-    @abc.abstractmethod
     def _retry_task(self, __endpoint: ClientEndpoint, /, task_id: str) -> t.Any:
         """Retry a task."""
 

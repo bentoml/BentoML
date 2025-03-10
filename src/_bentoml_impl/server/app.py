@@ -45,7 +45,7 @@ if t.TYPE_CHECKING:
     from bentoml._internal.types import LifecycleHook
 
 R = t.TypeVar("R")
-logger = logging.getLogger("bentoml.server")
+logger = logging.getLogger("bentoml.serve")
 RESULT_STORE_ENV = "BENTOML_RESULT_STORE"
 
 

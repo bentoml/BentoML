@@ -2,31 +2,30 @@
 Async task queues
 =================
 
-Many model inferences are best handled as long-running operations. Tasks in BentoML allow you to execute these long-running workloads in the background and retrieve the results at a later time.
+Async tasks enable you to handle certain inference tasks in a fire-and-forget style. Instead of waiting for a response, you can submit a request that runs in the background and immediately receive a unique identifier. This identifier can then be used at any point to check the status of the task or retrieve the results once the task is complete. This allows for more efficient use of resources and improved responsiveness in scenarios where immediate results are not required.
 
-This document explains how to define and call a task endpoint.
+Async tasks are ideal for:
 
-Overview
---------
+- Batch processing: Running inference on large volumes of data
+- Asynchronous generation: Generating text, images, or other media that may take a long time to complete
+- Time insensitive tasks: Tasks that do not need to be completed immediately that can be executed with a lower priority
 
-Tasks are ideal for scenarios where you don't need the inference results immediately, such as:
-
-- **Batch processing**: Handling large volumes of data or computations in a single batch.
-- **Video or image generation**: Creating or manipulating media files which may take considerable time.
-
-Waiting synchronously for such tasks could lead to inefficiencies, with the caller remaining idle for the majority of the time. With BentoML tasks, you can send prompts first and then asynchronously get the results.
-
-Here is the general workflow of using BentoML tasks:
-
-.. image:: ../../_static/img/get-started/tasks/task-workflow.png
-    :width: 400px
+.. image:: ../../_static/img/get-started/tasks/async_tasks.png
+    :width: 800px
     :align: center
-    :alt: BentoML task workflow
+    :alt: BentoML async task architecture
+
+
+Task results are stored for a configurable amount of time, default 24 hours, and are deleted after that period.
+
+.. note::
+
+    The diagram above illustrates the architecture of async tasks running on BentoCloud. When a BentoML service is deployed locally, the request queue and ephemeral storage are created in non-persistent memory, intended solely for development purposes.
 
 Define a task endpoint
 ----------------------
 
-You define a task endpoint using the ``@bentoml.task`` decorator in the Service constructor. Here's an example:
+You can define a task endpoint using the ``@bentoml.task`` decorator in the Service constructor. If you already have a ``@bentoml.api`` and would like to convert it to an async task, you can simply change the decorator only without modifying the function implementation. Here's an example:
 
 .. code-block:: python
 
@@ -41,14 +40,18 @@ You define a task endpoint using the ``@bentoml.task`` decorator in the Service 
             # Process the prompt in a long-running process
             return image
 
-BentoML automatically exposes several endpoints for clients to manage the task, such as task submission and status retrieval.
+Under the hood, BentoML automatically generates several endpoints for creating the task, getting the task status, and retrieving the task results.
+
+- ``POST /submit``: Submit a task to the queue. A unique task identifier is returned immediately.
+- ``GET /status``: Get the status of a task given the task identifier.
+- ``GET /get``: Get the result of a task given the task identifier.
+- ``POST /cancel``: Attempt to cancel a task given the task identifier, if the task hasn't started execution.
+- ``PUT /retry``: Retry a task given the task identifier.
 
 Call a task endpoint
 --------------------
 
-BentoML tasks are managed via a task queue style API endpoint. You can create clients to interact with the endpoint by submitting requests and dedicated worker processes will monitor the queues for new tasks. Both ``SyncHTTPClient`` and ``AsyncHTTPClient`` clients can be used to call a task endpoint.
-
-Here's how you can submit a task using a synchronous client:
+Async tasks can be submitted through the ``SyncHTTPClient`` or ``AsyncHTTPClient`` clients, using the ``submit()`` function on the endpoint name.
 
 .. code-block:: python
 
@@ -60,7 +63,12 @@ Here's how you can submit a task using a synchronous client:
     task = client.long_running_image_generation.submit(prompt=prompt)
     print("Task submitted, ID:", task.id)
 
-Once a task is submitted, the client receives a task ID, which can be used to track the task status and retrieve results at a later time. Here is an example:
+.. note::
+
+    You may also use an HTTP client from any language and invoke the endpoints listed above directly.
+
+
+Once a task is submitted, the request is enqueued in the request queue and a unique task identifier is returned immediately, which can be used to get the status and retrieve the result.
 
 .. code-block:: python
 

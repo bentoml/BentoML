@@ -43,6 +43,7 @@ ARG BENTO_PATH={{ bento__path }}
 ENV BENTO_PATH=$BENTO_PATH
 ENV BENTOML_HOME={{ bento__home }}
 ENV BENTOML_HF_CACHE_DIR={{ bento__path }}/hf-models
+ENV BENTOML_CONTAINERIZED=true
 
 {% for env in __bento_envs__ %}
 ARG {{ env.name }}{% if env.value %}={{ env.value }}{% endif %}

@@ -10,6 +10,7 @@ import shutil
 import sys
 import tempfile
 import typing as t
+from functools import lru_cache
 from functools import partial
 from pathlib import Path
 
@@ -95,6 +96,14 @@ def ensure_prometheus_dir(
         ) from None
 
 
+@lru_cache(maxsize=1)
+def running_inside_container() -> bool:
+    return (
+        "BENTOML_CONTAINERIZED" in os.environ
+        or "BENTOCLOUD_DEPLOYMENT_URL" in os.environ
+    )
+
+
 def create_watcher(
     name: str,
     args: list[str],
@@ -113,7 +122,7 @@ def create_watcher(
         stop_children=True,
         use_sockets=use_sockets,
         graceful_timeout=86400,
-        respawn=True,
+        respawn=not running_inside_container(),
         **kwargs,
     )
 

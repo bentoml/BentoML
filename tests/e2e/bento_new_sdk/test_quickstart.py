@@ -1,3 +1,5 @@
+import os
+import pickle
 from pathlib import Path
 
 import pytest
@@ -21,9 +23,23 @@ async def test_async_serve_and_prediction(examples: Path) -> None:
     with bentoml.serve(
         ".", working_dir=str(examples / "quickstart"), port=port
     ) as server:
+
+        class Evil:
+            def __reduce__(self):
+                return (os.system, ("echo 'EVIL'",))
+
         with bentoml.SyncHTTPClient(server.url, server_ready_timeout=100) as client:
             result = client.summarize([EXAMPLE_INPUT])[0]
-        assert "Whiskers" in result
+            assert "Whiskers" in result
+
+            evil_payload = pickle.dumps(Evil())
+            resp = client.request(
+                "POST",
+                "/summarize",
+                data=evil_payload,
+                headers={"Content-Type": "application/vnd.bentoml+pickle"},
+            )
+            assert resp.status_code == 415
 
         async with bentoml.AsyncHTTPClient(server.url) as client:
             result = (await client.summarize([EXAMPLE_INPUT]))[0]

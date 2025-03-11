@@ -654,6 +654,7 @@ class ServiceAppFactory(BaseAppFactory):
         media_type = request.headers.get("Content-Type", "application/json")
         media_type = media_type.split(";")[0].strip()
 
+        # NOTE: The following check is for security concern, DO NOT REMOVE
         if self.is_main and media_type == "application/vnd.bentoml+pickle":
             raise BentoMLException(
                 "application/vnd.bentoml+pickle is not allowed in main server",

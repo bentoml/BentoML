@@ -53,6 +53,7 @@ ARG BENTO_PATH={{ bento__path }}
 ENV BENTO_PATH=$BENTO_PATH
 ENV BENTOML_HOME={{ bento__home }}
 ENV BENTOML_HF_CACHE_DIR={{ bento__path }}/hf-models
+ENV BENTOML_CONTAINERIZED=true
 
 RUN mkdir $BENTO_PATH && chown {{ bento__user }}:{{ bento__user }} $BENTO_PATH -R
 WORKDIR $BENTO_PATH

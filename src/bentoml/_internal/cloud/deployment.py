@@ -1093,19 +1093,21 @@ class DeploymentAPI:
     ) -> DeploymentTargetHPAConf:
         if scaling is None:
             return DeploymentTargetHPAConf(1, 1)
-        if scaling.min_replicas is None:
-            scaling.min_replicas = 1
         if scaling.max_replicas is None:
-            scaling.max_replicas = max(scaling.min_replicas, 1)
+            if scaling.min_replicas is not None:
+                scaling.max_replicas = max(scaling.min_replicas, 1)
+            else:
+                scaling.max_replicas = 1
         # one edge case:
-        if scaling.min_replicas > scaling.max_replicas:
-            raise BentoMLException(
-                "min scaling values must be less than or equal to max scaling values"
-            )
-        if scaling.min_replicas < 0:
-            raise BentoMLException(
-                "min scaling values must be greater than or equal to 0"
-            )
+        if scaling.min_replicas is not None:
+            if scaling.min_replicas > scaling.max_replicas:
+                raise BentoMLException(
+                    "min scaling values must be less than or equal to max scaling values"
+                )
+            if scaling.min_replicas < 0:
+                raise BentoMLException(
+                    "min scaling values must be greater than or equal to 0"
+                )
         if scaling.max_replicas <= 0:
             raise BentoMLException("max scaling values must be greater than 0")
         return scaling

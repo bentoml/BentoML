@@ -358,7 +358,7 @@ def test_create_deployment_scailing_only_max(deployment_api: DeploymentAPI):
     assert config.access_authorization is False
     for service in config.services.values():
         assert service.scaling == DeploymentTargetHPAConf(
-            min_replicas=1, max_replicas=3
+            min_replicas=None, max_replicas=3
         )
 
 
@@ -396,7 +396,7 @@ def test_create_deployment_config_dict(deployment_api: DeploymentAPI):
             },
         ),
         "preprocessing": DeploymentServiceConfig(
-            scaling=DeploymentTargetHPAConf(min_replicas=1, max_replicas=2)
+            scaling=DeploymentTargetHPAConf(min_replicas=None, max_replicas=2)
         ),
     }
 

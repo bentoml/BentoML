@@ -58,6 +58,10 @@ class AbstractClient(abc.ABC):
             method.__signature__ = endpoint.input_spec.__signature__
         if endpoint.is_task:
             method.submit = functools.partial(self._submit, endpoint)
+            method.get = functools.partial(self._get_task_result, endpoint)
+            method.get_status = functools.partial(self._get_task_status, endpoint)
+            method.cancel = functools.partial(self._cancel_task, endpoint)
+            method.retry = functools.partial(self._retry_task, endpoint)
         return method
 
     @abc.abstractmethod
@@ -73,6 +77,18 @@ class AbstractClient(abc.ABC):
         """Submit a job to the service.
         It takes the same arguments as the service method.
         """
+
+    def _get_task_status(self, __endpoint: ClientEndpoint, /, task_id: str) -> t.Any:
+        """Get the status of a task."""
+
+    def _cancel_task(self, __endpoint: ClientEndpoint, /, task_id: str) -> t.Any:
+        """Cancel a task."""
+
+    def _get_task_result(self, __endpoint: ClientEndpoint, /, task_id: str) -> t.Any:
+        """Get the result of a task."""
+
+    def _retry_task(self, __endpoint: ClientEndpoint, /, task_id: str) -> t.Any:
+        """Retry a task."""
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         if "__call__" not in self.endpoints:

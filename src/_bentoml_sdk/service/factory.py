@@ -35,7 +35,7 @@ from ..models import HuggingFaceModel
 from ..models import Model
 from .config import ServiceConfig as Config
 
-logger = logging.getLogger("bentoml.io")
+logger = logging.getLogger("bentoml.serve")
 
 T = t.TypeVar("T", bound=object)
 

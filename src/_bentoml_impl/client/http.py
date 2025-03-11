@@ -29,6 +29,7 @@ from bentoml.exceptions import NotFound
 from bentoml.exceptions import ServiceUnavailable
 
 from ..serde import Payload
+from ..tasks import ResultStatus
 from .base import AbstractClient
 from .base import ClientEndpoint
 from .base import map_exception
@@ -506,6 +507,49 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
                 f.close()
             self._opened_files.clear()
 
+    def _get_task_result(self, __endpoint: ClientEndpoint, /, task_id: str) -> t.Any:
+        resp = self.request("GET", f"{__endpoint}/get", params={"task_id": task_id})
+        if resp.is_error:
+            resp.read()
+            raise map_exception(resp)
+        if (
+            __endpoint.output.get("type") == "file"
+            and self.media_type == "application/json"
+        ):
+            return self._parse_file_response(__endpoint, resp)
+        else:
+            return self._parse_response(__endpoint, resp)
+
+    def _get_task_status(
+        self, __endpoint: ClientEndpoint, /, task_id: str
+    ) -> ResultStatus:
+        resp = self.client.request(
+            "GET", f"{__endpoint.route}/status", params={"task_id": task_id}
+        )
+        if resp.is_error:
+            resp.read()
+            raise map_exception(resp)
+        data = resp.json()
+        return ResultStatus(data["status"])
+
+    def _cancel_task(self, __endpoint: ClientEndpoint, /, task_id: str) -> None:
+        resp = self.request(
+            "PUT", f"{__endpoint.route}/cancel", params={"task_id": task_id}
+        )
+        if resp.is_error:
+            resp.read()
+            raise map_exception(resp)
+
+    def _retry_task(self, __endpoint: ClientEndpoint, /, task_id: str) -> Task:
+        resp = self.request(
+            "POST", f"{__endpoint.route}/retry", params={"task_id": task_id}
+        )
+        if resp.is_error:
+            resp.read()
+            raise map_exception(resp)
+        data = resp.json()
+        return Task(data["task_id"], __endpoint, self)
+
     def _call(
         self,
         endpoint: ClientEndpoint,
@@ -629,6 +673,55 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
             for f in self._opened_files:
                 f.close()
             self._opened_files.clear()
+
+    async def _get_task_status(
+        self, __endpoint: ClientEndpoint, /, task_id: str
+    ) -> ResultStatus:
+        resp = await self.client.request(
+            "GET", f"{__endpoint.route}/status", params={"task_id": task_id}
+        )
+        if resp.is_error:
+            await resp.aread()
+            raise map_exception(resp)
+        data = resp.json()
+        return ResultStatus(data["status"])
+
+    async def _cancel_task(self, __endpoint: ClientEndpoint, /, task_id: str) -> None:
+        resp = await self.request(
+            "PUT", f"{__endpoint.route}/cancel", params={"task_id": task_id}
+        )
+        if resp.is_error:
+            await resp.aread()
+            raise map_exception(resp)
+
+    async def _retry_task(
+        self, __endpoint: ClientEndpoint, /, task_id: str
+    ) -> AsyncTask:
+        resp = await self.request(
+            "POST", f"{__endpoint.route}/retry", params={"task_id": task_id}
+        )
+        if resp.is_error:
+            await resp.aread()
+            raise map_exception(resp)
+        data = resp.json()
+        return AsyncTask(data["task_id"], __endpoint, self)
+
+    async def _get_task_result(
+        self, __endpoint: ClientEndpoint, /, task_id: str
+    ) -> t.Any:
+        resp = await self.request(
+            "GET", f"{__endpoint.route}/get", params={"task_id": task_id}
+        )
+        if resp.is_error:
+            await resp.aread()
+            raise map_exception(resp)
+        if (
+            __endpoint.output.get("type") == "file"
+            and self.media_type == "application/json"
+        ):
+            return await self._parse_file_response(__endpoint, resp)
+        else:
+            return await self._parse_response(__endpoint, resp)
 
     async def _call(
         self,

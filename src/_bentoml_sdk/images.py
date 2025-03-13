@@ -189,7 +189,13 @@ class Image:
                 )
             except subprocess.CalledProcessError as e:
                 raise BentoMLException(f"Failed to lock PyPI packages: {e}") from None
-            return requirements_in.with_suffix(".lock").read_text()
+            locked_requirements = (  # uv doesn't preserve global option lines, add them here
+                "\n".join(option.dumps() for option in requirements_file.options)
+            )
+            if locked_requirements:
+                locked_requirements += "\n"
+            locked_requirements += requirements_in.with_suffix(".lock").read_text()
+            return locked_requirements
 
 
 @attrs.define

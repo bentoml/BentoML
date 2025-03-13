@@ -26,7 +26,9 @@ class Arbiter(_Arbiter):
 
     def start(self, cb: t.Callable[[t.Any], t.Any] | None = None) -> None:
         self.exit_stack.__enter__()
-        return super().start(cb)
+        fut = super().start(cb)
+        if exc := fut.exception():
+            raise exc
 
     def stop(self) -> None:
         self.exit_stack.__exit__(None, None, None)

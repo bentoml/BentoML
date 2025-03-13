@@ -28,7 +28,7 @@ dependencies = [
     "aiohttp",
     "attrs>=22.2.0",
     "cattrs>=22.1.0,<23.2.0",
-    "kantoku>=0.18.2",
+    "kantoku>=0.18.3",
     "click>=7.0",
     "click-option-group",
     "cloudpickle>=2.0.0",

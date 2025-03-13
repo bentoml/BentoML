@@ -849,11 +849,12 @@ class ImageInfo:
 
         from _bentoml_impl.docker import generate_dockerfile
 
+        # Prepare env/python files
         py_folder = fs.path.join("env", "python")
         bento_fs.makedirs(py_folder, recreate=True)
         reqs_txt = fs.path.join(py_folder, "requirements.txt")
         bento_fs.writetext(reqs_txt, self.python_requirements)
-
+        # Prepare env/docker files
         docker_folder = fs.path.join("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
         dockerfile_path = fs.path.join(docker_folder, "Dockerfile")

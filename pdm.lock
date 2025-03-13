@@ -5,7 +5,7 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:1cd0300e31c215e6bc1f1c9f601509be6c9d32d2350d4b4c42bc719da2f1dd23"
+content_hash = "sha256:77cd3c12b54fdee57646534b5328ee9620f2ba248fe19775888dd59d4d1ad655"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1294,7 +1294,7 @@ files = [
 
 [[package]]
 name = "kantoku"
-version = "0.18.2"
+version = "0.18.3"
 requires_python = ">=3.7"
 summary = "Circus is a program that will let you run and watch multiple processes and sockets."
 groups = ["default"]
@@ -1304,8 +1304,8 @@ dependencies = [
     "tornado>=5.0.2",
 ]
 files = [
-    {file = "kantoku-0.18.2-py3-none-any.whl", hash = "sha256:7c6b2e67bd40be82349f4ca4f49a255cbcd3e1bfcc61fe28dc1737739902e750"},
-    {file = "kantoku-0.18.2.tar.gz", hash = "sha256:875583e75d6c79aacdaa11af1e4b31334f2161b115a2aa6c75f11323b0232a50"},
+    {file = "kantoku-0.18.3-py3-none-any.whl", hash = "sha256:bddf7d385de8ca951d28ac5a2e86f360202cf5840b0a06e5630487ebc981e1ad"},
+    {file = "kantoku-0.18.3.tar.gz", hash = "sha256:751882b2bde074cd8d65f8f9f62606a805b7aa9ea956ba452d13fab0352b5163"},
 ]
 
 [[package]]

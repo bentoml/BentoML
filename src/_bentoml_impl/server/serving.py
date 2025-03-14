@@ -196,10 +196,11 @@ def serve_http(
         assert working_dir is None, (
             "working_dir should not be set when passing a service in process"
         )
+        bento_identifier = svc.import_string
+        bento_path = pathlib.Path(svc.working_dir)
     else:
         svc = load(bento_identifier, working_dir)
-    bento_identifier = svc.import_string
-    bento_path = pathlib.Path(svc.working_dir)
+        bento_path = pathlib.Path(working_dir or ".")
 
     # Process environment variables from the service
     for env_var in svc.envs:

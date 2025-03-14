@@ -160,7 +160,7 @@ def main(
                 )
             os.environ.update(env_list[worker_key])
 
-    from _bentoml_impl.loader import import_service
+    from _bentoml_impl.loader import load
     from bentoml._internal.container import BentoMLContainer
     from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
@@ -175,7 +175,7 @@ def main(
         server_context.worker_index = worker_id
     if model_preheat:
         patch_safetensor()
-    service = import_service(bento_identifier)
+    service = load(bento_identifier)
 
     if service_name and service_name != service.name:
         service = service.find_dependent_by_name(service_name)

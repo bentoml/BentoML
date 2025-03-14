@@ -275,11 +275,6 @@ def get_image_from_build_config(
             "python.wheels is not supported by bento v2, fallback to bento v1"
         )
         return None
-    if python_options.pack_git_packages:
-        logger.warning(
-            "python.pack_git_packages is not supported by bento v2, fallback to bento v1"
-        )
-        return None
     image.lock_python_packages = python_options.lock_packages
     if python_options.index_url:
         image.python_packages(f"--index-url {python_options.index_url}")

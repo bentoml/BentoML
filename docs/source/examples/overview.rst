@@ -7,13 +7,6 @@ This section provides the tutorials for a curated list of example projects to he
 LLMs
 ----
 
-One-command LLM deployment with `OpenLLM <https://github.com/bentoml/OpenLLM>`_:
-
-.. code-block:: bash
-
-   pip install openllm  # or pip3 install openllm
-   openllm hello
-
 Deploy an OpenAI-compatible LLM API service with BentoML and vLLM:
 
 - `DeepSeek R1 Distill of Llama 3.3 70B <https://github.com/bentoml/BentoVLLM/tree/main/deepseek-r1-distill-llama3.3-70b>`_

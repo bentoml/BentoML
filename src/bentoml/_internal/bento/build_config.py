@@ -512,7 +512,7 @@ class PythonOptions:
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
             logger.warning(
-                "Build option python: 'requirements_txt={self.requirements_txt}' found, will ignore the option: 'packages=%s'.",
+                "Build option python: 'requirements_txt=%s' found, will ignore the option: 'packages=%s'.",
                 self.requirements_txt,
                 self.packages,
             )

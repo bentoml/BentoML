@@ -508,7 +508,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
             self._opened_files.clear()
 
     def _get_task_result(self, __endpoint: ClientEndpoint, /, task_id: str) -> t.Any:
-        resp = self.request("GET", f"{__endpoint}/get", params={"task_id": task_id})
+        resp = self.request("GET", f"{__endpoint.route}/get", params={"task_id": task_id})
         if resp.is_error:
             resp.read()
             raise map_exception(resp)

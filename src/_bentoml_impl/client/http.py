@@ -592,7 +592,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
     def _parse_file_response(
         self, endpoint: ClientEndpoint, resp: httpx.Response
     ) -> pathlib.Path | Image.Image:
-        from multipart.multipart import parse_options_header
+        from python_multipart.multipart import parse_options_header
         from PIL import Image
 
         content_disposition = resp.headers.get("content-disposition")
@@ -767,7 +767,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
     async def _parse_file_response(
         self, endpoint: ClientEndpoint, resp: httpx.Response
     ) -> pathlib.Path | Image.Image:
-        from multipart.multipart import parse_options_header
+        from python_multipart.multipart import parse_options_header
         from PIL import Image
 
         content_disposition = resp.headers.get("content-disposition")

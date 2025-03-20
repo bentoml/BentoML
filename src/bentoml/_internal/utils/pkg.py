@@ -86,5 +86,7 @@ def get_local_bentoml_dependency() -> str:
         ).strip()
     except subprocess.CalledProcessError:
         remote_url = DEFAULT_BENTOML_GIT_URL
+    if remote_url.startswith("git@"):
+        remote_url = f"ssh://{remote_url.replace(':', '/', 1)}"
 
     return f"git+{remote_url}@{ref}"

@@ -113,7 +113,7 @@ If your project depends on a private GitHub repository, you can include the Pyth
     image = bentoml.images.PythonImage(python_version='3.11') \
         .python_packages("git+ssh://git@github.com/username/repository.git@branch_name")
 
-To configure PyPI indexes and other pip options:
+To configure PyPI indexes and other pip options (e.g. custom package sources and private repositories):
 
 .. code-block:: python
 
@@ -128,14 +128,38 @@ To configure PyPI indexes and other pip options:
             "torchaudio"
         )
 
-    # Multiple pip options
+    # Configuring multiple PyPI options, including a private repository
     image = bentoml.images.PythonImage(python_version='3.11') \
         .python_packages(
-            "--index-url https://pypi.org/simple",
-            "--extra-index-url https://my.private.pypi/simple",
-            "--trusted-host my.private.pypi",
+            "--index-url https://pypi.org/simple", # Default PyPI index
+            "--extra-index-url https://my.private.pypi/simple", # Additional private repository
+            "--trusted-host my.private.pypi", # Mark the private host as trusted
             "my-private-package"
         )
+
+If your private package requires authentication:
+
+.. code-block:: python
+
+    import bentoml
+
+    # Securely configure authentication for a private PyPI repository
+    image = bentoml.images.PythonImage(python_version='3.11') \
+        .python_packages(
+            # Use environment variables for security
+            "--extra-index-url https://${USERNAME}:${PASSWORD}@my.private.pypi/simple",
+            "my-private-package"
+        )
+
+    @bentoml.service(
+        image=image,
+        envs=[
+            {"name": "USERNAME"},  # You can omit value and set it when deploying the Service
+            {"name": "PASSWORD"},
+        ]
+    )
+    class MyService:
+       ...
 
 ``requirements_file()``
 ^^^^^^^^^^^^^^^^^^^^^^^^

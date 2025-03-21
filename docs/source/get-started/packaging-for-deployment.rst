@@ -2,7 +2,12 @@
 Packaging for deployment
 ========================
 
-BentoML provides a standardized format called Bentos for packaging AI/ML services. A Bento includes all the components required to run AI services, such as source code, Python dependencies, model artifacts, and configurations. This ensures your AI services are consistent and reproducible across different environments.
+BentoML provides a standardized format called Bentos for packaging AI/ML services. A **Bento** includes all the components required to run AI services, such as source code, Python dependencies, model artifacts, and configurations. This ensures your AI services are consistent and reproducible across different environments.
+
+.. image:: ../../_static/img/get-started/packaging-for-deployment/bento-architecture.png
+    :align: center
+    :width: 80%
+    :alt: BentoML Bento architecture
 
 Define the runtime environment
 ------------------------------

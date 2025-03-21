@@ -9,7 +9,7 @@ from enum import Enum
 from tempfile import SpooledTemporaryFile
 from urllib.parse import unquote_plus
 
-import multipart.multipart as multipart
+import python_multipart.multipart as multipart
 from starlette.datastructures import FormData
 from starlette.datastructures import Headers
 from starlette.datastructures import MutableHeaders

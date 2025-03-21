@@ -2,7 +2,7 @@
 Adaptive batching
 =================
 
-Adaptive batching is a dispatching mechanism in BentoML, which adjusts both the batch window and size based on traffic patterns. This mechanism minimizes latency and optimizes resource usage by continuously adjusting the batching parameters based on recent request trends.
+Many models achieve higher throughput, better resource utilization, and lower latency when processing requests in batches. BentoML supports **adaptive batching**, a dynamic request dispatching mechanism that intelligently groups multiple requests for more efficient processing. It continuously adjusts batch size and window based on real-time traffic patterns. This ensures optimal performance as it provides fast responses during low-traffic periods and maximizes resource utilization under heavy load.
 
 .. note::
 
@@ -19,7 +19,7 @@ Adaptive batching is implemented on the server side. This is advantageous as opp
 Specifically, there is a dispatcher within a BentoML Service that oversees collecting requests into a batch until the conditions of the batch window or batch size are met, at which point the batch is sent to the model for inference.
 
 .. image:: ../../_static/img/get-started/adaptive-batching/single-service-batching.png
-    :width: 65%
+    :width: 75%
     :align: center
     :alt: Adaptive batching in a single BentoML Service
 

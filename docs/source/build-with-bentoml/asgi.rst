@@ -2,7 +2,7 @@
 Mount ASGI applications
 =======================
 
-`ASGI (Asynchronous Server Gateway Interface <https://asgi.readthedocs.io/en/latest/>`_ is a spiritual successor to WSGI (Web Server Gateway Interface), designed to provide a standard interface between async-capable Python web servers, frameworks, and applications. ASGI supports asynchronous request handling, allowing multiple requests to be processed at the same time, making it suitable for real-time web applications, such as WebSockets, long polling, and more.
+`ASGI (Asynchronous Server Gateway Interface) <https://asgi.readthedocs.io/en/latest/>`_ is a spiritual successor to WSGI (Web Server Gateway Interface), designed to provide a standard interface between async-capable Python web servers, frameworks, and applications. ASGI supports asynchronous request handling, allowing multiple requests to be processed at the same time, making it suitable for real-time web applications, such as WebSockets, long polling, and more.
 
 BentoML's server runs the Service API in an ASGI web serving layer, exposing REST endpoints for inference APIs (for example, ``POST /summarize``) and common infrastructure APIs (for example, ``GET /metrics``) for monitoring. This ASGI-native web serving layer allows for direct mounting of existing ASGI applications, enabling them to serve side-by-side with BentoML Services.
 

@@ -66,7 +66,7 @@ class Tag:
     def __init__(self, name: str, version: t.Optional[str] = None):
         lname = name.lower()
         if name != lname:
-            logger.warning("Converting '%s' to lowercase: '%s'.", name, lname)
+            logger.warning("[bentoml] Converting '%s' to lowercase: '%s'.", name, lname)
 
         validate_tag_str(lname)
 
@@ -75,7 +75,9 @@ class Tag:
         if version is not None:
             lversion = version.lower()
             if version != lversion:
-                logger.warning("Converting '%s' to lowercase: '%s'.", version, lversion)
+                logger.warning(
+                    "[bentoml] Converting '%s' to lowercase: '%s'.", version, lversion
+                )
             validate_tag_str(lversion)
             self.version = lversion
         else:

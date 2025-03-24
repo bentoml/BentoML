@@ -400,18 +400,21 @@ class Service(t.Generic[T]):
         )
 
     def on_load_bento(self, bento: Bento) -> None:
-        service_info = next(svc for svc in bento.info.services if svc.name == self.name)
-        for model, info in zip(self.models, service_info.models):
-            # Replace the model version with the one in the Bento
-            if not isinstance(model, HuggingFaceModel):
-                continue
-            model_id = info.metadata.get("model_id")  # use the case in bento info
-            if not model_id:
-                model_id = info.tag.name.replace("--", "/")
-            revision = info.metadata.get("revision", info.tag.version)
-            model.model_id = model_id
-            model.revision = revision
-        self.bento = bento
+        for svc in self.all_services().values():
+            service_info = next(
+                info for info in bento.info.services if info.name == svc.name
+            )
+            for model, info in zip(svc.models, service_info.models):
+                # Replace the model version with the one in the Bento
+                if not isinstance(model, HuggingFaceModel):
+                    continue
+                model_id = info.metadata.get("model_id")  # use the case in bento info
+                if not model_id:
+                    model_id = info.tag.name.replace("--", "/")
+                revision = info.metadata.get("revision", info.tag.version)
+                model.model_id = model_id
+                model.revision = revision
+            svc.bento = bento
 
 
 @t.overload

@@ -5,7 +5,7 @@ import io
 import typing as t
 from urllib.parse import quote
 
-from multipart.multipart import parse_options_header
+from python_multipart.multipart import parse_options_header
 from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import Response

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import typing as t
 
-from multipart.multipart import parse_options_header
+from python_multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response
 

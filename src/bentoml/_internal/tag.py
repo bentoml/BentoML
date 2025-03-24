@@ -75,7 +75,9 @@ class Tag:
         if version is not None:
             lversion = version.lower()
             if version != lversion:
-                logger.warning("[bentoml] Converting '%s' to lowercase: '%s'.", version, lversion)
+                logger.warning(
+                    "[bentoml] Converting '%s' to lowercase: '%s'.", version, lversion
+                )
             validate_tag_str(lversion)
             self.version = lversion
         else:

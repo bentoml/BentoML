@@ -401,7 +401,7 @@ def load(
             except (NotFound, ImportServiceError) as e2:
                 raise ImportServiceError(
                     f"Failed to load bento or import service '{bento_identifier}'.\n"
-                    f"If you are attempting to import bento in local store: '{e1}'.\n"
-                    f"If you are importing by python module path: '{e2}'."
+                    f"If you are attempting to import bento by tag: '{e2}'.\n"
+                    f"If you are importing by python module path: '{e1}'."
                 ) from e2
     return svc

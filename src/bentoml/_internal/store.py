@@ -158,9 +158,14 @@ class Store(ABC, t.Generic[Item]):
         matches = self._fs.glob(f"{path}*/")
         counts = matches.count().directories
         if counts == 0:
+            cmd = (
+                "bentoml pull"
+                if self._item_type.get_typename() == "Model"
+                else "bentoml models pull"
+            )
             raise NotFound(
                 f"{self._item_type.get_typename()} '{tag}' is not found in BentoML store {self._fs}, "
-                "you may need to run `bentoml models pull` first"
+                f"you may need to run `{cmd}` first"
             )
         elif counts == 1:
             match = next(iter(matches))

@@ -173,14 +173,15 @@ class Service(t.Generic[T]):
         url = dependency_map.get(self.name)
         return url.replace("tcp://", "http://") if url else None
 
-    @lru_cache(maxsize=1)
-    def all_services(self) -> dict[str, Service[t.Any]]:
+    def all_services(self, exclude_urls: bool = False) -> dict[str, Service[t.Any]]:
         """Get a map of the service and all recursive dependencies"""
         services: dict[str, Service[t.Any]] = {self.name: self}
         for dependency in self.dependencies.values():
             if dependency.on is None:
                 continue
-            dependents = dependency.on.all_services()
+            if exclude_urls and (dependency.url or dependency.deployment):
+                continue
+            dependents = dependency.on.all_services(exclude_urls=exclude_urls)
             conflict = next(
                 (
                     k

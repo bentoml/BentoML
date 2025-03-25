@@ -230,10 +230,8 @@ def serve_http(
     try:
         if not service_name and not development_mode:
             with contextlib.ExitStack() as port_stack:
-                for name, dep_svc in svc.all_services().items():
-                    if name == svc.name:
-                        continue
-                    if name in dependency_map:
+                for name, dep_svc in svc.all_services(exclude_urls=True).items():
+                    if name == svc.name or name in dependency_map:
                         continue
 
                     # Process environment variables for dependency services

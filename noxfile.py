@@ -73,7 +73,7 @@ def run_framework_integration_test(session: nox.Session, framework: str):
 @nox.session(name="e2e-testing", python=PYTHON_VERSIONS)
 @nox.parametrize("suite", ["bento_server_http", "bento_server_grpc", "bento_new_sdk"])
 def run_e2e_test(session: nox.Session, suite: str):
-    session.run("pdm", "sync", "-G", "io,testing", external=True)
+    session.run("pdm", "sync", "-G", "io,testing", "--no-editable", external=True)
     test_folder = os.path.join("tests/e2e", suite)
     requirements = os.path.join(test_folder, "requirements.txt")
     if os.path.exists(requirements):
@@ -83,7 +83,9 @@ def run_e2e_test(session: nox.Session, suite: str):
 
 @nox.session(name="e2e-monitoring", python=PYTHON_VERSIONS)
 def run_e2e_monitoring_test(session: nox.Session):
-    session.run("pdm", "sync", "-G", "io,testing,monitor-otlp", external=True)
+    session.run(
+        "pdm", "sync", "-G", "io,testing,monitor-otlp", "--no-editable", external=True
+    )
     test_folder = "tests/monitoring/task_classification"
     os.makedirs(os.path.join(test_folder, "monitoring"), exist_ok=True)
     session.run(*TEST_ARGS, test_folder)

@@ -150,9 +150,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest]
-        python-version: [3.12]
-        suite: ['bento_new_sdk']
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.9, 3.11, 3.12]
+        suite: ['bento_server_http', 'bento_new_sdk']
         exclude:
           - os: macos-latest
             suite: bento_server_http
@@ -185,8 +185,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: pipx install pdm && pipx install nox
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
       - name: Run ${{ matrix.suite }} tests
         run: nox -s "e2e-testing-${{ matrix.python-version }}(suite='${{ matrix.suite }}')"
       - name: Disambiguate coverage filename

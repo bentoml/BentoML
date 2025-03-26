@@ -4,6 +4,10 @@ Model composition
 
 Model composition lets you combine multiple models to build sophisticated AI applications such as RAG and AI agents. BentoML provides simple :doc:`Service APIs </build-with-bentoml/services>` for creating workflows where models need to work together - either in sequence (one after another) or in parallel (at the same time).
 
+.. image:: ../../_static/img/get-started/model-composition/bentoml-multi-model-composition.png
+    :align: center
+    :alt: BentoML multi-model composition diagram - Inference Graph
+
 You might want to use model composition in BentoML when you need to:
 
 - Process different types of data together (for example, images and text) with different models

@@ -12,6 +12,12 @@ Why developers love BentoCloud:
 - **Streamlined workflows** across development, testing, deployment, monitoring, and CI/CD
 - Easy access to various GPUs like L4 and A100, in **our cloud or yours**
 
+Here is the workflow of deploying your AI service to BentoCloud:
+
+.. image:: ../../_static/img/get-started/cloud-deployment/bentocloud-deployment-workflow.png
+    :align: center
+    :alt: BentoCloud deployment workflow
+
 Log in to BentoCloud
 --------------------
 

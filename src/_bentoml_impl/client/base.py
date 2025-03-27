@@ -34,12 +34,9 @@ class ClientEndpoint:
 
 
 class AbstractClient(abc.ABC):
-    _setup_done: bool
     endpoints: dict[str, ClientEndpoint]
 
     def _setup_endpoints(self) -> None:
-        if self._setup_done:
-            raise RuntimeError("Client is already set up.")
         self._setup_done = True
         for name in self.endpoints:
             if name == "__call__":

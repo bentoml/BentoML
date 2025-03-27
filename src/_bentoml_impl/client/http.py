@@ -62,7 +62,7 @@ def to_async_iterable(iterable: t.Iterable[T]) -> t.AsyncIterable[T]:
     return _gen()
 
 
-@attr.define
+@attr.define(slots=False)
 class HTTPClient(AbstractClient, t.Generic[C]):
     client_cls: t.ClassVar[type[C]]  # type: ignore
 

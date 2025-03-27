@@ -42,6 +42,7 @@ def source_locations(pkg: str) -> str | None:
 DEFAULT_BENTOML_GIT_URL = "https://github.com/bentoml/bentoml.git"
 
 
+@lru_cache(maxsize=1)
 def get_local_bentoml_dependency() -> str:
     import logging
 

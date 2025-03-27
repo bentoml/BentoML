@@ -34,7 +34,11 @@ ENV PYTHONUNBUFFERED=1
 ARG BENTO_USER={{ bento__user }}
 ARG BENTO_USER_UID={{ bento__uid_gid }}
 ARG BENTO_USER_GID={{ bento__uid_gid }}
-RUN groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID -g $BENTO_USER_GID -o -r $BENTO_USER
+RUN if command -v groupadd &>/dev/null; then \
+    groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID -g $BENTO_USER_GID -o -r $BENTO_USER; \
+    else \
+    addgroup -g $BENTO_USER_GID -S $BENTO_USER && adduser -u $BENTO_USER_UID -G $BENTO_USER -S $BENTO_USER; \
+    fi
 {% endblock %}
 
 {% block SETUP_BENTO_ENVARS %}
@@ -74,7 +78,7 @@ ENV UV_COMPILE_BYTECODE=1
 
 COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
 # install python packages
-{% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} uv pip install -r ./env/python/requirements.txt
+{% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} uv --directory ./env/python/ pip install -r requirements.txt
 
 {% for command in __options__post_commands %}
 RUN {{ command }}

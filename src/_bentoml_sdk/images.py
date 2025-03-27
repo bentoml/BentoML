@@ -9,6 +9,7 @@ import typing as t
 from pathlib import Path
 
 import attrs
+import fs
 
 from bentoml._internal.bento.bento import ImageInfo
 from bentoml._internal.bento.build_config import BentoBuildConfig
@@ -18,9 +19,13 @@ from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.configuration import get_quiet_mode
 from bentoml._internal.container.frontend.dockerfile import CONTAINER_METADATA
 from bentoml._internal.container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
-from bentoml._internal.utils.pkg import get_local_bentoml_dependency
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
+
+if t.TYPE_CHECKING:
+    from fs.base import FS
+
+    from bentoml._internal.bento.build_config import BentoEnvSchema
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -40,6 +45,7 @@ class Image:
     python_version: str = DEFAULT_PYTHON_VERSION
     commands: t.List[str] = attrs.field(factory=list)
     lock_python_packages: bool = True
+    pack_git_packages: bool = True
     python_requirements: str = ""
     post_commands: t.List[str] = attrs.field(factory=list)
     scripts: t.Dict[str, str] = attrs.field(factory=dict, init=False)
@@ -122,80 +128,135 @@ class Image:
         self.scripts[script] = target_script
         return self
 
-    def freeze(self, platform_: str | None = None) -> ImageInfo:
+    def freeze(
+        self, bento_fs: FS, envs: list[BentoEnvSchema], platform_: str | None = None
+    ) -> ImageInfo:
         """Freeze the image to an ImageInfo object for build."""
-        python_requirements = self._freeze_python_requirements(platform_)
-        return ImageInfo(
+        python_requirements = self._freeze_python_requirements(bento_fs, platform_)
+        from importlib import resources
+
+        from _bentoml_impl.docker import generate_dockerfile
+        from bentoml._internal.utils.filesystem import copy_file_to_fs_folder
+
+        # Prepare env/python files
+        py_folder = fs.path.join("env", "python")
+        bento_fs.makedirs(py_folder, recreate=True)
+        reqs_txt = fs.path.join(py_folder, "requirements.txt")
+        bento_fs.writetext(reqs_txt, python_requirements)
+        info = ImageInfo(
             base_image=self.base_image,
             python_version=self.python_version,
-            commands=["export UV_COMPILE_BYTECODE=1", *self.commands],
+            commands=self.commands,
             python_requirements=python_requirements,
             post_commands=self.post_commands,
-            scripts=self.scripts,
         )
+        # Prepare env/docker files
+        docker_folder = fs.path.join("env", "docker")
+        bento_fs.makedirs(docker_folder, recreate=True)
+        dockerfile_path = fs.path.join(docker_folder, "Dockerfile")
+        bento_fs.writetext(
+            dockerfile_path,
+            generate_dockerfile(info, bento_fs, enable_buildkit=False, envs=envs),
+        )
+        for script_name, target_path in self.scripts.items():
+            copy_file_to_fs_folder(script_name, bento_fs, dst_filename=target_path)
 
-    def _freeze_python_requirements(self, platform_: str | None = None) -> str:
-        from tempfile import TemporaryDirectory
+        with resources.path(
+            "bentoml._internal.container.frontend.dockerfile", "entrypoint.sh"
+        ) as entrypoint_path:
+            copy_file_to_fs_folder(str(entrypoint_path), bento_fs, docker_folder)
+        return info
 
+    def _freeze_python_requirements(
+        self, bento_fs: FS, platform_: str | None = None
+    ) -> str:
         from pip_requirements_parser import RequirementsFile
 
+        from bentoml._internal.bento.bentoml_builder import build_bentoml_sdist
+        from bentoml._internal.bento.build_config import PythonOptions
         from bentoml._internal.configuration import get_uv_command
 
-        with TemporaryDirectory(prefix="bento-reqs-") as parent:
-            requirements_in = Path(parent).joinpath("requirements.in")
-            requirements_in.write_text(self.python_requirements)
-            # XXX: RequirementsFile.from_string() does not work due to bugs
-            requirements_file = RequirementsFile.from_file(str(requirements_in))
-            has_bentoml_req = any(
-                req.name and req.name.lower() == "bentoml" and req.link is not None
-                for req in requirements_file.requirements
+        py_folder = fs.path.join("env", "python")
+        bento_fs.makedirs(py_folder, recreate=True)
+        requirements_in = Path(
+            bento_fs.getsyspath(fs.path.join(py_folder, "requirements.in"))
+        )
+        requirements_in.write_text(self.python_requirements)
+        py_req = fs.path.join("env", "python", "requirements.txt")
+        requirements_out = Path(bento_fs.getsyspath(py_req))
+        # XXX: RequirementsFile.from_string() does not work due to bugs
+        requirements_file = RequirementsFile.from_file(str(requirements_in))
+        has_bentoml_req = any(
+            req.name and req.name.lower() == "bentoml" and req.link is not None
+            for req in requirements_file.requirements
+        )
+        wheels_folder = fs.path.join("env", "python", "wheels")
+        with requirements_in.open("w") as f:
+            f.write(requirements_file.dumps(preserve_one_empty_line=True))
+            if not has_bentoml_req:
+                sdist_name = build_bentoml_sdist(bento_fs.getsyspath(wheels_folder))
+                bento_req = get_bentoml_requirement()
+                if bento_req is not None:
+                    logger.info(
+                        "Adding BentoML requirement to the image: %s.", bento_req
+                    )
+                    f.write(f"{bento_req}\n")
+                elif sdist_name is not None:
+                    f.write(f"./wheels/{sdist_name}\n")
+        if not self.lock_python_packages:
+            requirements_out.parent.mkdir(parents=True, exist_ok=True)
+            requirements_out.write_text(requirements_in.read_text())
+            PythonOptions.fix_dep_urls(
+                str(requirements_out),
+                bento_fs.getsyspath(wheels_folder),
+                self.pack_git_packages,
             )
-            with requirements_in.open("w") as f:
-                f.write(requirements_file.dumps(preserve_one_empty_line=True))
-                if not has_bentoml_req:
-                    req = get_bentoml_requirement() or get_local_bentoml_dependency()
-                    f.write(f"{req}\n")
-            if not self.lock_python_packages:
-                return requirements_in.read_text()
-            lock_args = [
-                str(requirements_in),
-                "--allow-unsafe",
-                "--no-header",
-                f"--output-file={requirements_in.with_suffix('.lock')}",
-                "--emit-index-url",
-                "--emit-find-links",
-                "--no-annotate",
-            ]
-            if get_debug_mode():
-                lock_args.append("--verbose")
-            else:
-                lock_args.append("--quiet")
-            logger.info("Locking PyPI package versions.")
-            if platform_:
-                lock_args.extend(["--python-platform", platform_])
-            elif platform.system() != "Linux" or platform.machine() != "x86_64":
-                logger.info(
-                    "Locking packages for %s. Pass `--platform` option to specify the platform.",
-                    DEFAULT_LOCK_PLATFORM,
-                )
-                lock_args.extend(["--python-platform", DEFAULT_LOCK_PLATFORM])
-            cmd = [*get_uv_command(), "pip", "compile", *lock_args]
-            try:
-                subprocess.check_call(
-                    cmd,
-                    text=True,
-                    stderr=subprocess.DEVNULL if get_quiet_mode() else None,
-                    cwd=parent,
-                )
-            except subprocess.CalledProcessError as e:
-                raise BentoMLException(f"Failed to lock PyPI packages: {e}") from None
-            locked_requirements = (  # uv doesn't preserve global option lines, add them here
-                "\n".join(option.dumps() for option in requirements_file.options)
+            return requirements_out.read_text()
+        lock_args = [
+            str(requirements_in),
+            "--allow-unsafe",
+            "--no-header",
+            f"--output-file={requirements_out}",
+            "--emit-index-url",
+            "--emit-find-links",
+            "--no-annotate",
+        ]
+        if get_debug_mode():
+            lock_args.append("--verbose")
+        else:
+            lock_args.append("--quiet")
+        logger.info("Locking PyPI package versions.")
+        if platform_:
+            lock_args.extend(["--python-platform", platform_])
+        elif platform.system() != "Linux" or platform.machine() != "x86_64":
+            logger.info(
+                "Locking packages for %s. Pass `--platform` option to specify the platform.",
+                DEFAULT_LOCK_PLATFORM,
             )
-            if locked_requirements:
-                locked_requirements += "\n"
-            locked_requirements += requirements_in.with_suffix(".lock").read_text()
-            return locked_requirements
+            lock_args.extend(["--python-platform", DEFAULT_LOCK_PLATFORM])
+        cmd = [*get_uv_command(), "pip", "compile", *lock_args]
+        try:
+            subprocess.check_call(
+                cmd,
+                text=True,
+                stderr=subprocess.DEVNULL if get_quiet_mode() else None,
+                cwd=bento_fs.getsyspath(py_folder),
+            )
+        except subprocess.CalledProcessError as e:
+            raise BentoMLException(f"Failed to lock PyPI packages: {e}") from None
+        locked_requirements = (  # uv doesn't preserve global option lines, add them here
+            "\n".join(option.dumps() for option in requirements_file.options)
+        )
+        if locked_requirements:
+            locked_requirements += "\n"
+        locked_requirements += requirements_out.read_text()
+        requirements_out.write_text(locked_requirements)
+        PythonOptions.fix_dep_urls(
+            str(requirements_out),
+            bento_fs.getsyspath(wheels_folder),
+            self.pack_git_packages,
+        )
+        return requirements_out.read_text()
 
 
 @attrs.define

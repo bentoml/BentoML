@@ -691,13 +691,21 @@ class PythonOptions:
                 )
             except subprocess.CalledProcessError as e:
                 raise BentoMLException(f"Failed to lock PyPI packages: {e}") from None
-            self._fix_dep_urls(pip_compile_out, bento_fs.getsyspath(wheels_folder))
+            self.fix_dep_urls(
+                pip_compile_out,
+                bento_fs.getsyspath(wheels_folder),
+                self.pack_git_packages,
+            )
         else:
             requirements_txt = bento_fs.getsyspath(
                 fs.path.combine(py_folder, "requirements.txt")
             )
             if os.path.exists(requirements_txt):
-                self._fix_dep_urls(requirements_txt, bento_fs.getsyspath(wheels_folder))
+                self.fix_dep_urls(
+                    requirements_txt,
+                    bento_fs.getsyspath(wheels_folder),
+                    self.pack_git_packages,
+                )
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
@@ -708,7 +716,10 @@ class PythonOptions:
             return attr.evolve(self, lock_packages=False)
         return self
 
-    def _fix_dep_urls(self, requirements_txt: str, wheels_folder: str) -> None:
+    @staticmethod
+    def fix_dep_urls(
+        requirements_txt: str, wheels_folder: str, pack_git_packages: bool = True
+    ) -> None:
         """Replace the git dependencies in the requirements.lock file with the
         paths to the local copy.
         """
@@ -725,7 +736,7 @@ class PythonOptions:
 
             if "/env/python/wheels" in link.url:
                 filename = link.filename
-            elif self.pack_git_packages and link.url.startswith("git+"):
+            elif pack_git_packages and link.url.startswith("git+"):
                 # We are only able to handle SSH Git URLs
                 url, ref = link.url_without_fragment[4:], ""
                 if "@" in link.path:  # ssh://git@owner/repo@ref

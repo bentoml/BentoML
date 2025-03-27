@@ -161,7 +161,7 @@ class Bento(StoreItem):
         else:
             self._model_store = ModelStore(models)
 
-    def __init__(self, tag: Tag, bento_fs: "FS", info: "BentoInfo"):
+    def __init__(self, tag: Tag, bento_fs: "FS", info: "BaseBentoInfo"):
         self._tag = tag
         self.__fs = bento_fs
         self.check_fs(None, bento_fs)
@@ -210,7 +210,8 @@ class Bento(StoreItem):
             ]
             image: ImageInfo | None = None
         else:
-            image = t.cast(ImageInfo, info.image)
+            assert isinstance(info, BentoInfoV2)
+            image = info.image
             runners = []
         return BentoManifestSchema(
             name=info.name,
@@ -440,9 +441,8 @@ class Bento(StoreItem):
                 ),
                 envs=build_config.envs,
                 schema=svc.schema() if not is_legacy else {},
-                image=image.freeze(platform),
+                image=image.freeze(bento_fs, build_config.envs, platform),
             )
-            bento_info.image.write_to_bento(bento_fs, build_config.envs)
 
         res = Bento(tag, bento_fs, bento_info)
         if bare:
@@ -842,33 +842,6 @@ class ImageInfo:
     commands: t.List[str] = attr.field(factory=list)
     python_requirements: str = ""
     post_commands: t.List[str] = attr.field(factory=list)
-    scripts: t.Dict[str, str] = attr.field(factory=dict)
-
-    def write_to_bento(self, bento_fs: FS, envs: list[BentoEnvSchema]) -> None:
-        from importlib import resources
-
-        from _bentoml_impl.docker import generate_dockerfile
-
-        # Prepare env/python files
-        py_folder = fs.path.join("env", "python")
-        bento_fs.makedirs(py_folder, recreate=True)
-        reqs_txt = fs.path.join(py_folder, "requirements.txt")
-        bento_fs.writetext(reqs_txt, self.python_requirements)
-        # Prepare env/docker files
-        docker_folder = fs.path.join("env", "docker")
-        bento_fs.makedirs(docker_folder, recreate=True)
-        dockerfile_path = fs.path.join(docker_folder, "Dockerfile")
-        bento_fs.writetext(
-            dockerfile_path,
-            generate_dockerfile(self, bento_fs, enable_buildkit=False, envs=envs),
-        )
-        for script_name, target_path in self.scripts.items():
-            copy_file_to_fs_folder(script_name, bento_fs, dst_filename=target_path)
-
-        with resources.path(
-            "bentoml._internal.container.frontend.dockerfile", "entrypoint.sh"
-        ) as entrypoint_path:
-            copy_file_to_fs_folder(str(entrypoint_path), bento_fs, docker_folder)
 
 
 @attr.frozen(repr=False)

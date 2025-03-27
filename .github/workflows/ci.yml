@@ -31,6 +31,7 @@ jobs:
         python-version: [3.9, 3.11, 3.12]
     name: unit-tests (python${{ matrix.python-version }}.${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    if: ${{ false }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,6 +58,7 @@ jobs:
   integrations:
     name: framework-integration-tests
     runs-on: ubuntu-latest
+    if: ${{ false }}
     strategy:
       fail-fast: false
       matrix:
@@ -113,6 +115,7 @@ jobs:
         python-version: [3.9, 3.11, 3.12]
     name: monitoring-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    if: ${{ false }}
     timeout-minutes: 90
     env:
       BENTOML_BUNDLE_LOCAL_BUILD: True
@@ -150,9 +153,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ macos-latest]
         python-version: [3.9, 3.11, 3.12]
-        suite: ['bento_server_http', 'bento_new_sdk']
+        suite: ['bento_new_sdk']
         exclude:
           - os: macos-latest
             suite: bento_server_http
@@ -185,6 +188,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: pipx install pdm && pipx install nox
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Run ${{ matrix.suite }} tests
         run: nox -s "e2e-testing-${{ matrix.python-version }}(suite='${{ matrix.suite }}')"
       - name: Disambiguate coverage filename

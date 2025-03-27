@@ -45,17 +45,17 @@ if t.TYPE_CHECKING:
 
     from ..serde import Serde
 
-    T = t.TypeVar("T", bound="HTTPClient[t.Any]")
-    A = t.TypeVar("A")
-    C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
+    T = t.TypeVar("T")
     AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
+
+C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
 
 logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
 
 
-def to_async_iterable(iterable: t.Iterable[A]) -> t.AsyncIterable[A]:
-    async def _gen() -> t.AsyncIterator[A]:
+def to_async_iterable(iterable: t.Iterable[T]) -> t.AsyncIterable[T]:
+    async def _gen() -> t.AsyncIterator[T]:
         for item in iterable:
             yield item
 
@@ -64,7 +64,7 @@ def to_async_iterable(iterable: t.Iterable[A]) -> t.AsyncIterable[A]:
 
 @attr.define
 class HTTPClient(AbstractClient, t.Generic[C]):
-    client_cls: t.ClassVar[type[httpx.Client] | type[httpx.AsyncClient]]
+    client_cls: t.ClassVar[type[C]]  # type: ignore
 
     url: str
     endpoints: dict[str, ClientEndpoint] = attr.field(factory=dict)
@@ -486,7 +486,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
                 pass
         raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
 
-    def __enter__(self: T) -> T:
+    def __enter__(self) -> t.Self:
         return self
 
     def __exit__(self, exc_type: t.Any, exc: t.Any, tb: t.Any) -> None:

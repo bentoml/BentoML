@@ -146,7 +146,7 @@ class Image:
         info = ImageInfo(
             base_image=self.base_image,
             python_version=self.python_version,
-            commands=["export UV_COMPILE_BYTECODE=1", *self.commands],
+            commands=self.commands,
             python_requirements=python_requirements,
             post_commands=self.post_commands,
         )
@@ -249,7 +249,7 @@ class Image:
         )
         if locked_requirements:
             locked_requirements += "\n"
-        locked_requirements += requirements_in.with_suffix(".lock").read_text()
+        locked_requirements += requirements_out.read_text()
         requirements_out.write_text(locked_requirements)
         PythonOptions.fix_dep_urls(
             str(requirements_out),

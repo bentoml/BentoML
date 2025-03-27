@@ -56,12 +56,9 @@ After you start the ``Summarization`` Service, you can create the following clie
             import bentoml
 
             async def async_client_operation():
-                client = bentoml.AsyncHTTPClient('http://localhost:3000')
-                summarized_text: str = await client.summarize(text="Your long text to summarize")
-                print(summarized_text)
-
-                # Close the client to release resources
-                await client.close()
+                async with bentoml.AsyncHTTPClient('http://localhost:3000') as client:
+                    summarized_text: str = await client.summarize(text="Your long text to summarize")
+                    print(summarized_text)
 
             asyncio.run(async_client_operation())
 
@@ -357,12 +354,10 @@ You can add streaming logic to a BentoML client, which is especially useful when
 
             import bentoml
 
-            client = bentoml.AsyncHTTPClient("http://localhost:3000")
-            async for data_chunk in client.stream_data():
-                # Process each chunk of data as it arrives
-                await process_data_async(data_chunk)
-
-            await client.close()
+            async with bentoml.AsyncHTTPClient("http://localhost:3000") as client:
+                async for data_chunk in client.stream_data():
+                    # Process each chunk of data as it arrives
+                    await process_data_async(data_chunk)
 
             async def process_data_async(data_chunk):
                 # Add processing logic

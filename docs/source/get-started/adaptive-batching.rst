@@ -19,14 +19,14 @@ Adaptive batching is implemented on the server side. This is advantageous as opp
 Specifically, there is a dispatcher within a BentoML Service that oversees collecting requests into a batch until the conditions of the batch window or batch size are met, at which point the batch is sent to the model for inference.
 
 .. image:: ../../_static/img/get-started/adaptive-batching/single-service-batching.png
-    :width: 75%
+    :width: 55%
     :align: center
     :alt: Adaptive batching in a single BentoML Service
 
 For multiple Services, the Service responsible for running model inference (``ServiceTwo`` in the diagram below) collects requests from the intermediary Service (``ServiceOne``) and forms batches based on optimal latency.
 
 .. image:: ../../_static/img/get-started/adaptive-batching/multi-service-batching.png
-    :width: 100%
+    :width: 75%
     :align: center
     :alt: Adaptive batching in multiple BentoML Services
 

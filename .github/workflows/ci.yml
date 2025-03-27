@@ -189,6 +189,7 @@ jobs:
       - name: Install dependencies
         run: pipx install pdm && pipx install nox
       - name: Setup tmate session
+        if: ${{ false }}
         uses: mxschmitt/action-tmate@v3
       - name: Run ${{ matrix.suite }} tests
         run: nox -s "e2e-testing-${{ matrix.python-version }}(suite='${{ matrix.suite }}')"

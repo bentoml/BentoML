@@ -27,6 +27,7 @@ from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import CLIException
 from bentoml_cli.utils import BentoMLCommandGroup
+from bentoml_cli.utils import build_args_option
 
 logger = logging.getLogger("bentoml.cli.deployment")
 
@@ -147,6 +148,7 @@ def convert_env_to_dict(env: tuple[str] | None) -> list[dict[str, str]] | None:
     default=3600,
     help="Timeout for deployment to be ready in seconds",
 )
+@build_args_option
 def deploy_command(
     bento: str | None,
     name: str | None,
@@ -239,6 +241,7 @@ def shared_decorator(
     multiple=True,
 )
 @shared_decorator
+@build_args_option
 @inject
 def codespace(
     bento_dir: str,

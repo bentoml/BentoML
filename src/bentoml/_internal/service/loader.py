@@ -22,6 +22,7 @@ from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..models import ModelStore
 from ..tag import Tag
+from ..utils.args import set_arguments
 from ..utils.uri import encode_path_for_uri
 
 if TYPE_CHECKING:
@@ -269,6 +270,7 @@ def load_bento_dir(path: str, reload: bool = False) -> AnyService:
 
 def _load_bento(bento: Bento, reload: bool = False) -> AnyService:
     # Use Bento's user project path as working directory when importing the service
+    set_arguments(**bento.info.args)
     working_dir = bento.path_of(BENTO_PROJECT_DIR_NAME)
 
     model_store = BentoMLContainer.model_store.get()
@@ -370,11 +372,14 @@ def load(
                 ):
                     build_config = BentoBuildConfig.from_file(config_file)
                     BentoMLContainer.model_aliases.set(build_config.model_aliases)
-                    svc = import_service(
-                        build_config.service, working_dir=bento_path, reload=reload
-                    )
-                    logger.debug("'%s' loaded from '%s': %s", svc.name, bento_path, svc)
-                    break
+                    if build_config.service:
+                        svc = import_service(
+                            build_config.service, working_dir=bento_path, reload=reload
+                        )
+                        logger.debug(
+                            "'%s' loaded from '%s': %s", svc.name, bento_path, svc
+                        )
+                        break
             else:
                 if os.path.isfile(os.path.join(bento_path, "service.py")):
                     logger.info("Loading service from default location 'service.py'")

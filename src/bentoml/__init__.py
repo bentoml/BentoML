@@ -25,6 +25,7 @@ MODULE_ATTRS = {
     "load_config": "._internal.configuration:load_config",
     "save_config": "._internal.configuration:save_config",
     "set_serialization_strategy": "._internal.configuration:set_serialization_strategy",
+    "use_arguments": "._internal.utils.args:use_arguments",
     "Bento": "._internal.bento:Bento",
     "BentoCloudClient": "._internal.cloud:BentoCloudClient",
     "Context": "._internal.context:ServiceContext",
@@ -100,6 +101,7 @@ if TYPE_CHECKING:
     from ._internal.service import Service
     from ._internal.service.loader import load
     from ._internal.tag import Tag
+    from ._internal.utils.args import use_arguments
     from ._internal.utils.http import Cookie
 
     # Bento management APIs
@@ -318,6 +320,7 @@ __all__ = [
     "batch",
     "metrics",
     "container",
+    "use_arguments",
     "server_context",
     "client",
     "io",

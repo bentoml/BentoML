@@ -75,8 +75,13 @@ def create(
     extras: dict[str, t.Any] | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
+    args: dict[str, t.Any] | None = None,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> Deployment:
+    from ._internal.utils.args import set_arguments
+
+    if args is not None:
+        set_arguments(**args)
     config_params = DeploymentConfigParameters(
         name=name,
         path_context=path_context,

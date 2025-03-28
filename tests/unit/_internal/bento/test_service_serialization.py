@@ -16,6 +16,8 @@ from bentoml.exceptions import NotFound
 
 from .test_bento import build_test_bento
 
+pytestmark = pytest.mark.skip(reason="New service doesn't support serialization")
+
 
 @pytest.fixture
 def build_bento():

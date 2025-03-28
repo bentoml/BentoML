@@ -1,3 +1,6 @@
 import bentoml
 
-svc = bentoml.Service("test.bentoa")
+
+@bentoml.service
+class BentoA:
+    pass

@@ -17,6 +17,7 @@ from ._internal.bento import Bento
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.tag import Tag
+from ._internal.utils.args import set_arguments
 from ._internal.utils.filesystem import resolve_user_filepath
 from .exceptions import BadInput
 from .exceptions import BentoMLException
@@ -288,6 +289,7 @@ def build(
     version: str | None = None,
     build_ctx: str | None = None,
     platform: str | None = None,
+    args: dict[str, t.Any] | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
     """
@@ -352,6 +354,8 @@ def build(
            )
 
     """
+    if args is not None:
+        set_arguments(**args)
     build_config = BentoBuildConfig(
         service=service,
         name=name,
@@ -386,6 +390,7 @@ def build_bentofile(
     platform: str | None = None,
     bare: bool = False,
     reload: bool = False,
+    args: dict[str, t.Any] | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
     """
@@ -404,6 +409,8 @@ def build_bentofile(
     Returns:
         Bento: a Bento instance representing the materialized Bento saved in BentoStore
     """
+    if args is not None:
+        set_arguments(**args)
     if bentofile:
         try:
             bentofile = resolve_user_filepath(bentofile, None)
@@ -494,9 +501,13 @@ def serve(
     max_concurrent_streams: int | None = None,
     grpc_protocol_version: str | None = None,
     blocking: bool = False,
+    args: dict[str, t.Any] | None = None,
 ) -> Server:
     from ._internal.log import configure_logging
     from ._internal.service import Service
+
+    if args is not None:
+        set_arguments(**args)
 
     if isinstance(bento, Bento):
         bento = str(bento.tag)

@@ -486,3 +486,31 @@ def get_entry_points(group: str) -> t.Iterable[EntryPoint]:
     except TypeError:
         # For Python < 3.10, entry_points() does not accept group argument
         return entry_points().get(group, [])
+
+
+def set_build_args(ctx: Context, param: Parameter, value: str | tuple[str]) -> None:
+    from bentoml._internal.utils.args import set_arguments
+
+    if isinstance(value, str):
+        value = (value,)
+    arguments: dict[str, str] = {}
+    for item in value:
+        for part in item.split(","):
+            key, has_equal, val = part.partition("=")
+            if not has_equal:
+                raise click.BadParameter(
+                    f"Invalid argument format: {part}. Must be in the form of key=value"
+                )
+            arguments[key] = val
+
+    set_arguments(**arguments)
+
+
+build_args_option = click.option(
+    "--arg",
+    multiple=True,
+    help="Bento arguments in the form of key1=value1[,key2=value2...] pairs, can be specified multiple times",
+    expose_value=False,
+    metavar="KEY=VALUE",
+    callback=set_build_args,
+)

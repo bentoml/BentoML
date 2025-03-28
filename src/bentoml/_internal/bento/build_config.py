@@ -10,7 +10,6 @@ import typing as t
 from sys import version_info
 
 import attr
-import cattrs
 import fs
 import fs.copy
 import jinja2
@@ -32,6 +31,7 @@ from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
 from ..container.frontend.dockerfile import DistroSpec
 from ..container.frontend.dockerfile import get_supported_spec
 from ..container.generate import BENTO_PATH
+from ..utils.args import set_arguments
 from ..utils.cattr import bentoml_cattr
 from ..utils.dotenv import parse_dotenv
 from ..utils.filesystem import copy_file_to_fs_folder
@@ -465,14 +465,8 @@ class PythonOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    lock_packages: bool = attr.field(
-        default=True,
-        validator=attr.validators.optional(attr.validators.instance_of(bool)),
-    )
-    pack_git_packages: bool = attr.field(
-        default=True,
-        validator=attr.validators.optional(attr.validators.instance_of(bool)),
-    )
+    lock_packages: t.Optional[bool] = None
+    pack_git_packages: t.Optional[bool] = None
     index_url: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
@@ -702,12 +696,12 @@ class PythonOptions:
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
-        if not self.pack_git_packages and self.lock_packages is not False:
-            logger.warning(
-                "Setting 'lock_packages' to False since 'pack_git_packages' is False"
-            )
-            return attr.evolve(self, lock_packages=False)
-        return self
+        new_attrs = {}
+        if self.lock_packages is None:
+            new_attrs["lock_packages"] = self.pack_git_packages is not False
+        if self.pack_git_packages is None:
+            new_attrs["pack_git_packages"] = True
+        return attr.evolve(self, **new_attrs) if new_attrs else self
 
     @staticmethod
     def fix_dep_urls(
@@ -831,7 +825,7 @@ class BentoBuildConfig:
     # no need to omit since BentoML has already handled the default values.
     __omit_if_default__ = False
 
-    service: str
+    service: str = ""
     name: t.Optional[str] = None
     description: t.Optional[str] = None
     labels: t.Dict[str, str] = attr.field(factory=dict)
@@ -853,6 +847,7 @@ class BentoBuildConfig:
         factory=list, converter=convert_models_config
     )
     envs: t.List[BentoEnvSchema] = attr.field(factory=list)
+    args: t.Dict[str, t.Any] = attr.field(factory=dict)
 
     def __attrs_post_init__(self) -> None:
         use_conda = not self.conda.is_empty()
@@ -889,6 +884,9 @@ class BentoBuildConfig:
                     raise BentoMLException(
                         f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(spec.supported_cuda_versions)}."
                     )
+
+            if self.args:
+                set_arguments(**self.args)
 
     def with_defaults(self) -> FilledBentoBuildConfig:
         """
@@ -953,18 +951,7 @@ class BentoBuildConfig:
 
     @classmethod
     def load(cls, data: dict[str, t.Any]) -> BentoBuildConfig:
-        try:
-            return bentoml_cattr.structure(data, cls)
-        except cattrs.errors.BaseValidationError as e:
-            if any(
-                isinstance(exc, KeyError) and exc.args[0] == "service"
-                for exc in e.exceptions
-            ):
-                raise InvalidArgument(
-                    'Missing required build config field "service", which indicates import path of target bentoml.Service instance. e.g.: "service: fraud_detector.py:svc"'
-                ) from None
-            else:
-                raise
+        return bentoml_cattr.structure(data, cls)
 
     @classmethod
     def from_bento_dir(cls, bento_dir: str) -> BentoBuildConfig:

@@ -92,6 +92,7 @@ else:
 _SERVICE_WORKER_SCRIPT = "_bentoml_impl.worker.service"
 
 
+@inject
 def create_dependency_watcher(
     bento_identifier: str,
     svc: AnyService,
@@ -101,6 +102,7 @@ def create_dependency_watcher(
     scheduler: ResourceAllocator,
     working_dir: str | None = None,
     env: dict[str, str] | None = None,
+    bento_args: dict[str, t.Any] = Provide[BentoMLContainer.bento_arguments],
 ) -> tuple[Watcher, CircusSocket, str]:
     from bentoml.serving import create_watcher
 
@@ -116,6 +118,8 @@ def create_dependency_watcher(
         f"$(circus.sockets.{svc.name})",
         "--worker-id",
         "$(CIRCUS.WID)",
+        "--args",
+        json.dumps(bento_args),
     ]
 
     if worker_envs:
@@ -306,6 +310,7 @@ def serve_http(
             timeout_graceful_shutdown=timeout_graceful_shutdown,
         )
         timeout_args = ["--timeout", str(timeout)] if timeout else []
+        bento_args = BentoMLContainer.bento_arguments.get()
 
         server_args = [
             "-m",
@@ -319,6 +324,8 @@ def serve_http(
             str(backlog),
             "--worker-id",
             "$(CIRCUS.WID)",
+            "--args",
+            json.dumps(bento_args),
             *ssl_args,
             *timeouts_args,
             *timeout_args,

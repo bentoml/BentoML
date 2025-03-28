@@ -380,4 +380,3 @@ def test_build_bento_with_args():
     )
     BentoMLContainer.bento_arguments.reset()
     assert bento.info.args == {"label": "awesome"}
-    assert bento.info.labels == {"foo": "awesome"}

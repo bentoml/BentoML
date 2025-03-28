@@ -17,8 +17,6 @@ import jinja2
 import psutil
 import yaml
 from pathspec import PathSpec
-from typing_extensions import NotRequired
-from typing_extensions import TypedDict
 
 from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
@@ -46,11 +44,6 @@ if t.TYPE_CHECKING:
     from fs.base import FS
 
 logger = logging.getLogger(__name__)
-
-
-class EnvironmentEntry(TypedDict):
-    name: str
-    value: NotRequired[str]
 
 
 # Docker defaults

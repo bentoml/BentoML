@@ -10,9 +10,9 @@ def create_bentoml_cli() -> click.Command:
     from bentoml_cli.bentos import bento_command
     from bentoml_cli.cloud import cloud_command
     from bentoml_cli.containerize import containerize_command
+    from bentoml_cli.deployment import codespace
     from bentoml_cli.deployment import deploy_command
     from bentoml_cli.deployment import deployment_command
-    from bentoml_cli.deployment import develop_command
     from bentoml_cli.env import env_command
     from bentoml_cli.models import model_command
     from bentoml_cli.secret import secret_command
@@ -47,7 +47,7 @@ def create_bentoml_cli() -> click.Command:
     bentoml_cli.add_subcommands(serve_command)
     bentoml_cli.add_command(containerize_command)
     bentoml_cli.add_command(deploy_command)
-    bentoml_cli.add_command(develop_command)
+    bentoml_cli.add_command(codespace)
     bentoml_cli.add_command(deployment_command)
     bentoml_cli.add_command(secret_command)
     # Load commands from extensions

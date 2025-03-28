@@ -747,6 +747,7 @@ class BaseBentoInfo:
     services: t.List[BentoServiceInfo] = attr.field(factory=list)
     envs: t.List[BentoEnvSchema] = attr.field(factory=list)
     schema: t.Dict[str, t.Any] = attr.field(factory=dict)
+    args: t.Dict[str, t.Any] = attr.field(factory=BentoMLContainer.bento_arguments.get)
 
     @property
     def all_models(self) -> t.List[BentoModelInfo]:

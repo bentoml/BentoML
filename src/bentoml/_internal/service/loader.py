@@ -22,6 +22,7 @@ from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..models import ModelStore
 from ..tag import Tag
+from ..utils.args import set_arguments
 from ..utils.uri import encode_path_for_uri
 
 if TYPE_CHECKING:
@@ -269,6 +270,7 @@ def load_bento_dir(path: str, reload: bool = False) -> AnyService:
 
 def _load_bento(bento: Bento, reload: bool = False) -> AnyService:
     # Use Bento's user project path as working directory when importing the service
+    set_arguments(**bento.info.args)
     working_dir = bento.path_of(BENTO_PROJECT_DIR_NAME)
 
     model_store = BentoMLContainer.model_store.get()

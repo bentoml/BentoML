@@ -509,6 +509,9 @@ class _BentoMLContainerClass:
 
         return BentoCloudClient.for_context(context)
 
+    # Global store of bento arguments
+    bento_arguments = providers.Static[dict[str, t.Any]]({})
+
 
 BentoMLContainer = _BentoMLContainerClass()
 load_config()

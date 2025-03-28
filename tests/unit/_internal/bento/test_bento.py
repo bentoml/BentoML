@@ -98,6 +98,7 @@ entry_service: ''
 services: []
 envs: []
 schema: {{}}
+args: {{}}
 spec: 1
 runners:
 - name: runner_a
@@ -155,7 +156,7 @@ conda:
 
 def build_test_bento() -> Bento:
     bento_cfg = BentoBuildConfig(
-        "simplebento.py:svc",
+        "simplebento.py:SimpleBento",
         include=["*.py", "config.json", "somefile", "*dir*", ".bentoignore"],
         exclude=["*.storage", "/somefile", "/subdir2"],
         conda={
@@ -192,7 +193,7 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     # Bento build will change working dir to the build_context, this will reset it
     os.chdir(working_dir)
 
-    cfg = BentoBuildConfig("bentoa.py:svc")
+    cfg = BentoBuildConfig("bentoa.py:BentoA")
     bentoa = Bento.create(cfg, build_ctx="./bentoa")
     # Bento build will change working dir to the build_context, this will reset it
     os.chdir(working_dir)
@@ -201,7 +202,7 @@ def test_bento_export(tmpdir: "Path", model_store: "ModelStore"):
     # Bento build will change working dir to the build_context, this will reset it
     os.chdir(working_dir)
 
-    cfg = BentoBuildConfig("bentob.py:svc")
+    cfg = BentoBuildConfig("bentob.py:BentoB")
     bentob = Bento.create(cfg, build_ctx="./bentob")
 
     bento = testbento
@@ -368,3 +369,15 @@ def test_bento(model_store: ModelStore):
             ".bentoignore",
         }
         assert set(bento_fs.listdir("src/subdir")) == {"somefile"}
+
+
+@pytest.mark.usefixtures("change_test_dir")
+def test_build_bento_with_args():
+    from bentoml._internal.configuration.containers import BentoMLContainer
+
+    bento = bentos.build_bentofile(
+        build_ctx="./bento_with_args", args={"label": "awesome"}
+    )
+    BentoMLContainer.bento_arguments.reset()
+    assert bento.info.args == {"label": "awesome"}
+    assert bento.info.labels == {"foo": "awesome"}

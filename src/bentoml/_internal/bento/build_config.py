@@ -31,6 +31,7 @@ from ..container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
 from ..container.frontend.dockerfile import DistroSpec
 from ..container.frontend.dockerfile import get_supported_spec
 from ..container.generate import BENTO_PATH
+from ..utils.args import set_arguments
 from ..utils.cattr import bentoml_cattr
 from ..utils.dotenv import parse_dotenv
 from ..utils.filesystem import copy_file_to_fs_folder
@@ -846,6 +847,7 @@ class BentoBuildConfig:
         factory=list, converter=convert_models_config
     )
     envs: t.List[BentoEnvSchema] = attr.field(factory=list)
+    args: t.Dict[str, t.Any] = attr.field(factory=dict)
 
     def __attrs_post_init__(self) -> None:
         use_conda = not self.conda.is_empty()
@@ -882,6 +884,9 @@ class BentoBuildConfig:
                     raise BentoMLException(
                         f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(spec.supported_cuda_versions)}."
                     )
+
+            if self.args:
+                set_arguments(**self.args)
 
     def with_defaults(self) -> FilledBentoBuildConfig:
         """

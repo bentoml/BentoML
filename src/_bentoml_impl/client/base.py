@@ -36,7 +36,8 @@ class ClientEndpoint:
 class AbstractClient(abc.ABC):
     endpoints: dict[str, ClientEndpoint]
 
-    def __init__(self) -> None:
+    def _setup_endpoints(self) -> None:
+        self._setup_done = True
         for name in self.endpoints:
             if name == "__call__":
                 # __call__ must be set on the class

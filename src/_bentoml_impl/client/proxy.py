@@ -59,13 +59,16 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
             server_ready_timeout=0,
             app=app,
         )
+        # Setup async client with the same endpoints
+        self._async.endpoints = self._sync.endpoints
+        self._async._setup_endpoints()
         if service is not None:
             self._inner = service.inner
             self.endpoints = self._async.endpoints
         else:
             self.endpoints = {}
             self._inner = None
-        super().__init__()
+        self._setup_endpoints()
 
     @property
     def to_async(self) -> AsyncHTTPClient:

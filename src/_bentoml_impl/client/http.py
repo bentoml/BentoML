@@ -45,25 +45,26 @@ if t.TYPE_CHECKING:
 
     from ..serde import Serde
 
-    T = t.TypeVar("T", bound="HTTPClient[t.Any]")
-    A = t.TypeVar("A")
+    T = t.TypeVar("T")
+    AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
+
 C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
-AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
+
 logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
 
 
-def to_async_iterable(iterable: t.Iterable[A]) -> t.AsyncIterable[A]:
-    async def _gen() -> t.AsyncIterator[A]:
+def to_async_iterable(iterable: t.Iterable[T]) -> t.AsyncIterable[T]:
+    async def _gen() -> t.AsyncIterator[T]:
         for item in iterable:
             yield item
 
     return _gen()
 
 
-@attr.define
+@attr.define(slots=False)
 class HTTPClient(AbstractClient, t.Generic[C]):
-    client_cls: t.ClassVar[type[httpx.Client] | type[httpx.AsyncClient]]
+    client_cls: t.ClassVar[type[C]]  # type: ignore
 
     url: str
     endpoints: dict[str, ClientEndpoint] = attr.field(factory=dict)
@@ -71,9 +72,12 @@ class HTTPClient(AbstractClient, t.Generic[C]):
     timeout: float = 30
     default_headers: dict[str, str] = attr.field(factory=dict)
     app: ASGIApp | None = None
+    server_ready_timeout: float | None = None
+    service: Service[t.Any] | None = None
 
     _opened_files: list[io.BufferedReader] = attr.field(init=False, factory=list)
     _temp_dir: tempfile.TemporaryDirectory[str] = attr.field(init=False)
+    _setup_done: bool = attr.field(init=False, default=False)
 
     @staticmethod
     def _make_client(
@@ -174,30 +178,9 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             default_headers=default_headers,
             timeout=timeout,
             app=app,
+            server_ready_timeout=server_ready_timeout,
+            service=service,
         )
-        if app is None and (server_ready_timeout is None or server_ready_timeout > 0):
-            self.wait_until_server_ready(server_ready_timeout)
-        if service is None:
-            schema_url = urljoin(url, "/schema.json")
-
-            with self._make_client(
-                httpx.Client, url, default_headers, timeout, app=app
-            ) as client:
-                resp = client.get("/schema.json")
-
-                if resp.is_error:
-                    raise BentoMLException(f"Failed to fetch schema from {schema_url}")
-                for route in resp.json()["routes"]:
-                    self.endpoints[route["name"]] = ClientEndpoint(
-                        name=route["name"],
-                        route=route["route"],
-                        input=route["input"],
-                        output=route["output"],
-                        doc=route.get("doc"),
-                        stream_output=route["output"].get("is_stream", False),
-                        is_task=route.get("is_task", False),
-                    )
-        super().__init__()
 
     @cached_property
     def client(self) -> C:
@@ -326,22 +309,6 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             headers=headers,
         )
 
-    def wait_until_server_ready(self, timeout: int | None = None) -> None:
-        if timeout is None:
-            timeout = self.timeout
-        with self._make_client(
-            httpx.Client, self.url, self.default_headers, timeout
-        ) as client:
-            start = time.monotonic()
-            while time.monotonic() - start < timeout:
-                try:
-                    resp = client.get("/readyz")
-                    if resp.status_code == 200:
-                        return
-                except (httpx.TimeoutException, httpx.ConnectError):
-                    pass
-        raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
-
     def _get_file(self, value: t.Any) -> str | tuple[str, t.IO[bytes], str | None]:
         if isinstance(value, str) and not is_http_url(value):
             value = pathlib.Path(value)
@@ -457,7 +424,69 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
 
     client_cls = httpx.Client
 
-    def __enter__(self: T) -> T:
+    def __init__(
+        self,
+        url: str,
+        *,
+        media_type: str = "application/json",
+        service: Service[t.Any] | None = None,
+        server_ready_timeout: float | None = None,
+        token: str | None = None,
+        timeout: float = 30,
+        app: ASGIApp | None = None,
+    ):
+        super().__init__(
+            url,
+            media_type=media_type,
+            service=service,
+            server_ready_timeout=server_ready_timeout,
+            token=token,
+            timeout=timeout,
+            app=app,
+        )
+        self._setup()
+
+    def _setup(self) -> None:
+        if self._setup_done:
+            return
+
+        if self.app is None and (
+            self.server_ready_timeout is None or self.server_ready_timeout > 0
+        ):
+            self.wait_until_server_ready(self.server_ready_timeout)
+        if self.service is None:
+            schema_url = urljoin(self.url, "/schema.json")
+
+            resp = self.client.get("/schema.json")
+
+            if resp.is_error:
+                raise BentoMLException(f"Failed to fetch schema from {schema_url}")
+            for route in resp.json()["routes"]:
+                self.endpoints[route["name"]] = ClientEndpoint(
+                    name=route["name"],
+                    route=route["route"],
+                    input=route["input"],
+                    output=route["output"],
+                    doc=route.get("doc"),
+                    stream_output=route["output"].get("is_stream", False),
+                    is_task=route.get("is_task", False),
+                )
+        self._setup_endpoints()
+
+    def wait_until_server_ready(self, timeout: float | None = None) -> None:
+        if timeout is None:
+            timeout = self.timeout
+        start = time.monotonic()
+        while time.monotonic() - start < timeout:
+            try:
+                resp = self.client.get("/readyz")
+                if resp.status_code == 200:
+                    return
+            except (httpx.TimeoutException, httpx.ConnectError):
+                pass
+        raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
+
+    def __enter__(self) -> t.Self:
         return self
 
     def __exit__(self, exc_type: t.Any, exc: t.Any, tb: t.Any) -> None:
@@ -470,7 +499,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
             )
             return resp.status_code == 200
         except httpx.TimeoutException:
-            logger.warn("Timed out waiting for runner to be ready")
+            logger.warning("Timed out waiting for runner to be ready")
             return False
 
     def close(self) -> None:
@@ -629,6 +658,46 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
 
     client_cls = httpx.AsyncClient
 
+    async def _setup(self) -> None:
+        if self._setup_done:
+            return
+
+        if self.app is None and (
+            self.server_ready_timeout is None or self.server_ready_timeout > 0
+        ):
+            await self.wait_until_server_ready(self.server_ready_timeout)
+        if self.service is None:
+            schema_url = urljoin(self.url, "/schema.json")
+
+            resp = await self.client.get("/schema.json")
+
+            if resp.is_error:
+                raise BentoMLException(f"Failed to fetch schema from {schema_url}")
+            for route in resp.json()["routes"]:
+                self.endpoints[route["name"]] = ClientEndpoint(
+                    name=route["name"],
+                    route=route["route"],
+                    input=route["input"],
+                    output=route["output"],
+                    doc=route.get("doc"),
+                    stream_output=route["output"].get("is_stream", False),
+                    is_task=route.get("is_task", False),
+                )
+        self._setup_endpoints()
+
+    async def wait_until_server_ready(self, timeout: float | None = None) -> None:
+        if timeout is None:
+            timeout = self.timeout
+        start = time.monotonic()
+        while time.monotonic() - start < timeout:
+            try:
+                resp = await self.client.get("/readyz")
+                if resp.status_code == 200:
+                    return
+            except (httpx.TimeoutException, httpx.ConnectError):
+                pass
+        raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
+
     async def is_ready(self, timeout: int | None = None) -> bool:
         try:
             resp = await self.client.get(
@@ -636,7 +705,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
             )
             return resp.status_code == 200
         except httpx.TimeoutException:
-            logger.warn("Timed out waiting for runner to be ready")
+            logger.warning("Timed out waiting for runner to be ready")
             return False
 
     async def _get_stream(
@@ -647,7 +716,18 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
         async for data in resp:
             yield data
 
-    async def __aenter__(self: T) -> T:
+    def __getattr__(self, name: str) -> t.Any:
+        if not self._setup_done:
+            raise RuntimeError(
+                "Client is not set up yet, please use it as an async context manager"
+            )
+        else:
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{name}'"
+            )
+
+    async def __aenter__(self) -> t.Self:
+        await self._setup()
         return self
 
     async def __aexit__(self, *args: t.Any) -> None:

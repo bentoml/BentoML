@@ -274,7 +274,11 @@ class Image:
                 cwd=bento_fs.getsyspath(py_folder),
             )
         except subprocess.CalledProcessError as e:
-            raise BentoMLException(f"Failed to lock PyPI packages: {e}") from None
+            raise BentoMLException(
+                "Failed to lock PyPI packages. Add `--debug` option to see more details.\n"
+                "You see this error because you set `lock_packages=true` in the image config.\n"
+                "Learn more at https://docs.bentoml.com/en/latest/reference/bentoml/bento-build-options.html#pypi-package-locking"
+            ) from e
         locked_requirements = (  # uv doesn't preserve global option lines, add them here
             "\n".join(option.dumps() for option in requirements_file.options)
         )

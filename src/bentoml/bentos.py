@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 import typing as t
 
+import attr
 from simple_di import Provide
 from simple_di import inject
 
@@ -25,9 +26,9 @@ if t.TYPE_CHECKING:
     from _bentoml_sdk import Service as NewService
 
     from ._internal.bento import BentoStore
+    from ._internal.bento.build_config import BentoEnvSchema
     from ._internal.bento.build_config import CondaOptions
     from ._internal.bento.build_config import DockerOptions
-    from ._internal.bento.build_config import EnvironmentEntry
     from ._internal.bento.build_config import ModelSpec
     from ._internal.bento.build_config import PythonOptions
     from ._internal.cloud import BentoCloudClient
@@ -279,7 +280,7 @@ def build(
     description: str | None = None,
     include: t.List[str] | None = None,
     exclude: t.List[str] | None = None,
-    envs: t.List[EnvironmentEntry] | None = None,
+    envs: t.List[BentoEnvSchema] | None = None,
     docker: DockerOptions | dict[str, t.Any] | None = None,
     python: PythonOptions | dict[str, t.Any] | None = None,
     conda: CondaOptions | dict[str, t.Any] | None = None,
@@ -378,6 +379,7 @@ def build_bentofile(
     bentofile: str | None = None,
     *,
     service: str | None = None,
+    name: str | None = None,
     version: str | None = None,
     labels: dict[str, str] | None = None,
     build_ctx: str | None = None,
@@ -421,10 +423,14 @@ def build_bentofile(
         else:
             build_config = BentoBuildConfig(service=service or "")
 
+    new_attrs = {}
+    if name is not None:
+        new_attrs["name"] = name
     if labels:
-        if not build_config.labels:
-            object.__setattr__(build_config, "labels", labels)
-        build_config.labels.update(labels)
+        new_attrs["labels"] = {**(build_config.labels or {}), **labels}
+
+    if new_attrs:
+        build_config = attr.evolve(build_config, **new_attrs)
 
     bento = Bento.create(
         build_config=build_config,

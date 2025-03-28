@@ -240,7 +240,7 @@ def shared_decorator(
 )
 @shared_decorator
 @inject
-def develop_command(
+def codespace(
     bento_dir: str,
     cluster: str | None,
     attach: str | None,
@@ -292,8 +292,12 @@ def develop_command(
         ).ask()
 
         if chosen == "new":
+            name = questionary.text(
+                "Enter a name for the new codespace, or leave it blank to get a random name derived from the service"
+            ).ask()
             deployment = create_deployment(
                 bento=bento_dir,
+                name=name or None,
                 cluster=cluster,
                 dev=True,
                 wait=False,

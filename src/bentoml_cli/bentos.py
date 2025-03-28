@@ -362,6 +362,7 @@ def bento_management_commands() -> click.Group:
     @click.option(
         "-f", "--bentofile", help="Path to bentofile. Default to 'bentofile.yaml'"
     )
+    @click.option("--name", help="Bento name")
     @click.option(
         "--version",
         type=click.STRING,
@@ -412,6 +413,7 @@ def bento_management_commands() -> click.Group:
     def build(  # type: ignore (not accessed)
         build_ctx: str,
         bentofile: str | None,
+        name: str | None,
         version: str | None,
         labels: tuple[str, ...],
         output: t.Literal["tag", "default"],
@@ -442,6 +444,7 @@ def bento_management_commands() -> click.Group:
         bento = build_bentofile(
             bentofile,
             service=service,
+            name=name,
             version=version,
             labels=labels_dict or None,
             build_ctx=build_ctx,

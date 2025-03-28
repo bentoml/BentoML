@@ -370,11 +370,14 @@ def load(
                 ):
                     build_config = BentoBuildConfig.from_file(config_file)
                     BentoMLContainer.model_aliases.set(build_config.model_aliases)
-                    svc = import_service(
-                        build_config.service, working_dir=bento_path, reload=reload
-                    )
-                    logger.debug("'%s' loaded from '%s': %s", svc.name, bento_path, svc)
-                    break
+                    if build_config.service:
+                        svc = import_service(
+                            build_config.service, working_dir=bento_path, reload=reload
+                        )
+                        logger.debug(
+                            "'%s' loaded from '%s': %s", svc.name, bento_path, svc
+                        )
+                        break
             else:
                 if os.path.isfile(os.path.join(bento_path, "service.py")):
                     logger.info("Loading service from default location 'service.py'")

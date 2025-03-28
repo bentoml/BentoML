@@ -10,7 +10,6 @@ import typing as t
 from sys import version_info
 
 import attr
-import cattrs
 import fs
 import fs.copy
 import jinja2
@@ -465,14 +464,8 @@ class PythonOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    lock_packages: bool = attr.field(
-        default=True,
-        validator=attr.validators.optional(attr.validators.instance_of(bool)),
-    )
-    pack_git_packages: bool = attr.field(
-        default=True,
-        validator=attr.validators.optional(attr.validators.instance_of(bool)),
-    )
+    lock_packages: t.Optional[bool] = None
+    pack_git_packages: t.Optional[bool] = None
     index_url: t.Optional[str] = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
@@ -702,12 +695,12 @@ class PythonOptions:
 
     def with_defaults(self) -> PythonOptions:
         # Convert from user provided options to actual build options with default values
-        if not self.pack_git_packages and self.lock_packages is not False:
-            logger.warning(
-                "Setting 'lock_packages' to False since 'pack_git_packages' is False"
-            )
-            return attr.evolve(self, lock_packages=False)
-        return self
+        new_attrs = {}
+        if self.lock_packages is None:
+            new_attrs["lock_packages"] = self.pack_git_packages is not False
+        if self.pack_git_packages is None:
+            new_attrs["pack_git_packages"] = True
+        return attr.evolve(self, **new_attrs) if new_attrs else self
 
     @staticmethod
     def fix_dep_urls(
@@ -831,7 +824,7 @@ class BentoBuildConfig:
     # no need to omit since BentoML has already handled the default values.
     __omit_if_default__ = False
 
-    service: str
+    service: str = ""
     name: t.Optional[str] = None
     description: t.Optional[str] = None
     labels: t.Dict[str, str] = attr.field(factory=dict)
@@ -953,18 +946,7 @@ class BentoBuildConfig:
 
     @classmethod
     def load(cls, data: dict[str, t.Any]) -> BentoBuildConfig:
-        try:
-            return bentoml_cattr.structure(data, cls)
-        except cattrs.errors.BaseValidationError as e:
-            if any(
-                isinstance(exc, KeyError) and exc.args[0] == "service"
-                for exc in e.exceptions
-            ):
-                raise InvalidArgument(
-                    'Missing required build config field "service", which indicates import path of target bentoml.Service instance. e.g.: "service: fraud_detector.py:svc"'
-                ) from None
-            else:
-                raise
+        return bentoml_cattr.structure(data, cls)
 
     @classmethod
     def from_bento_dir(cls, bento_dir: str) -> BentoBuildConfig:

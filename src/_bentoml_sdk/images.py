@@ -41,7 +41,8 @@ DEFAULT_PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 class Image:
     """A class defining the environment requirements for bento."""
 
-    base_image: str
+    base_image: str = ""
+    distro: str = "debian"
     python_version: str = DEFAULT_PYTHON_VERSION
     commands: t.List[str] = attrs.field(factory=list)
     lock_python_packages: bool = True
@@ -50,6 +51,36 @@ class Image:
     post_commands: t.List[str] = attrs.field(factory=list)
     scripts: t.Dict[str, str] = attrs.field(factory=dict, init=False)
     _after_pip_install: bool = attrs.field(init=False, default=False, repr=False)
+
+    def __attrs_post_init__(self) -> None:
+        if not self.base_image:
+            if self.distro not in CONTAINER_METADATA:
+                raise BentoMLConfigException(
+                    f"Unsupported distro: {self.distro}, expected one of {CONTAINER_SUPPORTED_DISTROS}"
+                )
+            python_version = self.python_version
+            if self.distro in ("ubi8",):
+                python_version = python_version.replace(".", "")
+            distro_config = CONTAINER_METADATA[self.distro]
+            self.base_image = distro_config["python"]["image"].format(
+                spec_version=python_version
+            )
+            self.commands.insert(0, distro_config["default_install_command"])
+
+    def system_packages(self, *packages: str) -> t.Self:
+        if self.distro not in CONTAINER_METADATA:
+            raise BentoMLConfigException(
+                f"Unsupported distro: {self.distro}, expected one of {CONTAINER_SUPPORTED_DISTROS}"
+            )
+        logger.info(
+            "Adding system packages using distro %s's package manager", self.distro
+        )
+        self.commands.append(
+            CONTAINER_METADATA[self.distro]["install_command"].format(
+                packages=" ".join(packages)
+            )
+        )
+        return self
 
     def requirements_file(self, file_path: str) -> t.Self:
         """Add a requirements file to the image. Supports chaining call.
@@ -259,66 +290,33 @@ class Image:
         return requirements_out.read_text()
 
 
-@attrs.define
-class PythonImage(Image):
-    base_image: str = ""
-    distro: str = "debian"
-    _original_base_image: str = attrs.field(init=False, default="")
-
-    def __attrs_post_init__(self) -> None:
-        self._original_base_image = self.base_image
-        if not self.base_image:
-            if self.distro not in CONTAINER_METADATA:
-                raise BentoMLConfigException(
-                    f"Unsupported distro: {self.distro}, expected one of {CONTAINER_SUPPORTED_DISTROS}"
-                )
-            python_version = self.python_version
-            if self.distro in ("ubi8",):
-                python_version = python_version.replace(".", "")
-            distro_config = CONTAINER_METADATA[self.distro]
-            self.base_image = distro_config["python"]["image"].format(
-                spec_version=python_version
-            )
-            self.commands.insert(0, distro_config["default_install_command"])
-
-    def system_packages(self, *packages: str) -> t.Self:
-        if self._original_base_image:
-            raise BentoMLConfigException(
-                "system_packages() can only be used in default base image"
-            )
-        if self.distro not in CONTAINER_METADATA:
-            raise BentoMLConfigException(
-                f"Unsupported distro: {self.distro}, expected one of {CONTAINER_SUPPORTED_DISTROS}"
-            )
-        self.commands.append(
-            CONTAINER_METADATA[self.distro]["install_command"].format(
-                packages=" ".join(packages)
-            )
-        )
-        return self
-
-
-def get_image_from_build_config(
-    build_config: BentoBuildConfig, build_ctx: str
+def populate_image_from_build_config(
+    image: Image | None, build_config: BentoBuildConfig, build_ctx: str
 ) -> Image | None:
     from bentoml._internal.utils.filesystem import resolve_user_filepath
 
+    fallback_message = "fallback to bento v1" if image is None else "it will be ignored"
     if not build_config.conda.is_empty():
         logger.warning(
-            "conda options are not supported by bento v2, fallback to bento v1"
+            "conda options are not supported by bento v2, %s", fallback_message
         )
-        return None
+        if image is None:
+            return None
     docker_options = build_config.docker
     if docker_options.cuda_version is not None:
         logger.warning(
-            "docker.cuda_version is not supported by bento v2, fallback to bento v1"
+            "docker.cuda_version is not supported by bento v2, %s", fallback_message
         )
-        return None
+        if image is None:
+            return None
     if docker_options.dockerfile_template is not None:
         logger.warning(
-            "docker.dockerfile_template is not supported by bento v2, fallback to bento v1"
+            "docker.dockerfile_template is not supported by bento v2, %s",
+            fallback_message,
         )
-        return None
+        if image is None:
+            return None
+
     image_params = {}
     if docker_options.base_image is not None:
         image_params["base_image"] = docker_options.base_image
@@ -326,17 +324,23 @@ def get_image_from_build_config(
         image_params["distro"] = docker_options.distro
     if docker_options.python_version is not None:
         image_params["python_version"] = docker_options.python_version
-    image = PythonImage(**image_params)
-    if docker_options.system_packages:
-        image.system_packages(*docker_options.system_packages)
 
-    python_options = build_config.python.with_defaults()
+    python_options = build_config.python
     if python_options.wheels:
         logger.warning(
-            "python.wheels is not supported by bento v2, fallback to bento v1"
+            "python.wheels is not supported by bento v2, %s", fallback_message
         )
-        return None
-    image.lock_python_packages = python_options.lock_packages
+        if image is None:
+            return None
+    if python_options.lock_packages is not None:
+        image_params["lock_python_packages"] = python_options.lock_packages
+    if python_options.pack_git_packages is not None:
+        image_params["pack_git_packages"] = python_options.pack_git_packages
+    image = (
+        Image(**image_params) if image is None else attrs.evolve(image, **image_params)
+    )
+    if docker_options.system_packages:
+        image.system_packages(*docker_options.system_packages)
     if python_options.index_url:
         image.python_packages(f"--index-url {python_options.index_url}")
     if python_options.no_index:

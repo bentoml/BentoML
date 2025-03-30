@@ -244,7 +244,7 @@ class Bento(StoreItem):
         enabled_features: list[str] = Provide[BentoMLContainer.enabled_features],
     ) -> Bento:
         from _bentoml_sdk.images import Image
-        from _bentoml_sdk.images import get_image_from_build_config
+        from _bentoml_sdk.images import populate_image_from_build_config
         from _bentoml_sdk.models import BentoModel
 
         from ..service import Service
@@ -262,7 +262,7 @@ class Bento(StoreItem):
 
         BentoMLContainer.model_aliases.set(build_config.model_aliases)
         # This also verifies that svc can be imported correctly
-        svc = load(build_config.service or ".", working_dir=build_ctx, reload=reload)
+        svc = load(build_config.service, working_dir=build_ctx, reload=reload)
         if not build_config.service:
             object.__setattr__(build_config, "service", get_service_import_str(svc))
         is_legacy = isinstance(svc, Service)
@@ -287,8 +287,8 @@ class Bento(StoreItem):
             build_config.labels.update(svc.labels)
             if svc.image is not None:
                 image = svc.image
-        if image is None and not disable_image:
-            image = get_image_from_build_config(build_config, build_ctx)
+        if not disable_image:
+            image = populate_image_from_build_config(image, build_config, build_ctx)
         build_config = build_config.with_defaults()
         tag = Tag(bento_name, version)
         if version is None:

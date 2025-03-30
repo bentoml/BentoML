@@ -435,10 +435,10 @@ PyPI package locking
 
 By default, BentoML automatically locks all package versions, as well as all packages in
 their dependency graph, and
-generates a :code:`requirements.lock.txt` file. This process uses
-`pip-compile <https://github.com/jazzband/pip-tools>`_ under the hood.
+generates a :code:`requirements.txt` file with all packages and their exact versions. This process uses
+`uv pip compile <https://docs.astral.sh/uv/pip/compile/#locking-environments>`_ under the hood.
 
-If you have already specified a version for all packages, you can optionally disable
+If you have already specified a version for every package or want to skip this process, you can optionally disable
 this behavior by setting the ``lock_packages`` field to ``false``:
 
 .. tab-set::
@@ -458,32 +458,6 @@ this behavior by setting the ``lock_packages`` field to ``false``:
          python:
            requirements_txt: "./requirements.txt"
            lock_packages: false
-
-Python wheels
-"""""""""""""
-
-Python ``.whl`` files are also supported as a type of dependency to include in a
-Bento. Simply provide a path to your ``.whl`` files under the ``wheels`` field.
-
-.. tab-set::
-
-   .. tab-item:: pyproject.toml
-
-      .. code-block:: toml
-
-         [tool.bentoml.build.python]
-         wheels = ["./lib/my_package.whl"]
-
-   .. tab-item:: bentofile.yaml
-
-      .. code-block:: yaml
-
-         python:
-           wheels:
-             - ./lib/my_package.whl
-
-If the wheel is hosted on a local network without TLS, you can indicate
-that the domain is safe to pip with the ``trusted_host`` field.
 
 Python options table
 """"""""""""""""""""

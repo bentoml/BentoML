@@ -119,6 +119,7 @@ def get_model_preheat():
     default=lambda: get_model_preheat(),
     help="Preheat model loading in parallel using multiple processes. Can be set via the environment variable BENTOML_MODEL_PREHEAT.",
 )
+@click.option("--args", type=click.STRING, help="Bento arguments dict for the service")
 def main(
     bento_identifier: str,
     service_name: str,
@@ -139,6 +140,7 @@ def main(
     development_mode: bool,
     timeout: int,
     model_preheat: bool,
+    args: str | None,
 ):
     """
     Start a HTTP server worker for given service.
@@ -164,6 +166,10 @@ def main(
     from bentoml._internal.container import BentoMLContainer
     from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.utils.args import set_arguments
+
+    if args:
+        set_arguments(**json.loads(args))
 
     configure_server_logging()
     if runner_map:

@@ -105,7 +105,9 @@ def bento_management_commands() -> click.Group:
     from bentoml._internal.utils import human_readable_size
     from bentoml.bentos import build_bentofile
     from bentoml.bentos import import_bento
-    from bentoml_cli.utils import BentoMLCommandGroup
+
+    from .utils import BentoMLCommandGroup
+    from .utils import build_args_option
 
     @click.group(cls=BentoMLCommandGroup)
     def bentos():
@@ -410,6 +412,7 @@ def bento_management_commands() -> click.Group:
         help="Platform to build for",
         type=click.Choice(ALLOWED_PLATFORMS),
     )
+    @build_args_option
     def build(  # type: ignore (not accessed)
         build_ctx: str,
         bentofile: str | None,

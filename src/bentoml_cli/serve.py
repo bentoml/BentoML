@@ -53,6 +53,7 @@ def build_serve_command() -> click.Group:
     from bentoml_cli.env_manager import env_manager
     from bentoml_cli.utils import AliasCommand
     from bentoml_cli.utils import BentoMLCommandGroup
+    from bentoml_cli.utils import build_args_option
 
     @click.group(name="serve", cls=BentoMLCommandGroup)
     def cli():
@@ -192,6 +193,7 @@ def build_serve_command() -> click.Group:
         show_default=True,
         hidden=True,
     )
+    @build_args_option
     @env_manager
     def serve(  # type: ignore (unused warning)
         bento: str,

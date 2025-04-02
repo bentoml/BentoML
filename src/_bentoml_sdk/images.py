@@ -91,7 +91,7 @@ class Image:
 
             image = Image("debian:latest").requirements_file("requirements.txt")
         """
-        self.python_requirements += Path(file_path).read_text()
+        self.python_requirements += Path(file_path).read_text().rstrip("\n") + "\n"
         self._after_pip_install = True
         return self
 

@@ -18,19 +18,13 @@ _main() {
 	# For backwards compatibility with the yatai<1.0.0, adapting the old "yatai" command to the new "start" command.
 	if [ "${#}" -gt 0 ] && [ "${1}" = 'python' ] && [ "${2}" = '-m' ] && { [ "${3}" = 'bentoml._internal.server.cli.runner' ] || [ "${3}" = "bentoml._internal.server.cli.api_server" ]; }; then # SC2235, use { } to avoid subshell overhead
 		if [ "${3}" = 'bentoml._internal.server.cli.runner' ]; then
-			set -- python -m bentoml_cli._internal.start_runner "${@:4}"
+			set -- python -m bentoml_cli._internal.start start-runner-server "${@:4}"
 		elif [ "${3}" = 'bentoml._internal.server.cli.api_server' ]; then
-			set -- python -m bentoml_cli._internal.start_http "${@:4}"
+			set -- python -m bentoml_cli._internal.start start-http-server "${@:4}"
 		fi
     # Redirect start-* commands to the internal modules.
     elif [ "${#}" -gt 0 ] && { [ "${1}" = 'start-http-server' ] || [ "${1}" = 'start-grpc-server' ] || [ "${1}" = 'start-runner-server' ]; }; then
-        if [ "${1}" = 'start-http-server' ]; then
-            set -- python -m bentoml_cli._internal.start_http "${@:2}" "$BENTO_PATH"
-        elif [ "${1}" = 'start-grpc-server' ]; then
-            set -- python -m bentoml_cli._internal.start_grpc "${@:2}" "$BENTO_PATH"
-        elif [ "${1}" = 'start-runner-server' ]; then
-            set -- python -m bentoml_cli._internal.start_runner "${@:2}" "$BENTO_PATH"
-        fi
+        set -- python -m bentoml_cli._internal.start "${@:1}" "$BENTO_PATH"
 	# If no arg or first arg looks like a flag.
 	elif [[ "$#" -eq 0 ]] || [[ "${1:0:1}" =~ '-' ]]; then
 		# This is provided for backwards compatibility with places where user may have
@@ -38,11 +32,11 @@ _main() {
 		if [[ -v BENTOML_SERVE_COMPONENT ]]; then
 			echo "\$BENTOML_SERVE_COMPONENT is set! Calling 'bentoml start-*' instead"
 			if [ "${BENTOML_SERVE_COMPONENT}" = 'http_server' ]; then
-				set -- python -m bentoml_cli._internal.start_http "$@" "$BENTO_PATH"
+				set -- python -m bentoml_cli._internal.start start-http-server "$@" "$BENTO_PATH"
 			elif [ "${BENTOML_SERVE_COMPONENT}" = 'grpc_server' ]; then
-				set -- python -m bentoml_cli._internal.start_grpc "$@" "$BENTO_PATH"
+				set -- python -m bentoml_cli._internal.start start-grpc-server "$@" "$BENTO_PATH"
 			elif [ "${BENTOML_SERVE_COMPONENT}" = 'runner' ]; then
-				set -- python -m bentoml_cli._internal.start_runner "$@" "$BENTO_PATH"
+				set -- python -m bentoml_cli._internal.start start-runner-server "$@" "$BENTO_PATH"
 			fi
 		else
 			set -- bentoml serve "$@" "$BENTO_PATH"

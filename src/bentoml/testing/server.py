@@ -340,8 +340,7 @@ def run_bento_server_distributed(
             cmd = [
                 sys.executable,
                 "-m",
-                "bentoml",
-                "start-http-server",
+                "bentoml_cli._internal.start_http",
                 str(bento_tag),
                 "--service-name",
                 runner["name"],
@@ -368,8 +367,9 @@ def run_bento_server_distributed(
     cmd = [
         sys.executable,
         "-m",
-        "bentoml",
-        "start-http-server" if not use_grpc else "start-grpc-server",
+        "bentoml_cli._internal.start_http"
+        if not use_grpc
+        else "bentoml_cli._internal.start_grpc",
         str(bento_tag),
         "--host",
         host,

@@ -17,7 +17,6 @@ def create_bentoml_cli() -> click.Command:
     from bentoml_cli.models import model_command
     from bentoml_cli.secret import secret_command
     from bentoml_cli.serve import serve_command
-    from bentoml_cli.start import start_command
     from bentoml_cli.utils import BentoMLCommandGroup
     from bentoml_cli.utils import get_entry_points
 
@@ -43,7 +42,6 @@ def create_bentoml_cli() -> click.Command:
     bentoml_cli.add_command(cloud_command)
     bentoml_cli.add_command(model_command)
     bentoml_cli.add_subcommands(bento_command)
-    bentoml_cli.add_subcommands(start_command)
     bentoml_cli.add_subcommands(serve_command)
     bentoml_cli.add_command(containerize_command)
     bentoml_cli.add_command(deploy_command)

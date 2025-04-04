@@ -487,3 +487,7 @@ def build_start_command() -> click.Group:
 
 
 start_command = build_start_command()
+
+
+if __name__ == "__main__":
+    start_command()

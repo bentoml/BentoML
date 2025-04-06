@@ -17,4 +17,4 @@ or [BentoML Discussions](https://github.com/bentoml/BentoML/discussions).
 
 To report a vulnerability, please do not share it publicly on GitHub
 nor the community slack channel. Instead, contact the BentoML team
-directly via email first: contact@bentoml.ai
+directly via email first: security@bentoml.com

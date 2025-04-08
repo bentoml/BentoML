@@ -8,8 +8,9 @@ Obtain SAML configuration parameters
 
 You will need to provide the following SAML configuration parameters to the BentoML team through a secure channel.
 
-- **SAML Issuer**: This is the issuer (entity ID) of your identity provider.
-- **SAML Identity Provider Certificate**: The certificate your IdP uses to sign SAML assertions.
+- **SAML Issuer**: This is the entity ID of your identity provider. For example, with Okta (Auth0), it typically follows this format: ``urn:************.us.auth0.com``
+- **SAML Identity Provider Certificate**: The X.509 certificate your identity provider uses to sign SAML assertions.
+- **SAML Identity Provider Login URL**: The authentication endpoint URL that users will be redirected to during login. For example, with Okta (Auth0), it typically follows this format: ``https://**********.us.auth0.com/samlp/********************``
 
 .. note::
 

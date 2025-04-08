@@ -16,7 +16,7 @@ PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12"]
 
 FRAMEWORK_DEPENDENCIES = {
     "catboost": ["catboost", "numpy<2"],
-    "diffusers": ["diffusers", "transformers", "tokenizer"],
+    "diffusers": ["diffusers", "transformers<4.51", "tokenizer"],
     "easyocr": ["easyocr"],
     "fastai": ["fastai"],
     "flax": [

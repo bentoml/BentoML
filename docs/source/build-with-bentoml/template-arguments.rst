@@ -2,7 +2,7 @@
 Configure template arguments
 ============================
 
-Starting with BentoML v1.4.8, you can define template arguments for :doc:`Services </build-with-bentoml/services>` using the ``use_arguments()`` API. It allows you to pass dynamic and validated parameters at serve, build, and deploy time. 
+Starting with BentoML v1.4.8, you can define template arguments for :doc:`Services </build-with-bentoml/services>` using the ``use_arguments()`` API. It allows you to pass dynamic and validated parameters at serve, build, and deploy time.
 
 As these arguments are available directly in Python code, you can substitute values anywhere in ``service.py``, including inside conditionals, loops, or any dynamic logic. It's especially useful when reusing Service templates for different models or configurations.
 
@@ -69,5 +69,5 @@ After setting the template arguments, you can supply their values dynamically th
    bentoml serve --arg model_name=deepseek-ai/DeepSeek-V3
 
 .. warning::
-   
+
    If a required argument is missing, BentoML will raise an error when running the command.

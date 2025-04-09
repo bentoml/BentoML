@@ -62,6 +62,10 @@ class ResourceSchema(TypedDict, total=False):
     gpu_type follows the naming convention of AWS EC2 GPU instances, GCP GPU instances etc.
     """
     gpu_type: Literal[
+        "nvidia-backwell-gb200",
+        "nvidia-backwell-b100",
+        "nvidia-h200-141gb",
+        "nvidia-tesla-h100",
         "nvidia-tesla-t4",
         "nvidia-tesla-a100",
         "nvidia-a100-80gb",

@@ -105,6 +105,55 @@ For descriptions sourced from an external file, you can use either an absolute o
             owner: bentoml-team
             stage: not-ready
 
+``args``
+^^^^^^^^
+
+After defining :doc:`template arguments for your Service </build-with-bentoml/template-arguments>`, you can use the ``args`` parameter to dynamically set the corresponding values.
+
+For example, you may have a template as follows:
+
+.. code-block:: python
+   :caption: `service.py`
+
+   from pydantic import BaseModel
+   import bentoml
+
+   class BentoArgs(BaseModel):
+       model_name: str
+       gpu: int = 8
+       gpu_type: str = "nvidia-h200-141gb"
+
+   args = bentoml.use_arguments(BentoArgs)
+
+   @bentoml.service(
+       resources={
+           "gpu": args.gpu,
+           "gpu_type": args.gpu_type
+       }
+   )
+   class LLM:
+       model = bentoml.models.HuggingFaceModel(args.model_name)
+
+You can then provide values for these arguments in your build configuration:
+
+.. tab-set::
+
+    .. tab-item:: pyproject.toml
+
+       .. code-block:: toml
+
+          [tool.bentoml.build.args]
+          model_name = deepseek-ai/DeepSeek-V3
+          gpu = 4
+
+    .. tab-item:: bentofile.yaml
+
+       .. code-block:: yaml
+
+          args:
+            model_name: deepseek-ai/DeepSeek-V3
+            gpu: 4
+
 ``include``
 ^^^^^^^^^^^
 

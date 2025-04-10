@@ -99,7 +99,7 @@ You can find `the source code in GitHub <https://github.com/bentoml/BentoDiffusi
    .. code-block:: python
       :caption: `service.py`
 
-      my_image = bentoml.images.PythonImage(python_version="3.11", distro="debian") \
+      my_image = bentoml.images.Image(python_version="3.11", distro="debian") \
                   .system_packages("ffmpeg") \
                   .requirements_file("requirements.txt")
 

@@ -297,7 +297,7 @@ For deployment, the plugin should also be installed in your runtime environment:
 
     import bentoml
 
-    my_image = bentoml.images.PythonImage(python_version='3.11') \
+    my_image = bentoml.images.Image(python_version='3.11') \
         .python_packages("bentoml-plugins-arize") # Add this plugin
 
     @bentoml.service(image=my_image)

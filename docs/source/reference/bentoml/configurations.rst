@@ -89,7 +89,7 @@ To specify the number of workers (for example, ``3``) within a Service:
 
 .. code-block:: python
 
-    my_image = bentoml.images.PythonImage(python_version='3.11') \
+    my_image = bentoml.images.Image(python_version='3.11') \
         .python_packages("torch", "transformers")
 
     @bentoml.service(image=my_image)

@@ -102,7 +102,7 @@ When building your Bento, simply add PyTorch and TensorFlow using the ``python_p
 
     import bentoml
 
-    my_image = bentoml.images.PythonImage(python_version='3.11') \
+    my_image = bentoml.images.Image(python_version='3.11') \
         .python_packages("torch", "tensorflow[and-cuda]")
 
     @bentoml.service(image=my_image)

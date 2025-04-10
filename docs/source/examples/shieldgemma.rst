@@ -113,7 +113,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
    .. code-block:: python
       :caption: `service.py`
 
-      IMAGE = bentoml.images.PythonImage(python_version='3.11') \
+      IMAGE = bentoml.images.Image(python_version='3.11') \
                     .requirements_file("requirements.txt")
 
       @bentoml.service(

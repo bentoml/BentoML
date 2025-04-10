@@ -69,6 +69,7 @@ RUN UV_PYTHON_INSTALL_DIR=/app/python/ uv venv --python {{ __options__python_ver
     chown -R {{ bento__user }}:{{ bento__user }} /app/.venv
 ENV VIRTUAL_ENV=/app/.venv
 ENV UV_COMPILE_BYTECODE=1
+ENV PATH="/app/.venv/bin:$PATH"
 {% set __pip_cache__ = common.mount_cache("/root/.cache/") %}
 {% if __pip_preheat_packages__ %}
 {% for value in __pip_preheat_packages__ -%}

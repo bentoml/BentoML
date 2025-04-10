@@ -185,7 +185,7 @@ Here is an example:
 .. code-block:: python
     :caption: `service.py`
 
-    my_image = bentoml.images.PythonImage(python_version="3.11") \
+    my_image = bentoml.images.Image(python_version="3.11") \
                 .python_packages("xgboost", "scikit-learn")
 
     @bentoml.service(

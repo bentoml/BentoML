@@ -39,7 +39,7 @@ Define APIs in a `service.py` file.
 import bentoml
 
 @bentoml.service(
-    image=bentoml.images.PythonImage(python_version="3.11").python_packages("torch", "transformers"),
+    image=bentoml.images.Image(python_version="3.11").python_packages("torch", "transformers"),
 )
 class Summarization:
     def __init__(self) -> None:

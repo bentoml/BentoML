@@ -116,7 +116,7 @@ service.py
    .. code-block:: python
       :caption: `service.py`
 
-      my_image = bentoml.images.PythonImage(python_version='3.11', lock_python_packages=False) \
+      my_image = bentoml.images.Image(python_version='3.11', lock_python_packages=False) \
                        .requirements_file("requirements.txt")
 
       @bentoml.service(

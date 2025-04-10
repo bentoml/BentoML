@@ -19,7 +19,7 @@ Before building a Bento, you need to define the runtime environment of it. Here'
 
     import bentoml
 
-    my_image = bentoml.images.PythonImage(python_version="3.11") \
+    my_image = bentoml.images.Image(python_version="3.11") \
         .python_packages("torch", "transformers")
 
     @bentoml.service(

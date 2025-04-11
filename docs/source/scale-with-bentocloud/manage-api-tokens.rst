@@ -172,17 +172,17 @@ Example:
     When using environment variables, make sure to set both ``BENTO_CLOUD_API_KEY`` and ``BENTO_CLOUD_API_ENDPOINT`` as they are both required for authentication.
 
 Monitoring API tokens
--------------------
+---------------------
 
-BentoCloud also provides a special type of API token called Monitoring tokens, which are only available for BYOC (Bring Your Own Cloud) customers. These tokens are specifically designed for accessing Prometheus metrics in a federated manner.
+BentoCloud provides a special type of API token called **Monitoring Tokens**, which are only available for BYOC (Bring Your Own Cloud) customers. These tokens are specifically designed for accessing Prometheus metrics in a federated manner.
 
 .. note::
 
-   Monitoring tokens are disabled by default. If your organization needs access to monitoring tokens, please contact the BentoML team to enable this feature.
+   Monitoring Tokens are disabled by default. If your organization needs access to them, please contact the BentoML team to have this feature enabled.
 
-To use a monitoring token:
+To use a Monitoring Token:
 
-1. Create a monitoring token by following the steps in the :ref:`creating-an-api-token` section above, making sure to select the `Monitoring Token` option.
+1. Create a Monitoring Token by following the steps in the :ref:`creating-an-api-token` section above, ensuring you select the `Monitoring Token` option.
 2. Use the token to access Prometheus metrics through the federated endpoint:
 
    .. code-block:: bash

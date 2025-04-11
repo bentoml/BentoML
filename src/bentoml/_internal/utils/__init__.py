@@ -505,6 +505,10 @@ def deprecated(
     return decorator
 
 
+def join_path(prefix: str, path: str) -> str:
+    return f"{prefix.rstrip('/')}/{path.lstrip('/')}"
+
+
 def is_jupyter() -> bool:  # pragma: no cover
     """Check if we're running in a Jupyter notebook."""
     try:

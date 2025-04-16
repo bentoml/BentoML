@@ -155,6 +155,7 @@ class CliEvent(EventMeta):
 
 @attr.define
 class BentoBuildEvent(CliEvent):
+    bentoml_version: str = BENTOML_VERSION
     bento_creation_timestamp: t.Optional[datetime] = attr.field(default=None)
     bento_size_in_kb: float = attr.field(default=0)
     model_size_in_kb: float = attr.field(default=0)
@@ -162,7 +163,6 @@ class BentoBuildEvent(CliEvent):
     num_of_models: int = attr.field(default=0)
     num_of_runners: int = attr.field(default=0)
     model_types: t.List[str] = attr.field(factory=list)
-    runnable_types: t.List[str] = attr.field(factory=list)
 
 
 @attr.define

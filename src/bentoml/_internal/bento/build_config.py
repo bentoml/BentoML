@@ -886,10 +886,10 @@ class BentoBuildConfig:
                         f"{self.docker.cuda_version} is not supported for {self.docker.distro}. Supported cuda versions are: {', '.join(spec.supported_cuda_versions)}."
                     )
 
-            if self.args:
-                # Merge command line args with the ones in the config file
-                # and the command line args take precedence
-                set_arguments(**self.args, **BentoMLContainer.bento_arguments.get())
+        if self.args:
+            # Merge command line args with the ones in the config file
+            # and the command line args take precedence
+            set_arguments(**(self.args | BentoMLContainer.bento_arguments.get()))
 
     def with_defaults(self) -> FilledBentoBuildConfig:
         """

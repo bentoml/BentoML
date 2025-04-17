@@ -440,7 +440,7 @@ def bento_management_commands() -> click.Group:
             labels_dict[key] = label_value
 
         service: str | None = None
-        if ":" in build_ctx:
+        if ":" in build_ctx or not os.path.isdir(build_ctx):
             service = build_ctx
             build_ctx = "."
 

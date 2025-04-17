@@ -911,6 +911,7 @@ class BentoBuildConfig:
             conda=self.conda.with_defaults(),
             models=self.models,
             envs=self.envs,
+            args=self.args,
         )
 
     @property

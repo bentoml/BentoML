@@ -20,7 +20,6 @@ from bentoml._internal.service.openapi.utils import exception_components_schema
 from bentoml._internal.service.openapi.utils import exception_schema
 from bentoml._internal.types import LazyType
 from bentoml._internal.utils import deep_merge
-from bentoml._internal.utils import join_path
 from bentoml._internal.utils.cattr import bentoml_cattr
 from bentoml.exceptions import InternalServerError
 from bentoml.exceptions import InvalidArgument
@@ -38,6 +37,9 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
     """Generate a OpenAPI specification for a service."""
     mounted_app_paths = {}
     schema_components: dict[str, dict[str, Schema]] = {}
+
+    def join_path(prefix: str, path: str) -> str:
+        return f"{prefix.rstrip('/')}/{path.lstrip('/')}"
 
     for app, path, _ in svc.mount_apps:
         if LazyType["fastapi.FastAPI"]("fastapi.FastAPI").isinstance(app):

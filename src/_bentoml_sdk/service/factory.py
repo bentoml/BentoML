@@ -23,10 +23,8 @@ from bentoml._internal.bento.build_config import BentoEnvSchema
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.context import ServiceContext
 from bentoml._internal.models import Model as StoredModel
-from bentoml._internal.types import LazyType
 from bentoml._internal.utils import deprecated
 from bentoml._internal.utils import dict_filter_none
-from bentoml._internal.utils import join_path
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
 
@@ -42,8 +40,6 @@ logger = logging.getLogger("bentoml.serve")
 T = t.TypeVar("T", bound=object)
 
 if t.TYPE_CHECKING:
-    import fastapi as fastapi
-
     from bentoml._internal import external_typing as ext
     from bentoml._internal.service.openapi.specification import OpenAPISpecification
     from bentoml._internal.utils.circus import Server
@@ -211,55 +207,11 @@ class Service(t.Generic[T]):
         return get_default_svc_readme(self)
 
     def schema(self) -> dict[str, t.Any]:
-        from ..method import flatten_field
-
-        routes = [method.schema() for method in self.apis.values()]
-        for app, path, _ in self.mount_apps:
-            if not LazyType["fastapi.FastAPI"]("fastapi.FastAPI").isinstance(app):
-                continue
-            from fastapi.openapi.utils import get_openapi
-
-            openapi = get_openapi(
-                title=app.title, version=app.version, routes=app.routes
-            )
-            defs = openapi.get("components", {}).get("schemas", {})
-            for subpath, methods in openapi["paths"].items():
-                if "post" not in methods:
-                    continue
-                method = methods["post"]
-                subpath = join_path(path, subpath)
-                request_body = method.get("requestBody", {}).get("content", {})
-                input_schema = next(iter(request_body.values())).get(
-                    "schema", {"type": "object"}
-                )
-                response_body = (
-                    method.get("responses", {}).get("200", {}).get("content", {})
-                )
-                output_schema = next(iter(response_body.values())).get(
-                    "schema", {"type": "object"}
-                )
-                route = dict_filter_none(
-                    {
-                        "name": subpath.strip("/").replace("/", "_"),
-                        "route": subpath,
-                        "description": method.get("summary", ""),
-                        "batchable": False,
-                        "input": flatten_field(
-                            input_schema, defs, def_prefix="#/components/schemas/"
-                        ),
-                        "output": flatten_field(
-                            output_schema, defs, def_prefix="#/components/schemas/"
-                        ),
-                        "is_task": False,
-                    }
-                )
-                routes.append(route)
-
         return dict_filter_none(
             {
                 "name": self.name,
                 "type": "service",
-                "routes": routes,
+                "routes": [method.schema() for method in self.apis.values()],
                 "description": getattr(self.inner, "__doc__", None),
             }
         )

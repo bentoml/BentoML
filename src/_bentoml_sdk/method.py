@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import functools
 import inspect
 import sys
@@ -197,7 +196,7 @@ class APIMethod(t.Generic[P, R]):
     def openapi_request(self) -> dict[str, t.Any]:
         from .service.openapi import REF_TEMPLATE
 
-        input = flatten_field(
+        input = _flatten_field(
             _only_include(
                 self.input_spec.model_json_schema(
                     ref_template=REF_TEMPLATE, mode="serialization"
@@ -224,7 +223,7 @@ class APIMethod(t.Generic[P, R]):
     def openapi_response(self) -> dict[str, t.Any]:
         from .service.openapi import REF_TEMPLATE
 
-        output = flatten_field(
+        output = _flatten_field(
             _only_include(
                 self.output_spec.model_json_schema(
                     ref_template=REF_TEMPLATE, mode="serialization"
@@ -243,45 +242,30 @@ class APIMethod(t.Generic[P, R]):
         }
 
 
-def flatten_field(
+def _flatten_field(
     schema: dict[str, t.Any],
     defs: dict[str, t.Any],
     max_depth: int | None = None,
     _depth: int = 0,
-    def_prefix: str = "#/$defs/",
 ) -> dict[str, t.Any]:
     if "allOf" in schema:
         schema.update(schema.pop("allOf")[0])
     if "anyOf" in schema:
-        if len(schema["anyOf"]) == 2 and schema["anyOf"][1].get("type") == "null":
-            schema.update(schema.pop("anyOf")[0])
-        else:  # we are not able to handle this, convert to a plain object
-            schema.update(type="object")
-            schema.pop("anyOf")
+        schema.update(schema.pop("anyOf")[0])
     if max_depth is not None and _depth >= max_depth:
         return schema
     if "$ref" in schema:
-        ref = schema.pop("$ref")[len(def_prefix) :]
-        schema.update(
-            flatten_field(
-                copy.deepcopy(defs[ref]),
-                defs,
-                max_depth,
-                _depth=_depth + 1,
-                def_prefix=def_prefix,
-            )
-        )
+        ref = schema.pop("$ref")[len("#/$defs/") :]
+        schema.update(_flatten_field(defs[ref], defs, max_depth, _depth=_depth + 1))
     elif schema.get("type") == "object" and "properties" in schema:
         for k, v in schema["properties"].items():
-            schema["properties"][k] = flatten_field(
-                v, defs, max_depth, _depth=_depth + 1, def_prefix=def_prefix
+            schema["properties"][k] = _flatten_field(
+                v, defs, max_depth, _depth=_depth + 1
             )
     elif schema.get("type") == "array" and "items" in schema:
-        schema["items"] = flatten_field(
-            schema["items"], defs, max_depth, _depth=_depth + 1, def_prefix=def_prefix
+        schema["items"] = _flatten_field(
+            schema["items"], defs, max_depth, _depth=_depth + 1
         )
-    elif schema.get("type") == "string" and schema.get("format") == "binary":
-        schema["type"] = "file"
     return schema
 
 
@@ -290,4 +274,4 @@ def _flatten_model_schema(model: type[IODescriptor]) -> dict[str, t.Any]:
     if not schema.get("properties"):
         return schema
     defs = schema.pop("$defs", {})
-    return flatten_field(schema, defs)
+    return _flatten_field(schema, defs)

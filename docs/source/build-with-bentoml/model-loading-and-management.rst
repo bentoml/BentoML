@@ -59,6 +59,29 @@ BentoML provides an efficient mechanism for loading AI models to accelerate mode
 
 .. tab-set::
 
+   .. tab-item:: From the Model Store or BentoCloud
+
+      To load a model from the local Model Store or BentoCloud, instantiate a ``BentoModel`` from ``bentoml.models`` and specify its model tag. Make sure the model is stored locally or available in BentoCloud.
+
+      Here is an example:
+
+      .. code-block:: python
+
+         import bentoml
+         from bentoml.models import BentoModel
+         import joblib
+
+         @bentoml.service(resources={"cpu": "200m", "memory": "512Mi"})
+         class MyService:
+             # Define model reference at the class level
+             # Load a model from the Model Store or BentoCloud
+             iris_ref = BentoModel("iris_sklearn:latest")
+
+             def __init__(self):
+                 self.iris_model = joblib.load(self.iris_ref.path_of("model.pkl"))
+
+      By default, ``__get__`` from ``BentoModel`` returns a ``bentoml.Model`` object, which requires additional tools like ``joblib.load`` to load the model data.
+
    .. tab-item:: From Hugging Face
 
       To load a model from Hugging Face (HF), instantiate a ``HuggingFaceModel`` class from ``bentoml.models`` and specify the model ID as shown on HF. For a gated Hugging Face model, remember to export your `Hugging Face API token <https://huggingface.co/docs/hub/en/security-tokens>`_ as environment variables before loading the model.
@@ -94,34 +117,11 @@ BentoML provides an efficient mechanism for loading AI models to accelerate mode
       .. image:: ../../_static/img/build-with-bentoml/model-loading-and-management/hf-model-on-bentocloud.png
          :alt: Hugging Face model marked with an icon on BentoCloud console
 
-   .. tab-item:: From the Model Store or BentoCloud
-
-      To load a model from the local Model Store or BentoCloud, instantiate a ``BentoModel`` from ``bentoml.models`` and specify its model tag. Make sure the model is stored locally or available in BentoCloud.
-
-      Here is an example:
-
-      .. code-block:: python
-
-         import bentoml
-         from bentoml.models import BentoModel
-         import joblib
-
-         @bentoml.service(resources={"cpu": "200m", "memory": "512Mi"})
-         class MyService:
-             # Define model reference at the class level
-             # Load a model from the Model Store or BentoCloud
-             iris_ref = BentoModel("iris_sklearn:latest")
-
-             def __init__(self):
-                 self.iris_model = joblib.load(self.iris_ref.path_of("model.pkl"))
-
-      By default, ``__get__`` from ``BentoModel`` returns a ``bentoml.Model`` object, which requires additional tools like ``joblib.load`` to load the model data.
-
-When using ``HuggingFaceModel`` and ``BentoModel``, you must load the model from the class scope of a Service. Defining the model as a class variable declares it as a dependency of the Service, ensuring the models are referenced by the Bento when transported and deployed. If you call these two APIs within the constructor of a Service class, the model will not be referenced by the Bento. As a result, it will not be pushed or deployed, leading to a model ``NotFound`` error.
+When using ``BentoModel`` or ``HuggingFaceModel``, you must load the model from the class scope of a Service. Defining the model as a class variable declares it as a dependency of the Service, ensuring the models are referenced by the Bento when transported and deployed. If you call these two APIs within the constructor of a Service class, the model will not be referenced by the Bento. As a result, it will not be pushed or deployed, leading to a model ``NotFound`` error.
 
 .. note::
 
-    BentoML accelerates model loading in two key ways. First, when using ``HuggingFaceModel`` or ``BentoModel``, models are downloaded during image building rather than Service startup. The downloaded models are cached and mounted directly into containers, significantly reducing cold start time and improving scaling performance, especially for large models. Second, BentoML optimizes the actual loading process itself with parallel loading using safetensors. Instead of loading model weights sequentially, multiple parts of the model are loaded simultaneously.
+    BentoML accelerates model loading in two key ways. First, when using ``BentoModel`` or ``HuggingFaceModel``, models are downloaded during image building rather than Service startup. The downloaded models are cached and mounted directly into containers, significantly reducing cold start time and improving scaling performance, especially for large models. Second, BentoML optimizes the actual loading process itself with parallel loading using safetensors. Instead of loading model weights sequentially, multiple parts of the model are loaded simultaneously.
 
 For more information, see :doc:`/reference/bentoml/stores`.
 

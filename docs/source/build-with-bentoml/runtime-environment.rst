@@ -205,6 +205,23 @@ Here is an example:
 
 ``run()`` is context-sensitive. For example, commands placed before ``.python_packages()`` are executed before installing Python dependencies, while those placed after are executed after installation. This allows you to perform certain tasks in the correct order.
 
+Exclude files
+-------------
+
+You can define a ``.bentoignore`` file to exclude specific files when building your Bento. It uses standard pathspec patterns and the specified paths should be relative to the ``build_ctx`` directory (typically, this is the same directory where your ``service.py`` resides). This helps reduce the size of your Bento and keeps your runtime clean and efficient.
+
+Here is an example:
+
+.. code-block:: bash
+   :caption: .bentoignore
+
+   __pycache__/
+   *.py[cod]
+   *$py.class
+   .ipynb_checkpoints/
+   training_data/
+   venv/
+
 Next step
 ---------
 

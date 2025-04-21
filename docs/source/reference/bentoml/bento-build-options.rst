@@ -688,21 +688,6 @@ The following OS distros are currently supported in BentoML:
 - ``ubi8``: Red Hat Universal Base Image
 - ``amazonlinux``: Amazon Linux 2
 
-Some of the distros may not support using conda or specifying CUDA for GPU. Here is the
-support matrix for all distros:
-
-+------------------+-----------------------------+-----------------+----------------------+
-| Distro           |  Available Python Versions  | Conda Support   | CUDA Support (GPU)   |
-+==================+=============================+=================+======================+
-| debian           |  3.7, 3.8, 3.9, 3.10        |  Yes            |  Yes                 |
-+------------------+-----------------------------+-----------------+----------------------+
-| alpine           |  3.7, 3.8, 3.9, 3.10        |  Yes            |  No                  |
-+------------------+-----------------------------+-----------------+----------------------+
-| ubi8             |  3.8, 3.9                   |  No             |  Yes                 |
-+------------------+-----------------------------+-----------------+----------------------+
-| amazonlinux      |  3.7, 3.8                   |  No             |  No                  |
-+------------------+-----------------------------+-----------------+----------------------+
-
 Setup script
 """"""""""""
 

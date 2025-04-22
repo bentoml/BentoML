@@ -69,6 +69,7 @@ class ResourceSchema(TypedDict, total=False):
         "nvidia-tesla-t4",
         "nvidia-tesla-a100",
         "nvidia-a100-80gb",
+        "nvidia-h100-80gb",
         "nvidia-a10g",
         "nvidia-l4",
         "nvidia-tesla-v100",

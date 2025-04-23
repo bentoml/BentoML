@@ -42,7 +42,7 @@ The ``resources`` field in BentoML allows you to specify the resource allocation
 - ``cpu``: The number (or the amount) of CPUs that the Service should use. This is a string, like ``“200m”`` or ``“1”``.
 - ``memory``: The amount of memory that the Service should use.
 - ``gpu``: The number of GPUs allocated to the Service.
-- ``gpu_type``: A specific type of GPU to be used on BentoCloud, following the naming conventions of cloud providers like AWS EC2 or GCP GPU instances. Available values include ``nvidia-tesla-t4``, ``nvidia-tesla-a100``, ``nvidia-a100-80gb``, ``nvidia-a10g``, ``nvidia-l4``, ``nvidia-tesla-v100``, ``nvidia-tesla-p100``, ``nvidia-tesla-k80``, and ``nvidia-tesla-p4``.
+- ``gpu_type``: A specific type of GPU to be used on BentoCloud, following the naming conventions of cloud providers like AWS EC2 or GCP GPU instances. To list available GPU types, run ``bentoml deployment list-instance-types``.
 
 We recommend you specify at least one field of ``resources``, so that resources can be automatically allocated to the Service on BentoCloud.
 

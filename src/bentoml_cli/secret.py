@@ -97,7 +97,7 @@ def parse_kvs_argument_callback(
     """
     key_vals: t.List[tuple[str, str]] = []
     for key_val in value:
-        key, val = key_val.split("=")
+        key, val = key_val.split("=", maxsplit=1)
         if not key or not val:
             raise click.BadParameter(f"Invalid key-value pair: {key_val}")
         if val.startswith("@"):

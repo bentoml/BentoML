@@ -80,8 +80,8 @@ if TYPE_CHECKING:
     from _bentoml_impl.frameworks import lightgbm
     from _bentoml_impl.frameworks import mlflow
     from _bentoml_impl.frameworks import sklearn
-    from _bentoml_impl.frameworks import xgboost
     from _bentoml_impl.frameworks import spacy
+    from _bentoml_impl.frameworks import xgboost
 
     from . import bentos
 

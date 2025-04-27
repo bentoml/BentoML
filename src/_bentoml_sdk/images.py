@@ -245,7 +245,6 @@ class Image:
             return requirements_out.read_text()
         lock_args = [
             str(requirements_in),
-            "--allow-unsafe",
             "--no-header",
             f"--output-file={requirements_out}",
             "--emit-index-url",
@@ -279,13 +278,7 @@ class Image:
                 "You see this error because you set `lock_packages=true` in the image config.\n"
                 "Learn more at https://docs.bentoml.com/en/latest/reference/bentoml/bento-build-options.html#pypi-package-locking"
             ) from e
-        locked_requirements = (  # uv doesn't preserve global option lines, add them here
-            "\n".join(option.dumps() for option in requirements_file.options)
-        )
-        if locked_requirements:
-            locked_requirements += "\n"
-        locked_requirements += requirements_out.read_text()
-        requirements_out.write_text(locked_requirements)
+
         PythonOptions.fix_dep_urls(
             str(requirements_out),
             bento_fs.getsyspath(wheels_folder),

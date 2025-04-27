@@ -358,6 +358,26 @@ class ServiceAppFactory(BaseAppFactory):
         set_current_service(None)
         await self._result_store.__aexit__(None, None, None)
 
+    async def livez(self, _: Request) -> Response:
+        from starlette.exceptions import HTTPException
+
+        from bentoml._internal.utils import is_async_callable
+
+        if hasattr(self.service.inner, "__is_alive__"):
+            assert self._service_instance is not None, "Service must be initialized"
+            if is_async_callable(self.service.inner.__is_alive__):
+                is_alive = await self._service_instance.__is_alive__()
+            else:
+                is_alive = await anyio.to_thread.run_sync(
+                    self._service_instance.__is_alive__
+                )
+            if not is_alive:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Service is dead because .__is_alive__() returns False.",
+                )
+        return await super().livez(_)
+
     async def readyz(self, _: Request) -> Response:
         from starlette.exceptions import HTTPException
         from starlette.responses import PlainTextResponse

@@ -148,3 +148,37 @@ Use the ``@bentoml.on_shutdown`` decorator to specify a method as a shutdown hoo
         @bentoml.on_shutdown
         async def async_shutdown(self):
             print("Async cleanup actions on Service shutdown.")
+
+Readiness hook
+^^^^^^^^^^^^^^
+
+Readiness hooks allow you to specify custom logic for determining when your Service is ready to handle requests. This is particularly useful when your Service depends on external resources that need to be checked before the Service can be considered operational.
+
+Use ``__is_ready__`` as the readiness hook method name. The hook should return a boolean indicating whether the Service is ready. For example:
+
+.. code-block:: python
+
+    import bentoml
+
+    @bentoml.service(workers=4)
+    class HookService:
+        def __init__(self) -> None:
+            self.db_connection = None
+            self.cache = None
+
+        @bentoml.on_startup
+        def init_resources(self):
+            self.db_connection = setup_database()
+            self.cache = setup_cache()
+
+        def __is_ready__(self) -> bool:
+            # Check if required resources are available
+            if self.db_connection is None or self.cache is None:
+                return False
+            return self.db_connection.is_connected() and self.cache.is_available()
+
+The readiness hook method can also be asynchronous.
+The readiness check is exposed via the ``/readyz`` endpoint. When you call this endpoint, it returns:
+
+- HTTP 200 if the Service is ready (the hook returns ``True``)
+- HTTP 503 if the Service is not ready (the hook returns ``False``)

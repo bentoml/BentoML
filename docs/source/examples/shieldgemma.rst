@@ -46,7 +46,7 @@ This example is ready for easy deployment and scaling on BentoCloud. With a sing
 Architecture
 ------------
 
-This example includes two BentoML Services: ``Gemma`` and ``ShieldAssistant``. ``Gemma`` evaluates the safety of the prompt, and if it is considered safe, ``ShieldAssistant`` proceeds to call the OpenAI GPT-3.5 Turbo API to generate a response. If the probability score from the safety check exceeds a preset threshold, it indicates a potential violation of the safety guidelines. As a result, ``ShieldAssistant`` raises an error and rejects the query.
+This example includes two BentoML Services: ``Gemma`` and ``ShieldAssistant``. ``Gemma`` evaluates the safety of the prompt, and if it is considered safe, ``ShieldAssistant`` proceeds to call the OpenAI GPT-4o API to generate a response. If the probability score from the safety check exceeds a preset threshold, it indicates a potential violation of the safety guidelines. As a result, ``ShieldAssistant`` raises an error and rejects the query.
 
 .. image:: ../../_static/img/examples/shieldgemma/architecture-shield.png
     :alt: Architecture diagram showing the flow between Gemma and ShieldAssistant services, illustrating how prompts are evaluated for safety before being processed
@@ -169,7 +169,7 @@ The ``service.py`` file outlines the logic of the two required BentoML Services.
 
           # Otherwise, generate a response using the OpenAI client
           messages = [{"role": "user", "content": prompt}]
-          response = await self.client.chat.completions.create(model="gpt-3.5-turbo", messages=messages)
+          response = await self.client.chat.completions.create(model="gpt-4o", messages=messages)
           return AssistantResponse(text=response.choices[0].message.content)
 
 Try it out

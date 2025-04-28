@@ -14,18 +14,27 @@ def load(
     bento_identifier: str | Tag | Bento,
     working_dir: str | None = None,
     reload: bool = False,
+    standalone_load: bool = False,
 ) -> Service[t.Any]:
     """An alias for `bentoml.load` that ensures to return a new-style service object."""
     from bentoml._internal.service.loader import load as load_service
 
     return t.cast(
         "Service[t.Any]",
-        load_service(bento_identifier, working_dir=working_dir, reload=reload),
+        load_service(
+            bento_identifier,
+            working_dir=working_dir,
+            standalone_load=standalone_load,
+            reload=reload,
+        ),
     )
 
 
 def import_service(
-    svc_import_path: str, working_dir: str | None = None, reload: bool = False
+    svc_import_path: str,
+    working_dir: str | None = None,
+    reload: bool = False,
+    standalone_load: bool = False,
 ) -> Service[t.Any]:
     """An alias for `bentoml._internal.services.loader.import_service` that ensures
     to return a new-style service object.
@@ -34,7 +43,12 @@ def import_service(
 
     return t.cast(
         "Service[t.Any]",
-        import_service_impl(svc_import_path, working_dir=working_dir, reload=reload),
+        import_service_impl(
+            svc_import_path,
+            working_dir=working_dir,
+            reload=reload,
+            standalone_load=standalone_load,
+        ),
     )
 
 

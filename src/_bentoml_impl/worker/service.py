@@ -181,7 +181,8 @@ def main(
         server_context.worker_index = worker_id
     if model_preheat:
         patch_safetensor()
-    service = load(bento_identifier)
+    # standalone_build=True means to not restore cwd and model store
+    service = load(bento_identifier, standalone_load=True)
 
     if service_name and service_name != service.name:
         service = service.find_dependent_by_name(service_name)

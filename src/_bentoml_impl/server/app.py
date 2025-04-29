@@ -358,11 +358,47 @@ class ServiceAppFactory(BaseAppFactory):
         set_current_service(None)
         await self._result_store.__aexit__(None, None, None)
 
+    async def livez(self, _: Request) -> Response:
+        from starlette.exceptions import HTTPException
+
+        from bentoml._internal.utils import is_async_callable
+
+        if hasattr(self.service.inner, "__is_alive__"):
+            assert self._service_instance is not None, "Service must be initialized"
+            if is_async_callable(self.service.inner.__is_alive__):
+                is_alive = await self._service_instance.__is_alive__()
+            else:
+                is_alive = await anyio.to_thread.run_sync(
+                    self._service_instance.__is_alive__
+                )
+            if not is_alive:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Service is dead because .__is_alive__() returns False.",
+                )
+        return await super().livez(_)
+
     async def readyz(self, _: Request) -> Response:
         from starlette.exceptions import HTTPException
         from starlette.responses import PlainTextResponse
 
+        from bentoml._internal.utils import is_async_callable
+
         from ..client import RemoteProxy
+
+        if hasattr(self.service.inner, "__is_ready__"):
+            assert self._service_instance is not None, "Service must be initialized"
+            if is_async_callable(self.service.inner.__is_ready__):
+                is_ready = await self._service_instance.__is_ready__()
+            else:
+                is_ready = await anyio.to_thread.run_sync(
+                    self._service_instance.__is_ready__
+                )
+            if not is_ready:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Service is not ready because .__is_ready__() returns False.",
+                )
 
         if BentoMLContainer.api_server_config.runner_probe.enabled.get():
             dependency_statuses: list[t.Coroutine[None, None, bool]] = []

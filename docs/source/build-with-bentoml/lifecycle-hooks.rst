@@ -148,3 +148,44 @@ Use the ``@bentoml.on_shutdown`` decorator to specify a method as a shutdown hoo
         @bentoml.on_shutdown
         async def async_shutdown(self):
             print("Async cleanup actions on Service shutdown.")
+
+Health check hooks
+^^^^^^^^^^^^^^^^^^
+
+Health check hooks allow you to specify custom logic for determining when your Service is healthy and ready to handle requests.
+This is particularly useful when your Service depends on external resources that need to be checked before the Service can be considered operational.
+
+You can define the following methods in your service class to implement health checks:
+
+- ``__is_alive__``: This method is called to check if the Service is alive. It should return a boolean value indicating the Service's health status. This responds to the ``/livez`` endpoint.
+- ``__is_ready__``: This method is called to check if the Service is ready to handle requests. It should return a boolean value indicating the Service's readiness status. This responds to the ``/readyz`` endpoint.
+
+Both can be asynchronous functions.
+
+For example:
+
+.. code-block:: python
+
+    import bentoml
+
+    @bentoml.service(workers=4)
+    class HookService:
+        def __init__(self) -> None:
+            self.db_connection = None
+            self.cache = None
+
+        @bentoml.on_startup
+        def init_resources(self):
+            self.db_connection = setup_database()
+            self.cache = setup_cache()
+
+        def __is_ready__(self) -> bool:
+            # Check if required resources are available
+            if self.db_connection is None or self.cache is None:
+                return False
+            return self.db_connection.is_connected() and self.cache.is_available()
+
+When you call the ``/readyz`` endpoint, it returns:
+
+- HTTP 200 if the Service is ready (the hook returns ``True``)
+- HTTP 503 if the Service is not ready (the hook returns ``False``)

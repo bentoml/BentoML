@@ -100,7 +100,7 @@ CLI login requires an API token with Developer Operations Access.
 
       bentoml cloud current-context | jq '("endpoint:" + .endpoint + ", api_token:" + .api_token)'
 
-After you log in, you should be able to manage BentoCloud resources. For more information on the CLI, see :doc:`Reference - CLI </reference/cli>`.
+After you log in, you should be able to manage BentoCloud resources. For more information on the CLI, see :doc:`/reference/bentocloud/bentocloud-cli`.
 
 Access protected Deployments
 ----------------------------

@@ -65,7 +65,10 @@ class Image:
             self.base_image = distro_config["python"]["image"].format(
                 spec_version=python_version
             )
-            self.commands.insert(0, distro_config["default_install_command"])
+        if self.distro in CONTAINER_METADATA:
+            self.commands.insert(
+                0, CONTAINER_METADATA[self.distro]["default_install_command"]
+            )
 
     def system_packages(self, *packages: str) -> t.Self:
         if self.distro not in CONTAINER_METADATA:

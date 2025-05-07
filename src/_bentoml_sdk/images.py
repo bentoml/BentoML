@@ -94,6 +94,8 @@ class Image:
 
             image = Image("debian:latest").requirements_file("requirements.txt")
         """
+        if self.post_commands:
+            raise BentoMLConfigException("Can't separate adding python requirements")
         self.python_requirements += Path(file_path).read_text().rstrip("\n") + "\n"
         self._after_pip_install = True
         return self
@@ -107,6 +109,8 @@ class Image:
 
             image = Image("debian:latest").pyproject_toml("pyproject.toml")
         """
+        if self.post_commands:
+            raise BentoMLConfigException("Can't separate adding python requirements")
         with Path(file_path).open("rb") as f:
             pyproject_toml = tomllib.load(f)
         dependencies = pyproject_toml.get("project", {}).get("dependencies", {})
@@ -124,6 +128,8 @@ class Image:
                 .python_packages("numpy", "pandas")\
                 .requirements_file("requirements.txt")
         """
+        if self.post_commands:
+            raise BentoMLConfigException("Can't separate adding python requirements")
         if not packages:
             raise BentoMLConfigException("No packages provided")
         self.python_requirements += "\n".join(packages) + "\n"

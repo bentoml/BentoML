@@ -72,11 +72,6 @@ ENV UV_COMPILE_BYTECODE=1
 ENV UV_NO_PROGRESS=1
 ENV PATH=/app/.venv/bin:${PATH}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/") %}
-{% if __pip_preheat_packages__ %}
-{% for value in __pip_preheat_packages__ -%}
-{% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} uv pip install {{ value|bash_quote }} ; exit 0
-{% endfor -%}
-{% endif -%}
 
 COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
 # install python packages

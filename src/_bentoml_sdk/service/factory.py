@@ -232,7 +232,7 @@ class Service(t.Generic[T]):
         # Store id(app) to avoid reprocessing
         processed_mounted_apps: set[int] = set()
 
-        def extract_routes_from_asgi_app(app: ext.ASGIApp, current_prefix: str) -> None:
+        def extract_routes_from_asgi_app(app: t.Any, current_prefix: str) -> None:
             if app is None or id(app) in processed_mounted_apps:
                 return
             processed_mounted_apps.add(id(app))

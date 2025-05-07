@@ -91,7 +91,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         transport = None
         if parsed.scheme == "file":
             uds = uri_to_path(url)
-            if client_cls is httpx.Client:
+            if issubclass(client_cls, httpx.Client):
                 transport = httpx.HTTPTransport(uds=uds)
             else:
                 transport = httpx.AsyncHTTPTransport(uds=uds)
@@ -99,7 +99,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         elif parsed.scheme == "tcp":
             url = f"http://{parsed.netloc}"
         elif app is not None:
-            if client_cls is httpx.Client:
+            if issubclass(client_cls, httpx.Client):
                 from a2wsgi import ASGIMiddleware
 
                 transport = httpx.WSGITransport(app=ASGIMiddleware(app))
@@ -228,7 +228,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     endpoint.route,
                     headers=headers,
                     content=to_async_iterable(payload.data)
-                    if self.client_cls is httpx.AsyncClient
+                    if issubclass(self.client_cls, httpx.AsyncClient)
                     else payload.data,
                 )
         assert self.media_type == "application/json", (
@@ -265,7 +265,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 headers.update(payload.headers)
                 content = (
                     to_async_iterable(payload.data)
-                    if self.client_cls is httpx.AsyncClient
+                    if issubclass(self.client_cls, httpx.AsyncClient)
                     else payload.data
                 )
             if not passthrough:
@@ -304,7 +304,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             "POST",
             endpoint.route,
             content=to_async_iterable(payload.data)
-            if self.client_cls is httpx.AsyncClient
+            if issubclass(self.client_cls, httpx.AsyncClient)
             else payload.data,
             headers=headers,
         )

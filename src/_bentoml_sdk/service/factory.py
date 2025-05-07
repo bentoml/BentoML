@@ -53,6 +53,10 @@ if t.TYPE_CHECKING:
         def __call__(self, inner: type[T]) -> Service[T]: ...
 
 
+class PathMetadata(t.TypedDict):
+    mounted: bool
+
+
 def with_config(
     func: t.Callable[t.Concatenate["Service[t.Any]", P], R],
 ) -> t.Callable[t.Concatenate["Service[t.Any]", P], R]:
@@ -225,8 +229,9 @@ class Service(t.Generic[T]):
             return normalized_path
 
         # Add API method routes (these are already full paths from method.route)
-        all_paths: set[str] = set(
-            _build_full_path(method.route) for method in self.apis.values()
+        all_paths: dict[str, PathMetadata] = dict(
+            (_build_full_path(method.route), {"mounted": False})
+            for method in self.apis.values()
         )
 
         # Store id(app) to avoid reprocessing
@@ -247,14 +252,13 @@ class Service(t.Generic[T]):
                         full_item_path = _build_full_path(
                             current_prefix, item_specific_path
                         )
-                        all_paths.add(full_item_path)
+                        all_paths[full_item_path] = {"mounted": True}
 
                         if hasattr(route_item, "app") and route_item.app is not None:
                             extract_routes_from_asgi_app(route_item.app, full_item_path)
 
         for mounted_app, mount_path_prefix, _ in self.mount_apps:
             normalized_base_prefix = _build_full_path(mount_path_prefix)
-            all_paths.add(normalized_base_prefix)
             extract_routes_from_asgi_app(mounted_app, normalized_base_prefix)
 
         return dict_filter_none(
@@ -263,7 +267,7 @@ class Service(t.Generic[T]):
                 "type": "service",
                 "routes": [method.schema() for method in self.apis.values()],
                 "description": getattr(self.inner, "__doc__", None),
-                "paths": list(all_paths),
+                "paths": all_paths,
             }
         )
 

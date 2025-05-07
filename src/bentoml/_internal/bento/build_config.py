@@ -11,7 +11,6 @@ from sys import version_info
 
 import attr
 import fs
-import fs.copy
 import jinja2
 import psutil
 import yaml
@@ -990,7 +989,7 @@ class BentoPathSpec:
     # we want to ignore .git and venv folders in cases they are very large.
     extra: PathSpec = attr.field(
         default=PathSpec.from_lines(
-            "gitwildmatch", [".git/", ".venv/", "venv/", "__pycache__/"]
+            "gitwildmatch", [".git/", ".venv/", "venv/", "__pycache__/", ".DS_Store"]
         ),
         init=False,
     )

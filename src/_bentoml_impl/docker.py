@@ -12,7 +12,6 @@ from jinja2 import FileSystemLoader
 
 from bentoml._internal.bento.bento import ImageInfo
 from bentoml._internal.container.generate import DEFAULT_BENTO_ENVS
-from bentoml._internal.container.generate import PREHEAT_PIP_PACKAGES
 from bentoml._internal.container.generate import expands_bento_path
 from bentoml._internal.container.generate import resolve_package_versions
 from bentoml._internal.container.generate import to_bento_field

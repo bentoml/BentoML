@@ -15,6 +15,7 @@ import anyio.to_thread
 import attrs
 from simple_di import Provide
 from simple_di import inject
+from starlette.applications import Starlette
 from typing_extensions import Unpack
 
 from bentoml import Runner
@@ -51,6 +52,10 @@ if t.TYPE_CHECKING:
 
     class _ServiceDecorator(t.Protocol):
         def __call__(self, inner: type[T]) -> Service[T]: ...
+
+
+class PathMetadata(t.TypedDict):
+    mounted: bool
 
 
 def with_config(
@@ -207,12 +212,63 @@ class Service(t.Generic[T]):
         return get_default_svc_readme(self)
 
     def schema(self) -> dict[str, t.Any]:
+        def _build_full_path(*path_segments: str) -> str:
+            # Combines URL path segments into a normalized path.
+            # Ensures it starts with '/' and has no trailing '/' (unless it's just '/').
+            # Collapses multiple slashes.
+            parts: list[str] = []
+            for segment in path_segments:
+                if not segment:
+                    continue
+                # Split by '/' and filter out empty strings that result from '//' or trailing/leading '/'
+                parts.extend(p for p in segment.split("/") if p)
+
+            if not parts:
+                return "/"
+
+            normalized_path = "/" + "/".join(parts)
+            return normalized_path
+
+        # Add API method routes (these are already full paths from method.route)
+        all_paths: dict[str, PathMetadata] = dict(
+            (_build_full_path(method.route), {"mounted": False})
+            for method in self.apis.values()
+        )
+
+        # Store id(app) to avoid reprocessing
+        processed_mounted_apps: set[int] = set()
+
+        def extract_routes_from_asgi_app(app: t.Any, current_prefix: str) -> None:
+            if app is None or id(app) in processed_mounted_apps:
+                return
+            processed_mounted_apps.add(id(app))
+
+            # Introspect ASGI app (FastAPI/Starlette)
+            if issubclass(app.__class__, Starlette):
+                for route_item in app.routes:
+                    if hasattr(route_item, "path") and isinstance(route_item.path, str):
+                        item_specific_path = route_item.path
+                        # current_prefix is the path *to* this app.
+                        # item_specific_path is relative to this app.
+                        full_item_path = _build_full_path(
+                            current_prefix, item_specific_path
+                        )
+                        all_paths[full_item_path] = {"mounted": True}
+
+                        if hasattr(route_item, "app") and route_item.app is not None:
+                            extract_routes_from_asgi_app(route_item.app, full_item_path)
+
+        for mounted_app, mount_path_prefix, _ in self.mount_apps:
+            normalized_base_prefix = _build_full_path(mount_path_prefix)
+            extract_routes_from_asgi_app(mounted_app, normalized_base_prefix)
+
         return dict_filter_none(
             {
                 "name": self.name,
                 "type": "service",
                 "routes": [method.schema() for method in self.apis.values()],
                 "description": getattr(self.inner, "__doc__", None),
+                "paths": all_paths,
             }
         )
 

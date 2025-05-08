@@ -15,6 +15,7 @@ import anyio.to_thread
 import attrs
 from simple_di import Provide
 from simple_di import inject
+from starlette.applications import Starlette
 from typing_extensions import Unpack
 
 from bentoml import Runner
@@ -243,7 +244,7 @@ class Service(t.Generic[T]):
             processed_mounted_apps.add(id(app))
 
             # Introspect ASGI app (FastAPI/Starlette)
-            if hasattr(app, "routes") and isinstance(app.routes, list):
+            if issubclass(app.__class__, Starlette):
                 for route_item in app.routes:
                     if hasattr(route_item, "path") and isinstance(route_item.path, str):
                         item_specific_path = route_item.path

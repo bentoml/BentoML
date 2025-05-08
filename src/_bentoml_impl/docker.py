@@ -31,14 +31,10 @@ def get_templates_variables(
         python_packages = resolve_package_versions(requirement_file)
     else:
         python_packages = {}
-    pip_preheat_packages = [
-        python_packages[k] for k in PREHEAT_PIP_PACKAGES if k in python_packages
-    ]
     return {
         **{to_options_field(k): v for k, v in options.items()},
         **{to_bento_field(k): v for k, v in bento_envs.items()},
         "__prometheus_port__": BentoMLContainer.grpc.metrics.port.get(),
-        "__pip_preheat_packages__": pip_preheat_packages,
     }
 
 

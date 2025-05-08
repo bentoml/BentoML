@@ -343,7 +343,7 @@ class Bento(StoreItem):
                     path = fs.path.combine(dir_path, f.name).lstrip("/")
                     if specs.includes(path):
                         if ctx_fs.getsize(path) > 10 * 1024 * 1024:
-                            logger.warn("File size is larger than 10MiB: %s", path)
+                            logger.warning("File size is larger than 10MiB: %s", path)
                         target_fs.makedirs(dir_path, recreate=True)
                         copy_file(ctx_fs, path, target_fs, path)
             if image is None:

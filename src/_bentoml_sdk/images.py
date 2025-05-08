@@ -337,7 +337,7 @@ def populate_image_from_build_config(
     python_options = build_config.python
     if python_options.wheels:
         logger.warning(
-            "python.wheels is not supported by bento v2, %s\nInstead, add them to the requirements directly",
+            "python.wheels is not supported by bento v2, %s\nAdd the wheels directly into your project instead.",
             fallback_message,
         )
         if image is None:

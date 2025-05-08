@@ -32,7 +32,6 @@ BENTO_HOME = f"/home/{BENTO_USER}/"
 BENTO_PATH = f"{BENTO_HOME}bento"
 # 1.2.1 is the current docker frontend that both buildkitd and kaniko supports.
 BENTO_BUILDKIT_FRONTEND = "docker/dockerfile:1.2.1"
-PREHEAT_PIP_PACKAGES = ["torch", "vllm"]
 DEFAULT_BENTO_ENVS = {
     "uid_gid": BENTO_UID_GID,
     "user": BENTO_USER,
@@ -106,11 +105,6 @@ def get_templates_variables(
         "__base_image__": base_image,
         "__conda_python_version__": conda_python_version,
         "__is_cuda__": _is_cuda,
-        "__pip_preheat_packages__": [
-            python_packages[k]
-            for k in PREHEAT_PIP_PACKAGES
-            if python_packages and python_packages.get(k)
-        ],
     }
 
 

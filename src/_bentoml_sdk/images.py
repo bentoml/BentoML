@@ -230,7 +230,10 @@ class Image:
             req.name and req.name.lower() == "bentoml" and req.link is not None
             for req in requirements_file.requirements
         )
+        src_wheels = fs.path.join("src", "wheels")
         wheels_folder = fs.path.join("env", "python", "wheels")
+        if bento_fs.exists(src_wheels):
+            bento_fs.movedir(src_wheels, wheels_folder, create=True)
         with requirements_in.open("w") as f:
             f.write(requirements_file.dumps(preserve_one_empty_line=True))
             if not has_bentoml_req:
@@ -334,7 +337,8 @@ def populate_image_from_build_config(
     python_options = build_config.python
     if python_options.wheels:
         logger.warning(
-            "python.wheels is not supported by bento v2, %s", fallback_message
+            "python.wheels is not supported by bento v2, %s\nInstead, add them to the requirements directly",
+            fallback_message,
         )
         if image is None:
             return None

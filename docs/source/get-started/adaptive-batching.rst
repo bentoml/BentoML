@@ -94,7 +94,7 @@ Other available parameters for adaptive batching:
 
 - ``batch_dim``: The batch dimension for both input and output, which can be a tuple or a single value. See :ref:`reference/bentoml/sdk:Service api` for more information.
 - ``max_batch_size``: The upper limit for the number of requests that can be grouped into a single batch. Set this parameter based on the available resources, like memory or GPU, to avoid overloading the system.
-- ``max_latency_ms``: The maximum time in milliseconds that a batch will wait to accumulate more requests before processing.
+- ``max_latency_ms``: The total acceptable SLA (Service Level Agreement) for the end to end batch processing time. The dispatcher will respect this value by predicting the time it takes to process the batch.
 
 When you specify ``max_batch_size`` and ``max_latency_ms`` parameters, BentoML ensures that these constraints are respected, even as it dynamically adjusts batch sizes and processing intervals based on the adaptive batching algorithm. The algorithm's primary goal is to optimize both throughput (by batching requests together) and latency (by ensuring requests are processed within an acceptable time frame). However, it operates within the bounds set by these parameters.
 

@@ -20,7 +20,7 @@ Essentially, the runtime environment contains a set of Bento build options, such
 Basic usage
 -----------
 
-Create a ``Image`` instance with the desired configurations and attach it to your Service:
+Create an ``Image`` instance with the desired configurations and attach it to your Service:
 
 .. code-block:: python
 
@@ -45,7 +45,7 @@ This example specifies:
 Constructor parameters
 ----------------------
 
-You can initialize a ``Image`` instance with the following parameters:
+You can initialize an ``Image`` instance with the following parameters:
 
 - ``python_version``: The Python version to use. If not specified, it defaults to the Python version in your current build environment.
 - ``distro``: The Linux distribution for the base image. It defaults to ``debian``.
@@ -90,6 +90,9 @@ Install specific Python dependencies by listing them directly. It supports versi
 
     You don't need to specify BentoML as a dependency in this field since the current version of BentoML will be added to the list by default. However, you can override this by specifying a different BentoML version.
 
+GitHub packages
+"""""""""""""""
+
 To include a package from a GitHub repository, use `the pip requirements file format <https://pip.pypa.io/en/stable/reference/requirements-file-format/>`_. You can specify the repository URL, the branch, tag, or commit to install from, and the subdirectory if the Python package is not in the root of the repository.
 
 .. code-block:: python
@@ -112,6 +115,23 @@ If your project depends on a private GitHub repository, you can include the Pyth
 
     image = bentoml.images.Image(python_version='3.11') \
         .python_packages("git+ssh://git@github.com/username/repository.git@branch_name")
+
+Prebuilt wheels
+"""""""""""""""
+
+Include prebuilt wheels in your Bento by placing them inside a ``wheels/`` directory within your project. Then, specify them as local paths in the ``.python_packages()`` list:
+
+.. code-block:: python
+
+    import bentoml
+
+    image = bentoml.images.Image(python_version='3.11') \
+        .python_packages("./wheels/foo-0.1.0-py3-none-any.whl")
+
+You can also list the paths to your local wheel files in ``requirements.txt``. See :ref:`requirements_file` below.
+
+PyPI packages
+"""""""""""""
 
 To configure PyPI indexes and other pip options (e.g. custom package sources and private repositories):
 
@@ -161,6 +181,8 @@ If your private package requires authentication:
     class MyService:
        ...
 
+.. _requirements_file:
+
 ``requirements_file()``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -205,6 +227,37 @@ Here is an example:
 
 ``run()`` is context-sensitive. For example, commands placed before ``.python_packages()`` are executed before installing Python dependencies, while those placed after are executed after installation. This allows you to perform certain tasks in the correct order.
 
+``run_script()``
+^^^^^^^^^^^^^^^^
+
+Run a script file during the build process. It supports chaining with other methods. This is useful for executing more complex logic or third-party CLIs, such as downloading models or setting up configuration files.
+
+For example, you can write a shell script like this:
+
+.. code-block:: bash
+   :caption: `scripts/setup.sh`
+
+   #!/bin/bash
+   huggingface-cli download lukbl/LaTeX-OCR --repo-type space --local-dir models
+
+.. important::
+
+   The shebang line (the first line starting with ``#!``) is important as it tells the build process how to execute the script. For example, you can use ``#!/usr/bin/env python`` for Python scripts. Scripts are executed using:
+
+   .. code-block:: bash
+
+      ./scripts/setup.sh
+
+To include the script in the image build process:
+
+.. code-block:: python
+
+   import bentoml
+
+   image = bentoml.images.Image(python_version='3.11') \
+       .python_packages("torch", "pillow") \
+       .run_script("scripts/setup.sh")
+
 Exclude files
 -------------
 
@@ -213,7 +266,7 @@ You can define a ``.bentoignore`` file to exclude specific files when building y
 Here is an example:
 
 .. code-block:: bash
-   :caption: .bentoignore
+   :caption: `.bentoignore`
 
    __pycache__/
    *.py[cod]

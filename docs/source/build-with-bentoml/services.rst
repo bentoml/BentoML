@@ -210,7 +210,7 @@ The asynchronous API implementation is more efficient because when an asynchrono
 
 .. warning::
 
-    Avoid implementating blocking logic within asynchronous APIs, since such operations can block the IO event loop, preventing health check endpoints like ``/readyz`` from functioning properly.
+    Avoid implementing blocking logic within asynchronous APIs, since such operations can block the IO event loop, preventing health check endpoints like ``/readyz`` from functioning properly.
 
 Convert synchronous to asynchronous
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

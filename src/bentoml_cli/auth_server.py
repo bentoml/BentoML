@@ -84,7 +84,7 @@ class AuthCallbackHttpServer(HTTPServer):
 
     def wait_indefinitely_for_code(self) -> Optional[str]:
         """
-        Wait indefinitely for ther server to callback from token provider.
+        Wait indefinitely for the server to callback from the token provider.
         """
         while self._code is None:
             self.handle_request()

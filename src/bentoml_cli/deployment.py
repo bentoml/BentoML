@@ -502,12 +502,6 @@ def update(  # type: ignore
     default=None,
 )
 @click.option(
-    "-f",
-    "--config-file",
-    help="Configuration file path, mututally exclusive with other config options",
-    default=None,
-)
-@click.option(
     "--config-dict",
     type=click.STRING,
     help="Configuration json string",

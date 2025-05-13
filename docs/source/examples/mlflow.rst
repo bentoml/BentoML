@@ -78,7 +78,7 @@ After training, use the ``bentoml.mlflow.import_model`` API to save the model to
     import bentoml
 
     # model_uri can be any URI that refers to an MLflow model
-    # Use local path for demostration
+    # Use local path for demonstration
     bentoml.mlflow.import_model("iris", model_uri)
 
 To verify that the model has been successfully saved, run:

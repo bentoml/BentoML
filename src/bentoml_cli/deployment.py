@@ -387,6 +387,7 @@ def deployment_command():
     help="Configuration json string",
     default=None,
 )
+@build_args_option
 @inject
 def update(  # type: ignore
     name: str | None,
@@ -645,6 +646,7 @@ def apply(  # type: ignore
     default=3600,
     help="Timeout for deployment to be ready in seconds",
 )
+@build_args_option
 def create(
     bento: str | None,
     name: str | None,

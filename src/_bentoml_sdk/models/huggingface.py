@@ -82,16 +82,13 @@ class HuggingFaceModel(Model[str]):
         if base_path_sys is not None:
             os.makedirs(base_path_sys, exist_ok=True)
 
-            destination_subdir_name: str = os.path.basename(
-                snapshot_path_in_cache
-            )
+            destination_subdir_name: str = os.path.basename(snapshot_path_in_cache)
             destination_path_for_copy: str = os.path.join(
                 base_path_sys, destination_subdir_name
             )
 
-            if (
-                os.path.abspath(snapshot_path_in_cache)
-                != os.path.abspath(destination_path_for_copy)
+            if os.path.abspath(snapshot_path_in_cache) != os.path.abspath(
+                destination_path_for_copy
             ):
                 if os.path.exists(destination_path_for_copy):
                     shutil.rmtree(destination_path_for_copy)

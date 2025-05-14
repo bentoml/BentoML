@@ -68,4 +68,4 @@
                               -p 8080:8080 \
                               --network=host fullstorydev/grpcui -plaintext 0.0.0.0:3000
 
-      Proceed to http://127.0.0.1:8080 in your browser and send test request from the web UI.
+      Proceed to http://127.0.0.1:8080 in your browser and send a test request from the web UI.

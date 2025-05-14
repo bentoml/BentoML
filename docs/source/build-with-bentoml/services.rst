@@ -48,7 +48,7 @@ Test your Service by using ``bentoml serve``, which starts a model server locall
 
     bentoml serve
 
-By convention, BentoML Services are often defined in a ``service.py`` file, but you can specify any module and attribute name using the format ``<module_name>:<attribute_name>``. The attribute name corresponds to the Service class defined in your module. If your Service is in a different module, update the command accordingly, for example:
+By convention, BentoML Services are often defined in a ``service.py`` file, but you can specify any module and attribute name using the format ``<module_name>:<attribute_name>``. The attribute name corresponds to the Service class defined in your module. If your Service is in a different module, update the command accordingly, For example:
 
 .. code-block:: bash
 
@@ -210,7 +210,7 @@ The asynchronous API implementation is more efficient because when an asynchrono
 
 .. warning::
 
-    Avoid implementating blocking logic within asynchronous APIs, since such operations can block the IO event loop, preventing health check endpoints like ``/readyz`` from functioning properly.
+    Avoid implementing blocking logic within asynchronous APIs, since such operations can block the IO event loop, preventing health check endpoints like ``/readyz`` from functioning properly.
 
 Convert synchronous to asynchronous
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

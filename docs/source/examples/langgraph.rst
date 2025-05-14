@@ -151,7 +151,7 @@ service.py
               http_client=self.llm_service.to_sync.client,
           ).bind_tools(tools)
 
-          # Logic to reate LangGraph graph and add nodes & edge
+          # Logic to create LangGraph graph and add nodes & edges
                 ...
 
    Once the LLM Service is injected, use the `ChatOpenAI <https://python.langchain.com/docs/integrations/chat/openai/>`_ API from ``langchain_openai`` to configure an interface to interact with it. Since the ``LLM`` Service provides OpenAI-compatible API endpoints, you can use its HTTP client (``to_sync.client``) and client URL (``client_url``) to easily construct an OpenAI client for interaction.

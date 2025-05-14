@@ -12,7 +12,7 @@ documentation.
 
 Before starting to make a contribution to the docs, make sure to check the
 [issues page](https://github.com/bentoml/BentoML/issues) and the `#bentoml-contributors`
-channel in the [community slack](https://l.bentoml.com/join-slack), to make sure no one
+channel in the [community Slack](https://l.bentoml.com/join-slack), to make sure no one
 else is working on the same thing and to get feedback from the community for larger
 proposals.
 
@@ -29,7 +29,7 @@ git clone https://github.com/bentoml/BentoML.git && cd BentoML
 
 > **Note**: Make sure to have [PDM](https://pdm.fming.dev/latest/) installed.
 
-Install all dependencies required for building docs (mainly `sphinx` and its extension):
+Install all dependencies required for building docs (mainly `sphinx` and its extensions):
 
 ```bash
 pdm install -dG docs
@@ -180,7 +180,7 @@ Code blocks in reStructuredText can be created in various ways::
     print("Or disable all syntax highlighting.")
 ```
 
-There's a lot more forms of "blocks" in reStructuredText that can be used, as
+There are a lot more forms of "blocks" in reStructuredText that can be used, as
 seen in https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#literal-blocks.
 
 

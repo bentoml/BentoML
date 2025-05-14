@@ -121,7 +121,7 @@ When using ``BentoModel`` or ``HuggingFaceModel``, you must load the model from 
 
 .. note::
 
-    BentoML accelerates model loading in two key ways. First, when using ``BentoModel`` or ``HuggingFaceModel``, models are downloaded during image building rather than Service startup. The downloaded models are cached and mounted directly into containers, significantly reducing cold start time and improving scaling performance, especially for large models. Second, BentoML optimizes the actual loading process itself with parallel loading using safetensors. Instead of loading model weights sequentially, multiple parts of the model are loaded simultaneously.
+    BentoML accelerates model loading in two key ways. First, when using ``BentoModel`` or ``HuggingFaceModel``, models are downloaded during image building rather than at Service startup. The downloaded models are cached and mounted directly into containers, significantly reducing cold start time and improving scaling performance, especially for large models. Second, BentoML optimizes the actual loading process itself with parallel loading using safetensors. Instead of loading model weights sequentially, multiple parts of the model are loaded simultaneously.
 
 For more information, see :doc:`/reference/bentoml/stores`.
 

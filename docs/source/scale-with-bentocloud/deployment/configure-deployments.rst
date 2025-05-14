@@ -4,7 +4,7 @@ Configure Deployments
 
 When deploying a BentoML project on BentoCloud, you can customize the deployment by providing additional configurations to the BentoML CLI command or the Python client.
 
-This document provide examples for setting commonly used configurations.
+This document provides examples for setting commonly used configurations.
 
 Configurations
 --------------
@@ -92,7 +92,7 @@ To list available instance types on your BentoCloud account, run:
 Environment variables
 ^^^^^^^^^^^^^^^^^^^^^
 
-You can set environment variables for your deployment to configure the behavior of your BentoML Service, such as API keys, configuration flags, or other runtime settings. During deploying, they will be injected into the image builder container and the Bento Deployment container.
+You can set environment variables for your deployment to configure the behavior of your BentoML Service, such as API keys, configuration flags, or other runtime settings. During deployment, they will be injected into the image builder container and the Bento Deployment container.
 
 .. important::
 

@@ -155,7 +155,7 @@ You can use a token with **Protected Endpoint Access** to access a protected Ben
 Use environment variables for API authentication
 ------------------------------------------------
 
-When calling BentoCloud API using Python, you can set the following environment variables for authentication:
+When calling the BentoCloud API using Python, you can set the following environment variables for authentication:
 
 - ``BENTO_CLOUD_API_KEY``: Your BentoCloud API token
 - ``BENTO_CLOUD_API_ENDPOINT``: Your organization-specific BentoCloud endpoint

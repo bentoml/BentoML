@@ -136,7 +136,7 @@ BentoML allows you to use Jaeger to collect traces over the Thrift protocol.
 
 .. note::
 
-	When it is not feasible to deploy Jaeger Agent next to the application, for example, when the application code is running as Lambda function, a collector can be configured to send spans using Thrift over HTTP. If both agent and collector are configured, the exporter sends traces only to the collector to eliminate the duplicate entries.
+	When it is not feasible to deploy Jaeger Agent next to the application, for example, when the application code is running as a Lambda function, a collector can be configured to send spans using Thrift over HTTP. If both agent and collector are configured, the exporter sends traces only to the collector to eliminate the duplicate entries.
 
 Here is an example of using Jaeger as the tracing exporter:
 

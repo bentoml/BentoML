@@ -47,7 +47,7 @@ Follow the steps below to integrate Gradio with a BentoML Service.
                 results = self.pipeline(texts)
                 return [item["summary_text"] for item in results]
 
-2. Define a helper function to create a Gradio UI for. It retrieves the current Service instance via ``get_current_service()`` and invokes its exposed API method.
+2. Define a helper function to create a Gradio UI for the Service. It retrieves the current Service instance via ``get_current_service()`` and invokes its exposed API method.
 
    .. code-block:: python
 

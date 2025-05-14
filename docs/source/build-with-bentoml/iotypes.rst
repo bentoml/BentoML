@@ -286,7 +286,7 @@ More practical examples to handle files:
                   sound.export(output_path, format="mp3")
                   return Path(output_path)
 
-If you don't want to save temporary files to disk, you can return the data as ``bytes`` instead of ``pathlib.Path`` with properly annotated ``ContentType``. This is efficient for Services that generate data on the fly.
+If you don't want to save temporary files to disk, you can return the data as ``bytes`` instead of ``pathlib.Path`` with a properly annotated ``ContentType``. This is efficient for Services that generate data on the fly.
 
 Tensors
 ^^^^^^^

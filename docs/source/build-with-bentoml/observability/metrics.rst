@@ -389,7 +389,7 @@ You can integrate Prometheus to scrape and visualize both default and custom met
 
         ./prometheus --config.file=/path/to/the/file/prometheus.yml
 
-4. Once Prometheus is running, access its web UI by visiting ``http://localhost:9090`` in your web browser. This interface allows you to query and visualize metrics collected from your BentoML Service.
+4. Once Prometheus is running, access its web UI by visiting ``http://localhost:9090`` in your web browser. This interface allows you to query and visualize the metrics collected from your BentoML Service.
 5. Use `PromQL expressions <https://prometheus.io/docs/prometheus/latest/querying/basics/>`_ to query and visualize metrics. For example, to get the 99th percentile of request durations to the ``/encode`` endpoint over the last minute, use:
 
    .. code-block:: bash

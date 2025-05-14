@@ -164,7 +164,7 @@ Available fields for ``monitoring``:
 - ``type``: Specifies the type of monitoring system to use. The value ``default`` means the use of BentoML's built-in monitoring system, which collects data and logs it to files as shown in the previous section.
 - ``options``: A dictionary that allows you to customize the monitoring setup.
 
-  - ``log_config_file``: Specifies the path to a custom logging configuration file in YAML, which specifies logging behavior, such as log rotation policies, handlers, log formats, and log levels. The logging parameters should be set according to `the Python logging module's configuration schema <https://docs.python.org/3/library/logging.html>`_. If not provided, BentoML uses the default logging configuration, which are suitable for most use cases.
+  - ``log_config_file``: Specifies the path to a custom logging configuration file in YAML, which specifies logging behavior, such as log rotation policies, handlers, log formats, and log levels. The logging parameters should be set according to `the Python logging module's configuration schema <https://docs.python.org/3/library/logging.html>`_. If not provided, BentoML uses the default logging configuration, which is suitable for most use cases.
 
     Here is an example configuration file, which outputs log messages to a stream:
 
@@ -208,7 +208,7 @@ In Kubernetes, you can persist and ship logs by mounting the log directory and u
 Through an OTLP endpoint
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-In scenarios where you can't directly access log files, such as when using AWS Lambda since it doesn't support log files, BentoML supports exporting monitoring data to an external telemetry system using the OpenTelemetry Protocol (OTLP).
+In scenarios where you can't directly access log files, such as when using AWS Lambda, as it doesn't support log files, BentoML supports exporting monitoring data to an external telemetry system using the OpenTelemetry Protocol (OTLP).
 
 .. note::
 

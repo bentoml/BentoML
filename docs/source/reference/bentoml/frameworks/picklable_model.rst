@@ -11,7 +11,7 @@ Picklable Model
 .. note::
 
    You can find more examples for **Picklable Model** in our
-   :examples:`examples/custom_python_model <custom_python_model>` directory.
+   :examples:`BentoML/examples <>` directory.
 
 
 .. currentmodule:: bentoml.picklable_model

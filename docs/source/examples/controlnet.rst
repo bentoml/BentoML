@@ -2,7 +2,7 @@
 ControlNet
 ==========
 
-ControlNet is a neural network architecture designed to enhance the precision and control in generating images using text and image prompts. It allows you to influence image composition, adjust specific elements, and ensure spatial consistency. ControlNet can be used for various creative and precise image generation tasks, such as defining specific poses for human figures and replicating the composition or layout from one image in a new image.
+ControlNet is a neural network architecture designed to enhance the precision and control in generating images using text and image prompts. It allows you to influence image composition, adjust specific elements, and ensure spatial consistency. ControlNet can be used for various creative and precise image generation tasks, such as defining specific poses for human figures and replicating the composition or layout from one image to a new image.
 
 This document demonstrates how to use ControlNet and Stable Diffusion XL to create an image generation application for specific user requirements.
 

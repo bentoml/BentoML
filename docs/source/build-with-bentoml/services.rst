@@ -48,7 +48,7 @@ Test your Service by using ``bentoml serve``, which starts a model server locall
 
     bentoml serve
 
-By convention, BentoML Services are often defined in a ``service.py`` file, but you can specify any module and attribute name using the format ``<module_name>:<attribute_name>``. The attribute name corresponds to the Service class defined in your module. If your Service is in a different module, update the command accordingly, For example:
+By convention, BentoML Services are often defined in a ``service.py`` file, but you can specify any module and attribute name using the format ``<module_name>:<attribute_name>``. The attribute name corresponds to the Service class defined in your module. If your Service is in a different module, update the command accordingly:
 
 .. code-block:: bash
 

@@ -38,15 +38,15 @@ if t.TYPE_CHECKING:
 try:
     from pydantic._internal._typing_extra import eval_type_lenient
 except ImportError:
+    from pydantic._internal._typing_extra import try_eval_type
 
     def eval_type_lenient(
         value: t.Any,
-        globalns: dict[str, t.Any] | None,
-        localns: dict[str, t.Any] | None,
+        globalns: dict[str, t.Any] | None = None,
+        localns: dict[str, t.Any] | None = None,
     ) -> t.Any:
-        from pydantic._internal._typing_extra import eval_type
-
-        return eval_type(value, globalns, localns, lenient=True)
+        ev, _ = try_eval_type(value, globalns, localns)
+        return ev
 
 
 DEFAULT_TEXT_MEDIA_TYPE = "text/plain"

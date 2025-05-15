@@ -93,19 +93,10 @@ It's worth noting that when the external queue is enabled, ``max_concurrency`` w
 Autoscaling policies
 --------------------
 
-You can customize scaling behavior to match your Service's needs with scaling-up and scaling-down policies.
+You can customize scaling behavior to match your Service's needs with stabilization window.
 
-Allowed scaling-up policies (``scale_up_behavior``):
-
-- ``fast`` (default): There is no stabilization window, so the autoscaler can increase the number of replicas immediately if necessary. It can increase the number of replicas by 100% or by 4 replicas, whichever is higher, every 15 seconds.
-- ``stable``: The autoscaler can increase the number of replicas, but it will stabilize the number of replicas for 600 seconds (10 minutes) before deciding to scale up further. It can increase the number of replicas by 100% every 15 seconds.
-- ``disabled``: Scaling-up is turned off.
-
-Allowed scaling-down policies (``scale_down_behavior``):
-
-- ``fast``: There is no stabilization window, so the autoscaler can reduce the number of replicas immediately if necessary. It can decrease the number of replicas by 100% or by 4 replicas, whichever is higher, every 15 seconds.
-- ``stable`` (default): The autoscaler can reduce the number of replicas, but it will stabilize the number of replicas for 600 seconds (10 minutes) before deciding to scale down further. It can decrease the number of replicas by 100% every 15 seconds.
-- ``disabled``: Scaling-down is turned off.
+Stabilization window is a time period during which the autoscaler will not scale the number of replicas up or down. This helps to prevent rapid scaling in response to temporary spikes or drops in traffic.
+The allowed range for the stabilization window is between 0 and 3600 seconds.
 
 To set autoscaling policies, you need to configure the above fields in a separate YAML or JSON file. For example:
 
@@ -118,8 +109,8 @@ To set autoscaling policies, you need to configure the above fields in a separat
           max_replicas: 2
           min_replicas: 1
           policy:
-            scale_down_behavior: "disabled | stable | fast"  # Choose the behavior
-            scale_up_behavior: "disabled | stable | fast"  # Choose the behavior
+                scale_up_stabilization_window: 180
+                scale_down_stabilization_window: 600
 
 You can then deploy your project by referencing this file.
 

@@ -23,6 +23,7 @@ Customize your LLM inference runtime:
 - `MLC-LLM <https://github.com/bentoml/BentoMLCLLM>`_
 - `SGLang <https://github.com/bentoml/BentoSGLang>`_
 - `Hugging Face TGI <https://github.com/bentoml/BentoTGI>`_
+- `Triton Inference Server <https://github.com/bentoml/BentoTriton>`_
 
 Compound AI systems
 -------------------

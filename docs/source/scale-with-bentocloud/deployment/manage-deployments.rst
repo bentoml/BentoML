@@ -241,7 +241,7 @@ To roll out a Deployment:
       bentoml.deployment.update(name="deployment-1", bento="bento_name:version")
 
       # Use the project directory
-      bentoml.deployment.update(name="deployment-1", project_path="./project/directory")
+      bentoml.deployment.update(name="deployment-1", bento="./project/directory")
 
 Apply
 -----

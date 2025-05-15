@@ -93,10 +93,11 @@ It's worth noting that when the external queue is enabled, ``max_concurrency`` w
 Autoscaling policies
 --------------------
 
-You can customize scaling behavior to match your Service's needs with stabilization window.
+You can customize scaling behavior to match your Service's needs with the stabilization window.
 
-Stabilization window is a time period during which the autoscaler will not scale the number of replicas up or down. This helps to prevent rapid scaling in response to temporary spikes or drops in traffic.
-The allowed range for the stabilization window is between 0 and 3600 seconds.
+The stabilization window defines a time period during which the autoscaler temporarily holds off on scaling the number of replicas up or down. This helps prevent rapid or unnecessary scaling in response to short-lived spikes or drops in traffic.
+
+You can set the stabilization window to any value between 0 and 3600 seconds.
 
 To set autoscaling policies, you need to configure the above fields in a separate YAML or JSON file. For example:
 
@@ -109,8 +110,8 @@ To set autoscaling policies, you need to configure the above fields in a separat
           max_replicas: 2
           min_replicas: 1
           policy:
-                scale_up_stabilization_window: 180
-                scale_down_stabilization_window: 600
+            scale_up_stabilization_window: 180
+            scale_down_stabilization_window: 600
 
 You can then deploy your project by referencing this file.
 

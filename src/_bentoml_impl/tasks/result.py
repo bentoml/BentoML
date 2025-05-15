@@ -22,10 +22,11 @@ if t.TYPE_CHECKING:
 
 
 class ResultStatus(enum.Enum):
+    PENDING = "pending"
     IN_PROGRESS = "in_progress"
-    SUCCESS = "success"
-    FAILURE = "failure"
-    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELED = "canceled"
 
 
 @attrs.frozen

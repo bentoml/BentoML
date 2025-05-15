@@ -490,7 +490,7 @@ class ServiceAppFactory(BaseAppFactory):
             resp = JSONResponse({"error": "task_id is required"}, status_code=400)
             self._add_response_headers(resp)
             return resp
-        await self._result_store.set_status(task_id, ResultStatus.CANCELLED)
+        await self._result_store.set_status(task_id, ResultStatus.CANCELED)
         resp = JSONResponse(
             {"error": "task cancellation is not supported in local development server"},
             status_code=400,
@@ -505,9 +505,9 @@ class ServiceAppFactory(BaseAppFactory):
             await self._result_store.set_result(
                 task_id,
                 resp,
-                ResultStatus.SUCCESS
+                ResultStatus.COMPLETED
                 if resp.status_code < 400
-                else ResultStatus.FAILURE,
+                else ResultStatus.FAILED,
             )
         except Exception:
             logger.exception("Task(%s) %s failed", name, task_id)

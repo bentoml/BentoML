@@ -208,6 +208,8 @@ class HPAPolicy:
     metrics: t.Optional[t.List[HPAMetric]] = attr.field(default=None)
     scale_down_behavior: t.Optional[str] = attr.field(default=None)
     scale_up_behavior: t.Optional[str] = attr.field(default=None)
+    scale_down_stabilization_window: t.Optional[int] = attr.field(default=None)
+    scale_up_stabilization_window: t.Optional[int] = attr.field(default=None)
 
 
 @attr.define

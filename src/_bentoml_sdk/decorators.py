@@ -97,13 +97,7 @@ def api(
             "max_latency_ms": max_latency_ms,
         }
         if route is not None:
-
-            def parse_route(route: str) -> str:
-                if route.startswith("/"):
-                    return route
-                return f"/{route}"
-
-            params["route"] = parse_route(route)
+            params["route"] = route
         if input_spec is not None:
             params["input_spec"] = input_spec
         if output_spec is not None:

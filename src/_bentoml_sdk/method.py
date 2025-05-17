@@ -43,10 +43,17 @@ def _io_descriptor_converter(it: t.Any) -> type[IODescriptor]:
     return ensure_io_descriptor(it)
 
 
+def _starts_with_slash(
+    instance: t.Any, attribute: attrs.Attribute[str], value: str
+) -> None:
+    if not value.startswith("/"):
+        raise ValueError(f"{attribute.name} must start with a leading slash")
+
+
 @attrs.define
 class APIMethod(t.Generic[P, R]):
     func: t.Callable[t.Concatenate[t.Any, P], R]
-    route: str = attrs.field()
+    route: str = attrs.field(validator=_starts_with_slash)
     name: str = attrs.field(init=False)
     input_spec: type[IODescriptor] = attrs.field(converter=_io_descriptor_converter)
     output_spec: type[IODescriptor] = attrs.field(converter=_io_descriptor_converter)

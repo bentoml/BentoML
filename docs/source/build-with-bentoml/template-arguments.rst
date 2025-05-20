@@ -68,6 +68,7 @@ After setting the template arguments, you can supply their values dynamically th
    bentoml build --arg model_name=meta-llama/Llama-3.3-70B-Instruct --arg gpu=4
    bentoml serve --arg model_name=deepseek-ai/DeepSeek-V3
    bentoml deploy --arg model_name=deepseek-ai/DeepSeek-V3
+   bentoml deployment update <deployment_name> --arg model_tag=$MODEL_TAG --bento ./project/directory
 
 .. warning::
 

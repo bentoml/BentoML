@@ -39,6 +39,12 @@ Read how-to guides to create and manage your Deployments on BentoCloud.
 
         Run batch inference jobs with BentoML and BentoCloud.
 
+    .. grid-item-card:: Build CI/CD pipelines
+        :link: ci-cd-pipelines
+        :link-type: doc
+
+        Build CI/CD pipelines to automate AI deployments on BentoCloud.
+
 .. toctree::
     :maxdepth: 1
     :titlesonly:
@@ -49,3 +55,4 @@ Read how-to guides to create and manage your Deployments on BentoCloud.
     manage-deployments
     call-deployment-endpoints
     batch-inference-jobs
+    ci-cd-pipelines

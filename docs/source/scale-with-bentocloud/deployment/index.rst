@@ -39,7 +39,7 @@ Read how-to guides to create and manage your Deployments on BentoCloud.
 
         Run batch inference jobs with BentoML and BentoCloud.
 
-    .. grid-item-card:: Batch inference jobs
+    .. grid-item-card:: Build CI/CD pipelines
         :link: ci-cd-pipelines
         :link-type: doc
 

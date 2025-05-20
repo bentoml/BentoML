@@ -27,7 +27,7 @@ Prerequisites
 - You must have a BentoCloud account. `Sign up here <https://cloud.bentoml.com/signup>`_ if you don't have one yet.
 - Create an :doc:`API Token </scale-with-bentocloud/manage-api-tokens>`. For production pipelines, we recommend Organization API tokens to ensure continuity.
 - In your GitHub repository, go to **Settings > Secrets and variables > Actions > Secrets** and add the following:
-  
+
   - ``BENTOCLOUD_API_TOKEN``: Your BentoCloud API token.
   - ``DEPLOYMENT_NAME``: The name of your Deployment on BentoCloud.
   - ``DEPLOYMENT_URL``: The endpoint URL of your Deployment.
@@ -186,7 +186,7 @@ Once your new model is :doc:`saved and pushed to BentoCloud </build-with-bentoml
 Here are common strategies for triggering CI/CD workflows based on model updates:
 
 - **Manually trigger the workflow in GitHub**. This avoids complexity and works well for lightweight use cases, where:
-  
+
   - You're always using the ``latest`` model version (e.g. ``model_name:latest``)
   - You only manage a single model/deployment
   - Model updates are infrequent or can be manually verified
@@ -196,9 +196,9 @@ Here are common strategies for triggering CI/CD workflows based on model updates
   - Track the model tag in a file (e.g., ``model_tag.txt``)
   - Use :doc:`template arguments </build-with-bentoml/template-arguments>` or environment variables to pass the model tag to your Service
   - Trigger your workflow on commits to that file
-    
+
   This provides fine-grained control for managing different models, versions, or Deployment targets.
-    
+
 - **Call the GitHub API to trigger a workflow**. This lets you initiate a workflow from external systems like an ML training pipeline (e.g., Airflow or custom scripts). It provides full automation (from training → model registration → deployment), and supports versioned or conditional deployments, without needing to commit code. For more information, see `the GitHub API documentation <https://docs.github.com/en/rest?apiVersion=2022-11-28>`_.
 
 More resources

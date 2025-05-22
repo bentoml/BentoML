@@ -25,6 +25,13 @@ class ResourceAllocator:
             for _ in range(self.remaining_gpus)
         ]
 
+    @staticmethod
+    def gpu_allocation_disabled() -> bool:
+        return (
+            DISABLE_GPU_ALLOCATION_ENV in os.environ
+            or "CUDA_VISIBLE_DEVICES" in os.environ
+        )
+
     def assign_gpus(self, count: float) -> list[int]:
         if count > self.remaining_gpus:
             warnings.warn(
@@ -101,7 +108,7 @@ class ResourceAllocator:
                 return num_workers, worker_env
             else:  # workers is a number
                 num_workers = workers
-        if num_gpus and DISABLE_GPU_ALLOCATION_ENV not in os.environ:
+        if num_gpus and not self.gpu_allocation_disabled():
             assigned = self.assign_gpus(num_gpus)
             # assign gpus to all workers
             worker_env = [

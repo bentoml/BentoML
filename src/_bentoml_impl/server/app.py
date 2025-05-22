@@ -306,9 +306,10 @@ class ServiceAppFactory(BaseAppFactory):
         self._service_instance.to_async = proxy.to_async  # type: ignore[attr-defined]
         self._service_instance.to_sync = proxy.to_sync  # type: ignore[attr-defined]
         set_current_service(self._service_instance)
-        store_path = BentoMLContainer.result_store_file.get()
-        self._result_store = Sqlite3Store(store_path)
-        await self._result_store.__aenter__()
+        if self.service.needs_task_db():
+            store_path = BentoMLContainer.result_store_file.get()
+            self._result_store = Sqlite3Store(store_path)
+            await self._result_store.__aenter__()
 
     @inject
     def _add_response_headers(
@@ -356,7 +357,8 @@ class ServiceAppFactory(BaseAppFactory):
         logger.info("Service instance cleanup finalized")
         self._service_instance = None
         set_current_service(None)
-        await self._result_store.__aexit__(None, None, None)
+        if hasattr(self, "_result_store"):
+            await self._result_store.__aexit__(None, None, None)
 
     async def livez(self, _: Request) -> Response:
         from starlette.exceptions import HTTPException

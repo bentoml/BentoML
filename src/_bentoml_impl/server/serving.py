@@ -152,9 +152,10 @@ def server_on_deployment(
         member = getattr(svc.inner, name)
         if callable(member) and getattr(member, "__bentoml_deployment_hook__", False):
             member()
-    if os.path.exists(result_file):
-        os.remove(result_file)
-    Sqlite3Store.init_db(result_file)
+    if svc.needs_task_db():
+        if os.path.exists(result_file):
+            os.remove(result_file)
+        Sqlite3Store.init_db(result_file)
 
 
 @inject(squeeze_none=True)

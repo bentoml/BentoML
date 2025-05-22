@@ -28,7 +28,7 @@ FRAMEWORK_DEPENDENCIES = {
     ],
     "keras": ["keras>=3.4"],
     "lightgbm": ["lightgbm"],
-    "onnx": ["onnx", "onnxruntime", "skl2onnx"],
+    "onnx": ["onnx==1.17.0", "onnxruntime", "skl2onnx"],
     "picklable_model": [],
     "pytorch": [],
     "pytorch_lightning": ["lightning"],

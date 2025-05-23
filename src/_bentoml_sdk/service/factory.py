@@ -473,6 +473,11 @@ class Service(t.Generic[T]):
                 model.revision = revision
             svc.bento = bento
 
+    def needs_task_db(self) -> bool:
+        if "BENTOCLOUD_DEPLOYMENT_URL" in os.environ:
+            return False
+        return any(method.is_task for method in self.apis.values())
+
 
 @t.overload
 def service(inner: type[T], /) -> Service[T]: ...

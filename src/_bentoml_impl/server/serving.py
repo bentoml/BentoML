@@ -140,6 +140,8 @@ def server_on_deployment(
     svc: AnyService, result_file: str = Provide[BentoMLContainer.result_store_file]
 ) -> None:
     # Resolve models before server starts.
+    from ..tasks.result import Sqlite3Store
+
     if bento := svc.bento:
         for model in bento.info.all_models:
             model.to_model().resolve()
@@ -150,8 +152,10 @@ def server_on_deployment(
         member = getattr(svc.inner, name)
         if callable(member) and getattr(member, "__bentoml_deployment_hook__", False):
             member()
-    if os.path.exists(result_file):
-        os.remove(result_file)
+    if svc.needs_task_db():
+        if os.path.exists(result_file):
+            os.remove(result_file)
+        Sqlite3Store.init_db(result_file)
 
 
 @inject(squeeze_none=True)

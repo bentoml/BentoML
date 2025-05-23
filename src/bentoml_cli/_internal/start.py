@@ -44,13 +44,13 @@ def build_start_command() -> click.Group:
         type=click.STRING,
         envvar="BENTOML_SERVE_RUNNER_MAP",
         help="[Deprecated] use --depends instead. "
-        "JSON string of runners map. For backword compatibility for yatai < 1.0.0",
+        "JSON string of runners map. For backward compatibility for yatai < 1.0.0",
     )
     @click.option(
         "--bind",
         type=click.STRING,
         help="[Deprecated] use --host and --port instead."
-        "Bind address for the server. For backword compatibility for yatai < 1.0.0",
+        "Bind address for the server. For backward compatibility for yatai < 1.0.0",
         required=False,
     )
     @click.option(
@@ -399,7 +399,7 @@ def build_start_command() -> click.Group:
         "--bind",
         type=click.STRING,
         help="[Deprecated] use --host and --port instead."
-        "Bind address for the server. For backword compatibility for yatai < 1.0.0",
+        "Bind address for the server. For backward compatibility for yatai < 1.0.0",
         required=False,
     )
     @click.option(
@@ -449,7 +449,7 @@ def build_start_command() -> click.Group:
         timeout: int | None,
     ) -> None:
         """
-        Start Runner server standalone. Deprecate in 1.2.0
+        Start Runner server standalone. Deprecated in 1.2.0
         """
         if working_dir is None:
             if os.path.isdir(os.path.expanduser(bento)):

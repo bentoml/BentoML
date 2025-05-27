@@ -10,6 +10,14 @@ Codespaces is a development platform on BentoCloud designed to solve the challen
 
 With Codespaces, you can connect your local development environment to BentoCloud while using your favorite IDE. This allows you to develop with powerful cloud GPUs in a reliable environment that is consistent with production. Your changes are updated in real-time on BentoCloud, as Codespaces automatically hot-reload when detecting local updates. This ensures you can iterate rapidly and confidently on your applications.
 
+.. raw:: html
+
+    <div style="text-align: center;">
+        <iframe width="640" height="360" src="https://www.youtube.com/embed/7EZspagorJw" 
+        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen></iframe>
+    </div>
+
 Create a Codespace
 ------------------
 

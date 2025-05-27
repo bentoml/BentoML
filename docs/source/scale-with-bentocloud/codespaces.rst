@@ -13,8 +13,8 @@ With Codespaces, you can connect your local development environment to BentoClou
 .. raw:: html
 
     <div style="text-align: center;">
-        <iframe width="640" height="360" src="https://www.youtube.com/embed/7EZspagorJw" 
-        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        <iframe width="640" height="360" src="https://www.youtube.com/embed/7EZspagorJw"
+        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowfullscreen></iframe>
     </div>
 

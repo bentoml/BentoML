@@ -10,7 +10,7 @@ description: "A BentoML example showcasing custom gRPC streaming services."
 # If you build this into a Bento, you'd want to ensure 'generated' is included.
 include:
   - "*.py"
-  - "generated/*.py" 
+  - "generated/*.py"
   - "protos/*.proto"
 
 python:

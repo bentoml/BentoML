@@ -40,7 +40,7 @@ This example demonstrates how to define, implement, and serve a custom gRPC stre
 
     To ensure it uses a known gRPC port (e.g., 50051 if not default for `serve`), you might run:
     ```bash
-    bentoml serve service:svc --reload --grpc-port 50051 
+    bentoml serve service:svc --reload --grpc-port 50051
     # Or more explicitly for gRPC focus:
     # bentoml serve-grpc service:svc --reload --port 50051
     ```

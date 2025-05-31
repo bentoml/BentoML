@@ -1,31 +1,33 @@
 from __future__ import annotations
 
 import asyncio
-import click
 import sys
+
+import click
 
 from bentoml.grpc.v1alpha1.client import BentoMlGrpcClient
 
+
 @click.command(name="call-grpc-stream")
 @click.option(
-    "--host", 
-    type=click.STRING, 
-    default="localhost", 
+    "--host",
+    type=click.STRING,
+    default="localhost",
     help="The host address of the gRPC server.",
     show_default=True,
 )
 @click.option(
-    "--port", 
-    type=click.INT, 
-    default=50051, 
+    "--port",
+    type=click.INT,
+    default=50051,
     help="The port of the gRPC server.",
     show_default=True,
 )
 @click.option(
-    "--data", 
-    type=click.STRING, 
-    required=True, 
-    help="The string data to send to the CallStream method."
+    "--data",
+    type=click.STRING,
+    required=True,
+    help="The string data to send to the CallStream method.",
 )
 def call_grpc_stream_command(host: str, port: int, data: str) -> None:
     """
@@ -53,6 +55,7 @@ def call_grpc_stream_command(host: str, port: int, data: str) -> None:
             print("Connection closed.")
 
     asyncio.run(_main())
+
 
 if __name__ == "__main__":
     # This allows running the command directly for testing if needed,

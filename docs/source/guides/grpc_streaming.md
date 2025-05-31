@@ -17,7 +17,7 @@ package bentoml.grpc.v1alpha1;
 
 // The BentoService service definition.
 service BentoService {
-  // A streaming RPC method that accepts a Request message 
+  // A streaming RPC method that accepts a Request message
   // and returns a stream of Response messages.
   rpc CallStream(Request) returns (stream Response) {}
 }
@@ -97,10 +97,10 @@ from bentoml.grpc.v1alpha1.client import BentoMlGrpcClient
 
 async def main():
     client = BentoMlGrpcClient(host="localhost", port=50051)
-    
+
     input_data = "Hello Streaming World"
     print(f"Calling CallStream with data: '{input_data}'")
-    
+
     try:
         idx = 0
         async for response in client.call_stream(data=input_data):

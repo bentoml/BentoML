@@ -411,12 +411,11 @@ class Service:
         """
         if protocol_version == "v1alpha1":
             from bentoml.grpc.v1alpha1.server import BentoServiceImpl
-            from bentoml.grpc.v1alpha1 import bentoml_service_v1alpha1_pb2_grpc as services_v1alpha1
 
             # This part might need adjustment depending on how BentoServiceImpl is instantiated
             # and if it needs the `Service` instance (`self`) passed to it.
             # For now, assuming BentoServiceImpl() is self-contained or uses context.
-            return BentoServiceImpl() # type: ignore # TODO: fix type hint
+            return BentoServiceImpl()  # type: ignore # TODO: fix type hint
         else:
             return importlib.import_module(
                 f".grpc.servicer.{protocol_version}",

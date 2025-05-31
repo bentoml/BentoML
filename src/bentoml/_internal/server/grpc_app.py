@@ -86,7 +86,9 @@ class Server(aio._server.Server):
         protocol_version: str = LATEST_PROTOCOL_VERSION,
     ):
         if protocol_version == "v1alpha1":
-            pb, _ = import_generated_stubs(protocol_version, file="bentoml_service_v1alpha1.proto")
+            pb, _ = import_generated_stubs(
+                protocol_version, file="bentoml_service_v1alpha1.proto"
+            )
         else:
             pb, _ = import_generated_stubs(protocol_version)
 
@@ -296,7 +298,9 @@ class Server(aio._server.Server):
         if self.protocol_version == "v1alpha1":
             # For v1alpha1, the servicer returned by get_grpc_servicer is BentoServiceImpl,
             # and the pb2_grpc module is bentoml_service_v1alpha1_pb2_grpc
-            _, services = import_generated_stubs(self.protocol_version, file="bentoml_service_v1alpha1.proto")
+            _, services = import_generated_stubs(
+                self.protocol_version, file="bentoml_service_v1alpha1.proto"
+            )
         else:
             # For other versions, it uses the standard service.proto
             _, services = import_generated_stubs(self.protocol_version)

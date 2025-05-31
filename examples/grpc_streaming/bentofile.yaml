@@ -1,0 +1,21 @@
+service: "service:svc"
+name: "custom_grpc_stream_example"
+version: "0.1.0"
+
+description: "A BentoML example showcasing custom gRPC streaming services."
+
+# Ensure generated stubs are included if building a bento
+# For local development (bentoml serve), Python's import system will find them
+# if they are in the PYTHONPATH (e.g., in the same directory or an installed package).
+# If you build this into a Bento, you'd want to ensure 'generated' is included.
+include:
+  - "*.py"
+  - "generated/*.py" 
+  - "protos/*.proto"
+
+python:
+  packages:
+    - grpcio
+    - grpcio-tools # For local stub generation, not strictly needed by the Bento itself at runtime
+    - bentoml
+```

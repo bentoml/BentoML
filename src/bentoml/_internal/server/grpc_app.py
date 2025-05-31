@@ -85,7 +85,10 @@ class Server(aio._server.Server):
         compression: grpc.Compression | None = None,
         protocol_version: str = LATEST_PROTOCOL_VERSION,
     ):
-        pb, _ = import_generated_stubs(protocol_version)
+        if protocol_version == "v1alpha1":
+            pb, _ = import_generated_stubs(protocol_version, file="bentoml_service_v1alpha1.proto")
+        else:
+            pb, _ = import_generated_stubs(protocol_version)
 
         self.bento_service = bento_service
         self.servicer = bento_service.get_grpc_servicer(protocol_version)
@@ -290,7 +293,13 @@ class Server(aio._server.Server):
     async def startup(self) -> None:
         from ...exceptions import MissingDependencyException
 
-        _, services = import_generated_stubs(self.protocol_version)
+        if self.protocol_version == "v1alpha1":
+            # For v1alpha1, the servicer returned by get_grpc_servicer is BentoServiceImpl,
+            # and the pb2_grpc module is bentoml_service_v1alpha1_pb2_grpc
+            _, services = import_generated_stubs(self.protocol_version, file="bentoml_service_v1alpha1.proto")
+        else:
+            # For other versions, it uses the standard service.proto
+            _, services = import_generated_stubs(self.protocol_version)
 
         # Running on_startup callback.
         for handler in self.on_startup:

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package bentoml.grpc.v1alpha1;
+
+// The BentoService service definition.
+service BentoService {
+  // A streaming RPC method that accepts a Request message and returns a stream of Response messages.
+  rpc CallStream(Request) returns (stream Response) {}
+}
+
+// The request message containing the input data.
+message Request {
+  string data = 1;
+}
+
+// The response message containing the output data.
+message Response {
+  string data = 1;
+}

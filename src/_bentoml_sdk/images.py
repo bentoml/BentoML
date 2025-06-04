@@ -239,8 +239,10 @@ class Image:
                         "--no-annotate",
                         "--no-hashes",
                         "--no-emit-project",
+                        *(["--verbose"] if get_debug_mode() else []),
                     ],
                     text=True,
+                    stderr=subprocess.DEVNULL if get_quiet_mode() else None,
                     cwd=bento_fs.getsyspath("src"),
                 )
                 f.write(uv_reqs.rstrip("\n") + "\n")

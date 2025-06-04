@@ -51,6 +51,7 @@ class Image:
     post_commands: t.List[str] = attrs.field(factory=list)
     scripts: t.Dict[str, str] = attrs.field(factory=dict, init=False)
     _after_pip_install: bool = attrs.field(init=False, default=False, repr=False)
+    _uv_lock: bool = attrs.field(init=False, default=False, repr=False)
 
     def __attrs_post_init__(self) -> None:
         if not self.base_image:
@@ -100,7 +101,7 @@ class Image:
         self._after_pip_install = True
         return self
 
-    def pyproject_toml(self, file_path: str) -> t.Self:
+    def pyproject_toml(self, file_path: str = "pyproject.toml") -> t.Self:
         """Add a pyproject.toml to the image. Supports chaining call.
 
         Example:
@@ -115,6 +116,11 @@ class Image:
             pyproject_toml = tomllib.load(f)
         dependencies = pyproject_toml.get("project", {}).get("dependencies", {})
         self.python_packages(*dependencies)
+        return self
+
+    def uv_lock(self) -> t.Self:
+        self._uv_lock = True
+        self.lock_python_packages = False  # skip locking if uv.lock is used
         return self
 
     def python_packages(self, *packages: str) -> t.Self:
@@ -221,7 +227,26 @@ class Image:
         requirements_in = Path(
             bento_fs.getsyspath(fs.path.join(py_folder, "requirements.in"))
         )
-        requirements_in.write_text(self.python_requirements)
+        uv_cmd = get_uv_command()
+        with requirements_in.open("w") as f:
+            if self._uv_lock:
+                uv_reqs = subprocess.check_output(
+                    [
+                        *uv_cmd,
+                        "export",
+                        "--no-header",
+                        "--frozen",
+                        "--no-annotate",
+                        "--no-hashes",
+                        "--no-emit-project",
+                        *(["--verbose"] if get_debug_mode() else []),
+                    ],
+                    text=True,
+                    stderr=subprocess.DEVNULL if get_quiet_mode() else None,
+                    cwd=bento_fs.getsyspath("src"),
+                )
+                f.write(uv_reqs.rstrip("\n") + "\n")
+            f.write(self.python_requirements)
         py_req = fs.path.join("env", "python", "requirements.txt")
         requirements_out = Path(bento_fs.getsyspath(py_req))
         # XXX: RequirementsFile.from_string() does not work due to bugs
@@ -276,7 +301,7 @@ class Image:
                 DEFAULT_LOCK_PLATFORM,
             )
             lock_args.extend(["--python-platform", DEFAULT_LOCK_PLATFORM])
-        cmd = [*get_uv_command(), "pip", "compile", *lock_args]
+        cmd = [*uv_cmd, "pip", "compile", *lock_args]
         try:
             subprocess.check_call(
                 cmd,

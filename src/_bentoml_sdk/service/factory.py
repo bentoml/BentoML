@@ -18,7 +18,6 @@ from simple_di import inject
 from starlette.applications import Starlette
 from typing_extensions import Unpack
 
-from bentoml import Runner
 from bentoml._internal.bento.bento import Bento
 from bentoml._internal.bento.build_config import BentoEnvSchema
 from bentoml._internal.configuration.containers import BentoMLContainer
@@ -28,6 +27,7 @@ from bentoml._internal.utils import deprecated
 from bentoml._internal.utils import dict_filter_none
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
+from bentoml.legacy import Runner
 
 from ..images import Image
 from ..method import APIMethod

@@ -146,7 +146,7 @@ def save_model(
         name: Name for given model instance. This should pass Python identifier check.
         checkpointables: The model instance to be saved. Could be a ``detectron2.engine.DefaultPredictor`` or a ``torch.nn.Module``.
         config: Optional ``CfgNode`` for the model. Required when checkpointables is a ``torch.nn.Module``.
-        signatures: Methods to expose for running inference on the target model. Signatures are used for creating :obj:`~bentoml.Runner` instances when serving model with :obj:`~bentoml.Service`
+        signatures: Methods to expose for running inference on the target model. Signatures are used for creating :obj:`~bentoml.legacy.Runner` instances when serving model with :obj:`~bentoml.legacy.Service`
         labels: User-defined labels for managing models, e.g. ``team=nlp``, ``stage=dev``.
         custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
                         Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.
@@ -259,7 +259,7 @@ def save_model(
         return bento_model
 
 
-def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
@@ -267,7 +267,7 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
     is_predictor = bento_model.info.metadata.get("_is_predictor", True)
     partial_kwargs = t.cast(ModelOptions, bento_model.info.options).partial_kwargs
 
-    class Detectron2Runnable(bentoml.Runnable):
+    class Detectron2Runnable(bentoml.legacy.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 

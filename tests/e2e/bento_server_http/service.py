@@ -41,20 +41,20 @@ py_model = (
 )
 
 
-class StreamRunnable(bentoml.Runnable):
+class StreamRunnable(bentoml.legacy.Runnable):
     SUPPORTED_RESOURCES = ("cpu",)
     SUPPORTS_CPU_MULTI_THREADING = True
 
-    @bentoml.Runnable.method()
+    @bentoml.legacy.Runnable.method()
     async def count_text_stream(self, input_text: str) -> t.AsyncGenerator[str, None]:
         for i in range(10):
             await asyncio.sleep(0.1)
             yield f"{input_text} {i}"
 
 
-stream_runner = bentoml.Runner(StreamRunnable)
+stream_runner = bentoml.legacy.Runner(StreamRunnable)
 
-svc = bentoml.Service(
+svc = bentoml.legacy.Service(
     name="general_http_service.case-1.e2e", runners=[py_model, stream_runner]
 )
 

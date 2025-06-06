@@ -148,7 +148,7 @@ def get_runnable(bento_model: Model):
 
     partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
 
-    class PicklableRunnable(bentoml.Runnable):
+    class PicklableRunnable(bentoml.legacy.Runnable):
         SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = False
 

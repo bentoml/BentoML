@@ -204,12 +204,12 @@ def save_model(
 
 
 @deprecated(suggestion="Use `get_service` instead.")
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    class LightGBMRunnable(bentoml.Runnable):
+    class LightGBMRunnable(bentoml.legacy.Runnable):
         # LightGBM only supports GPU during training, not for inference.
         SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = True

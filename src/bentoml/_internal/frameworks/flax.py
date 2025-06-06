@@ -257,11 +257,11 @@ def save_model(
         return bento_model
 
 
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
     """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
     partial_kwargs: dict[str, t.Any] = bento_model.info.options.partial_kwargs
 
-    class FlaxRunnable(bentoml.Runnable):
+    class FlaxRunnable(bentoml.legacy.Runnable):
         SUPPORTED_RESOURCES = ("tpu", "nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 

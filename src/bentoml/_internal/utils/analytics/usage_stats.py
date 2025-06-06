@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from prometheus_client.samples import Sample
 
     from _bentoml_sdk import Service as NewService
-    from bentoml import Service
+    from bentoml.legacy import Service
 
     from ...server.metrics.prometheus import PrometheusClient
 
@@ -134,7 +134,7 @@ def _track_serve_init(
     from_server_api: bool,
     serve_info: ServeInfo = Provide[BentoMLContainer.serve_info],
 ):
-    from bentoml import Service
+    from bentoml.legacy import Service
 
     is_legacy = isinstance(svc, Service)
 

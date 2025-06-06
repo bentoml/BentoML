@@ -102,7 +102,7 @@ def reload_directory(
 
 
 @pytest.fixture(scope="session")
-def simple_service() -> bentoml.Service:
+def simple_service() -> bentoml.legacy.Service:
     """
     This fixture create a simple service implementation that implements a noop runnable with two APIs:
 
@@ -126,20 +126,20 @@ def simple_service() -> bentoml.Service:
 
     model_ref = bentoml.models.get("python_function")
 
-    class NoopRunnable(bentoml.Runnable):
+    class NoopRunnable(bentoml.legacy.Runnable):
         SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = True
 
         def __init__(self):
             self._model: NoopModel = bentoml.picklable_model.load_model(model_ref)
 
-        @bentoml.Runnable.method(batchable=True)
+        @bentoml.legacy.Runnable.method(batchable=True)
         def predict(self, data: t.Any) -> t.Any:
             return self._model.predict(data)
 
-    svc = bentoml.Service(
+    svc = bentoml.legacy.Service(
         name="simple_service",
-        runners=[bentoml.Runner(NoopRunnable, models=[model_ref])],
+        runners=[bentoml.legacy.Runner(NoopRunnable, models=[model_ref])],
     )
 
     @svc.api(input=Text(), output=Text())

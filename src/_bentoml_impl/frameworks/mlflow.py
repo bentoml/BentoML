@@ -213,14 +213,14 @@ def import_model(
 
 
 @deprecated(suggestion="Use `get_service` instead.")
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
     assert "predict" in bento_model.info.signatures
     predict_signature = bento_model.info.signatures["predict"]
 
-    class MLflowPyfuncRunnable(bentoml.Runnable):
+    class MLflowPyfuncRunnable(bentoml.legacy.Runnable):
         # The only case that multi-threading may not be supported is when user define a
         # custom python_function MLflow model with pure python code, but there's no way
         # of telling that from the MLflow model metadata. It should be a very rare case,
@@ -233,7 +233,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             super().__init__()
             self.model = load_model(bento_model)
 
-        @bentoml.Runnable.method(
+        @bentoml.legacy.Runnable.method(
             batchable=predict_signature.batchable,
             batch_dim=predict_signature.batch_dim,
             input_spec=None,

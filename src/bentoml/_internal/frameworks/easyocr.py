@@ -116,7 +116,7 @@ def save_model(
         name: Name for given model instance. This should pass Python identifier check.
         reader: The EasyOCR model to be saved. Currently only supports pre-trained models from easyocr.
                 Custom models are not yet supported.
-        signatures: Methods to expose for running inference on the target model. Signatures are used for creating :obj:`~bentoml.Runner` instances when serving model with :obj:`~bentoml.Service`
+        signatures: Methods to expose for running inference on the target model. Signatures are used for creating :obj:`~bentoml.legacy.Runner` instances when serving model with :obj:`~bentoml.legacy.Service`
         labels: User-defined labels for managing models, e.g. ``team=nlp``, ``stage=dev``.
         custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
                         Custom objects are currently serialized with cloudpickle, but this implementation is subject to change.
@@ -171,12 +171,12 @@ def save_model(
         return bento_model
 
 
-def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    class EasyOCRRunnable(bentoml.Runnable):
+    class EasyOCRRunnable(bentoml.legacy.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 

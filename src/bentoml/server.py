@@ -98,7 +98,7 @@ class Server(ABC, t.Generic[ClientType]):
         elif isinstance(servable, Service):
             if not servable.is_service_importable():
                 raise UnservableException(
-                    "Cannot use 'bentoml.Service' as a server if it is defined in interactive session or Jupyter Notebooks."
+                    "Cannot use 'bentoml.legacy.Service' as a server if it is defined in interactive session or Jupyter Notebooks."
                 )
             bento_str, working_dir = servable.get_service_import_origin()
         elif not isinstance(servable, str):

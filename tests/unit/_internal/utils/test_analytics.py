@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch
     from prometheus_client.metrics_core import Metric
 
-    from bentoml import Service
+    from bentoml.legacy import Service
 
 SCHEMA = Schema(
     {
@@ -182,7 +182,7 @@ def test_track_serve_init_no_bento(
 
     with caplog.at_level(logging.INFO):
         analytics.usage_stats._track_serve_init(  # type: ignore (private warning)
-            bentoml.Service("test"),
+            bentoml.legacy.Service("test"),
             production=False,
             serve_info=analytics.usage_stats.get_serve_info(),
             serve_kind="http",

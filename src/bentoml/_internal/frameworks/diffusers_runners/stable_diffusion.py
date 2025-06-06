@@ -51,7 +51,7 @@ def create_runner(
     textual_inversions: (
         TextualInversionOptionType | list[TextualInversionOptionType] | None
     ) = None,
-) -> bentoml.Runner:
+) -> bentoml.legacy.Runner:
     if isinstance(pipeline_class, str):
         pipeline_class = resolve_pipeline_class(pipeline_class, PIPELINE_MAPPING)
 

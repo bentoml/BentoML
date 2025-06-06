@@ -78,7 +78,9 @@ def get_valid_service_name(user_provided_svc_name: str) -> str:
     return lower_name
 
 
-@deprecated("bentoml.Service", suggestion="Please upgrade to @bentoml.service().")
+@deprecated(
+    "bentoml.legacy.Service", suggestion="Please upgrade to @bentoml.service()."
+)
 @attr.define(frozen=False, init=False)
 class Service:
     """The service definition is the manifestation of the Service Oriented Architecture
@@ -134,7 +136,7 @@ class Service:
 
     def __reduce__(self):
         """
-        Make bentoml.Service pickle serializable
+        Make bentoml.legacy.Service pickle serializable
         """
         import fs
 
@@ -203,7 +205,7 @@ class Service:
         runners: list[AbstractRunner] | None = None,
         models: list[Model] | None = None,
     ):
-        """Service definition itself. Runners and models can be optionally pass into a ``bentoml.Service``.
+        """Service definition itself. Runners and models can be optionally pass into a ``bentoml.legacy.Service``.
 
         Args:
             name: name of the service
@@ -217,7 +219,7 @@ class Service:
             runner_names: t.Set[str] = set()
             for r in runners:
                 assert isinstance(r, AbstractRunner), (
-                    f'Service runners list can only contain bentoml.Runner instances, type "{type(r)}" found.'
+                    f'Service runners list can only contain bentoml.legacy.Runner instances, type "{type(r)}" found.'
                 )
 
                 if r.name in runner_names:
@@ -258,12 +260,13 @@ class Service:
                     import_module = sys.modules["__main__"].__file__
                 else:
                     raise BentoMLException(
-                        "Failed to get service import origin, bentoml.Service object defined interactively in console or notebook is not supported"
+                        "Failed to get service import origin, bentoml.legacy.Service object defined interactively"
+                        " in console or notebook is not supported"
                     )
 
             if self._caller_module not in sys.modules:
                 raise BentoMLException(
-                    "Failed to get service import origin, bentoml.Service object must be defined in a module"
+                    "Failed to get service import origin, bentoml.legacy.Service object must be defined in a module"
                 )
 
             for name, value in vars(sys.modules[self._caller_module]).items():
@@ -273,7 +276,7 @@ class Service:
 
             if not self._import_str:
                 raise BentoMLException(
-                    "Failed to get service import origin, bentoml.Service object must be assigned to a variable at module level"
+                    "Failed to get service import origin, bentoml.legacy.Service object must be assigned to a variable at module level"
                 )
 
         assert self._working_dir is not None

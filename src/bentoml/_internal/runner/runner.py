@@ -199,7 +199,7 @@ class Runner(AbstractRunner):
             method_configs: A dictionary per method config for this given Runner signatures.
 
         Returns:
-            :obj:`bentoml.Runner`: A Runner instance.
+            :obj:`bentoml.legacy.Runner`: A Runner instance.
         """
 
         if name is None:

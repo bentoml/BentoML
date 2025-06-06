@@ -638,7 +638,7 @@ def save_model(
         return bento_model
 
 
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
@@ -699,7 +699,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
             "Try using `bento_model.with_options(pipeline_class=diffusers.StableDiffusionPipeline) to specify the pipeline's class"
         )
 
-    class DiffusersRunnable(bentoml.Runnable):
+    class DiffusersRunnable(bentoml.legacy.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 
@@ -742,7 +742,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.Runnable]:
                 load_pretrained_extra_kwargs=load_pretrained_extra_kwargs,
             )
 
-        @bentoml.Runnable.method(batchable=False)
+        @bentoml.legacy.Runnable.method(batchable=False)
         def _replace_scheduler(self, scheduler_txt: str):
             try:
                 scheduler_cls = _str2cls(scheduler_txt)

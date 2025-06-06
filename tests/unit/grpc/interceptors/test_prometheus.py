@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     import grpc
     from google.protobuf import wrappers_pb2
 
-    from bentoml import Service
+    from bentoml.legacy import Service
 else:
     wrappers_pb2 = LazyLoader("wrappers_pb2", globals(), "google.protobuf.wrappers_pb2")
     grpc, aio = import_grpc()

@@ -42,7 +42,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
 
        runner = bentoml.tensorflow.get('gpt2:latest').to_runner()
 
-       svc = bentoml.Service("gpt2-generation", runners=[runner])
+       svc = bentoml.legacy.Service("gpt2-generation", runners=[runner])
 
        @svc.api(input=Text(), output=Text())
        def predict(text: str) -> str:

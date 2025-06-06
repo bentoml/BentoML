@@ -108,7 +108,7 @@ class Image(
 
        runner = bentoml.tensorflow.get('image-classification:latest').to_runner()
 
-       svc = bentoml.Service("vit-object-detection", runners=[runner])
+       svc = bentoml.legacy.Service("vit-object-detection", runners=[runner])
 
        @svc.api(input=Image(), output=NumpyNdarray(dtype="float32"))
        async def predict_image(f: Image) -> NDArray[Any]:

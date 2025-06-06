@@ -6,8 +6,8 @@ import bentoml
 from bentoml._internal.runner import Runner
 
 
-class DummyRunnable(bentoml.Runnable):
-    @bentoml.Runnable.method
+class DummyRunnable(bentoml.legacy.Runnable):
+    @bentoml.legacy.Runnable.method
     def dummy_runnable_method(self):
         pass
 

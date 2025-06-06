@@ -29,11 +29,12 @@ if TYPE_CHECKING:
     from bentoml._internal.runner.runner import RunnerMethod
     from bentoml._internal.types import FileLike
     from bentoml._internal.types import JSONSerializable
-    from bentoml.picklable_model import get_runnable
 
-    RunnableImpl = get_runnable(bentoml.picklable_model.get("py_model.case-1.grpc.e2e"))
+    RunnableImpl = bentoml.picklable_model.get_runnable(
+        bentoml.picklable_model.get("py_model.case-1.grpc.e2e")
+    )
 
-    class PythonModelRunner(bentoml.Runner):
+    class PythonModelRunner(bentoml.legacy.Runner):
         predict_file: RunnerMethod[RunnableImpl, [list[FileLike[bytes]]], list[bytes]]
         echo_json: RunnerMethod[
             RunnableImpl, [list[JSONSerializable]], list[JSONSerializable]
@@ -62,7 +63,7 @@ py_model = t.cast(
     bentoml.picklable_model.get("py_model.case-1.grpc.e2e").to_runner(),
 )
 
-svc = bentoml.Service(name="general_grpc_service.case-1.e2e", runners=[py_model])
+svc = bentoml.legacy.Service(name="general_grpc_service.case-1.e2e", runners=[py_model])
 
 svc.add_grpc_interceptor(AsyncContextInterceptor, usage="NLP", accuracy_score=0.8247)
 

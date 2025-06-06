@@ -9,7 +9,7 @@ Create a sample Servie in `hello.py`:
 import bentoml
 from bentoml.io import JSON
 
-svc = bentoml.Service("bento-server-test")
+svc = bentoml.legacy.Service("bento-server-test")
 
 @svc.api(input=JSON(), output=JSON())
 def predict(input_json):

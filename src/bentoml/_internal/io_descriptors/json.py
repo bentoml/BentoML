@@ -109,7 +109,7 @@ class JSON(
 
        iris_clf_runner = bentoml.sklearn.get("iris_clf_with_feature_names:latest").to_runner()
 
-       svc = bentoml.Service("iris_classifier_pydantic", runners=[iris_clf_runner])
+       svc = bentoml.legacy.Service("iris_classifier_pydantic", runners=[iris_clf_runner])
 
        class IrisFeatures(BaseModel):
            sepal_len: float

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from _pytest.logging import LogCaptureFixture
 
 
-svc = bentoml.Service(name="general_features_routes")
+svc = bentoml.legacy.Service(name="general_features_routes")
 
 
 @svc.api(input=Text(), output=Text(), route="api/v1/test_without_prefix")
@@ -34,7 +34,7 @@ def test_routes_prefix():
 
 
 def test_invalid_api_naming():
-    svc = bentoml.Service(name="invalid_api_naming")
+    svc = bentoml.legacy.Service(name="invalid_api_naming")
 
     @svc.api(name="similar", input=Text(), output=Text())
     def r1(obj: str) -> int:

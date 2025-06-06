@@ -213,7 +213,7 @@ extension to include documentation from docstring. For example, a `.rst` documen
 create a section made from a Python Class's docstring, using the following syntax:
 
 ```rst
-.. autoclass:: bentoml.Service
+.. autoclass:: bentoml.Bento
     :members: api
 ```
 

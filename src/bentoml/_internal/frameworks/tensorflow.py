@@ -9,10 +9,10 @@ from types import ModuleType
 from typing import TYPE_CHECKING
 
 import bentoml
-from bentoml import Runnable
 from bentoml import Tag
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
+from bentoml.legacy import Runnable
 from bentoml.models import ModelContext
 
 from ..models.model import ModelSignature

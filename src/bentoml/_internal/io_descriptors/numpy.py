@@ -188,7 +188,7 @@ class NumpyNdarray(
 
        runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
 
-       svc = bentoml.Service("iris-classifier", runners=[runner])
+       svc = bentoml.legacy.Service("iris-classifier", runners=[runner])
 
        @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
        def predict(input_arr: NDArray[Any]) -> NDArray[Any]:

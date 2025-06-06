@@ -92,7 +92,7 @@ def save_model(
         name: Name for given model instance. This should pass Python identifier check.
         model: Instance of model to be saved.
         signatures: Methods to expose for running inference on the target model. Signatures are
-                    used for creating Runner instances when serving model with bentoml.Service
+                    used for creating Runner instances when serving model with bentoml.legacy.Service
         labels: user-defined labels for managing models, e.g. team=nlp, stage=dev
         custom_objects: user-defined additional python objects to be saved alongside the model,
                         e.g. a tokenizer instance, preprocessor function, model configuration json
@@ -164,7 +164,7 @@ def get_runnable(bento_model: Model):
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    class SklearnRunnable(bentoml.Runnable):
+    class SklearnRunnable(bentoml.legacy.Runnable):
         SUPPORTED_RESOURCES = ("cpu",)
         SUPPORTS_CPU_MULTI_THREADING = True
 

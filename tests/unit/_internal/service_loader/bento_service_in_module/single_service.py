@@ -1,3 +1,3 @@
 import bentoml
 
-svc = bentoml.Service("test-bento-service-in-module-single")
+svc = bentoml.legacy.Service("test-bento-service-in-module-single")

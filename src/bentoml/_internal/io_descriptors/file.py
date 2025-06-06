@@ -67,7 +67,7 @@ class File(
 
        runner = bentoml.tensorflow.get('image-classification:latest').to_runner()
 
-       svc = bentoml.Service("vit-pdf-classifier", runners=[runner])
+       svc = bentoml.legacy.Service("vit-pdf-classifier", runners=[runner])
 
        @svc.api(input=File(), output=NumpyNdarray(dtype="float32"))
        async def predict(input_pdf: io.BytesIO[Any]) -> NDArray[Any]:

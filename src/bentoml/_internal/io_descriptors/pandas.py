@@ -225,7 +225,7 @@ class PandasDataFrame(
 
        runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
 
-       svc = bentoml.Service("iris-classifier", runners=[runner])
+       svc = bentoml.legacy.Service("iris-classifier", runners=[runner])
 
        @svc.api(input=input_spec, output=PandasDataFrame())
        def predict(input_arr):
@@ -800,7 +800,7 @@ class PandasSeries(
 
         runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
 
-        svc = bentoml.Service("iris-classifier", runners=[runner])
+        svc = bentoml.legacy.Service("iris-classifier", runners=[runner])
 
         @svc.api(input=PandasSeries(), output=PandasSeries())
         def predict(input_arr):

@@ -63,7 +63,7 @@ class Multipart(
 
        runner = bentoml.sklearn.get("sklearn_model_clf").to_runner()
 
-       svc = bentoml.Service("iris-classifier", runners=[runner])
+       svc = bentoml.legacy.Service("iris-classifier", runners=[runner])
 
        input_spec = Multipart(arr=NumpyNdarray(), annotations=JSON())
        output_spec = Multipart(output=NumpyNdarray(), result=JSON())

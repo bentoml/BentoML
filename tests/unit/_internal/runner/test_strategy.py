@@ -13,16 +13,16 @@ from bentoml._internal.runner import strategy
 from bentoml._internal.runner.strategy import DefaultStrategy
 
 
-class GPURunnable(bentoml.Runnable):
+class GPURunnable(bentoml.legacy.Runnable):
     SUPPORTED_RESOURCES = ("nvidia.com/gpu",)
 
 
-class SingleThreadRunnable(bentoml.Runnable):
+class SingleThreadRunnable(bentoml.legacy.Runnable):
     SUPPORTED_RESOURCES = ("cpu",)
     SUPPORTS_CPU_MULTI_THREADING = False
 
 
-class MultiThreadRunnable(bentoml.Runnable):
+class MultiThreadRunnable(bentoml.legacy.Runnable):
     SUPPORTED_RESOURCES = ("cpu",)
     SUPPORTS_CPU_MULTI_THREADING = True
 

@@ -965,7 +965,7 @@ def save_model(
                             }
 
                         See module `src/transformers/pipelines/__init__.py <https://github.com/huggingface/transformers/blob/main/src/transformers/pipelines/__init__.py#L129>`_ for more details.
-        signatures: Methods to expose for running inference on the target model. Signatures are used for creating :obj:`~bentoml.Runner` instances when serving model with :obj:`~bentoml.Service`
+        signatures: Methods to expose for running inference on the target model. Signatures are used for creating :obj:`~bentoml.legacy.Runner` instances when serving model with :obj:`~bentoml.legacy.Service`
         labels: User-defined labels for managing models, e.g. ``team=nlp``, ``stage=dev``.
         custom_objects: Custom objects to be saved with the model. An example is ``{"my-normalizer": normalizer}``.
 
@@ -1167,12 +1167,12 @@ def save_model(
             return bento_model
 
 
-def get_runnable(bento_model: bentoml.Model) -> type[bentoml.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    class TransformersRunnable(bentoml.Runnable):
+    class TransformersRunnable(bentoml.legacy.Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 

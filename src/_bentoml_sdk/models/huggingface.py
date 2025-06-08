@@ -64,9 +64,13 @@ class HuggingFaceModel(Model[str]):
         from huggingface_hub import snapshot_download
 
         if isinstance(base_path, FS):
-            base_path = base_path.getsyspath("/")
+            base_path_sys = base_path.getsyspath("/")
+        elif base_path is not None:
+            base_path_sys = str(base_path)
+        else:
+            base_path_sys = None
 
-        snapshot_path = snapshot_download(
+        snapshot_path_in_cache: str = snapshot_download(
             self.model_id,
             revision=self.revision,
             endpoint=self.endpoint,
@@ -74,16 +78,28 @@ class HuggingFaceModel(Model[str]):
             allow_patterns=self.include,
             ignore_patterns=self.exclude,
         )
-        if base_path is not None:
-            model_path = os.path.dirname(os.path.dirname(snapshot_path))
-            os.makedirs(base_path, exist_ok=True)
-            shutil.copytree(
-                model_path,
-                os.path.join(base_path, os.path.basename(model_path)),
-                symlinks=True,
-                dirs_exist_ok=True,
+
+        if base_path_sys is not None:
+            os.makedirs(base_path_sys, exist_ok=True)
+
+            destination_subdir_name: str = os.path.basename(snapshot_path_in_cache)
+            destination_path_for_copy: str = os.path.join(
+                base_path_sys, destination_subdir_name
             )
-        return snapshot_path
+
+            if os.path.abspath(snapshot_path_in_cache) != os.path.abspath(
+                destination_path_for_copy
+            ):
+                if os.path.exists(destination_path_for_copy):
+                    shutil.rmtree(destination_path_for_copy)
+                shutil.copytree(
+                    snapshot_path_in_cache,
+                    destination_path_for_copy,
+                    symlinks=True,
+                    dirs_exist_ok=False,
+                )
+
+        return snapshot_path_in_cache
 
     def to_info(self, alias: str | None = None) -> BentoModelInfo:
         model_id = self.model_id.lower()

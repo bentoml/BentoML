@@ -563,7 +563,7 @@ def runner_service(runner: Runner, **kwargs: Unpack[Config]) -> Service[t.Any]:
         if isinstance(gpus, str):
             gpus = int(gpus)
         if runner.workers_per_resource > 1:
-            config["workers"] = {}
+            config["workers"] = []
             workers_per_resource = int(runner.workers_per_resource)
             if isinstance(gpus, int):
                 gpus = list(range(gpus))

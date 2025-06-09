@@ -249,8 +249,8 @@ def build_serve_command() -> click.Group:
         - when specified, respect 'include' and 'exclude' under 'bentofile.yaml' as well as the '.bentoignore' file in '--working-dir', for code and file changes
         - all model store changes will also trigger a restart (new model saved or existing model removed)
         """
-        from bentoml import Service
         from bentoml._internal.service.loader import load
+        from bentoml.legacy import Service
 
         configure_server_logging()
         if working_dir is None:

@@ -32,7 +32,7 @@ except ImportError:  # pragma: no cover
 
 
 def _get_runner_deployment(
-    svc: bentoml.Service,
+    svc: bentoml.legacy.Service,
     runner_name: str,
     runner_deployment_config: dict[str, t.Any],
     enable_batching: bool,
@@ -86,7 +86,7 @@ def _get_runner_deployment(
     )
 
 
-def _get_service_deployment(svc: bentoml.Service, **kwargs) -> Deployment:
+def _get_service_deployment(svc: bentoml.legacy.Service, **kwargs: t.Any) -> Deployment:
     @serve.deployment(name=f"bento-svc-{svc.name}", **kwargs)
     class BentoDeployment:
         def __init__(self, **runner_deployments: dict[str, Deployment]):
@@ -118,7 +118,7 @@ def get_bento_runtime_env(bento_tag: str | Tag) -> RuntimeEnv:
 
 
 def _deploy_bento_runners(
-    svc: bentoml.Service,
+    svc: bentoml.legacy.Service,
     runners_deployment_config_map: dict | None = None,
     enable_batching: bool = False,
     batching_config: dict | None = None,
@@ -145,17 +145,17 @@ def _deploy_bento_runners(
 
 
 def deployment(
-    target: str | Tag | bentoml.Bento | bentoml.Service,
+    target: str | Tag | bentoml.Bento | bentoml.legacy.Service,
     service_deployment_config: dict[str, t.Any] | None = None,
     runners_deployment_config_map: dict[str, dict[str, t.Any]] | None = None,
     enable_batching: bool = False,
     batching_config: dict[str, dict[str, dict[str, float | int]]] | None = None,
 ) -> Deployment:
     """
-    Deploy a Bento or bentoml.Service to Ray
+    Deploy a Bento or bentoml.legacy.Service to Ray
 
     Args:
-        target: A bentoml.Service instance, Bento tag string, or Bento object
+        target: A bentoml.legacy.Service instance, Bento tag string, or Bento object
         service_deployment_config: Ray deployment config for BentoML API server
         runners_deployment_config_map: Ray deployment config map for all Runners
         enable_batching: Enable Ray Serve batching for RunnerMethods with batchable=True
@@ -207,7 +207,7 @@ def deployment(
     # TODO: validate Ray deployment options
     service_deployment_config = service_deployment_config or {}
 
-    svc = target if isinstance(target, bentoml.Service) else bentoml.load(target)
+    svc = target if isinstance(target, bentoml.legacy.Service) else bentoml.load(target)
 
     runner_deployments = _deploy_bento_runners(
         svc, runners_deployment_config_map, enable_batching, batching_config

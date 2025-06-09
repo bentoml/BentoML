@@ -100,7 +100,7 @@ class CustomDescriptor(IODescriptor[str]):
 
 
 def test_custom_io_descriptor():
-    svc = bentoml.Service("test")
+    svc = bentoml.legacy.Service("test")
 
     @svc.api(input=CustomDescriptor(), output=CustomDescriptor())
     def descriptor_test_api(inp):

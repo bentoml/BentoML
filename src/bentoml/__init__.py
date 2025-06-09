@@ -32,11 +32,6 @@ MODULE_ATTRS = {
     "server_context": "._internal.context:server_context",
     "Model": "._internal.models:Model",
     "monitor": "._internal.monitoring:monitor",
-    "Resource": "._internal.resource:Resource",
-    "Runnable": "._internal.runner:Runnable",
-    "Runner": "._internal.runner:Runner",
-    "Strategy": "._internal.runner.strategy:Strategy",
-    "Service": "._internal.service:Service",
     "Tag": "._internal.tag:Tag",
     "load": "._internal.service.loader:load",
     "Cookie": "._internal.utils.http:Cookie",
@@ -50,9 +45,6 @@ MODULE_ATTRS = {
     "pull": ".bentos:pull",
     "push": ".bentos:push",
     "serve": ".bentos:serve",
-    # Legacy APIs
-    "HTTPServer": ".server:HTTPServer",
-    "GrpcServer": ".server:GrpcServer",
     # New SDK
     "service": "_bentoml_sdk:service",
     "runner_service": "_bentoml_sdk:runner_service",
@@ -83,6 +75,7 @@ if TYPE_CHECKING:
     from _bentoml_impl.frameworks import xgboost
 
     from . import bentos
+    from . import legacy
 
     # BentoML built-in types
     from ._internal.bento import Bento
@@ -94,11 +87,6 @@ if TYPE_CHECKING:
     from ._internal.context import server_context
     from ._internal.models import Model
     from ._internal.monitoring import monitor
-    from ._internal.resource import Resource
-    from ._internal.runner import Runnable
-    from ._internal.runner import Runner
-    from ._internal.runner.strategy import Strategy
-    from ._internal.service import Service
     from ._internal.service.loader import load
     from ._internal.tag import Tag
     from ._internal.utils.args import use_arguments
@@ -176,6 +164,7 @@ else:
     FrameworkImporter.install()
 
     bentos = _LazyLoader("bentoml.bentos", globals(), "bentoml.bentos")
+    legacy = _LazyLoader("bentoml.legacy", globals(), "bentoml.legacy")
 
     # ML Frameworks
     catboost = _LazyLoader(
@@ -301,22 +290,33 @@ else:
     del _LazyLoader, FrameworkImporter
 
     def __getattr__(name: str) -> Any:
+        import bentoml.legacy as legacy
+
         if name in MODULE_ATTRS:
             from importlib import import_module
 
             module_name, attr_name = MODULE_ATTRS[name].split(":")
             module = import_module(module_name, __package__)
             return getattr(module, attr_name)
-        raise AttributeError(f"module {__name__} has no attribute {name}")
+        elif name in legacy.__all__:
+            from ._internal.utils import warn_deprecated
+
+            warn_deprecated(
+                f"`bentoml.{name}` is moved to `bentoml.legacy.{name}` "
+                "and will be removed in a future version.",
+            )
+            return getattr(legacy, name)
+        else:
+            raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 __all__ = [
     "__version__",
     "Context",
     "Cookie",
-    "Service",
     "bentos",
     "models",
+    "legacy",
     "batch",
     "metrics",
     "container",
@@ -326,8 +326,6 @@ __all__ = [
     "io",
     "Tag",
     "Model",
-    "Runner",
-    "Runnable",
     "monitoring",
     "BentoCloudClient",  # BentoCloud REST API Client
     # bento APIs
@@ -374,8 +372,6 @@ __all__ = [
     "load_config",
     "save_config",
     "set_serialization_strategy",
-    "Strategy",
-    "Resource",
     # new SDK
     "service",
     "runner_service",

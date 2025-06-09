@@ -73,7 +73,7 @@ class _OpenAPIMeta:
 class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
     """
     IODescriptor describes the input/output data format of an InferenceAPI defined
-    in a :code:`bentoml.Service`. This is an abstract base class for extending new HTTP
+    in a :code:`bentoml.legacy.Service`. This is an abstract base class for extending new HTTP
     endpoint IO descriptor types in BentoServer.
     """
 

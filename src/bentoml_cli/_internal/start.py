@@ -150,8 +150,8 @@ def build_start_command() -> click.Group:
         """
         Start a HTTP API server standalone. This will be used inside Yatai.
         """
-        from bentoml import Service
         from bentoml._internal.service.loader import load
+        from bentoml.legacy import Service
 
         if working_dir is None:
             if os.path.isdir(os.path.expanduser(bento)):

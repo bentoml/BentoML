@@ -150,18 +150,20 @@ def test_service_init_checks():
         name="invalid"
     )
     with pytest.raises(ValueError) as excinfo:
-        _ = bentoml.Service(name="duplicates_runners", runners=[py_model1, py_model2])
+        _ = bentoml.legacy.Service(
+            name="duplicates_runners", runners=[py_model1, py_model2]
+        )
     assert "Found duplicate name" in str(excinfo.value)
 
     with pytest.raises(AssertionError) as excinfo:
-        _ = bentoml.Service(name="invalid_model_type", models=[1])
+        _ = bentoml.legacy.Service(name="invalid_model_type", models=[1])
     assert "Service models list can only" in str(excinfo.value)
 
 
 def test_dunder_string():
     runner = bentoml.picklable_model.get("py_model.case-1.http.e2e").to_runner()
 
-    svc = bentoml.Service(name="dunder_string", runners=[runner])
+    svc = bentoml.legacy.Service(name="dunder_string", runners=[runner])
 
     assert (
         str(svc)

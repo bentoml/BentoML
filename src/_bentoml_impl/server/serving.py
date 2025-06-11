@@ -9,6 +9,7 @@ import pathlib
 import platform
 import shutil
 import socket
+import sys
 import tempfile
 import typing as t
 
@@ -17,6 +18,8 @@ from simple_di import inject
 
 from _bentoml_sdk import Service
 from bentoml._internal.container import BentoMLContainer
+from bentoml._internal.utils import expand_envs
+from bentoml._internal.utils import reserve_free_port
 from bentoml._internal.utils.circus import Server
 from bentoml.exceptions import BentoMLConfigException
 
@@ -64,8 +67,6 @@ elif WINDOWS or IS_WSL:
     ) -> tuple[str, CircusSocket]:
         from circus.sockets import CircusSocket
 
-        from bentoml._internal.utils import reserve_free_port
-
         runner_port = port_stack.enter_context(reserve_free_port())
         runner_host = "127.0.0.1"
 
@@ -103,30 +104,49 @@ def create_dependency_watcher(
     working_dir: str | None = None,
     env: dict[str, str] | None = None,
     bento_args: dict[str, t.Any] = Provide[BentoMLContainer.bento_arguments],
-) -> tuple[Watcher, CircusSocket, str]:
+) -> tuple[Watcher, CircusSocket | None, str]:
     from bentoml.serving import create_watcher
 
-    num_workers, worker_envs = scheduler.get_worker_env(svc)
-    uri, socket = _get_server_socket(svc, uds_path, port_stack, backlog)
-    args = [
-        "-m",
-        _SERVICE_WORKER_SCRIPT,
-        bento_identifier,
-        "--service-name",
-        svc.name,
-        "--fd",
-        f"$(circus.sockets.{svc.name})",
-        "--worker-id",
-        "$(CIRCUS.WID)",
-        "--args",
-        json.dumps(bento_args),
-    ]
+    if svc.cmd is not None:
+        num_workers = 1  # Custom command only runs a single worker
+        svc_port = port_stack.enter_context(reserve_free_port())
+        if env is None:
+            env = {**os.environ, "PORT": str(svc_port)}
+        else:
+            env = {**os.environ, **env, "PORT": str(svc_port)}
+        uri = f"http://127.0.0.1:{svc_port}"
+        socket = None
+        working_dir = svc.working_dir
+        logger.info(
+            "Starting with custom command for dependency service(%s): %s",
+            svc.name,
+            svc.cmd,
+        )
+        cmd, *args = [expand_envs(p, env) for p in svc.cmd]
+    else:
+        num_workers, worker_envs = scheduler.get_worker_env(svc)
+        uri, socket = _get_server_socket(svc, uds_path, port_stack, backlog)
+        args = [
+            "-m",
+            _SERVICE_WORKER_SCRIPT,
+            bento_identifier,
+            "--service-name",
+            svc.name,
+            "--fd",
+            f"$(circus.sockets.{svc.name})",
+            "--worker-id",
+            "$(CIRCUS.WID)",
+            "--args",
+            json.dumps(bento_args),
+        ]
+        cmd = sys.executable
 
-    if worker_envs:
-        args.extend(["--worker-env", json.dumps(worker_envs)])
+        if worker_envs:
+            args.extend(["--worker-env", json.dumps(worker_envs)])
 
     watcher = create_watcher(
         name=f"service_{svc.name}",
+        cmd=cmd,
         args=args,
         numprocesses=num_workers,
         working_dir=working_dir,
@@ -269,7 +289,8 @@ def serve_http(
                         env={k: str(v) for k, v in dependency_env.items()},
                     )
                     watchers.append(new_watcher)
-                    sockets.append(new_socket)
+                    if new_socket:
+                        sockets.append(new_socket)
                     dependency_map[name] = uri
                     server_on_deployment(dep_svc)
                 # reserve one more to avoid conflicts
@@ -287,62 +308,78 @@ def serve_http(
                 )
         except ValueError as e:
             raise BentoMLConfigException(f"Invalid host IP address: {host}") from e
-
-        sockets.append(
-            CircusSocket(
-                name=API_SERVER_NAME,
-                host=host,
-                port=port,
-                family=family,
-                backlog=backlog,
+        if svc.cmd is not None:
+            logger.info("Starting with custom command for entry service: %s", svc.cmd)
+            num_workers = 1  # Custom command only runs a single worker
+            env.update(os.environ)
+            env.update(
+                {
+                    "PORT": str(port),
+                    "BENTOML_HOST": host,
+                    "BENTOML_PORT": str(port),
+                }
             )
-        )
-        if BentoMLContainer.ssl.enabled.get() and not ssl_certfile:
-            raise BentoMLConfigException("ssl_certfile is required when ssl is enabled")
+            server_cmd, *server_args = [expand_envs(p, env) for p in svc.cmd]
+            bento_path = pathlib.Path(svc.working_dir)
+        else:
+            sockets.append(
+                CircusSocket(
+                    name=API_SERVER_NAME,
+                    host=host,
+                    port=port,
+                    family=family,
+                    backlog=backlog,
+                )
+            )
+            if BentoMLContainer.ssl.enabled.get() and not ssl_certfile:
+                raise BentoMLConfigException(
+                    "ssl_certfile is required when ssl is enabled"
+                )
 
-        ssl_args = construct_ssl_args(
-            ssl_certfile=ssl_certfile,
-            ssl_keyfile=ssl_keyfile,
-            ssl_keyfile_password=ssl_keyfile_password,
-            ssl_version=ssl_version,
-            ssl_cert_reqs=ssl_cert_reqs,
-            ssl_ca_certs=ssl_ca_certs,
-            ssl_ciphers=ssl_ciphers,
-        )
-        timeouts_args = construct_timeouts_args(
-            timeout_keep_alive=timeout_keep_alive,
-            timeout_graceful_shutdown=timeout_graceful_shutdown,
-        )
-        timeout_args = ["--timeout", str(timeout)] if timeout else []
-        bento_args = BentoMLContainer.bento_arguments.get()
-
-        server_args = [
-            "-m",
-            _SERVICE_WORKER_SCRIPT,
-            bento_identifier,
-            "--fd",
-            f"$(circus.sockets.{API_SERVER_NAME})",
-            "--service-name",
-            svc.name,
-            "--backlog",
-            str(backlog),
-            "--worker-id",
-            "$(CIRCUS.WID)",
-            "--args",
-            json.dumps(bento_args),
-            *ssl_args,
-            *timeouts_args,
-            *timeout_args,
-        ]
-        if worker_envs:
-            server_args.extend(["--worker-env", json.dumps(worker_envs)])
-        if development_mode:
-            server_args.append("--development-mode")
+            ssl_args = construct_ssl_args(
+                ssl_certfile=ssl_certfile,
+                ssl_keyfile=ssl_keyfile,
+                ssl_keyfile_password=ssl_keyfile_password,
+                ssl_version=ssl_version,
+                ssl_cert_reqs=ssl_cert_reqs,
+                ssl_ca_certs=ssl_ca_certs,
+                ssl_ciphers=ssl_ciphers,
+            )
+            timeouts_args = construct_timeouts_args(
+                timeout_keep_alive=timeout_keep_alive,
+                timeout_graceful_shutdown=timeout_graceful_shutdown,
+            )
+            timeout_args = ["--timeout", str(timeout)] if timeout else []
+            bento_args = BentoMLContainer.bento_arguments.get()
+            server_cmd = sys.executable
+            server_args = [
+                "-m",
+                _SERVICE_WORKER_SCRIPT,
+                bento_identifier,
+                "--fd",
+                f"$(circus.sockets.{API_SERVER_NAME})",
+                "--service-name",
+                svc.name,
+                "--backlog",
+                str(backlog),
+                "--worker-id",
+                "$(CIRCUS.WID)",
+                "--args",
+                json.dumps(bento_args),
+                *ssl_args,
+                *timeouts_args,
+                *timeout_args,
+            ]
+            if worker_envs:
+                server_args.extend(["--worker-env", json.dumps(worker_envs)])
+            if development_mode:
+                server_args.append("--development-mode")
 
         scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
         watchers.append(
             create_watcher(
                 name="service",
+                cmd=server_cmd,
                 args=server_args,
                 working_dir=str(bento_path.absolute()),
                 numprocesses=num_workers,

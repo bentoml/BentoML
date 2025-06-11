@@ -116,7 +116,7 @@ def read_dotenv_callback(
     params: Parameter,
     value: tuple[str, ...],  # pylint: disable=unused-argument
 ) -> t.List[tuple[str, str]]:
-    from dotenv import dotenv_values
+    from bentoml._internal.utils.dotenv import parse_dotenv
 
     env_map: dict[str, str] = {}
 
@@ -124,7 +124,8 @@ def read_dotenv_callback(
         path = resolve_user_filepath(path, ctx=None)
         if not os.path.exists(path) or not os.path.isfile(path):
             raise click.BadParameter(f"Invalid file path: {path}")
-        values = {k: v for k, v in dotenv_values(path).items() if v is not None}
+        with open(path, "r") as f:
+            values = {k: v for k, v in parse_dotenv(f.read()).items() if v is not None}
         env_map.update(values)
     return list(env_map.items())
 

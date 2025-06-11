@@ -48,6 +48,7 @@ MODULE_ATTRS = {
     # New SDK
     "service": "_bentoml_sdk:service",
     "runner_service": "_bentoml_sdk:runner_service",
+    "Service": "_bentoml_sdk:Service",
     "api": "_bentoml_sdk:api",
     "task": "_bentoml_sdk:task",
     "depends": "_bentoml_sdk:depends",
@@ -144,6 +145,7 @@ if TYPE_CHECKING:
     from _bentoml_impl.client import SyncHTTPClient
     from _bentoml_impl.loader import importing
     from _bentoml_sdk import IODescriptor
+    from _bentoml_sdk import Service
     from _bentoml_sdk import api
     from _bentoml_sdk import asgi_app
     from _bentoml_sdk import depends
@@ -374,6 +376,7 @@ __all__ = [
     "set_serialization_strategy",
     # new SDK
     "service",
+    "Service",
     "runner_service",
     "api",
     "task",

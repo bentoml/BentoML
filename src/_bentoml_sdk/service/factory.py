@@ -38,7 +38,7 @@ from .config import ServiceConfig as Config
 
 logger = logging.getLogger("bentoml.serve")
 
-T = t.TypeVar("T", bound=object)
+T = t.TypeVar("T")
 
 if t.TYPE_CHECKING:
     from bentoml._internal import external_typing as ext
@@ -72,18 +72,23 @@ def convert_envs(envs: t.List[t.Dict[str, t.Any]]) -> t.List[BentoEnvSchema]:
     return [BentoEnvSchema(**env) for env in envs]
 
 
+class _DummyService:
+    pass
+
+
 @attrs.define
 class Service(t.Generic[T]):
     """A Bentoml service that can be served by BentoML server."""
 
-    config: Config
-    inner: type[T]
+    config: Config = attrs.field(factory=Config)
+    inner: type[T] = _DummyService
     image: t.Optional[Image] = None
     envs: t.List[BentoEnvSchema] = attrs.field(factory=list, converter=convert_envs)
     labels: t.Dict[str, str] = attrs.field(factory=dict)
-    bento: t.Optional[Bento] = attrs.field(init=False, default=None)
     models: list[Model[t.Any]] = attrs.field(factory=list)
-    apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict)
+    cmd: t.Optional[t.List[str]] = None
+    bento: t.Optional[Bento] = attrs.field(init=False, default=None)
+    apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict, init=False)
     dependencies: dict[str, Dependency[t.Any]] = attrs.field(factory=dict, init=False)
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
         factory=list, init=False
@@ -491,6 +496,8 @@ def service(
     image: Image | None = None,
     envs: list[dict[str, str]] | None = None,
     labels: dict[str, str] | None = None,
+    cmd: str | None = None,
+    service_class: type[Service] = Service,
     **kwargs: Unpack[Config],
 ) -> _ServiceDecorator: ...
 
@@ -502,6 +509,8 @@ def service(
     image: Image | None = None,
     envs: list[dict[str, str]] | None = None,
     labels: dict[str, str] | None = None,
+    cmd: str | None = None,
+    service_class: type[Service] = Service,
     **kwargs: Unpack[Config],
 ) -> t.Any:
     """Mark a class as a BentoML service.
@@ -519,12 +528,13 @@ def service(
     def decorator(inner: type[T]) -> Service[T]:
         if isinstance(inner, Service):
             raise TypeError("service() decorator can only be applied once")
-        return Service(
+        return service_class(
             config=config,
             inner=inner,
             image=image,
             envs=envs or [],
             labels=labels or {},
+            cmd=cmd,
         )
 
     return decorator(inner) if inner is not None else decorator

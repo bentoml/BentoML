@@ -5,7 +5,7 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:77cd3c12b54fdee57646534b5328ee9620f2ba248fe19775888dd59d4d1ad655"
+content_hash = "sha256:7fa486faff199f9ce196552500d3db98658891b6b77fa880cd3e72ae90ea3f07"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -3005,13 +3005,14 @@ files = [
 
 [[package]]
 name = "python-dotenv"
-version = "1.0.1"
-requires_python = ">=3.8"
+version = "1.1.0"
+requires_python = ">=3.9"
 summary = "Read key-value pairs from a .env file and set them as environment variables"
-groups = ["default", "docs"]
+groups = ["docs"]
+marker = "python_version < \"3.12\""
 files = [
-    {file = "python-dotenv-1.0.1.tar.gz", hash = "sha256:e324ee90a023d808f1959c46bcbc04446a10ced277783dc6ee09987c37ec10ca"},
-    {file = "python_dotenv-1.0.1-py3-none-any.whl", hash = "sha256:f7b63ef50f1b690dddf550d03497b66d609393b40b564ed0d674909a68ebf16a"},
+    {file = "python_dotenv-1.1.0-py3-none-any.whl", hash = "sha256:d7c01d9e2293916c18baf562d95698754b0dbbb5e74d457c45d4f6561fb9d55d"},
+    {file = "python_dotenv-1.1.0.tar.gz", hash = "sha256:41f90bc6f5f177fb41f53e87666db362025010eb28f60a01c9143bfa33a2b2d5"},
 ]
 
 [[package]]

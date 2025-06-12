@@ -496,8 +496,8 @@ def service(
     image: Image | None = None,
     envs: list[dict[str, str]] | None = None,
     labels: dict[str, str] | None = None,
-    cmd: str | None = None,
-    service_class: type[Service] = Service,
+    cmd: list[str] | None = None,
+    service_class: type[Service[T]] = Service,
     **kwargs: Unpack[Config],
 ) -> _ServiceDecorator: ...
 
@@ -509,8 +509,8 @@ def service(
     image: Image | None = None,
     envs: list[dict[str, str]] | None = None,
     labels: dict[str, str] | None = None,
-    cmd: str | None = None,
-    service_class: type[Service] = Service,
+    cmd: list[str] | None = None,
+    service_class: type[Service[T]] = Service,
     **kwargs: Unpack[Config],
 ) -> t.Any:
     """Mark a class as a BentoML service.

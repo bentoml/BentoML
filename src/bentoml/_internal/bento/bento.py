@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import shutil
 import typing as t
 from datetime import datetime
 from datetime import timezone
@@ -37,6 +36,7 @@ from ..types import PathType
 from ..utils import normalize_labels_value
 from ..utils.cattr import bentoml_cattr
 from ..utils.filesystem import copy_file_to_fs_folder
+from ..utils.filesystem import mirror_with_permissions
 from ..utils.uri import encode_path_for_uri
 from .build_config import BentoBuildConfig
 from .build_config import BentoEnvSchema
@@ -612,9 +612,7 @@ class Bento(StoreItem):
                         target_model_store=model_store,
                     )
                 self._model_store = None
-            shutil.copytree(
-                self._fs.getsyspath("/"), out_fs.getsyspath("/"), dirs_exist_ok=True
-            )
+            mirror_with_permissions(self._fs, out_fs, copy_if_newer=False)
             try:
                 out_fs.removetree("models")
             except fs.errors.ResourceNotFound:

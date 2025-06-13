@@ -11,9 +11,6 @@ from typing import TYPE_CHECKING
 import attr
 import fs
 import fs.errors
-import fs.mirror
-import fs.osfs
-import fs.walk
 import yaml
 from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn
@@ -39,6 +36,7 @@ from ..types import PathType
 from ..utils import normalize_labels_value
 from ..utils.cattr import bentoml_cattr
 from ..utils.filesystem import copy_file_to_fs_folder
+from ..utils.filesystem import mirror_with_permissions
 from ..utils.uri import encode_path_for_uri
 from .build_config import BentoBuildConfig
 from .build_config import BentoEnvSchema
@@ -270,7 +268,7 @@ class Bento(StoreItem):
         image: Image | None = None
         disable_image = "no_image" in enabled_features or is_legacy
 
-        if isinstance(svc, Service):
+        if is_legacy:
             # for < 1.2
             bento_name = (
                 build_config.name if build_config.name is not None else svc.name
@@ -285,6 +283,10 @@ class Bento(StoreItem):
             )
             build_config.envs.extend(svc.envs)
             build_config.labels.update(svc.labels)
+            if livez_endpoint := svc.config.get("endpoints", {}).get("livez"):
+                build_config.labels["livez_endpoint"] = livez_endpoint
+            if readyz_endpoint := svc.config.get("endpoints", {}).get("readyz"):
+                build_config.labels["readyz_endpoint"] = readyz_endpoint
             if svc.image is not None:
                 image = svc.image
         if not disable_image:
@@ -346,6 +348,11 @@ class Bento(StoreItem):
                             logger.warning("File size is larger than 10MiB: %s", path)
                         target_fs.makedirs(dir_path, recreate=True)
                         copy_file(ctx_fs, path, target_fs, path)
+                        # Copy executable bit from source to target
+                        src_file = ctx_fs.getsyspath(path)
+                        dst_file = target_fs.getsyspath(path)
+                        if (fmode := os.stat(src_file).st_mode) & 0o111:
+                            os.chmod(dst_file, fmode & 0o777)
             if image is None:
                 # NOTE: we need to generate both Python and Conda
                 # first to make sure we can generate the Dockerfile correctly.
@@ -605,7 +612,7 @@ class Bento(StoreItem):
                         target_model_store=model_store,
                     )
                 self._model_store = None
-            fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
+            mirror_with_permissions(self._fs, out_fs, copy_if_newer=False)
             try:
                 out_fs.removetree("models")
             except fs.errors.ResourceNotFound:

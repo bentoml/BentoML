@@ -153,3 +153,46 @@ def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
         return os.path.realpath(_path)
 
     raise FileNotFoundError(f"file {filepath} not found")
+
+
+def mirror_with_permissions(
+    src_fs: FS, dst_fs: FS, copy_if_newer: bool = True, preserve_time: bool = False
+) -> None:
+    """Mirror the contents of src_fs to dst_fs."""
+    import fs.mirror
+    from fs.osfs import OSFS
+    from fs.permissions import Permissions
+
+    if not isinstance(dst_fs, OSFS):
+        return fs.mirror.mirror(
+            src_fs, dst_fs, copy_if_newer=copy_if_newer, preserve_time=preserve_time
+        )
+
+    def copier(
+        src_fs: FS,
+        src_path: str,
+        dst_fs: FS,
+        dst_path: str,
+        preserve_time: bool = False,
+    ) -> None:
+        fs.copy.copy_file_internal(
+            src_fs,
+            src_path,
+            dst_fs,
+            dst_path,
+            preserve_time=preserve_time,
+        )
+        src_info = src_fs.getinfo(src_path, namespaces=["access"])
+        dst_sys_path = dst_fs.getsyspath(dst_path)
+        if (
+            src_mode := Permissions.get_mode(src_info.get("access", "permissions"))
+        ) & 0o111:
+            os.chmod(dst_sys_path, src_mode)
+
+    fs.mirror._mirror(
+        src_fs,
+        dst_fs,
+        copy_if_newer=copy_if_newer,
+        copy_file=copier,
+        preserve_time=preserve_time,
+    )

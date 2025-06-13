@@ -535,3 +535,12 @@ def deep_merge(base: t.Any, update: t.Any) -> dict[t.Any, t.Any]:
         else:
             base[k] = v
     return base
+
+
+def expand_envs(value: str, envs: t.Mapping[str, str] | None = None) -> str:
+    """Expand environment variables in a string."""
+    import string
+
+    if envs is None:
+        envs = os.environ
+    return string.Template(value).substitute(envs)

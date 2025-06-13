@@ -246,7 +246,6 @@ class ServiceConfig(TypedDict, total=False):
     service level (per replica) config
     """
 
-    name: str
     traffic: TrafficSchema
     backlog: Annotated[int, Ge(64)]
     max_runner_connections: Posint

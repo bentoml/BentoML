@@ -17,6 +17,37 @@ from typing_extensions import TypedDict
 
 Posint = Annotated[int, Gt(0)]
 Posfloat = Annotated[float, Gt(0.0)]
+GpuLiteralType = Literal[
+    "nvidia-backwell-gb200",
+    "nvidia-backwell-b100",
+    "nvidia-h200-141gb",
+    "nvidia-tesla-h100",
+    "nvidia-tesla-t4",
+    "nvidia-tesla-a100",
+    "nvidia-a100-80gb",
+    "nvidia-h100-80gb",
+    "nvidia-a10g",
+    "nvidia-l4",
+    "nvidia-tesla-v100",
+    "nvidia-tesla-p100",
+    "nvidia-tesla-k80",
+    "nvidia-tesla-p4",
+]
+TpuLiteralType = Literal[
+    "v4-2x2x1",
+    "v4-2x2x2",
+    "v4-2x2x4",
+    "v4-2x4x4",
+    "v5p-2x2x1",
+    "v5p-2x2x2",
+    "v5p-2x2x4",
+    "v5p-2x4x4",
+    "v5e-1x1",
+    "v5e-2x2",
+    "v5e-2x4",
+    "v5e-4x4",
+    "v5e-4x8",
+]
 
 
 class TrafficSchema(TypedDict, total=False):
@@ -61,37 +92,8 @@ class ResourceSchema(TypedDict, total=False):
     gpu type defined here is only a annotation, it will use as an recommendation choice of instance type when deploying this service to bentocloud
     gpu_type follows the naming convention of AWS EC2 GPU instances, GCP GPU instances etc.
     """
-    gpu_type: Literal[
-        "nvidia-backwell-gb200",
-        "nvidia-backwell-b100",
-        "nvidia-h200-141gb",
-        "nvidia-tesla-h100",
-        "nvidia-tesla-t4",
-        "nvidia-tesla-a100",
-        "nvidia-a100-80gb",
-        "nvidia-h100-80gb",
-        "nvidia-a10g",
-        "nvidia-l4",
-        "nvidia-tesla-v100",
-        "nvidia-tesla-p100",
-        "nvidia-tesla-k80",
-        "nvidia-tesla-p4",
-    ]
-    tpu_type: Literal[
-        "v4-2x2x1",
-        "v4-2x2x2",
-        "v4-2x2x4",
-        "v4-2x4x4",
-        "v5p-2x2x1",
-        "v5p-2x2x2",
-        "v5p-2x2x4",
-        "v5p-2x4x4",
-        "v5e-1x1",
-        "v5e-2x2",
-        "v5e-2x4",
-        "v5e-4x4",
-        "v5e-4x8",
-    ]
+    gpu_type: GpuLiteralType
+    tpu_type: TpuLiteralType
 
 
 WorkerSchema = Union[Posint, Literal["cpu_count"]]

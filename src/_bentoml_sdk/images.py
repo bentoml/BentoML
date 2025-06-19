@@ -115,8 +115,7 @@ class Image:
         with Path(file_path).open("rb") as f:
             pyproject_toml = tomllib.load(f)
         dependencies = pyproject_toml.get("project", {}).get("dependencies", {})
-        self.python_packages(*dependencies)
-        return self
+        return self.python_packages(*dependencies)
 
     def uv_lock(self) -> t.Self:
         self._uv_lock = True

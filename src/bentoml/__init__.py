@@ -52,6 +52,7 @@ MODULE_ATTRS = {
     "api": "_bentoml_sdk:api",
     "task": "_bentoml_sdk:task",
     "depends": "_bentoml_sdk:depends",
+    "Dependency": "_bentoml_sdk:Dependency",
     "on_shutdown": "_bentoml_sdk:on_shutdown",
     "on_startup": "_bentoml_sdk:on_startup",
     "on_deployment": "_bentoml_sdk:on_deployment",
@@ -144,6 +145,7 @@ if TYPE_CHECKING:
     from _bentoml_impl.client import AsyncHTTPClient
     from _bentoml_impl.client import SyncHTTPClient
     from _bentoml_impl.loader import importing
+    from _bentoml_sdk import Dependency
     from _bentoml_sdk import IODescriptor
     from _bentoml_sdk import Service
     from _bentoml_sdk import api
@@ -385,6 +387,7 @@ __all__ = [
     "on_startup",
     "on_deployment",
     "depends",
+    "Dependency",
     "IODescriptor",
     "validators",
     "Field",

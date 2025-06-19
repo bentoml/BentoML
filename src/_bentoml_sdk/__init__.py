@@ -17,6 +17,7 @@ if (ver := pkg_version_info("pydantic")) < (2,):
 from .decorators import api, on_shutdown, on_startup, asgi_app, on_deployment, task
 from .service import get_current_service
 from .service import depends
+from .service.dependency import Dependency
 from .service import Service, ServiceConfig
 from .service import service
 from .service import runner_service
@@ -38,6 +39,7 @@ __all__ = [
     "on_shutdown",
     "on_startup",
     "on_deployment",
+    "Dependency",
     "asgi_app",
     "mount_asgi_app",
     "depends",

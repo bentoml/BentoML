@@ -10,6 +10,7 @@ import attr
 from simple_di import Provide
 from simple_di import inject
 
+from ._internal.bento import Bento
 from ._internal.cloud.deployment import Deployment
 from ._internal.cloud.deployment import DeploymentConfigParameters
 from ._internal.cloud.schemas.modelschemas import EnvItemSchema
@@ -21,13 +22,15 @@ from .exceptions import BentoMLException
 if t.TYPE_CHECKING:
     from ._internal.cloud import BentoCloudClient
 
+BentoType = t.Union[str, Tag, Bento]
+
 
 @t.overload
 def create(
     name: str | None = ...,
     path_context: str | None = ...,
     *,
-    bento: Tag | str | None = ...,
+    bento: BentoType | None = ...,
     cluster: str | None = ...,
     access_authorization: bool | None = ...,
     scaling_min: int | None = ...,
@@ -44,7 +47,7 @@ def create(
     name: str | None = ...,
     path_context: str | None = ...,
     *,
-    bento: Tag | str | None = ...,
+    bento: BentoType | None = ...,
     config_file: str | None = ...,
 ) -> Deployment: ...
 
@@ -54,7 +57,7 @@ def create(
     name: str | None = ...,
     path_context: str | None = ...,
     *,
-    bento: Tag | str | None = ...,
+    bento: BentoType | None = ...,
     config_dict: dict[str, t.Any] | None = ...,
 ) -> Deployment: ...
 
@@ -64,7 +67,7 @@ def create(
     name: str | None = None,
     path_context: str | None = None,
     *,
-    bento: Tag | str | None = None,
+    bento: BentoType | None = None,
     cluster: str | None = None,
     access_authorization: bool | None = None,
     scaling_min: int | None = None,
@@ -85,7 +88,7 @@ def create(
     config_params = DeploymentConfigParameters(
         name=name,
         path_context=path_context,
-        bento=bento,
+        bento=bento.tag if isinstance(bento, Bento) else bento,
         cluster=cluster,
         access_authorization=access_authorization,
         scaling_max=scaling_max,
@@ -120,7 +123,7 @@ def update(
     context: str | None = ...,
     cluster: str | None = ...,
     *,
-    bento: Tag | str | None = ...,
+    bento: BentoType | None = ...,
     access_authorization: bool | None = ...,
     scaling_min: int | None = ...,
     scaling_max: int | None = ...,
@@ -139,7 +142,7 @@ def update(
     context: str | None = ...,
     cluster: str | None = None,
     *,
-    bento: Tag | str | None = ...,
+    bento: BentoType | None = ...,
     config_file: str | None = ...,
 ) -> Deployment: ...
 
@@ -151,7 +154,7 @@ def update(
     context: str | None = ...,
     cluster: str | None = None,
     *,
-    bento: Tag | str | None = ...,
+    bento: BentoType | None = ...,
     config_dict: dict[str, t.Any] | None = ...,
 ) -> Deployment: ...
 
@@ -162,7 +165,7 @@ def update(
     path_context: str | None = None,
     cluster: str | None = None,
     *,
-    bento: Tag | str | None = None,
+    bento: BentoType | None = None,
     access_authorization: bool | None = None,
     scaling_min: int | None = None,
     scaling_max: int | None = None,
@@ -183,7 +186,7 @@ def update(
     config_params = DeploymentConfigParameters(
         name=name,
         path_context=path_context,
-        bento=bento,
+        bento=bento.tag if isinstance(bento, Bento) else bento,
         cluster=cluster,
         access_authorization=access_authorization,
         scaling_max=scaling_max,
@@ -241,7 +244,7 @@ def apply(
     cluster: str | None = None,
     path_context: str | None = None,
     *,
-    bento: Tag | str | None = None,
+    bento: BentoType | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
@@ -249,7 +252,7 @@ def apply(
     config_params = DeploymentConfigParameters(
         name=name,
         path_context=path_context,
-        bento=bento,
+        bento=bento.tag if isinstance(bento, Bento) else bento,
         cluster=cluster,
         config_dict=config_dict,
         config_file=config_file,

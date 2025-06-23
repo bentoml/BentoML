@@ -283,7 +283,7 @@ def _load_bento(
     bento: Bento, reload: bool = False, standalone_build: bool = False
 ) -> AnyService:
     # Use Bento's user project path as working directory when importing the service
-    set_arguments(**bento.info.args)
+    set_arguments(bento.info.args)
     working_dir = bento.path_of(BENTO_PROJECT_DIR_NAME)
 
     model_store = BentoMLContainer.model_store.get()

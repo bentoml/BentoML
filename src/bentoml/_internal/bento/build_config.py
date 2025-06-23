@@ -23,7 +23,6 @@ from ..configuration import clean_bentoml_version
 from ..configuration import get_bentoml_requirement
 from ..configuration import get_debug_mode
 from ..configuration import get_quiet_mode
-from ..configuration.containers import BentoMLContainer
 from ..container import generate_containerfile
 from ..container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
 from ..container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
@@ -888,7 +887,7 @@ class BentoBuildConfig:
         if self.args:
             # Merge command line args with the ones in the config file
             # and the command line args take precedence
-            set_arguments(**(self.args | BentoMLContainer.bento_arguments.get()))
+            set_arguments(self.args, override=False)
 
     def with_defaults(self) -> FilledBentoBuildConfig:
         """

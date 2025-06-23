@@ -503,14 +503,39 @@ def set_build_args(ctx: Context, param: Parameter, value: str | tuple[str]) -> N
                 )
             arguments[key] = val
 
-    set_arguments(**arguments)
+    set_arguments(arguments, override=False)
 
 
-build_args_option = click.option(
-    "--arg",
-    multiple=True,
-    help="Bento arguments in the form of key1=value1[,key2=value2...] pairs, can be specified multiple times",
-    expose_value=False,
-    metavar="KEY=VALUE",
-    callback=set_build_args,
-)
+def set_build_args_from_file(ctx: Context, param: Parameter, value: str) -> None:
+    import yaml
+
+    from bentoml._internal.utils.args import set_arguments
+
+    if not value:
+        return
+
+    with open(value) as f:
+        try:
+            data = yaml.safe_load(f)
+        except yaml.YAMLError as e:
+            raise click.BadParameter(f"Invalid YAML file: {value}") from e
+    set_arguments(data, override=False)
+
+
+def build_args_option(f: t.Callable[..., t.Any]):
+    return click.option(
+        "--arg",
+        multiple=True,
+        help="Bento arguments in the form of key1=value1[,key2=value2...] pairs, can be specified multiple times",
+        expose_value=False,
+        metavar="KEY=VALUE",
+        callback=set_build_args,
+    )(
+        click.option(
+            "--arg-file",
+            type=click.Path(exists=True, dir_okay=False),
+            help="Path to a YAML file containing Bento arguments.",
+            expose_value=False,
+            callback=set_build_args_from_file,
+        )(f)
+    )

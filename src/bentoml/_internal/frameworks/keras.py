@@ -7,6 +7,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING
 
 import attr
+from packaging import version
 
 import bentoml
 from bentoml import Tag
@@ -269,7 +270,7 @@ def save_model(
         metadata=metadata,
         signatures=signatures,
     ) as bento_model:
-        if keras.__version__ >= "3.4.0":
+        if version.parse(keras.__version__) >= version.parse("3.4.0"):
             model.save(
                 bento_model.path,
                 zipped=False,

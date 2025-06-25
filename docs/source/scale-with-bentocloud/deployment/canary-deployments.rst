@@ -20,7 +20,7 @@ Canary Deployments on BentoCloud help mitigate these risks by enabling you to:
 How to use canary Deployments
 -----------------------------
 
-1. On the **Configuration** page, toggle on **Canary** mode when creating or updating a Deployment.
+1. On the **Configuration** page, expand **Advanced Options** and toggle on **Canary** mode when creating or updating a Deployment.
 
    .. image:: ../../_static/img/bentocloud/how-to/canary-deployments/canary-config.png
       :alt: Enable canary model on BentoCloud
@@ -55,7 +55,7 @@ How to use canary Deployments
 
    - Bento v1: 10%
    - Bento v2: 30%
-   - Remaining 60% will go to the default Bento version.
+   - Remaining 60% will go to the main Bento version.
 
    .. note::
 

@@ -1120,6 +1120,10 @@ class DeploymentAPI:
         # fix scaling
         for _, svc in config_struct.services.items():
             svc.scaling = cls._fix_scaling(svc.scaling)
+        if config_struct.canary is not None and config_struct.canary.versions is not None:
+            for _, version in config_struct.canary.versions.items():
+                for _, svc in version.services.items():
+                    svc.scaling = cls._fix_scaling(svc.scaling)
 
     @staticmethod
     def _convert_schema_to_update_schema(_schema: DeploymentSchema) -> dict[str, t.Any]:

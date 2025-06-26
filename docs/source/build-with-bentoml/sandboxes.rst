@@ -2,8 +2,8 @@
 Sandboxes
 =========
 
-.. important:: 
-    
+.. important::
+
    Sandbox is currently a **preview feature**. If you'd like early access, please `reach out to us <https://l.bentoml.com/join-slack>`_.
 
 Modern AI applications like agentic systems often generate and execute code autonomously. However, letting these agents use tools, write scripts, and make decisions without human review is risky. Consider these common scenarios:

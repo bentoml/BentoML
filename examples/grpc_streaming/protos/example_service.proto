@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package bentoml.example.grpc;
+
+// A simple service for demonstrating gRPC streaming.
+service SimpleStreamingService {
+  // Client sends a single message, server streams back multiple messages.
+  rpc Chat(ChatMessage) returns (stream ChatMessage) {}
+}
+
+// Message for chat communications.
+message ChatMessage {
+  string message_id = 1;
+  string text = 2;
+  int64 timestamp = 3;
+}

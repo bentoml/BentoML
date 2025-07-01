@@ -84,7 +84,7 @@ def create(
     from ._internal.utils.args import set_arguments
 
     if args is not None:
-        set_arguments(**args)
+        set_arguments(args)
     config_params = DeploymentConfigParameters(
         name=name,
         path_context=path_context,

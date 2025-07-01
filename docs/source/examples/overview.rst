@@ -9,10 +9,9 @@ LLMs
 
 Deploy an OpenAI-compatible LLM API service with BentoML and vLLM:
 
-- `DeepSeek R1 Distill of Llama 3.3 70B <https://github.com/bentoml/BentoVLLM/tree/main/deepseek-r1-distill-llama3.3-70b>`_
-- `Llama 3.2 11B Vision <https://github.com/bentoml/BentoVLLM/tree/main/llama3.2-11b-vision-instruct>`_
-- `Pixtral 12B <https://github.com/bentoml/BentoVLLM/tree/main/pixtral-12b-2409>`_
-- `Mistral Small 24B <https://github.com/bentoml/BentoVLLM/tree/main/mistral-small-24b-instruct-2501>`_
+- `DeepSeek R1 Distill of Llama 3.3 70B <https://github.com/bentoml/BentoVLLM/tree/main/deepseek-r1-llama3.3-70b>`_
+- `Llama 4 Scout <https://github.com/bentoml/BentoVLLM/tree/main/llama4-17b-scout-instruct>`_
+- `Mistral Small 24B <https://github.com/bentoml/BentoVLLM/tree/main/mistral-small-3.1-24b-instruct-2503>`_
 - Check out the `BentoVLLM project <https://github.com/bentoml/BentoVLLM/#featured-models>`_ to see more supported models.
 
 Customize your LLM inference runtime:

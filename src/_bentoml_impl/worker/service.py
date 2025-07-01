@@ -169,7 +169,7 @@ def main(
     from bentoml._internal.utils.args import set_arguments
 
     if args:
-        set_arguments(**json.loads(args))
+        set_arguments(json.loads(args))
 
     configure_server_logging()
     if runner_map:

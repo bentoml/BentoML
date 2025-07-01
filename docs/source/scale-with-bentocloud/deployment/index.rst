@@ -33,6 +33,12 @@ Read how-to guides to create and manage your Deployments on BentoCloud.
 
         Run inference with Deployments.
 
+    .. grid-item-card:: Create canary Deployments
+        :link: canary-deployments
+        :link-type: doc
+
+        Gradually roll out a new application version to a subset of users and monitor performance before wider release.
+
     .. grid-item-card:: Batch inference jobs
         :link: batch-inference-jobs
         :link-type: doc
@@ -54,5 +60,6 @@ Read how-to guides to create and manage your Deployments on BentoCloud.
     configure-deployments
     manage-deployments
     call-deployment-endpoints
+    canary-deployments
     batch-inference-jobs
     ci-cd-pipelines

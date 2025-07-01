@@ -80,6 +80,10 @@ Customize canary Deployments via a configuration file
 
 You can also configure canary Deployments programmatically using a separate file and then deploy it through the BentoML CLI or Python SDK. This is ideal when you need more fine-grained control, such as using different instance types, scaling policies, or environment variables for each canary version.
 
+.. note::
+
+   Canary Deployments via the CLI or Python SDK require **BentoML 1.4.17 or above**.
+
 Below is an example of a canary Deployment configuration file:
 
 .. code-block:: yaml

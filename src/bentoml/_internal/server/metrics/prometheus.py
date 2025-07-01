@@ -181,6 +181,7 @@ class PrometheusClient:
                 return float("inf")  # Default if parsing fails
             except (ValueError, TypeError):
                 return float("inf")
+
         # Rebuild the output with proper ordering
         result_lines = comment_lines.copy()
 

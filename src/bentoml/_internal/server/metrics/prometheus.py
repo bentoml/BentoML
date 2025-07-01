@@ -179,7 +179,7 @@ class PrometheusClient:
                         return float('inf')
                     return float(le_val)
                 return float('inf')  # Default if parsing fails
-            except:
+            except (ValueError, TypeError):
                 return float('inf')
         
         # Rebuild the output with proper ordering

@@ -143,8 +143,8 @@ Example usage:
         batch = bentoml.depends(ImageService)
 
         @bentoml.api
-        def generate(self, image: Path, threshold: float) -> Path:
-            result = self.batch.predict([BatchInput(image=image, threshold=threshold)])
+        async def generate(self, image: Path, threshold: float) -> Path:
+            result = await self.batch.to_async.predict([BatchInput(image=image, threshold=threshold)])
             return result[0]
 
 In the code snippet:

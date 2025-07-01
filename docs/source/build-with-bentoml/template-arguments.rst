@@ -70,6 +70,9 @@ After setting the template arguments, you can supply their values dynamically th
    bentoml deploy --arg model_name=deepseek-ai/DeepSeek-V3
    bentoml deployment update <deployment_name> --arg model_tag=$MODEL_TAG --bento ./project/directory
 
+   # Define arguments in a YAML file and pass it
+   bentoml build --arg-file bento_args.yaml
+
 .. warning::
 
    If a required argument is missing, BentoML will raise an error when running the command.

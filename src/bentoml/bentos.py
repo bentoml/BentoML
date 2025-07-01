@@ -355,7 +355,7 @@ def build(
 
     """
     if args is not None:
-        set_arguments(**args)
+        set_arguments(args)
     build_config = BentoBuildConfig(
         service=service,
         name=name,
@@ -410,7 +410,7 @@ def build_bentofile(
         Bento: a Bento instance representing the materialized Bento saved in BentoStore
     """
     if args is not None:
-        set_arguments(**args)
+        set_arguments(args)
     if bentofile:
         try:
             bentofile = resolve_user_filepath(bentofile, None)
@@ -507,7 +507,7 @@ def serve(
     from ._internal.service import Service
 
     if args is not None:
-        set_arguments(**args)
+        set_arguments(args, override=False)
 
     if isinstance(bento, Bento):
         bento = str(bento.tag)

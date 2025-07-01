@@ -50,6 +50,43 @@ class DeploymentConfigSchema:
     labels: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
     secrets: t.Optional[t.List[str]] = attr.field(default=None)
     services: t.Dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
+    canary: t.Optional[DeploymentCanarySchema] = attr.field(default=None)
+
+
+@attr.define
+class DeploymentCanaryTargetSchema:
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    envs: t.Optional[t.List[EnvItemSchema]] = attr.field(default=None)
+    secrets: t.Optional[t.List[str]] = attr.field(default=None)
+    services: t.Dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
+
+
+@attr.define
+class DeploymentVersionSchema(DeploymentCanaryTargetSchema):
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    bento: t.Optional[str] = attr.field(default=None)
+    weight: t.Optional[int] = attr.field(default=None)
+
+
+@attr.define
+class DeploymentRoutingSchema:
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    route_type: t.Optional[t.Literal["random", "header", "query"]] = attr.field(
+        default=None
+    )
+    route_by: t.Optional[str] = attr.field(default=None)
+
+
+@attr.define
+class DeploymentCanarySchema(DeploymentRoutingSchema):
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    versions: t.Optional[t.Dict[str, DeploymentVersionSchema]] = attr.field(
+        default=None
+    )
 
 
 @attr.define(kw_only=True)

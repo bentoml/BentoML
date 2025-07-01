@@ -111,63 +111,63 @@ class PrometheusClient:
     def _fix_histogram_ordering(self, prometheus_output: bytes) -> bytes:
         """
         Fix histogram metric ordering to comply with Prometheus text format specification.
-        
+
         The Prometheus format requires histogram metrics to be grouped by metric name with:
         1. All _bucket metrics for a histogram (in ascending order of 'le' values)
-        2. Followed by _count metric  
+        2. Followed by _count metric
         3. Followed by _sum metric
-        
+
         Args:
             prometheus_output: Raw Prometheus format output
-            
+
         Returns:
             Properly ordered Prometheus format output
         """
-        lines = prometheus_output.decode('utf-8').strip().split('\n')
-        
+        lines = prometheus_output.decode("utf-8").strip().split("\n")
+
         # Separate comments/help lines from metric lines
         comment_lines = []
         metric_lines = []
-        
+
         for line in lines:
-            if line.startswith('#') or line.strip() == '':
+            if line.startswith("#") or line.strip() == "":
                 comment_lines.append(line)
             else:
                 metric_lines.append(line)
-        
+
         # Group metrics by base name (without _bucket, _count, _sum suffixes)
         metrics_by_base = {}
         non_histogram_metrics = []
-        
+
         for line in metric_lines:
             if not line.strip():
                 continue
-                
+
             # Extract metric name (everything before the first space or '{')
-            if '{' in line:
-                metric_name = line.split('{')[0]
+            if "{" in line:
+                metric_name = line.split("{")[0]
             else:
-                metric_name = line.split(' ')[0]
-            
+                metric_name = line.split(" ")[0]
+
             # Check if this is a histogram metric
-            if metric_name.endswith('_bucket'):
+            if metric_name.endswith("_bucket"):
                 base_name = metric_name[:-7]  # Remove '_bucket'
                 if base_name not in metrics_by_base:
-                    metrics_by_base[base_name] = {'bucket': [], 'count': [], 'sum': []}
-                metrics_by_base[base_name]['bucket'].append(line)
-            elif metric_name.endswith('_count'):
+                    metrics_by_base[base_name] = {"bucket": [], "count": [], "sum": []}
+                metrics_by_base[base_name]["bucket"].append(line)
+            elif metric_name.endswith("_count"):
                 base_name = metric_name[:-6]  # Remove '_count'
                 if base_name not in metrics_by_base:
-                    metrics_by_base[base_name] = {'bucket': [], 'count': [], 'sum': []}
-                metrics_by_base[base_name]['count'].append(line)
-            elif metric_name.endswith('_sum'):
+                    metrics_by_base[base_name] = {"bucket": [], "count": [], "sum": []}
+                metrics_by_base[base_name]["count"].append(line)
+            elif metric_name.endswith("_sum"):
                 base_name = metric_name[:-4]  # Remove '_sum'
                 if base_name not in metrics_by_base:
-                    metrics_by_base[base_name] = {'bucket': [], 'count': [], 'sum': []}
-                metrics_by_base[base_name]['sum'].append(line)
+                    metrics_by_base[base_name] = {"bucket": [], "count": [], "sum": []}
+                metrics_by_base[base_name]["sum"].append(line)
             else:
                 non_histogram_metrics.append(line)
-        
+
         # Function to extract 'le' value for bucket sorting
         def extract_le_value(bucket_line: str) -> float:
             try:
@@ -175,34 +175,33 @@ class PrometheusClient:
                 match = re.search(r'le="([^"]+)"', bucket_line)
                 if match:
                     le_val = match.group(1)
-                    if le_val == '+Inf':
-                        return float('inf')
+                    if le_val == "+Inf":
+                        return float("inf")
                     return float(le_val)
-                return float('inf')  # Default if parsing fails
+                return float("inf")  # Default if parsing fails
             except (ValueError, TypeError):
-                return float('inf')
-        
+                return float("inf")
         # Rebuild the output with proper ordering
         result_lines = comment_lines.copy()
-        
+
         # Add non-histogram metrics first
         result_lines.extend(non_histogram_metrics)
-        
+
         # Add histogram metrics in proper order
         for base_name in sorted(metrics_by_base.keys()):
             hist_data = metrics_by_base[base_name]
-            
+
             # Sort buckets by 'le' value in ascending order
-            sorted_buckets = sorted(hist_data['bucket'], key=extract_le_value)
+            sorted_buckets = sorted(hist_data["bucket"], key=extract_le_value)
             result_lines.extend(sorted_buckets)
-            
+
             # Add count metrics
-            result_lines.extend(hist_data['count'])
-            
-            # Add sum metrics  
-            result_lines.extend(hist_data['sum'])
-        
-        return '\n'.join(result_lines).encode('utf-8')
+            result_lines.extend(hist_data["count"])
+
+            # Add sum metrics
+            result_lines.extend(hist_data["sum"])
+
+        return "\n".join(result_lines).encode("utf-8")
 
     def text_string_to_metric_families(self) -> t.Generator[Metric, None, None]:
         yield from self.prometheus_client.parser.text_string_to_metric_families(

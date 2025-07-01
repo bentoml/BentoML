@@ -51,7 +51,7 @@ This setup process will establish an IAM Role to provide BentoCloud with the nec
 
    .. code-block:: bash
 
-        https://customer-helpdesk.s3.us-west-1.amazonaws.com/create-bentocloud-copilot-role-v6.json
+        https://customer-helpdesk.s3.us-west-1.amazonaws.com/create-bentocloud-copilot-role-v8.json
 
    .. image:: ../../../_static/img/bentocloud/administering/byoc/aws/create-stack.png
       :alt: Screenshot of AWS CloudFormation "Create stack" interface showing template selection with Amazon S3 URL option

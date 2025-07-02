@@ -19,6 +19,29 @@ Implementing an effective data collection and model monitoring strategy with Ben
 - **Enhanced interoperability:** Promote collaboration between data science and operations teams, streamlining the process of training and iterating on models.
 - **Informed decision-making:** Provide insights into model behavior in production, informing future model improvements and iterations.
 
+Built-in monitoring endpoints
+-----------------------------
+
+BentoML Services automatically expose several built-in endpoints for health monitoring:
+
+- ``/healthz``: A general-purpose health monitoring endpoint that checks if the Service is running.
+- ``/livez``: A liveness probe endpoint that checks if the Service is still alive and needs to restart.
+- ``/readyz``: A readiness probe endpoint that indicates if the Service is ready to accept traffic.
+
+These endpoints return a ``200`` status code and an empty response body when the Service is healthy. They are always included in the Service and require no configuration.
+
+After a Service starts, you can call these endpoints and get their status codes:
+
+.. code-block:: python
+
+   import requests
+
+   base_url = "http://localhost:3000"
+
+   print(requests.get(f"{base_url}/healthz").status_code)
+   print(requests.get(f"{base_url}/livez").status_code)
+   print(requests.get(f"{base_url}/readyz").status_code)
+
 Implement monitoring
 --------------------
 

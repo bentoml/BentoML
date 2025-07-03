@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-import contextlib
+import logging
 import sys
+import time
 import urllib.parse
 import webbrowser
 
 import click
+import httpx
 import rich
 
 from bentoml._internal.cloud.client import RestApiClient
@@ -13,12 +15,12 @@ from bentoml._internal.cloud.config import DEFAULT_ENDPOINT
 from bentoml._internal.cloud.config import CloudClientConfig
 from bentoml._internal.cloud.config import CloudClientContext
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.utils import reserve_free_port
 from bentoml._internal.utils.cattr import bentoml_cattr
 from bentoml.exceptions import CLIException
 from bentoml.exceptions import CloudRESTApiClientError
-from bentoml_cli.auth_server import AuthCallbackHttpServer
 from bentoml_cli.utils import BentoMLCommandGroup
+
+logger = logging.getLogger("bentoml.cli")
 
 
 @click.group(name="cloud", cls=BentoMLCommandGroup)
@@ -63,57 +65,59 @@ def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
         ).ask()
 
         if choice == "create":
-            with contextlib.ExitStack() as port_stack:
-                port = port_stack.enter_context(
-                    reserve_free_port(enable_so_reuseport=True)
-                )
-            callback_server = AuthCallbackHttpServer(port)
             endpoint = endpoint.rstrip("/")
-            baseURL = f"{endpoint}/api_tokens"
-            encodedCallback = urllib.parse.quote(callback_server.callback_url)
-            authURL = f"{baseURL}?callback={encodedCallback}"
+            code_url = f"{endpoint}/api/v1/auth/code"
+            token_url = f"{endpoint}/api/v1/auth/token"
+            try:
+                code = httpx.get(code_url).json()["code"]
+            except httpx.HTTPError as e:
+                rich.print(
+                    f":police_car_light: Error fetching auth code: {e}", file=sys.stderr
+                )
+                raise SystemExit(1)
+            query = urllib.parse.urlencode({"code": code})
+            auth_url = f"{endpoint}/api_tokens?{query}"
             if Confirm.ask(
-                f"Would you like to open [blue]{authURL}[/] in your browser?",
+                f"Would you like to open [blue]{auth_url}[/] in your browser?",
                 default=True,
             ):
-                if webbrowser.open_new_tab(authURL):
+                if webbrowser.open_new_tab(auth_url):
                     rich.print(
-                        f":white_check_mark: Opened [blue]{authURL}[/] in your web browser."
+                        f":white_check_mark: Opened [blue]{auth_url}[/] in your web browser."
                     )
                 else:
                     rich.print(
-                        f":police_car_light: Failed to open browser. Try create a new API token at {baseURL} or Open [blue]{authURL}[/] yourself"
+                        f":police_car_light: Failed to open browser. Try creating a new API token at [blue]{auth_url}[/] yourself"
                     )
             else:
                 rich.print(
-                    f":backhand_index_pointing_right: Open [blue]{authURL}[/] yourself..."
+                    f":backhand_index_pointing_right: Open [blue]{auth_url}[/] yourself..."
                 )
-            try:
-                rich.print(":hourglass: Waiting for authentication...")
-                code = callback_server.wait_indefinitely_for_code()
-                if code is None:
-                    raise ValueError(
-                        "No code could be obtained from browser callback page"
-                    )
-                api_token = code
-            except Exception:
-                rich.print(":police_car_light: Error accquiring token from web browser")
-                return
+            rich.print(":hourglass: Waiting for authentication...")
+            while True:
+                resp = httpx.get(token_url, params={"code": code})
+                if resp.is_success:
+                    api_token = resp.json()["token"]
+                    break
+                logger.debug(
+                    "Failed to obtain token(%s): %s", resp.status_code, resp.text
+                )
+                time.sleep(1)
         elif choice == "paste":
             api_token = click.prompt(
-                "? Paste your authentication token", type=str, hide_input=True
+                "? Paste your API token", type=str, hide_input=True
             )
     try:
         cloud_rest_client = RestApiClient(endpoint, api_token)
         user = cloud_rest_client.v1.get_current_user()
 
         if user is None:
-            raise CLIException("current user is not found")
+            raise CLIException("The current user is not found")
 
         org = cloud_rest_client.v1.get_current_organization()
 
         if org is None:
-            raise CLIException("current organization is not found")
+            raise CLIException("The current organization is not found")
 
         current_context_name = CloudClientConfig.get_config().current_context_name
         cloud_context = BentoMLContainer.cloud_context.get()
@@ -143,6 +147,7 @@ def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
                 f":police_car_light: Error validating token: HTTP {e.error_code}",
                 file=sys.stderr,
             )
+        raise SystemExit(1)
 
 
 @cloud_command.command()

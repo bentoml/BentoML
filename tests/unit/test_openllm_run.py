@@ -85,9 +85,9 @@ class TestOpenLLMRun:
             assert "generated_text" in result
 
         # Performance requirement: complete within 60 seconds
-        assert (
-            elapsed_time < 60
-        ), f"Async operations took {elapsed_time:.2f}s, exceeding 60s limit"
+        assert elapsed_time < 60, (
+            f"Async operations took {elapsed_time:.2f}s, exceeding 60s limit"
+        )
 
         # For mock operations, should be very fast
         assert elapsed_time < 1.0, f"Mock operations took {elapsed_time:.3f}s, too slow"
@@ -162,12 +162,12 @@ class TestOpenLLMRun:
         elapsed_time = time.time() - start_time
 
         # Should complete well within 60 seconds
-        assert (
-            elapsed_time < 60
-        ), f"Performance test took {elapsed_time:.2f}s, exceeding 60s limit"
-        assert (
-            elapsed_time < 1.0
-        ), f"Mock operations took {elapsed_time:.3f}s, expected faster"
+        assert elapsed_time < 60, (
+            f"Performance test took {elapsed_time:.2f}s, exceeding 60s limit"
+        )
+        assert elapsed_time < 1.0, (
+            f"Mock operations took {elapsed_time:.3f}s, expected faster"
+        )
 
     @pytest.mark.asyncio
     async def test_async_performance_requirements(self):
@@ -184,12 +184,12 @@ class TestOpenLLMRun:
         assert len(results) == 10
 
         # Performance requirements
-        assert (
-            elapsed_time < 60
-        ), f"Async performance test took {elapsed_time:.2f}s, exceeding 60s limit"
-        assert (
-            elapsed_time < 1.0
-        ), f"Async mock operations took {elapsed_time:.3f}s, expected faster"
+        assert elapsed_time < 60, (
+            f"Async performance test took {elapsed_time:.2f}s, exceeding 60s limit"
+        )
+        assert elapsed_time < 1.0, (
+            f"Async mock operations took {elapsed_time:.3f}s, expected faster"
+        )
 
 
 class TestHttpxAsyncClient:
@@ -280,9 +280,9 @@ class TestHttpxAsyncClient:
                     assert result["prompt"] == prompts[i]
 
                 # Performance check
-                assert (
-                    elapsed_time < 60
-                ), f"HTTP requests took {elapsed_time:.2f}s, exceeding 60s limit"
+                assert elapsed_time < 60, (
+                    f"HTTP requests took {elapsed_time:.2f}s, exceeding 60s limit"
+                )
 
     @pytest.mark.asyncio
     async def test_httpx_batch_requests(self):

@@ -123,7 +123,7 @@ def run_async_llm_pattern_tests(session: nox.Session):
     )
 
 
-@nox.session(name="transformers-async-local", python=PYTHON_VERSIONS)  
+@nox.session(name="transformers-async-local", python=PYTHON_VERSIONS)
 def run_transformers_async_tests_local(session: nox.Session):
     """Run full transformers async tests locally (not in CI due to resource constraints)."""
     session.run("pdm", "sync", "-G", "testing", external=True)

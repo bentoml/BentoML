@@ -76,7 +76,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: pipx install pdm && pipx install nox
-      - name: Run OpenLLM async tests  
+      - name: Run OpenLLM async tests
         run: nox --session openllm-async-${{ matrix.python-version }}
       - name: Disambiguate coverage filename
         run: mv .coverage ".coverage.async-patterns.${{ matrix.os }}.${{ matrix.python-version }}"

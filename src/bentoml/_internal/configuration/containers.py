@@ -452,6 +452,7 @@ class _BentoMLContainerClass:
         the Prometheus default is returned; otherwise, a set of exponential buckets
         generated based on the configuration is returned.
         """
+        from ..utils.metrics import DEFAULT_BUCKET
         from ..utils.metrics import INF
         from ..utils.metrics import exponential_buckets
 
@@ -464,7 +465,9 @@ class _BentoMLContainerClass:
                 duration["min"], duration["factor"], duration["max"]
             )
         elif "buckets" in duration:
-            return tuple(duration["buckets"]) + (INF,)
+            return (
+                (*duration["buckets"], INF) if duration["buckets"] else DEFAULT_BUCKET
+            )
         else:
             raise BentoMLConfigException(
                 "Either `buckets` or `min`, `max`, and `factor` must be set in `api_server.metrics.duration`"

@@ -7,7 +7,6 @@ from numbers import Real
 
 import schema as s
 
-from ...utils.metrics import DEFAULT_BUCKET
 from ...utils.unflatten import unflatten
 from ..helpers import depth
 from ..helpers import ensure_iterable_type
@@ -98,9 +97,7 @@ _SERVICE_CONFIG = {
         "enabled": bool,
         "namespace": str,
         s.Optional("duration"): {
-            s.Optional("buckets", default=DEFAULT_BUCKET): s.Or(
-                s.And(list, ensure_iterable_type(float)), None
-            ),
+            s.Optional("buckets"): s.Or(s.And(list, ensure_iterable_type(float)), None),
             s.Optional("min"): s.Or(s.And(float, ensure_larger_than_zero), None),
             s.Optional("max"): s.Or(s.And(float, ensure_larger_than_zero), None),
             s.Optional("factor"): s.Or(s.And(float, ensure_larger_than(1.0)), None),

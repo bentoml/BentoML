@@ -14,7 +14,7 @@ services:
     namespace: bentoml_service
     duration:
       # https://github.com/prometheus/client_python/blob/f17a8361ad3ed5bc47f193ac03b00911120a8d81/prometheus_client/metrics.py#L544
-      buckets: [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0]
+      buckets: ~
       min: ~
       max: ~
       factor: ~

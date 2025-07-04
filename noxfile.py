@@ -89,6 +89,55 @@ def run_e2e_monitoring_test(session: nox.Session):
     session.run(*TEST_ARGS, test_folder)
 
 
+
+@nox.session(name="openllm-async", python=PYTHON_VERSIONS)
+def run_openllm_async_tests(session: nox.Session):
+    """Run async tests for openllm.run functionality with ≥90% coverage."""
+    session.run("pdm", "sync", "-G", "testing", external=True)
+    session.install("pytest-asyncio>=0.21.1", "httpx")
+    session.run(
+        "pytest",
+        "tests/unit/test_openllm_run.py",
+        "--cov=bentoml.openllm",
+        "--cov-fail-under=90",
+        "--cov-report=term-missing",
+        "-v",
+        "--timeout=60",  # 1 minute timeout as per design requirement
+    )
+
+
+@nox.session(name="async-llm-patterns", python=PYTHON_VERSIONS)
+def run_async_llm_pattern_tests(session: nox.Session):
+    """Run lightweight async LLM pattern tests for CI compatibility."""
+    session.run("pdm", "sync", "-G", "testing", external=True)
+    session.install("pytest-asyncio>=0.21.1", "httpx")
+    session.run(
+        "pytest",
+        "tests/unit/test_async_llm_patterns.py",
+        "--cov=bentoml._internal.runner",
+        "--cov=bentoml._internal.service",
+        "--cov-fail-under=80",
+        "--cov-report=term-missing",
+        "-v",
+        "--timeout=60",  # 1 minute timeout for lightweight tests
+    )
+
+
+@nox.session(name="transformers-async-local", python=PYTHON_VERSIONS)  
+def run_transformers_async_tests_local(session: nox.Session):
+    """Run full transformers async tests locally (not in CI due to resource constraints)."""
+    session.run("pdm", "sync", "-G", "testing", external=True)
+    session.install("pytest-asyncio>=0.21.1", "transformers", "torch", "tokenizers")
+    session.run(
+        "pytest",
+        "tests/integration/frameworks/test_transformers_async.py",
+        "--cov=bentoml._internal.frameworks.transformers",
+        "--cov-report=term-missing",
+        "-v",
+        "--timeout=300",  # 5 minutes timeout for model loading
+    )
+
+
 @nox.session(name="coverage")
 def coverage_report(session: nox.Session):
     session.run("pdm", "sync", "-G", "testing", external=True)

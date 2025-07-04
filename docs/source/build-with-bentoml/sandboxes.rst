@@ -43,14 +43,6 @@ You can create a Sandbox and specify its :doc:`runtime </build-with-bentoml/runt
    # Block until sandbox is ready (show logs if enabled)
    sb.wait_until_ready(log_polling=True)
 
-You can also create a Sandbox on BentoCloud:
-
-.. code-block:: python
-
-   # Use BentoCloud client
-   client = bentoml.BentoCloudClient()
-   sb = client.sandbox.create()
-
 To run commands in a Sandbox:
 
 .. code-block:: python
@@ -62,6 +54,22 @@ To run commands in a Sandbox:
    result = sb.exec("python", "-c", "import sys;print(sys.version)")
    for line in result.stdout:
        print(line)
+
+You can also create a Sandbox on BentoCloud:
+
+.. code-block:: python
+
+   # Use BentoCloud client
+   client = bentoml.BentoCloudClient()
+   sb = client.sandbox.create()
+
+On the **Monitoring** tab of the Sandbox details page, you can view real-time metrics such as replica count and resource usage:
+
+.. image:: ../../_static/img/build-with-bentoml/sandboxes/bento-sandboxes-scaling.png
+   :alt: Sandbox scaling based on real-time traffic
+
+.. image:: ../../_static/img/build-with-bentoml/sandboxes/bento-sandboxes-resources.png
+   :alt: Sandbox resource usage
 
 Reuse an existing Sandbox
 -------------------------

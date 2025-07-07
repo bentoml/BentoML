@@ -36,6 +36,10 @@ You can create a Sandbox and specify its :doc:`runtime </build-with-bentoml/runt
            .python_packages("fastapi")
    )
 
+   # Block until sandbox is ready (show logs if enabled)
+   sb.wait_until_ready(log_polling=True)
+
+
 To run commands in a Sandbox:
 
 .. code-block:: python

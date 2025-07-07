@@ -28,13 +28,9 @@ You can create a Sandbox and specify its :doc:`runtime </build-with-bentoml/runt
 
 .. code-block:: python
 
-   import bentoml
-
-   # Basic sandbox creation
-   sb = bentoml.sandbox.create()
-
-   # With custom image and packages
-   sb = bentoml.sandbox.create(
+   # Use BentoCloud client
+   client = bentoml.BentoCloudClient()
+   sb = client.sandbox.create(
        image=bentoml.images.Image(python_version="3.12")
            .run("apt-get install -y curl")
            .python_packages("fastapi")
@@ -42,6 +38,7 @@ You can create a Sandbox and specify its :doc:`runtime </build-with-bentoml/runt
 
    # Block until sandbox is ready (show logs if enabled)
    sb.wait_until_ready(log_polling=True)
+
 
 To run commands in a Sandbox:
 
@@ -55,13 +52,6 @@ To run commands in a Sandbox:
    for line in result.stdout:
        print(line)
 
-You can also create a Sandbox on BentoCloud:
-
-.. code-block:: python
-
-   # Use BentoCloud client
-   client = bentoml.BentoCloudClient()
-   sb = client.sandbox.create()
 
 On the **Monitoring** tab of the Sandbox details page, you can view real-time metrics such as replica count and resource usage:
 

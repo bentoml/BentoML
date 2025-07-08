@@ -39,6 +39,12 @@ Read how-to guides to create and manage your Deployments on BentoCloud.
 
         Gradually roll out a new application version to a subset of users and monitor performance before wider release.
 
+    .. grid-item-card:: Sandboxes
+        :link: sandboxes
+        :link-type: doc
+
+        Run AI-generated code in an isolated, scalable and secure environment.
+
     .. grid-item-card:: Batch inference jobs
         :link: batch-inference-jobs
         :link-type: doc
@@ -61,5 +67,6 @@ Read how-to guides to create and manage your Deployments on BentoCloud.
     manage-deployments
     call-deployment-endpoints
     canary-deployments
+    sandboxes
     batch-inference-jobs
     ci-cd-pipelines

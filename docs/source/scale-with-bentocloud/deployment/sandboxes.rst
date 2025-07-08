@@ -30,6 +30,7 @@ You can create a Sandbox and specify its :doc:`runtime </build-with-bentoml/runt
 
    # Use BentoCloud client
    client = bentoml.BentoCloudClient()
+
    sb = client.sandbox.create(
        image=bentoml.images.Image(python_version="3.12")
            .run("apt-get install -y curl")
@@ -51,7 +52,6 @@ To run commands in a Sandbox:
    result = sb.exec("python", "-c", "import sys;print(sys.version)")
    for line in result.stdout:
        print(line)
-
 
 On the **Monitoring** tab of the Sandbox details page, you can view real-time metrics such as replica count and resource usage:
 

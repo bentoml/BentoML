@@ -60,7 +60,7 @@ def is_safe_url(url: str) -> bool:
         parsed = urlparse(url)
     except (ValueError, TypeError):
         return False
-    
+
     if parsed.scheme not in {"http", "https"}:
         return False
 
@@ -83,7 +83,7 @@ def is_safe_url(url: str) -> bool:
     except socket.gaierror:
         # DNS resolution failed
         return False
-    
+
     for info in addr_info:
         try:
             ip = ipaddress.ip_address(info[4][0])
@@ -92,5 +92,5 @@ def is_safe_url(url: str) -> bool:
         except (ValueError, IndexError):
             # Skip malformed addresses
             continue
-    
+
     return True

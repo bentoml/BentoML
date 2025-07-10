@@ -821,7 +821,7 @@ class Deployment:
                     and rel_path not in DEFAULT_BENTO_BUILD_FILES
                 ):
                     continue
-                if rel_path in (REQUIREMENTS_TXT, "setup.sh"):
+                if rel_path in (REQUIREMENTS_TXT, "setup.sh", "post_setup.sh"):
                     continue
                 file_content = open(full_path, "rb").read()
                 if (
@@ -852,6 +852,11 @@ class Deployment:
         setup_md5 = hashlib.md5(setup_script).hexdigest()
         if setup_md5 != pod_files.get("setup.sh", ""):
             upload_files.append(("setup.sh", setup_script))
+        post_setup_script = _build_post_setup_script(bento_dir, svc.image)
+        if post_setup_script:
+            post_setup_md5 = hashlib.md5(post_setup_script).hexdigest()
+            if post_setup_md5 != pod_files.get("post_setup.sh", ""):
+                upload_files.append(("post_setup.sh", post_setup_script))
         self.upload_files(upload_files, console=console)
         # Upload a ready flag file after all files are uploaded
         self.upload_files([(".project_ready", b"")], console=console)
@@ -892,6 +897,7 @@ class Deployment:
                 *DEFAULT_BENTO_BUILD_FILES,
                 REQUIREMENTS_TXT,
                 "setup.sh",
+                "post_setup.sh",
             ) or bento_spec.includes(rel_path)
 
         console = Console(highlight=False)
@@ -1582,6 +1588,14 @@ def _build_setup_script(bento_dir: str, image: Image | None) -> bytes:
         content += f"apt-get update && apt-get install -y {' '.join(config.docker.system_packages)} || exit 1\n".encode()
     if image and image.commands:
         content += "\n".join(image.commands).encode() + b"\n"
+    return content
+
+
+def _build_post_setup_script(bento_dir: str, image: Image | None) -> bytes:
+    content = b""
+    config = BentoBuildConfig.from_bento_dir(bento_dir)
+    if image and image.post_commands:
+        content += "\n".join(image.post_commands).encode() + b"\n"
     if config.docker.setup_script and os.path.exists(
         fullpath := os.path.join(bento_dir, config.docker.setup_script)
     ):

@@ -3,7 +3,8 @@ from __future__ import annotations
 import contextvars
 import logging
 from timeit import default_timer
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING
+from typing import Sequence
 
 from simple_di import Provide
 from simple_di import inject
@@ -25,7 +26,7 @@ class HTTPTrafficMetricsMiddleware:
         self,
         app: ext.ASGIApp,
         namespace: str = "bentoml_api_server",
-        skip_paths: Sequence[str] = ('/metrics', '/healthz', '/livez', '/readyz'),
+        skip_paths: Sequence[str] = ("/metrics", "/healthz", "/livez", "/readyz"),
     ):
         self.app = app
         self.namespace = namespace
@@ -154,12 +155,13 @@ class RunnerTrafficMetricsMiddleware:
         self,
         app: "ext.ASGIApp",
         namespace: str = "bentoml_runner",
-        skip_paths: Sequence[str] = ('/metrics', '/healthz', '/livez', '/readyz'),
+        skip_paths: Sequence[str] = ("/metrics", "/healthz", "/livez", "/readyz"),
     ):
         self.app = app
         self.namespace = namespace
         self._is_setup = False
         self.skip_paths = skip_paths
+
     @inject
     def _setup(
         self,

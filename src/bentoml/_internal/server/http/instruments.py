@@ -4,6 +4,7 @@ import contextvars
 import logging
 from timeit import default_timer
 from typing import TYPE_CHECKING
+from typing import Sequence
 
 from simple_di import Provide
 from simple_di import inject
@@ -25,10 +26,12 @@ class HTTPTrafficMetricsMiddleware:
         self,
         app: ext.ASGIApp,
         namespace: str = "bentoml_api_server",
+        skip_paths: Sequence[str] = ("/metrics", "/healthz", "/livez", "/readyz"),
     ):
         self.app = app
         self.namespace = namespace
         self._is_setup = False
+        self.skip_paths = skip_paths
 
     @inject
     def _setup(
@@ -70,6 +73,12 @@ class HTTPTrafficMetricsMiddleware:
             labelnames=["endpoint", "service_name", "service_version"],
             multiprocess_mode="livesum",
         )
+        self.metrics_last_request_timestamp = metrics_client.Gauge(
+            namespace=self.namespace,
+            name="last_request_timestamp_seconds",
+            documentation="Timestamp of the last received request",
+            labelnames=["service_name", "service_version"],
+        )
         self._is_setup = True
 
     async def __call__(
@@ -96,6 +105,11 @@ class HTTPTrafficMetricsMiddleware:
             return
 
         endpoint = scope["path"]
+        if not endpoint.startswith(tuple(self.skip_paths)):
+            self.metrics_last_request_timestamp.labels(
+                service_name=server_context.bento_name,
+                service_version=server_context.bento_version,
+            ).set_to_current_time()
         START_TIME_VAR.set(default_timer())
 
         async def wrapped_send(message: "ext.ASGIMessage") -> None:
@@ -141,10 +155,12 @@ class RunnerTrafficMetricsMiddleware:
         self,
         app: "ext.ASGIApp",
         namespace: str = "bentoml_runner",
+        skip_paths: Sequence[str] = ("/metrics", "/healthz", "/livez", "/readyz"),
     ):
         self.app = app
         self.namespace = namespace
         self._is_setup = False
+        self.skip_paths = skip_paths
 
     @inject
     def _setup(
@@ -207,6 +223,12 @@ class RunnerTrafficMetricsMiddleware:
             documentation="Total number of bytes sent to websocket",
             labelnames=["endpoint", "service_name", "service_version", "runner_name"],
         )
+        self.metrics_last_request_timestamp = metrics_client.Gauge(
+            namespace=self.namespace,
+            name="last_request_timestamp_seconds",
+            documentation="Timestamp of the last received request",
+            labelnames=["service_name", "service_version", "runner_name"],
+        )
         # place holder metrics to initialize endpoints with 0 to facilitate rate calculation
         # otherwise, rate() can be 0 if the endpoint is hit for the first time
         for endpoint in server_context.service_routes:
@@ -250,6 +272,12 @@ class RunnerTrafficMetricsMiddleware:
             return
 
         endpoint = scope["path"]
+        if not endpoint.startswith(tuple(self.skip_paths)):
+            self.metrics_last_request_timestamp.labels(
+                service_name=server_context.bento_name,
+                service_version=server_context.bento_version,
+                runner_name=server_context.service_name,
+            ).set_to_current_time()
         start_time = default_timer()
         status_code = 0
 

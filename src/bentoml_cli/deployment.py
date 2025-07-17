@@ -367,12 +367,14 @@ def deployment_command():
     type=click.STRING,
     help="List of environment variables pass by --env key[=value] --env ...",
     multiple=True,
+    default=None,
 )
 @click.option(
     "--secret",
     type=click.STRING,
     help="List of secret names pass by --secret name1, --secret name2, ...",
     multiple=True,
+    default=None,
 )
 @click.option(
     "-f",
@@ -423,7 +425,7 @@ def update(  # type: ignore
         instance_type=instance_type,
         strategy=strategy,
         envs=convert_env_to_dict(env),
-        secrets=list(secret) if secret is not None else None,
+        secrets=list(secret) if secret and len(secret) > 0 else None,
         config_file=config_file,
         config_dict=cfg_dict,
         cli=True,
@@ -542,7 +544,7 @@ def apply(  # type: ignore
         instance_type=instance_type,
         strategy=strategy,
         envs=convert_env_to_dict(env),
-        secrets=list(secret) if secret is not None else None,
+        secrets=list(secret) if secret and len(secret) > 0 else None,
         config_file=config_file,
         config_dict=cfg_dict,
         cli=True,

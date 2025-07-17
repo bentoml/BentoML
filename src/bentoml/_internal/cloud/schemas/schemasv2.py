@@ -22,7 +22,10 @@ class DeploymentTargetSchema(ResourceSchema):
     bento: t.Optional[BentoWithRepositorySchema]
     kube_resource_uid: t.Optional[str] = attr.field(default=None)
     kube_resource_version: t.Optional[str] = attr.field(default=None)
-
+@attr.define
+class DeploymentTargetsSchema:
+    main: DeploymentTargetSchema
+    canary: t.Optional[DeploymentCanarySchema] = attr.field(default=None)
 
 @attr.define
 class DeploymentTargetListSchema(BaseListSchema):
@@ -105,9 +108,16 @@ class CreateDeploymentSchema(UpdateDeploymentSchema):
 
 
 @attr.define
+class DeploymentRoutingManifestSchema(DeploymentRoutingSchema):
+    __forbid_extra_keys__ = False
+    __omit_if_default__ = True
+    weights: t.Optional[t.Dict[str, int]] = None
+
+@attr.define
 class DeploymentManifestSchema:
     __forbid_extra_keys__ = False
     dev: bool = False
+    routing: t.Optional[DeploymentRoutingManifestSchema] = None
 
 
 @attr.define

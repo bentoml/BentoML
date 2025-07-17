@@ -50,7 +50,7 @@ from .schemas.modelschemas import DeploymentTargetHPAConf
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeleteDeploymentFilesSchema
 from .schemas.schemasv2 import DeploymentFileListSchema
-from .schemas.schemasv2 import DeploymentSchema
+from .schemas.schemasv2 import DeploymentSchema, DeploymentTargetsSchema, DeploymentCanarySchema, DeploymentVersionSchema
 from .schemas.schemasv2 import DeploymentTargetSchema
 from .schemas.schemasv2 import KubePodSchema
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
@@ -443,20 +443,67 @@ class Deployment:
         if len(self._schema.latest_revision.targets) == 0:
             return None
         return self._schema.latest_revision.targets[0]
+    
+    def _refetch_targets(self, refetch: bool) -> DeploymentTargetsSchema | None:
+        if refetch:
+            self._refetch()
+        if self._schema.latest_revision is None:
+            return None
+        if len(self._schema.latest_revision.targets) == 0:
+            return None
 
+        main_target: DeploymentTargetSchema | None = None
+        canary: DeploymentCanarySchema | None = None
+        weights: t.Dict[str, int] | None = None
+        
+        if self._schema.manifest is not None and self._schema.manifest.routing is not None:
+            canary = DeploymentCanarySchema(
+                route_type=self._schema.manifest.routing.route_type,
+                route_by=self._schema.manifest.routing.route_by,
+            )
+            weights = self._schema.manifest.routing.weights
+        
+        if len(self._schema.latest_revision.targets) == 1:
+            main_target = self._schema.latest_revision.targets[0]
+        else:
+            for t in self._schema.latest_revision.targets:
+                if t is None:
+                    continue
+                if t.name == "main":
+                    main_target = t
+                else:
+                    if canary is None:
+                        canary = DeploymentCanarySchema()
+                    if canary.versions is None:
+                        canary.versions = {}
+                    canary.versions[t.name] = DeploymentVersionSchema(
+                        services=t.config.services if t.config is not None else {},
+                        envs=t.config.envs if t.config is not None else {},
+                        secrets=t.config.secrets if t.config is not None else {},
+                        bento=t.bento.repository.name + ":" + t.bento.version if t.bento is not None else None,
+                        weight=weights[t.name] if weights is not None else None,
+                    )
+        if main_target is None:
+            return None
+        return DeploymentTargetsSchema(
+            main=main_target,
+            canary=canary,
+        )
+    
     def get_config(self, refetch: bool = True) -> DeploymentConfig | None:
-        target = self._refetch_target(refetch)
-        if target is None:
+        targets = self._refetch_targets(refetch)
+        if targets is None:
             return None
-        if target.config is None:
+        if targets.main.config is None:
             return None
-
         return DeploymentConfig(
             name=self.name,
             bento=self.get_bento(refetch=False),
-            services=target.config.services,
-            access_authorization=target.config.access_authorization,
-            envs=target.config.envs,
+            services=targets.main.config.services,
+            access_authorization=targets.main.config.access_authorization,
+            envs=targets.main.config.envs,
+            secrets=targets.main.config.secrets,
+            canary=targets.canary,
         )
 
     def get_status(self, refetch: bool = True) -> DeploymentState:
@@ -1136,18 +1183,52 @@ class DeploymentAPI:
             raise BentoMLException(
                 f"Deployment {_schema.name} has no latest revision targets"
             )
-        target_schema = _schema.latest_revision.targets[0]
-        if target_schema is None:
+        
+        main_target: DeploymentTargetSchema | None = None
+        canary: DeploymentCanarySchema | None = None
+        weights: t.Dict[str, int] | None = None
+        
+        if _schema.manifest is not None and _schema.manifest.routing is not None:
+            canary = DeploymentCanarySchema(
+                route_type=_schema.manifest.routing.route_type,
+                route_by=_schema.manifest.routing.route_by,
+            )
+            weights = _schema.manifest.routing.weights
+        
+        if len(_schema.latest_revision.targets) == 1:
+            main_target = _schema.latest_revision.targets[0]
+        else:
+            for t in _schema.latest_revision.targets:
+                if t is None:
+                    continue
+                if t.name == "main":
+                    main_target = t
+                else:
+                    if canary is None:
+                        canary = DeploymentCanarySchema()
+                    if canary.versions is None:
+                        canary.versions = {}
+                    canary.versions[t.name] = DeploymentVersionSchema(
+                        services=t.config.services if t.config is not None else {},
+                        envs=t.config.envs if t.config is not None else {},
+                        secrets=t.config.secrets if t.config is not None else {},
+                        bento=t.bento.repository.name + ":" + t.bento.version if t.bento is not None else None,
+                        weight=weights[t.name] if weights is not None else None,
+                    )
+        
+        if main_target is None:
             raise BentoMLException(f"Deployment {_schema.name} has no target")
-        if target_schema.config is None:
+        if main_target.config is None:
             raise BentoMLException(f"Deployment {_schema.name} has no config")
-        if target_schema.bento is None:
+        if main_target.bento is None:
             raise BentoMLException(f"Deployment {_schema.name} has no bento")
         update_schema = UpdateDeploymentSchemaV2(
-            services=target_schema.config.services,
-            access_authorization=target_schema.config.access_authorization,
-            envs=target_schema.config.envs,
-            bento=target_schema.bento.repository.name + ":" + target_schema.bento.name,
+            services=main_target.config.services,
+            access_authorization=main_target.config.access_authorization,
+            envs=main_target.config.envs,
+            secrets=main_target.config.secrets,
+            bento=main_target.bento.repository.name + ":" + main_target.bento.name,
+            canary=canary,
         )
         return bentoml_cattr.unstructure(update_schema)
 
@@ -1277,7 +1358,6 @@ class DeploymentAPI:
         config_params = deployment_config_params.get_config_dict(
             orig_dict.get("bento"),
         )
-
         deep_merge(orig_dict, config_params)
         config_struct = bentoml_cattr.structure(orig_dict, UpdateDeploymentSchemaV2)
 

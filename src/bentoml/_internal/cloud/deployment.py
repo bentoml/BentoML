@@ -49,9 +49,12 @@ from .schemas.modelschemas import DeploymentStatus
 from .schemas.modelschemas import DeploymentTargetHPAConf
 from .schemas.schemasv2 import CreateDeploymentSchema as CreateDeploymentSchemaV2
 from .schemas.schemasv2 import DeleteDeploymentFilesSchema
+from .schemas.schemasv2 import DeploymentCanarySchema
 from .schemas.schemasv2 import DeploymentFileListSchema
-from .schemas.schemasv2 import DeploymentSchema, DeploymentTargetsSchema, DeploymentCanarySchema, DeploymentVersionSchema
+from .schemas.schemasv2 import DeploymentSchema
 from .schemas.schemasv2 import DeploymentTargetSchema
+from .schemas.schemasv2 import DeploymentTargetsSchema
+from .schemas.schemasv2 import DeploymentVersionSchema
 from .schemas.schemasv2 import KubePodSchema
 from .schemas.schemasv2 import UpdateDeploymentSchema as UpdateDeploymentSchemaV2
 from .schemas.schemasv2 import UploadDeploymentFilesSchema
@@ -443,7 +446,7 @@ class Deployment:
         if len(self._schema.latest_revision.targets) == 0:
             return None
         return self._schema.latest_revision.targets[0]
-    
+
     def _refetch_targets(self, refetch: bool) -> DeploymentTargetsSchema | None:
         if refetch:
             self._refetch()
@@ -455,14 +458,17 @@ class Deployment:
         main_target: DeploymentTargetSchema | None = None
         canary: DeploymentCanarySchema | None = None
         weights: t.Dict[str, int] | None = None
-        
-        if self._schema.manifest is not None and self._schema.manifest.routing is not None:
+
+        if (
+            self._schema.manifest is not None
+            and self._schema.manifest.routing is not None
+        ):
             canary = DeploymentCanarySchema(
                 route_type=self._schema.manifest.routing.route_type,
                 route_by=self._schema.manifest.routing.route_by,
             )
             weights = self._schema.manifest.routing.weights
-        
+
         if len(self._schema.latest_revision.targets) == 1:
             main_target = self._schema.latest_revision.targets[0]
         else:
@@ -480,7 +486,9 @@ class Deployment:
                         services=t.config.services if t.config is not None else {},
                         envs=t.config.envs if t.config is not None else {},
                         secrets=t.config.secrets if t.config is not None else {},
-                        bento=t.bento.repository.name + ":" + t.bento.version if t.bento is not None else None,
+                        bento=t.bento.repository.name + ":" + t.bento.version
+                        if t.bento is not None
+                        else None,
                         weight=weights[t.name] if weights is not None else None,
                     )
         if main_target is None:
@@ -489,7 +497,7 @@ class Deployment:
             main=main_target,
             canary=canary,
         )
-    
+
     def get_config(self, refetch: bool = True) -> DeploymentConfig | None:
         targets = self._refetch_targets(refetch)
         if targets is None:
@@ -1183,18 +1191,18 @@ class DeploymentAPI:
             raise BentoMLException(
                 f"Deployment {_schema.name} has no latest revision targets"
             )
-        
+
         main_target: DeploymentTargetSchema | None = None
         canary: DeploymentCanarySchema | None = None
         weights: t.Dict[str, int] | None = None
-        
+
         if _schema.manifest is not None and _schema.manifest.routing is not None:
             canary = DeploymentCanarySchema(
                 route_type=_schema.manifest.routing.route_type,
                 route_by=_schema.manifest.routing.route_by,
             )
             weights = _schema.manifest.routing.weights
-        
+
         if len(_schema.latest_revision.targets) == 1:
             main_target = _schema.latest_revision.targets[0]
         else:
@@ -1212,10 +1220,12 @@ class DeploymentAPI:
                         services=t.config.services if t.config is not None else {},
                         envs=t.config.envs if t.config is not None else {},
                         secrets=t.config.secrets if t.config is not None else {},
-                        bento=t.bento.repository.name + ":" + t.bento.version if t.bento is not None else None,
+                        bento=t.bento.repository.name + ":" + t.bento.version
+                        if t.bento is not None
+                        else None,
                         weight=weights[t.name] if weights is not None else None,
                     )
-        
+
         if main_target is None:
             raise BentoMLException(f"Deployment {_schema.name} has no target")
         if main_target.config is None:

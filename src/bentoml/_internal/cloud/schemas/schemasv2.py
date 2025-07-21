@@ -25,6 +25,12 @@ class DeploymentTargetSchema(ResourceSchema):
 
 
 @attr.define
+class DeploymentTargetsSchema:
+    main: DeploymentTargetSchema
+    canary: t.Optional[DeploymentCanarySchema] = attr.field(default=None)
+
+
+@attr.define
 class DeploymentTargetListSchema(BaseListSchema):
     items: t.List[t.Optional[DeploymentTargetSchema]]
 
@@ -105,9 +111,17 @@ class CreateDeploymentSchema(UpdateDeploymentSchema):
 
 
 @attr.define
+class DeploymentRoutingManifestSchema(DeploymentRoutingSchema):
+    __forbid_extra_keys__ = False
+    __omit_if_default__ = True
+    weights: t.Optional[t.Dict[str, int]] = None
+
+
+@attr.define
 class DeploymentManifestSchema:
     __forbid_extra_keys__ = False
     dev: bool = False
+    routing: t.Optional[DeploymentRoutingManifestSchema] = None
 
 
 @attr.define

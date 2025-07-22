@@ -180,7 +180,7 @@ class IOMixin:
 
     @classmethod
     def from_inputs(cls, *args: t.Any, **kwargs: t.Any) -> IODescriptor:
-        assert issubclass(cls, IODescriptor)
+        assert issubclass(cls, BaseModel), "cls must be a subclass of BaseModel"
         if getattr(cls, "__root_input__", False):
             if len(args) > 1:
                 raise TypeError("Expected exactly 1 argument")
@@ -502,7 +502,7 @@ def ensure_io_descriptor(
     type_name = getattr(typ_, "__name__", "")
 
     if inspect.isclass(typ_) and lenient_issubclass(typ_, BaseModel):
-        if not issubclass(typ_, IODescriptor):
+        if not issubclass(typ_, IOMixin):
             return t.cast(
                 t.Type[IODescriptor],
                 create_model(f"{type_name}IODescriptor", __base__=(IOMixin, typ_)),

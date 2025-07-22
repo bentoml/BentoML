@@ -291,6 +291,8 @@ class Image:
             lock_args.append("--verbose")
         else:
             lock_args.append("--quiet")
+        if self.python_version != DEFAULT_PYTHON_VERSION:
+            lock_args.extend(["--python-version", self.python_version])
         logger.info("Locking PyPI package versions.")
         if platform_:
             lock_args.extend(["--python-platform", platform_])

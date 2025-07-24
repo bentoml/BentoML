@@ -580,6 +580,15 @@ class Bento(StoreItem):
             return self._doc
         if not self._fs.isfile(BENTO_README_FILENAME):
             return ""
+        info = self._fs.getinfo(BENTO_README_FILENAME, ["details"])
+        if (
+            info.size > 3 * 1024 * 1024
+        ):  # 3MB, Limit of bentocloud api is 4MB, leave 1MB for other metadata
+            logger.warning(
+                "Bento README is too large (%d bytes > 3MB), skipping upload...",
+                info.size,
+            )
+            return ""
         with self._fs.open(BENTO_README_FILENAME, "r") as readme_md:
             self._doc = str(readme_md.read())
             return self._doc

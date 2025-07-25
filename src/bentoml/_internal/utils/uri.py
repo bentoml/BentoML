@@ -1,5 +1,7 @@
+import ipaddress
 import os
 import pathlib
+import socket
 from urllib.parse import quote
 from urllib.parse import unquote
 from urllib.parse import urlparse
@@ -50,3 +52,45 @@ def encode_path_for_uri(path: str) -> str:
 
 def is_http_url(url: str) -> bool:
     return urlparse(url).scheme in {"http", "https"}
+
+
+def is_safe_url(url: str) -> bool:
+    """Check if URL is safe for download (prevents basic SSRF)."""
+    try:
+        parsed = urlparse(url)
+    except (ValueError, TypeError):
+        return False
+    
+    if parsed.scheme not in {"http", "https"}:
+        return False
+
+    hostname = parsed.hostname
+    if not hostname:
+        return False
+
+    if hostname.lower() in {"localhost", "127.0.0.1", "::1", "169.254.169.254"}:
+        return False
+
+    try:
+        ip = ipaddress.ip_address(hostname)
+        return not (ip.is_private or ip.is_loopback or ip.is_link_local)
+    except ValueError:
+        # hostname is not an IP address, need to resolve it
+        pass
+
+    try:
+        addr_info = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        # DNS resolution failed
+        return False
+    
+    for info in addr_info:
+        try:
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local:
+                return False
+        except (ValueError, IndexError):
+            # Skip malformed addresses
+            continue
+    
+    return True

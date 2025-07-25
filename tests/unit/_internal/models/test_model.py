@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import os
+import posixpath
 from datetime import datetime
 from datetime import timezone
 from sys import version_info as pyver
 from typing import TYPE_CHECKING
 
 import attr
-import fs
-import fs.errors
 import numpy as np
 import pytest
 
@@ -219,7 +218,7 @@ def test_model_equal(bento_model):
     assert eq_to_b.__hash__() == bento_model.__hash__()
 
 
-def test_model_export_import(bento_model, tmpdir: "Path"):
+def test_model_export_import(bento_model, tmp_path: "Path"):
     # note: these tests rely on created models having a system path
     sys_written_path = bento_model.path_of("sys_written/file")
     assert sys_written_path == os.path.join(bento_model.path, "sys_written", "file")
@@ -234,53 +233,42 @@ def test_model_export_import(bento_model, tmpdir: "Path"):
     with open(bento_model.path_of("sys_written/file"), encoding="utf-8") as f:
         assert f.read() == sys_written_content
 
-    export_tar_path = f"tar://{fs.path.join(str(tmpdir), 'model_b.tar')}"
+    export_tar_path = f"tar://{posixpath.join(tmp_path, 'model_b.tar')}"
     bento_model.export(export_tar_path)
-    tar_fs = fs.open_fs(export_tar_path)
-    from_tar_model = Model.from_fs(tar_fs)
+    from_tar_model = Model.import_from(export_tar_path)
 
     assert from_tar_model == bento_model
     assert from_tar_model.info == bento_model.info
     assert (
-        from_tar_model._fs.readtext("sys_written/file")  # type: ignore
+        from_tar_model._path.joinpath("sys_written/file").read_text()  # type: ignore
         == sys_written_content
     )
     assert from_tar_model.custom_objects["add"](4) == add_num_1 + 4  # type: ignore
-    with pytest.raises(fs.errors.NoSysPath):
-        assert from_tar_model.path
 
     # tmpdir/modelb.bentomodel
-    export_bentomodel_path = fs.path.join(str(tmpdir), "modelb.bentomodel")
+    export_bentomodel_path = posixpath.join(tmp_path, "modelb.bentomodel")
     bento_model.export(export_bentomodel_path)
 
-    from_fs_model = Model.from_fs(
-        fs.tarfs.TarFS(export_bentomodel_path, compression="xz")
-    )
+    from_fs_model = Model.import_from(export_bentomodel_path)
 
-    # can cause model.path to fail by using `from_fs`.
-    with pytest.raises(fs.errors.NoSysPath):
-        assert from_fs_model.path
-
-    model_store = ModelStore(tmpdir)
+    model_store = ModelStore(tmp_path)
     from_fs_model.save(model_store)
 
-    save_path = os.path.join(
-        tmpdir,
-        os.path.join(from_fs_model.tag.name, from_fs_model.tag.version) + os.path.sep,
-    )
+    save_path = tmp_path / from_fs_model.tag.name / from_fs_model.tag.version
     assert str(from_fs_model) == f'Model(tag="{bento_model.tag}")'
     assert repr(from_fs_model) == f'Model(tag="{bento_model.tag}", path="{save_path}")'
 
 
-def test_load_bad_model(tmpdir: "Path"):
+def test_load_bad_model(tmp_path: "Path"):
+    tmp_path.joinpath("nonexistent").mkdir(parents=True, exist_ok=True)
     with pytest.raises(BentoMLException):
-        Model.from_fs(fs.open_fs(os.path.join(tmpdir, "nonexistent"), create=True))
+        Model.import_from(os.path.join(tmp_path, "nonexistent"))
 
-    bad_path = os.path.join(tmpdir, "badmodel")
+    bad_path = os.path.join(tmp_path, "badmodel")
     os.makedirs(bad_path)
     with open(
         os.path.join(bad_path, "model.yaml"), "w", encoding="utf-8", newline=""
     ) as model_yaml:
         model_yaml.write("bad yaml")
     with pytest.raises(BentoMLException):
-        Model.from_fs(fs.open_fs(bad_path))
+        Model.import_from(bad_path)

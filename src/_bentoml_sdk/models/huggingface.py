@@ -8,7 +8,6 @@ import typing as t
 from functools import cached_property
 
 import attrs
-from fs.base import FS
 
 from bentoml._internal.bento.bento import BentoModelInfo
 from bentoml._internal.cloud.schemas.modelschemas import ModelManifestSchema
@@ -60,11 +59,8 @@ class HuggingFaceModel(Model[str]):
             or self.revision
         )
 
-    def resolve(self, base_path: t.Union[PathType, FS, None] = None) -> str:
+    def resolve(self, base_path: t.Union[PathType, None] = None) -> str:
         from huggingface_hub import snapshot_download
-
-        if isinstance(base_path, FS):
-            base_path = base_path.getsyspath("/")
 
         snapshot_path = snapshot_download(
             self.model_id,

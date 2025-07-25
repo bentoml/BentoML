@@ -4,13 +4,14 @@ import logging
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import typing as t
+from pathlib import Path
 from sys import version_info
 
 import attr
-import fs
 import jinja2
 import psutil
 import yaml
@@ -33,14 +34,11 @@ from ..container.generate import BENTO_PATH
 from ..utils.args import set_arguments
 from ..utils.cattr import bentoml_cattr
 from ..utils.dotenv import parse_dotenv
-from ..utils.filesystem import copy_file_to_fs_folder
 from ..utils.filesystem import resolve_user_filepath
-from ..utils.uri import encode_path_for_uri
 from .bentoml_builder import build_git_repo
 
 if t.TYPE_CHECKING:
     from attr import Attribute
-    from fs.base import FS
 
 logger = logging.getLogger(__name__)
 
@@ -228,28 +226,28 @@ class DockerOptions:
 
         return attr.evolve(self, **defaults)
 
-    def write_to_bento(self, bento_fs: FS, build_ctx: str, conda: CondaOptions) -> None:
-        docker_folder = fs.path.combine("env", "docker")
-        bento_fs.makedirs(docker_folder, recreate=True)
-        dockerfile_path = fs.path.combine(docker_folder, "Dockerfile")
+    def write_to_bento(
+        self, bento_fs: Path, build_ctx: str, conda: CondaOptions
+    ) -> None:
+        docker_folder = bento_fs / "env/docker"
+        docker_folder.mkdir(parents=True, exist_ok=True)
+        dockerfile_path = docker_folder / "Dockerfile"
 
         # NOTE that by default the generated Dockerfile won't have BuildKit syntax.
         # By default, BentoML containerization will use BuildKit. To opt-out specify DOCKER_BUILDKIT=0
-        bento_fs.writetext(
-            dockerfile_path,
+        dockerfile_path.write_text(
             generate_containerfile(
                 self, build_ctx, conda=conda, bento_fs=bento_fs, enable_buildkit=False
             ),
         )
-        copy_file_to_fs_folder(
-            fs.path.join(
+        shutil.copy2(
+            os.path.join(
                 os.path.dirname(os.path.dirname(__file__)),
                 "container",
                 "frontend",
                 "dockerfile",
                 "entrypoint.sh",
             ),
-            bento_fs,
             docker_folder,
         )
 
@@ -265,18 +263,14 @@ class DockerOptions:
                         f"{message} Ensure the script has a shebang line, then run 'chmod +x {setup_script}'."
                     ) from None
                 raise InvalidArgument(message) from None
-            copy_file_to_fs_folder(
-                setup_script, bento_fs, docker_folder, "setup_script"
-            )
+            shutil.copy(setup_script, docker_folder / "setup_script")
 
         # If dockerfile_template is provided, then we copy it to the Bento
         # This template then can be used later to containerize.
         if self.dockerfile_template is not None:
-            copy_file_to_fs_folder(
+            shutil.copy2(
                 resolve_user_filepath(self.dockerfile_template, build_ctx),
-                bento_fs,
-                docker_folder,
-                "Dockerfile.template",
+                docker_folder / "Dockerfile.template",
             )
 
     def to_dict(self) -> dict[str, t.Any]:
@@ -365,23 +359,18 @@ class CondaOptions:
                     self.pip,
                 )
 
-    def write_to_bento(self, bento_fs: FS, build_ctx: str) -> None:
+    def write_to_bento(self, bento_fs: Path, build_ctx: str) -> None:
         if self.is_empty():
             return
 
-        conda_folder = fs.path.join("env", "conda")
-        bento_fs.makedirs(conda_folder, recreate=True)
+        conda_folder = bento_fs / "env/conda"
+        conda_folder.mkdir(parents=True, exist_ok=True)
 
         if self.environment_yml is not None:
             environment_yml_file = resolve_user_filepath(
                 self.environment_yml, build_ctx
             )
-            copy_file_to_fs_folder(
-                environment_yml_file,
-                bento_fs,
-                conda_folder,
-                dst_filename=CONDA_ENV_YAML_FILE_NAME,
-            )
+            shutil.copy2(environment_yml_file, conda_folder / CONDA_ENV_YAML_FILE_NAME)
         else:
             deps_list: DependencyType = []
             if self.dependencies is not None:
@@ -399,21 +388,13 @@ class CondaOptions:
             yaml_content: CondaYamlDict = {"dependencies": deps_list}
             assert self.channels is not None
             yaml_content["channels"] = self.channels
-            with bento_fs.open(
-                fs.path.combine(conda_folder, CONDA_ENV_YAML_FILE_NAME), "w"
-            ) as f:
+            with conda_folder.joinpath(CONDA_ENV_YAML_FILE_NAME).open("w") as f:
                 yaml.dump(yaml_content, f)
 
-    def get_python_version(self, bento_fs: FS) -> str | None:
+    def get_python_version(self, bento_fs: Path) -> str | None:
         # Get the python version from given environment.yml file
 
-        environment_yml = bento_fs.getsyspath(
-            fs.path.join(
-                "env",
-                "conda",
-                CONDA_ENV_YAML_FILE_NAME,
-            )
-        )
+        environment_yml = bento_fs / "env" / "conda" / CONDA_ENV_YAML_FILE_NAME
         if os.path.exists(environment_yml):
             with open(environment_yml, "r") as f:
                 for line in f:
@@ -523,30 +504,30 @@ class PythonOptions:
         return env
 
     def write_to_bento(
-        self, bento_fs: FS, build_ctx: str, platform_: str | None = None
+        self, bento_fs: Path, build_ctx: str, platform_: str | None = None
     ) -> None:
         import platform
 
         from ..configuration import get_uv_command
         from .bentoml_builder import build_bentoml_sdist
 
-        py_folder = fs.path.join("env", "python")
-        wheels_folder = fs.path.join(py_folder, "wheels")
-        bento_fs.makedirs(py_folder, recreate=True)
+        py_folder = bento_fs / "env/python"
+        wheels_folder = py_folder / "wheels"
+        wheels_folder.mkdir(parents=True, exist_ok=True)
 
         # Save the python version of current build environment
-        with bento_fs.open(fs.path.join(py_folder, "version.txt"), "w") as f:
-            f.write(f"{version_info.major}.{version_info.minor}.{version_info.micro}")
+        py_folder.joinpath("version.txt").write_text(
+            f"{version_info.major}.{version_info.minor}.{version_info.micro}"
+        )
 
         # Build BentoML sdist from local source if BENTOML_BUNDLE_LOCAL_BUILD=True
-        sdist_name = build_bentoml_sdist(bento_fs.getsyspath(wheels_folder))
+        sdist_name = build_bentoml_sdist(str(wheels_folder))
 
         # Move over required wheel files
         if self.wheels:
-            bento_fs.makedirs(wheels_folder, recreate=True)
             for whl_file in self.wheels:  # pylint: disable=not-an-iterable
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
-                copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
+                shutil.copy2(whl_file, wheels_folder)
 
         pip_compile_compat: list[str] = []
         if self.index_url:
@@ -569,7 +550,7 @@ class PythonOptions:
         if self.pip_args:
             pip_args.extend(self.pip_args.split())
 
-        with bento_fs.open(fs.path.combine(py_folder, "install.sh"), "w") as f:
+        with py_folder.joinpath("install.sh").open("w") as f:
             args: list[str] = []
             if pip_args:
                 args.extend(pip_args)
@@ -580,7 +561,7 @@ class PythonOptions:
                 )
             )
 
-        with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
+        with py_folder.joinpath("requirements.txt").open("w") as f:
             has_bentoml_req = False
 
             if self.requirements_txt is not None:
@@ -635,12 +616,8 @@ class PythonOptions:
             # Note: "--generate-hashes" is purposefully not used here because it will
             # break if user includes PyPI package from version control system
 
-            pip_compile_in = bento_fs.getsyspath(
-                fs.path.combine(py_folder, "requirements.txt")
-            )
-            pip_compile_out = bento_fs.getsyspath(
-                fs.path.combine(py_folder, "requirements.lock.txt")
-            )
+            pip_compile_in = str(py_folder / "requirements.txt")
+            pip_compile_out = str(py_folder / "requirements.lock.txt")
             pip_compile_args = [pip_compile_in]
             pip_compile_args.extend(pip_compile_compat)
             pip_compile_args.extend(
@@ -673,24 +650,18 @@ class PythonOptions:
                     cmd,
                     text=True,
                     stderr=subprocess.DEVNULL if get_quiet_mode() else None,
-                    cwd=bento_fs.getsyspath(py_folder),
+                    cwd=py_folder,
                 )
             except subprocess.CalledProcessError as e:
                 raise BentoMLException(f"Failed to lock PyPI packages: {e}") from None
             self.fix_dep_urls(
-                pip_compile_out,
-                bento_fs.getsyspath(wheels_folder),
-                self.pack_git_packages,
+                pip_compile_out, str(wheels_folder), self.pack_git_packages
             )
         else:
-            requirements_txt = bento_fs.getsyspath(
-                fs.path.combine(py_folder, "requirements.txt")
-            )
+            requirements_txt = str(py_folder / "requirements.txt")
             if os.path.exists(requirements_txt):
                 self.fix_dep_urls(
-                    requirements_txt,
-                    bento_fs.getsyspath(wheels_folder),
-                    self.pack_git_packages,
+                    requirements_txt, str(wheels_folder), self.pack_git_packages
                 )
 
     def with_defaults(self) -> PythonOptions:
@@ -996,13 +967,15 @@ class BentoPathSpec:
     @recurse_exclude_spec.default
     def _default_recurse_exclude_spec(self) -> list[tuple[str, PathSpec]]:
         # recurse_exclude_spec is a list of (path, spec) pairs.
-        fs_ = fs.open_fs(encode_path_for_uri(self.ctx_dir))
+        ctx_path = Path(self.ctx_dir).resolve()
         recurse_exclude_spec: list[tuple[str, PathSpec]] = []
-        for file in fs_.walk.files(filter=[self.recurse_ignore_filename]):
-            dir_path = fs.path.dirname(file)
-            with fs_.open(file) as f:
+        for ignore_file in ctx_path.rglob(self.recurse_ignore_filename):
+            if not ignore_file.is_file():
+                continue
+            dir_path = os.path.relpath(ignore_file.parent, self.ctx_dir).lstrip("/")
+            with open(ignore_file) as f:
                 recurse_exclude_spec.append(
-                    (dir_path.lstrip("/"), PathSpec.from_lines("gitwildmatch", f))
+                    (dir_path, PathSpec.from_lines("gitwildmatch", f))
                 )
         return recurse_exclude_spec
 
@@ -1015,9 +988,9 @@ class BentoPathSpec:
         )
         if to_include:
             return not any(
-                ignore_spec.match_file(fs.path.relativefrom(ignore_parent, path))
+                ignore_spec.match_file(os.path.relpath(path, ignore_parent))
                 for ignore_parent, ignore_spec in self.recurse_exclude_spec
-                if fs.path.isparent(ignore_parent, path)
+                if Path(path).is_relative_to(ignore_parent)
             )
         return to_include
 

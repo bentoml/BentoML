@@ -3,9 +3,9 @@ from __future__ import annotations
 import importlib
 import shlex
 import typing as t
+from pathlib import Path
 
 import attrs
-from fs.base import FS
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 
@@ -17,7 +17,7 @@ from bentoml._internal.container.generate import to_options_field
 
 
 def get_templates_variables(
-    image: ImageInfo, bento_fs: FS, **bento_envs: t.Any
+    image: ImageInfo, bento_fs: Path, **bento_envs: t.Any
 ) -> dict[str, t.Any]:
     from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -31,7 +31,11 @@ def get_templates_variables(
 
 
 def generate_dockerfile(
-    image: ImageInfo, bento_fs: FS, *, frontend: str = "dockerfile", **bento_envs: t.Any
+    image: ImageInfo,
+    bento_fs: Path,
+    *,
+    frontend: str = "dockerfile",
+    **bento_envs: t.Any,
 ) -> str:
     templates_path = importlib.import_module(
         f"bentoml._internal.container.frontend.{frontend}.templates"

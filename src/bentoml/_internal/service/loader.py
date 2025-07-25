@@ -7,7 +7,6 @@ import sys
 import typing as t
 from typing import TYPE_CHECKING
 
-import fs
 from simple_di import Provide
 from simple_di import inject
 
@@ -23,7 +22,6 @@ from ..configuration.containers import BentoMLContainer
 from ..models import ModelStore
 from ..tag import Tag
 from ..utils.args import set_arguments
-from ..utils.uri import encode_path_for_uri
 
 if TYPE_CHECKING:
     from _bentoml_sdk import Service as NewService
@@ -269,8 +267,7 @@ def load_bento_dir(
     Example usage:
         load_bento_dir("~/bentoml/bentos/iris_classifier/4tht2icroji6zput3suqi5nl2")
     """
-    bento_fs = fs.open_fs(encode_path_for_uri(path))
-    bento = Bento.from_fs(bento_fs)
+    bento = Bento.from_path(path)
     logger.debug(
         'Loading bento "%s" from directory: %s',
         bento.tag,

@@ -6,10 +6,10 @@ import os
 import re
 import sys
 import typing as t
+from pathlib import Path
 from shutil import which
 
 import click
-import fs
 from simple_di import Provide
 from simple_di import inject
 
@@ -21,7 +21,6 @@ from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.env_manager import EnvManager
 from bentoml._internal.env_manager.envs import Environment
-from bentoml._internal.utils.uri import encode_path_for_uri
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import NotFound as BentoNotFound
 
@@ -59,16 +58,15 @@ def get_environment(
 ) -> Environment:
     # env created will be ephemeral
     if os.path.isdir(os.path.expanduser(bento_identifier)):
-        bento_path_fs = fs.open_fs(
-            encode_path_for_uri(os.path.abspath(os.path.expanduser(bento_identifier)))
-        )
-        if bento_path_fs.isfile(BENTO_YAML_FILENAME):
+        bento_path = Path(bento_identifier).expanduser().resolve()
+        if (bento_path / BENTO_YAML_FILENAME).is_file():
             # path to a build bento dir
             return EnvManager.from_bento(
-                env_type=env, bento=Bento.from_fs(bento_path_fs)
+                env_type=env, bento=Bento.from_path(bento_path)
             ).environment
         elif any(
-            bento_path_fs.isfile(filename) for filename in DEFAULT_BENTO_BUILD_FILES
+            bento_path.joinpath(filename).is_file()
+            for filename in DEFAULT_BENTO_BUILD_FILES
         ):
             # path to a bento project
             raise NotImplementedError(
@@ -76,7 +74,7 @@ def get_environment(
             )
         else:
             raise BentoMLException(
-                f"EnvManager failed to create an environment from path {bento_path_fs}. "
+                f"EnvManager failed to create an environment from path {bento_path}. "
                 f"When loading from a path, it must be either a Bento or a project directory containing '{DEFAULT_BENTO_BUILD_FILES[0]}'."
             )
     else:

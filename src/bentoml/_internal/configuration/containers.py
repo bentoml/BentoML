@@ -31,8 +31,6 @@ from .helpers import import_configuration_spec
 from .helpers import load_config_file
 
 if TYPE_CHECKING:
-    from fs.base import FS
-
     from .. import external_typing as ext
     from ..bento import BentoStore
     from ..cloud import BentoCloudClient
@@ -189,17 +187,8 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def env_store_dir(bentoml_home: str = Provide[bentoml_home]):
+    def env_store_dir(bentoml_home: str = Provide[bentoml_home]) -> str:
         return os.path.join(bentoml_home, "envs")
-
-    @providers.SingletonFactory
-    @staticmethod
-    def env_store(bentoml_home: str = Provide[bentoml_home]) -> FS:
-        import fs
-
-        from ..utils.uri import encode_path_for_uri
-
-        return fs.open_fs(encode_path_for_uri(os.path.join(bentoml_home, "envs")))
 
     @providers.SingletonFactory
     @staticmethod

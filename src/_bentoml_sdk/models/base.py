@@ -4,7 +4,6 @@ import abc
 import typing as t
 
 import attrs
-from fs.base import FS
 from simple_di import Provide
 from simple_di import inject
 
@@ -45,7 +44,7 @@ class Model(abc.ABC, t.Generic[T]):
         """Return the create model schema object."""
 
     @abc.abstractmethod
-    def resolve(self, base_path: t.Union[PathType, FS, None] = None) -> T:
+    def resolve(self, base_path: t.Union[PathType, None] = None) -> T:
         """Get the actual object of the model."""
 
     @t.overload
@@ -117,7 +116,7 @@ class BentoModel(Model[StoredModel]):
     @inject
     def resolve(
         self,
-        base_path: t.Union[PathType, FS, None] = None,
+        base_path: t.Union[PathType, None] = None,
         global_model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> StoredModel:
         stored = self.stored

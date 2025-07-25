@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import base64
 import logging
+import posixpath
 import re
 import typing as t
 import uuid
 
 import attr
-import fs
 
 from ..exceptions import BentoMLException
 from .utils.cattr import bentoml_cattr
@@ -92,10 +92,14 @@ class Tag:
     def __repr__(self):
         return f"{self.__class__.__name__}(name={repr(self.name)}, version={repr(self.version)})"
 
-    def __eq__(self, other: "Tag") -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Tag):
+            return NotImplemented
         return self.name == other.name and self.version == other.version
 
-    def __lt__(self, other: "Tag") -> bool:
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, Tag):
+            return NotImplemented
         if self.name == other.name:
             if other.version is None:
                 return False
@@ -143,10 +147,10 @@ class Tag:
     def path(self) -> str:
         if self.version is None:
             return self.name
-        return fs.path.combine(self.name, self.version)
+        return posixpath.join(self.name, self.version)
 
     def latest_path(self) -> str:
-        return fs.path.combine(self.name, "latest")
+        return posixpath.join(self.name, "latest")
 
 
 bentoml_cattr.register_structure_hook(Tag, lambda d, _: Tag.from_taglike(d))  # type: ignore[misc]

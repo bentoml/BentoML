@@ -6,7 +6,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import attr
-import fs
 import pytest
 
 from bentoml import Tag
@@ -23,15 +22,13 @@ if sys.version_info < (3, 7):
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from fs.base import FS
-
     from bentoml._internal.types import PathType
 
 
 @attr.define(repr=False)
 class DummyItem(StoreItem):
     _tag: Tag
-    fs: "FS"
+    _path: Path
     _creation_time: datetime
     store: "DummyStore" = attr.field(init=False)
 
@@ -51,22 +48,21 @@ class DummyItem(StoreItem):
     def create(tag: t.Union[str, Tag], creation_time: t.Optional[datetime] = None):
         creation_time = datetime.now() if creation_time is None else creation_time
         with DummyItem.store.register(tag) as path:
-            dummy_fs = fs.open_fs(path)
-            dummy_fs.writetext("tag", str(tag))
-            dummy_fs.writetext("ctime", creation_time.isoformat())
+            Path(path, "tag").write_text(str(tag))
+            Path(path, "ctime").write_text(creation_time.isoformat())
 
     @classmethod
-    def from_fs(cls, item_fs: "FS") -> "DummyItem":
+    def from_path(cls, path: PathType) -> "DummyItem":
+        path = Path(path)
         return DummyItem(
-            Tag.from_str(item_fs.readtext("tag")),
-            item_fs,
-            datetime.fromisoformat(item_fs.readtext("ctime")),
+            Tag.from_str(path.read_text("tag")),
+            path,
+            datetime.fromisoformat(path.read_text("ctime")),
         )
 
 
 class DummyStore(Store[DummyItem]):
-    def __init__(self, base_path: "t.Union[PathType, FS]"):
-        super().__init__(base_path, DummyItem)
+    _item_type = DummyItem
 
 
 def test_store(tmpdir: "Path"):

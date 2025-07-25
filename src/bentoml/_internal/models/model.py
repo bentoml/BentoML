@@ -5,28 +5,27 @@ import inspect
 import io
 import logging
 import os
+import shutil
+import tempfile
 import typing as t
+import weakref
 from datetime import datetime
 from datetime import timezone
+from pathlib import Path
 from sys import version_info as pyver
 from types import ModuleType
+from typing import IO
 from typing import TYPE_CHECKING
 from typing import overload
 
 import attr
 import cloudpickle  # type: ignore (no cloudpickle types)
-import fs
-import fs.errors
-import fs.mirror
 import yaml
 from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn
 from cattr.gen import override
-from fs.base import FS
 from simple_di import Provide
 from simple_di import inject
-
-from bentoml._internal.utils.uri import encode_path_for_uri
 
 from ...exceptions import BentoMLException
 from ...exceptions import NotFound
@@ -37,16 +36,17 @@ from ..store import StoreItem
 from ..tag import Tag
 from ..types import MetadataDict
 from ..types import ModelSignatureDict
+from ..types import PathType
 from ..utils import label_validator
 from ..utils import metadata_validator
 from ..utils import normalize_labels_value
 from ..utils.cattr import bentoml_cattr
+from ..utils.filesystem import safe_remove_dir
 
 if t.TYPE_CHECKING:
     from ..runner import Runnable
     from ..runner import Runner
     from ..runner.strategy import Strategy
-    from ..types import PathType
 
 
 T = t.TypeVar("T")
@@ -72,37 +72,27 @@ class PartialKwargsModelOptions(ModelOptions):
     partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
 
 
-@attr.define(repr=False, eq=False, init=False)
+@attr.define(repr=False, eq=False)
 class Model(StoreItem):
     _tag: Tag
-    __fs: FS
-
+    _path: Path = attr.field(converter=Path)
     _info: ModelInfo
     _custom_objects: dict[str, t.Any] | None = None
+    _internal: bool = attr.field(kw_only=True, default=False)
 
     _runnable: t.Type[Runnable] | None = attr.field(init=False, default=None)
-
-    _model: t.Any = None
-    _attr: str | None = None
+    _model: t.Any = attr.field(init=False, default=None)
+    _attr: str | None = attr.field(init=False, default=None)
 
     def __set_name__(self, owner: t.Any, name: str) -> None:
         self._attr = name
 
-    def __init__(
-        self,
-        tag: Tag,
-        model_fs: FS,
-        info: ModelInfo,
-        custom_objects: dict[str, t.Any] | None = None,
-        *,
-        _internal: bool = False,
-    ):
-        if not _internal:
+    @_internal.validator
+    def _check_internal(self, attribute: attr.Attribute[bool], value: bool) -> None:
+        if not value:
             raise BentoMLException(
                 "Model cannot be instantiated directly; use bentoml.<framework>.save or bentoml.models.get instead"
             )
-
-        self.__attrs_init__(tag, model_fs, info, custom_objects)  # type: ignore (no types for attrs init)
 
     @staticmethod
     def _export_ext() -> str:
@@ -113,18 +103,14 @@ class Model(StoreItem):
         return self._tag
 
     @property
-    def _fs(self) -> FS:
-        return self.__fs
-
-    @property
     def info(self) -> ModelInfo:
         return self._info
 
     @property
     def custom_objects(self) -> t.Dict[str, t.Any]:
         if self._custom_objects is None:
-            if self._fs.isfile(CUSTOM_OBJECTS_FILENAME):
-                with self._fs.open(CUSTOM_OBJECTS_FILENAME, "rb") as cofile:
+            if self._path.joinpath(CUSTOM_OBJECTS_FILENAME).is_file():
+                with self._path.joinpath(CUSTOM_OBJECTS_FILENAME).open("rb") as cofile:
                     self._custom_objects: dict[str, t.Any] | None = cloudpickle.load(
                         cofile
                     )
@@ -185,9 +171,9 @@ class Model(StoreItem):
         metadata = {} if metadata is None else metadata
         options = ModelOptions() if options is None else options
 
-        model_fs = fs.open_fs(f"temp://bentoml_model_{tag.name}")
+        model_fs = tempfile.mkdtemp(prefix=f"bentoml-model-{tag.name}-")
 
-        return cls(
+        res = cls(
             tag,
             model_fs,
             ModelInfo(
@@ -201,8 +187,10 @@ class Model(StoreItem):
                 context=context,
             ),
             custom_objects=custom_objects,
-            _internal=True,
+            internal=True,  # type: ignore[call-arg]
         )
+        weakref.finalize(res, safe_remove_dir, model_fs)
+        return res
 
     @inject
     def save(
@@ -215,26 +203,22 @@ class Model(StoreItem):
             raise BentoMLException(f"Failed to save {self!s}: {e}") from None
 
         with model_store.register(self.tag) as model_path:
-            out_fs = fs.open_fs(
-                encode_path_for_uri(model_path), create=True, writeable=True
-            )
-            fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
-            self._fs.close()
-            self.__fs = out_fs
-
-        return self
+            out_path = Path(model_path)
+            out_path.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(self._path, out_path, dirs_exist_ok=True)
+            return attr.evolve(self, path=out_path)
 
     @classmethod
-    def from_fs(cls: t.Type[Model], item_fs: FS) -> Model:
+    def from_path(cls, path: PathType) -> t.Self:
         try:
-            with item_fs.open(MODEL_YAML_FILENAME, "r") as model_yaml:
+            with open(os.path.join(path, MODEL_YAML_FILENAME)) as model_yaml:
                 info = ModelInfo.from_yaml_file(model_yaml)
-        except fs.errors.ResourceNotFound:
+        except FileNotFoundError:
             raise BentoMLException(
                 f"Failed to load bento model because it does not contain a '{MODEL_YAML_FILENAME}'"
-            )
+            ) from None
 
-        res = Model(tag=info.tag, model_fs=item_fs, info=info, _internal=True)
+        res = cls(info.tag, path=path, info=info, internal=True)  # type: ignore[call-arg]
         try:
             res.validate()
         except BentoMLException as e:
@@ -291,21 +275,23 @@ class Model(StoreItem):
         self._write_custom_objects()
 
     def _write_info(self):
-        with self._fs.open(MODEL_YAML_FILENAME, "w", encoding="utf-8") as model_yaml:
-            self.info.dump(t.cast(io.StringIO, model_yaml))
+        with self._path.joinpath(MODEL_YAML_FILENAME).open(
+            "w", encoding="utf8"
+        ) as model_yaml:
+            self.info.dump(model_yaml)
 
     def _write_custom_objects(self):
         # pickle custom_objects if it is not None and not empty
         if self.custom_objects:
-            with self._fs.open(CUSTOM_OBJECTS_FILENAME, "wb") as cofile:
+            with self._path.joinpath(CUSTOM_OBJECTS_FILENAME).open("wb") as cofile:
                 cloudpickle.dump(self.custom_objects, cofile)  # type: ignore (incomplete cloudpickle types)
 
     @property
     def creation_time(self) -> datetime:
         return self.info.creation_time
 
-    def validate(self):
-        if not self._fs.isfile(MODEL_YAML_FILENAME):
+    def validate(self) -> None:
+        if not self._path.joinpath(MODEL_YAML_FILENAME).is_file():
             raise BentoMLException(
                 f"{self!s} does not contain a {MODEL_YAML_FILENAME}."
             )
@@ -382,19 +368,11 @@ class Model(StoreItem):
         return self._model
 
     def with_options(self, **kwargs: t.Any) -> Model:
-        res = Model(
-            self._tag,
-            self._fs,
-            self.info.with_options(**kwargs),
-            self._custom_objects,
-            _internal=True,
-        )
-        return res
+        return attr.evolve(self, info=self.info.with_options(**kwargs))
 
 
 class ModelStore(Store[Model]):
-    def __init__(self, base_path: "t.Union[PathType, FS]"):
-        super().__init__(base_path, Model)
+    _item_type = Model
 
 
 @attr.frozen
@@ -543,8 +521,8 @@ class ModelInfo:
     api_version: str
     creation_time: datetime
 
-    _cached_module: t.Optional[ModuleType] = None
-    _cached_options: t.Optional[ModelOptions] = None
+    _cached_module: t.Optional[ModuleType] = attr.field(init=False, default=None)
+    _cached_options: t.Optional[ModelOptions] = attr.field(init=False, default=None)
 
     def __init__(
         self,
@@ -598,17 +576,7 @@ class ModelInfo:
         )
 
     def with_options(self, **kwargs: t.Any) -> ModelInfo:
-        return ModelInfo(
-            tag=self.tag,
-            module=self.module,
-            signatures=self.signatures,
-            labels=self.labels,
-            options=self.options.with_options(**kwargs),
-            metadata=self.metadata,
-            context=self.context,
-            api_version=self.api_version,
-            creation_time=self.creation_time,
-        )
+        return attr.evolve(self, options=self.options.with_options(**kwargs))
 
     # cached_property doesn't support __slots__ classes
     @property
@@ -648,12 +616,12 @@ class ModelInfo:
         return bentoml_cattr.unstructure(self)
 
     @overload
-    def dump(self, stream: io.StringIO) -> io.BytesIO: ...
+    def dump(self, stream: IO[str]) -> io.BytesIO: ...
 
     @overload
     def dump(self, stream: None = None) -> None: ...
 
-    def dump(self, stream: io.StringIO | None = None) -> io.BytesIO | None:
+    def dump(self, stream: IO[str] | None = None) -> io.BytesIO | None:
         return yaml.safe_dump(self.to_dict(), stream=stream, sort_keys=False)  # type: ignore (bad yaml types)
 
     @classmethod

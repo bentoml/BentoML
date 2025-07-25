@@ -4,6 +4,7 @@ import logging
 import os
 import shlex
 import typing as t
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from jinja2 import Environment
@@ -17,8 +18,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
-
-    from fs.base import FS
 
     from ..bento.build_config import CondaOptions
     from ..bento.build_config import DockerOptions
@@ -65,7 +64,7 @@ def to_options_field(s: str):
 def get_templates_variables(
     docker: DockerOptions,
     conda: CondaOptions,
-    bento_fs: FS,
+    bento_fs: Path,
     *,
     python_packages: dict[str, str] | None = None,
     _is_cuda: bool = False,
@@ -113,7 +112,7 @@ def generate_containerfile(
     build_ctx: str,
     *,
     conda: CondaOptions,
-    bento_fs: FS,
+    bento_fs: Path,
     frontend: str = "dockerfile",
     **override_bento_env: t.Any,
 ) -> str:
@@ -192,11 +191,11 @@ def generate_containerfile(
             globals={"bento_base_template": template, **J2_FUNCTION},
         )
 
-    requirement_file = bento_fs.getsyspath("env/python/requirements.lock.txt")
-    if not os.path.exists(requirement_file):
-        requirement_file = bento_fs.getsyspath("env/python/requirements.txt")
-    if os.path.exists(requirement_file):
-        python_packages = resolve_package_versions(requirement_file)
+    requirement_file = bento_fs.joinpath("env/python/requirements.lock.txt")
+    if not requirement_file.exists():
+        requirement_file = bento_fs.joinpath("env/python/requirements.txt")
+    if requirement_file.exists():
+        python_packages = resolve_package_versions(str(requirement_file))
     else:
         python_packages = {}
 

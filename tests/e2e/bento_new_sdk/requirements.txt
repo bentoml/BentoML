@@ -1,4 +1,4 @@
 scikit-learn
 pydantic>=2
-transformers<4.51
+transformers<4.54
 torch

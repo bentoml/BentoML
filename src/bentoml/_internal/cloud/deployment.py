@@ -1474,8 +1474,9 @@ def _build_requirements_txt(bento_dir: str, image: Image | None) -> bytes:
     if filename and os.path.exists(fullpath := os.path.join(bento_dir, filename)):
         with open(fullpath, "rb") as f:
             content = f.read().rstrip(b"\n") + b"\n"
-    for package in config.python.packages or []:
-        content += f"{package}\n".encode()
+    elif config.python.packages:
+        for package in config.python.packages:
+            content += f"{package}\n".encode()
     if image and image.python_requirements:
         content += image.python_requirements.encode()
     bentoml_requirement = get_bentoml_requirement()

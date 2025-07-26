@@ -395,7 +395,7 @@ def populate_image_from_build_config(
         image.requirements_file(
             resolve_user_filepath(python_options.requirements_txt, build_ctx)
         )
-    if python_options.packages:
+    elif python_options.packages:
         image.python_packages(*python_options.packages)
     if docker_options.setup_script:
         image.run_script(docker_options.setup_script)

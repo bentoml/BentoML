@@ -2,7 +2,7 @@
 Manage Deployments
 ==================
 
-After you :doc:`deploy a Bento on BentoCloud </get-started/cloud-deployment>`, you can easily manage them using the BentoML CLI or API. Available operations include viewing, updating, applying, terminating, and deleting Deployments.
+After you :doc:`deploy a Bento on BentoCloud </get-started/cloud-deployment>`, you can easily manage them using the console, BentoML CLI or API. Available operations include viewing, updating, applying, terminating, and deleting Deployments.
 
 View
 ----
@@ -273,6 +273,25 @@ To apply new configurations to a Deployment, you define them in a separate file 
       import bentoml
 
       bentoml.deployment.apply(name = "deployment-1", config_file = "deployment.yaml")
+
+Roll back
+---------
+
+BentoCloud keeps track of all Deployment revisions, allowing you to easily roll back to previous versions and recover from issues or revert unwanted changes.
+
+To revert your Deployment to a previous state:
+
+1. Navigate to the **Deployments** page on the BentoCloud console.
+2. Select your Deployment.
+3. On the **Revisions** tab, locate the revision you want to roll back to.
+4. Click the **Rollback** button next to that revision and confirm the rollback action. You can view the configurations of a previous version by clicking **Settings**.
+
+.. image:: ../../_static/img/bentocloud/how-to/manage-deployments/revisions-and-rollbacks.png
+   :alt: Revisions and rollbacks on BentoCloud
+
+.. note::
+
+   Rolling back does not delete any revisions. You can always roll forward or back to any available revision as needed.
 
 Terminate
 ---------

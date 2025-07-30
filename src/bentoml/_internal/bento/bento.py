@@ -361,7 +361,7 @@ class Bento(StoreItem):
             ):
                 shutil.copy(ctx_path.joinpath(BENTO_README_FILENAME), bento_readme)
             else:
-                with bento_readme.open("w") as f:
+                with bento_readme.open("w", encoding="utf8") as f:
                     if build_config.description is None:
                         f.write(get_default_svc_readme(svc, version))
                     else:

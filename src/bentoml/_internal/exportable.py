@@ -74,17 +74,18 @@ class Exportable(ABC):
         params: dict[str, str] | None = None,
         subpath: str | None = None,
     ) -> t.Self:
-        parsedurl = urllib.parse.urlsplit(path)
-        if parsedurl.scheme and any(
+        is_url = "://" in path
+        if is_url and any(
             v is not None for v in [protocol, user, passwd, params, subpath]
         ):
             raise ValueError(
                 "An FS URL was passed as the input path; all additional information should be passed as part of the URL."
             )
-        protocol = protocol or parsedurl.scheme or "file"
+        parsedurl = urllib.parse.urlsplit(path)
+        protocol = parsedurl.scheme if is_url else (protocol or "file")
         if protocol in ("osfs", "tar", "zip"):
             protocol = "file"
-        if parsedurl.scheme:
+        if is_url:
             resource = parsedurl.netloc.rpartition("@")[2]
             subpath = parsedurl.path
             resource_url = urllib.parse.urlunsplit((protocol, *parsedurl[1:]))
@@ -161,17 +162,18 @@ class Exportable(ABC):
         params: t.Optional[t.Dict[str, str]] = None,
         subpath: t.Optional[str] = None,
     ) -> str:
-        parsedurl = urllib.parse.urlsplit(path)
-        if parsedurl.scheme and any(
+        is_url = "://" in path
+        if is_url and any(
             v is not None for v in [protocol, user, passwd, params, subpath]
         ):
             raise ValueError(
                 "An FS URL was passed as the output path; all additional information should be passed as part of the URL."
             )
-        protocol = protocol or parsedurl.scheme or "file"
+        parsedurl = urllib.parse.urlsplit(path)
+        protocol = parsedurl.scheme if is_url else (protocol or "file")
         if protocol in ("osfs", "tar", "zip"):
             protocol = "file"
-        if parsedurl.scheme:
+        if is_url:
             resource = parsedurl.netloc.rpartition("@")[2]
             subpath = parsedurl.path
             netloc = parsedurl.netloc

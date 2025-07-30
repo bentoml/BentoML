@@ -257,7 +257,7 @@ def test_bento_export(tmp_path: "Path", model_store: "ModelStore"):
     del imported_bento
 
     path = posixpath.join(tmp_path, "testbento-parent-2/")
-    with pytest.raises(ValueError):
+    with pytest.raises(FileNotFoundError):
         export_path = bento.export(path)
 
     path = posixpath.join(tmp_path, "bento-dir")
@@ -289,7 +289,7 @@ def test_bento_export(tmp_path: "Path", model_store: "ModelStore"):
 
     path = "zip://" + posixpath.join(tmp_path, "testbento.zip")
     export_path = bento.export(path)
-    assert export_path == path
+    assert export_path == path[6:]
     imported_bento = Bento.import_from(export_path)
     assert imported_bento.tag == bento.tag
     assert imported_bento.info == bento.info
@@ -306,7 +306,7 @@ def test_bento_export(tmp_path: "Path", model_store: "ModelStore"):
     del imported_bento
 
     path = posixpath.join(tmp_path, "testbento-gz-1/")
-    with pytest.raises(ValueError):
+    with pytest.raises(FileNotFoundError):
         bento.export(path, output_format="gz")
 
 

@@ -139,9 +139,13 @@ class Exportable(ABC):
         else:
             from fsspec.implementations.tar import TarFileSystem
 
+            compressions = {
+                cls._export_ext(): "xz",
+                "gz": "gzip",
+                "tar": None,
+            }
             fs = TarFileSystem(
-                resource_url,
-                compression="xz" if input_format == cls._export_ext() else input_format,
+                resource_url, compression=compressions.get(input_format, input_format)
             )
 
         return cls._from_fs(fs)
@@ -189,7 +193,6 @@ class Exportable(ABC):
                     resource, _, subpath = path.partition("/")
             else:
                 resource = path
-            resource, _, subpath = path.partition("/")
             netloc += resource
             query = urllib.parse.urlencode(params or {})
 
@@ -201,7 +204,14 @@ class Exportable(ABC):
         if output_format is None:
             output_format = self.guess_format(subpath)
 
-        if output_format != "folder" and (not subpath or subpath.endswith("/")):
+        is_dir = (
+            not subpath
+            or subpath.endswith("/")
+            or protocol == "file"
+            and os.path.isdir(subpath)
+        )
+
+        if output_format != "folder" and is_dir:
             subpath = posixpath.join(
                 subpath or "", f"{self._export_name}.{output_format}"
             )

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import os
-import sys
 import time
 import typing as t
 from datetime import datetime
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import attr
@@ -14,14 +16,7 @@ from bentoml._internal.store import StoreItem
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import NotFound
 
-if sys.version_info < (3, 7):
-    from backports.datetime_fromisoformat import MonkeyPatch
-
-    MonkeyPatch.patch_fromisoformat()
-
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from bentoml._internal.types import PathType
 
 
@@ -55,9 +50,9 @@ class DummyItem(StoreItem):
     def from_path(cls, path: PathType) -> "DummyItem":
         path = Path(path)
         return DummyItem(
-            Tag.from_str(path.read_text("tag")),
+            Tag.from_str(path.joinpath("tag").read_text().strip()),
             path,
-            datetime.fromisoformat(path.read_text("ctime")),
+            datetime.fromisoformat(path.joinpath("ctime").read_text().strip()),
         )
 
 

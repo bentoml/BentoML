@@ -138,6 +138,15 @@ class Store(t.Generic[Item]):
         if (self._path / path).exists():
             return self._get_item(_tag)
 
+        matches = list(p for p in self._path.glob(f"{path}*/") if p.is_dir())
+        if len(matches) == 1:
+            return self._get_item(Tag(_tag.name, matches[0].name))
+        elif len(matches) > 1:
+            vers = [p.name for p in matches]
+            raise BentoMLException(
+                f"Multiple {_tag.name} versions found: {', '.join(vers)}"
+            )
+        # No match found
         cmd = (
             "bentoml models pull"
             if self._item_type.get_typename() == "Model"

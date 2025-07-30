@@ -144,7 +144,7 @@ class Bento(StoreItem):
     def _export_ext() -> str:
         return "bento"
 
-    @_model_store.default  # type:ignore # attrs default not supported by pyright
+    @_model_store.default  # type: ignore # attrs default not supported by pyright
     def _internal_store(self) -> ModelStore | None:
         if self._path.joinpath("models").exists():
             return ModelStore(self._path.joinpath("models"))
@@ -323,9 +323,9 @@ class Bento(StoreItem):
             with target_fs.joinpath("bentofile.yaml").open("w") as bentofile_yaml:
                 build_config.to_yaml(bentofile_yaml)
 
-            for dir_path, _, files in os.walk(ctx_path):
+            for root, _, files in os.walk(ctx_path):
                 for f in files:
-                    dir_path = os.path.relpath(dir_path, ctx_path)
+                    dir_path = os.path.relpath(root, ctx_path)
                     path = os.path.join(dir_path, f).replace(os.sep, "/")
                     if specs.includes(path):
                         if ctx_path.joinpath(path).stat().st_size > 10 * 1024 * 1024:

@@ -249,10 +249,8 @@ def test_model_export_import(bento_model, tmp_path: "Path"):
     export_bentomodel_path = posixpath.join(tmp_path, "modelb.bentomodel")
     bento_model.export(export_bentomodel_path)
 
-    from_fs_model = Model.import_from(export_bentomodel_path)
-
     model_store = ModelStore(tmp_path)
-    from_fs_model.save(model_store)
+    from_fs_model = Model.import_from(export_bentomodel_path).save(model_store)
 
     save_path = tmp_path / from_fs_model.tag.name / from_fs_model.tag.version
     assert str(from_fs_model) == f'Model(tag="{bento_model.tag}")'
@@ -262,7 +260,7 @@ def test_model_export_import(bento_model, tmp_path: "Path"):
 def test_load_bad_model(tmp_path: "Path"):
     tmp_path.joinpath("nonexistent").mkdir(parents=True, exist_ok=True)
     with pytest.raises(BentoMLException):
-        Model.import_from(os.path.join(tmp_path, "nonexistent"))
+        Model.from_path(os.path.join(tmp_path, "nonexistent"))
 
     bad_path = os.path.join(tmp_path, "badmodel")
     os.makedirs(bad_path)
@@ -271,4 +269,4 @@ def test_load_bad_model(tmp_path: "Path"):
     ) as model_yaml:
         model_yaml.write("bad yaml")
     with pytest.raises(BentoMLException):
-        Model.import_from(bad_path)
+        Model.from_path(bad_path)

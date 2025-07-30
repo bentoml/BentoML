@@ -576,7 +576,17 @@ class ModelInfo:
         )
 
     def with_options(self, **kwargs: t.Any) -> ModelInfo:
-        return attr.evolve(self, options=self.options.with_options(**kwargs))
+        return ModelInfo(
+            tag=self.tag,
+            module=self.module,
+            signatures=self.signatures,
+            labels=self.labels,
+            options=self.options.with_options(**kwargs),
+            metadata=self.metadata,
+            context=self.context,
+            api_version=self.api_version,
+            creation_time=self.creation_time,
+        )
 
     # cached_property doesn't support __slots__ classes
     @property

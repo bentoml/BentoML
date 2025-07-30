@@ -6,6 +6,7 @@ import subprocess
 import typing as t
 from abc import ABC
 from abc import abstractmethod
+from pathlib import Path
 from shutil import which
 from tempfile import NamedTemporaryFile
 
@@ -17,23 +18,18 @@ from ..configuration import get_debug_mode
 
 logger = logging.getLogger(__name__)
 
-if t.TYPE_CHECKING:
-    from fs.base import FS
-
 
 @attr.define
 class Environment(ABC):
     name: str
-    env_fs: FS
+    path: Path = attr.field(converter=Path)
     # path to bento's /env dir
     bento: Bento
     env_exe: str = attr.field(init=False)
 
     def __attrs_post_init__(self):
         self.env_exe = self.get_executable()
-        if self.env_fs.exists(self.name):
-            return self.env_fs.getsyspath(self.name)
-        else:
+        if not self.path.exists():
             self.create()
 
     @abstractmethod
@@ -103,7 +99,7 @@ class Conda(Environment):
 
         # create a env under $BENTOML_HOME/env
         # setup conda with bento's environment.yml file and python/install.sh file
-        conda_env_path = self.env_fs.getsyspath(self.name)
+        conda_env_path = self.path / self.name
         python_version: str
         with open(self.bento.path_of("/env/python/version.txt"), "r") as pyver_file:
             py_version = pyver_file.read().split(".")[:2]
@@ -138,7 +134,7 @@ bash -euxo pipefail {self.bento.path_of("/env/python/install.sh")}
         """
         Run commands in the activated environment.
         """
-        conda_env_path = self.env_fs.getsyspath(self.name)
+        conda_env_path = self.path / self.name
         create_script = f"""\
 eval "$({self.env_exe} shell.posix hook)"
 conda activate {conda_env_path}

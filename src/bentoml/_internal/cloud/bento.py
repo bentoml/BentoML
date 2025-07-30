@@ -3,13 +3,13 @@ from __future__ import annotations
 import math
 import os
 import tarfile
+import tempfile
 import typing as t
 from concurrent.futures import ThreadPoolExecutor
 from tempfile import NamedTemporaryFile
 from tempfile import mkstemp
 
 import attrs
-import fs
 import httpx
 from simple_di import Provide
 from simple_di import inject
@@ -538,10 +538,9 @@ class BentoAPI:
             tar_file.seek(0, 0)
             tar = tarfile.open(fileobj=tar_file, mode="r")
             with self.spinner.spin(text=f'Extracting bento "{_tag}" tar file'):
-                with fs.open_fs("temp://") as temp_fs:
-                    safe_extract_tarfile(tar, temp_fs.getsyspath("/"))
-                    bento = Bento.from_fs(temp_fs)
-                    bento = bento.save(bento_store)
+                with tempfile.TemporaryDirectory(prefix="bentoml-bento-") as temp_dir:
+                    safe_extract_tarfile(tar, temp_dir)
+                    bento = Bento.from_path(temp_dir).save(bento_store)
                     self.spinner.log(f'[bold green]Successfully pulled bento "{_tag}"')
                     if with_models:
                         self._pull_bento_models(bento)

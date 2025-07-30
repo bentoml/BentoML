@@ -1,0 +1,3 @@
+from fsspec.spec import AbstractFileSystem as AbstractFileSystem
+
+def url_to_fs(url: str) -> tuple[AbstractFileSystem, str]: ...

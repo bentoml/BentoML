@@ -5,6 +5,7 @@ import inspect
 import logging
 import os
 import sys
+import tempfile
 import typing as t
 from functools import partial
 
@@ -138,7 +139,6 @@ class Service:
         """
         Make bentoml.legacy.Service pickle serializable
         """
-        import fs
 
         from bentoml._internal.bento.bento import Bento
         from bentoml._internal.configuration.containers import BentoMLContainer
@@ -149,10 +149,12 @@ class Service:
 
         if self.bento:
             if serialization_strategy == "EXPORT_BENTO":
-                temp_fs = fs.open_fs("temp:///")
-                tmp_path = temp_fs.getsyspath("/")
-                bento_path = self.bento.export(tmp_path, output_format="tar")
-                content = open(bento_path, "rb").read()
+                temp_name = tempfile.mktemp(prefix="bentoml-export-", suffix=".bento")
+                try:
+                    self.bento.export(temp_name)
+                    content = open(temp_name, "rb").read()
+                finally:
+                    os.remove(temp_name)
 
                 def load_exported_bento(bento_tag: Tag, content: bytes):
                     tmp_bento_store = BentoMLContainer.tmp_bento_store.get()
@@ -160,11 +162,12 @@ class Service:
                         bento = tmp_bento_store.get(bento_tag)
                         return load_bento_dir(bento.path)
                     except NotFound:
-                        temp_fs = fs.open_fs("temp:///")
-                        temp_fs.writebytes("/import.bento", content)
-                        bento = Bento.import_from(
-                            temp_fs.getsyspath("/import.bento")
-                        ).save(tmp_bento_store)
+                        temp_name = tempfile.mktemp(
+                            prefix="bentoml-import-", suffix=".bento"
+                        )
+                        with open(temp_name, "wb") as f:
+                            f.write(content)
+                        bento = Bento.import_from(temp_name).save(tmp_bento_store)
                         return load_bento_dir(bento.path)
 
                 return (

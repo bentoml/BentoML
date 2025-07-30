@@ -3,13 +3,13 @@ from __future__ import annotations
 import hashlib
 import logging
 import platform
+import shutil
 import subprocess
 import sys
 import typing as t
 from pathlib import Path
 
 import attrs
-import fs
 
 from bentoml._internal.bento.bento import ImageInfo
 from bentoml._internal.bento.build_config import BentoBuildConfig
@@ -23,8 +23,6 @@ from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
 
 if t.TYPE_CHECKING:
-    from fs.base import FS
-
     from bentoml._internal.bento.build_config import BentoEnvSchema
 
 if sys.version_info >= (3, 11):
@@ -174,20 +172,19 @@ class Image:
         return self
 
     def freeze(
-        self, bento_fs: FS, envs: list[BentoEnvSchema], platform_: str | None = None
+        self, bento_fs: Path, envs: list[BentoEnvSchema], platform_: str | None = None
     ) -> ImageInfo:
         """Freeze the image to an ImageInfo object for build."""
         python_requirements = self._freeze_python_requirements(bento_fs, platform_)
         from importlib import resources
 
         from _bentoml_impl.docker import generate_dockerfile
-        from bentoml._internal.utils.filesystem import copy_file_to_fs_folder
 
         # Prepare env/python files
-        py_folder = fs.path.join("env", "python")
-        bento_fs.makedirs(py_folder, recreate=True)
-        reqs_txt = fs.path.join(py_folder, "requirements.txt")
-        bento_fs.writetext(reqs_txt, python_requirements)
+        py_folder = bento_fs.joinpath("env", "python")
+        py_folder.mkdir(parents=True, exist_ok=True)
+        reqs_txt = py_folder.joinpath("requirements.txt")
+        reqs_txt.write_text(python_requirements)
         info = ImageInfo(
             base_image=self.base_image,
             python_version=self.python_version,
@@ -196,24 +193,23 @@ class Image:
             post_commands=self.post_commands,
         )
         # Prepare env/docker files
-        docker_folder = fs.path.join("env", "docker")
-        bento_fs.makedirs(docker_folder, recreate=True)
-        dockerfile_path = fs.path.join(docker_folder, "Dockerfile")
-        bento_fs.writetext(
-            dockerfile_path,
+        docker_folder = bento_fs.joinpath("env", "docker")
+        docker_folder.mkdir(parents=True, exist_ok=True)
+        dockerfile_path = docker_folder.joinpath("Dockerfile")
+        dockerfile_path.write_text(
             generate_dockerfile(info, bento_fs, enable_buildkit=False, envs=envs),
         )
         for script_name, target_path in self.scripts.items():
-            copy_file_to_fs_folder(script_name, bento_fs, dst_filename=target_path)
+            shutil.copy(script_name, bento_fs / target_path)
 
         with resources.path(
             "bentoml._internal.container.frontend.dockerfile", "entrypoint.sh"
         ) as entrypoint_path:
-            copy_file_to_fs_folder(str(entrypoint_path), bento_fs, docker_folder)
+            shutil.copy(entrypoint_path, docker_folder)
         return info
 
     def _freeze_python_requirements(
-        self, bento_fs: FS, platform_: str | None = None
+        self, bento_fs: Path, platform_: str | None = None
     ) -> str:
         from pip_requirements_parser import RequirementsFile
 
@@ -221,11 +217,9 @@ class Image:
         from bentoml._internal.bento.build_config import PythonOptions
         from bentoml._internal.configuration import get_uv_command
 
-        py_folder = fs.path.join("env", "python")
-        bento_fs.makedirs(py_folder, recreate=True)
-        requirements_in = Path(
-            bento_fs.getsyspath(fs.path.join(py_folder, "requirements.in"))
-        )
+        py_folder = bento_fs.joinpath("env", "python")
+        py_folder.mkdir(parents=True, exist_ok=True)
+        requirements_in = py_folder.joinpath("requirements.in")
         uv_cmd = get_uv_command()
         with requirements_in.open("w") as f:
             if self._uv_lock:
@@ -242,26 +236,24 @@ class Image:
                     ],
                     text=True,
                     stderr=subprocess.DEVNULL if get_quiet_mode() else None,
-                    cwd=bento_fs.getsyspath("src"),
+                    cwd=bento_fs / "src",
                 )
                 f.write(uv_reqs.rstrip("\n") + "\n")
             f.write(self.python_requirements)
-        py_req = fs.path.join("env", "python", "requirements.txt")
-        requirements_out = Path(bento_fs.getsyspath(py_req))
+        requirements_out = py_folder.joinpath("requirements.txt")
         # XXX: RequirementsFile.from_string() does not work due to bugs
         requirements_file = RequirementsFile.from_file(str(requirements_in))
         has_bentoml_req = any(
             req.name and req.name.lower() == "bentoml" and req.link is not None
             for req in requirements_file.requirements
         )
-        src_wheels = fs.path.join("src", "wheels")
-        wheels_folder = fs.path.join("env", "python", "wheels")
-        if bento_fs.exists(src_wheels):
-            bento_fs.movedir(src_wheels, wheels_folder, create=True)
+        wheels_folder = py_folder.joinpath("wheels")
+        wheels_folder.mkdir(parents=True, exist_ok=True)
+
         with requirements_in.open("w") as f:
             f.write(requirements_file.dumps(preserve_one_empty_line=True))
             if not has_bentoml_req:
-                sdist_name = build_bentoml_sdist(bento_fs.getsyspath(wheels_folder))
+                sdist_name = build_bentoml_sdist(str(wheels_folder))
                 bento_req = get_bentoml_requirement()
                 if bento_req is not None:
                     logger.info(
@@ -274,9 +266,7 @@ class Image:
             requirements_out.parent.mkdir(parents=True, exist_ok=True)
             requirements_out.write_text(requirements_in.read_text())
             PythonOptions.fix_dep_urls(
-                str(requirements_out),
-                bento_fs.getsyspath(wheels_folder),
-                self.pack_git_packages,
+                str(requirements_out), str(wheels_folder), self.pack_git_packages
             )
             return requirements_out.read_text()
         lock_args = [
@@ -308,7 +298,7 @@ class Image:
                 cmd,
                 text=True,
                 stderr=subprocess.DEVNULL if get_quiet_mode() else None,
-                cwd=bento_fs.getsyspath(py_folder),
+                cwd=py_folder,
             )
         except subprocess.CalledProcessError as e:
             raise BentoMLException(
@@ -318,9 +308,7 @@ class Image:
             ) from e
 
         PythonOptions.fix_dep_urls(
-            str(requirements_out),
-            bento_fs.getsyspath(wheels_folder),
-            self.pack_git_packages,
+            str(requirements_out), str(wheels_folder), self.pack_git_packages
         )
         return requirements_out.read_text()
 

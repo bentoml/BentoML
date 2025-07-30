@@ -1,3 +1,4 @@
+# ruff: noqa
 from __future__ import annotations
 
 import tarfile
@@ -9,7 +10,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-import fs
 import httpx
 from simple_di import Provide
 from simple_di import inject
@@ -537,7 +537,7 @@ class YataiClient:
                             if p.parent != Path("."):
                                 temp_fs.makedirs(str(p.parent), recreate=True)
                             temp_fs.writebytes(member.name, f.read())
-                        bento = Bento.from_fs(temp_fs)
+                        bento = Bento._from_fs(temp_fs)
                         for model_tag in remote_bento.manifest.models:
                             with self.spinner.spin(
                                 text=f'Copying model "{model_tag}" to model store'
@@ -972,6 +972,6 @@ class YataiClient:
                         if p.parent != Path("."):
                             temp_fs.makedirs(str(p.parent), recreate=True)
                         temp_fs.writebytes(member.name, f.read())
-                    model = Model.from_fs(temp_fs).save(model_store)
+                    model = Model._from_fs(temp_fs).save(model_store)
                     self.spinner.log(f'[bold green]Successfully pulled model "{_tag}"')
                     return model

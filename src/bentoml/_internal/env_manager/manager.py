@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 import logging
+import os
+import tempfile
 import typing as t
+import weakref
 
-import fs
 from simple_di import Provide
 from simple_di import inject
 
 from ..bento.bento import Bento
 from ..bento.bento import BentoInfo
 from ..configuration.containers import BentoMLContainer
+from ..utils.filesystem import safe_remove_dir
 from .envs import Conda
 
 if t.TYPE_CHECKING:
-    from fs.base import FS
-
     from .envs import Environment
 
 logger = logging.getLogger(__name__)
@@ -30,16 +31,19 @@ class EnvManager:
         bento: Bento,
         is_ephemeral: bool = True,
         env_name: str | None = None,
-        env_store: FS = Provide[BentoMLContainer.env_store],
+        env_store: str = Provide[BentoMLContainer.env_store_dir],
     ):
-        if not is_ephemeral:
+        if is_ephemeral:
+            if env_name is None:
+                env_name = "ephemeral_env"
+            env_fs = tempfile.mkdtemp()
+            weakref.finalize(self, safe_remove_dir, env_fs)
+        else:
             assert env_name is not None, "persistent environments need a valid name."
-        if not env_store.exists(env_type):
-            env_store.makedir(env_type)
-        env_fs = fs.open_fs("temp://") if is_ephemeral else env_store.opendir(env_type)
+            env_fs = os.path.join(env_store, env_type)
 
         if env_type == "conda":
-            self.environment = Conda(name=env_name, env_fs=env_fs, bento=bento)
+            self.environment = Conda(name=env_name, path=env_fs, bento=bento)
         else:
             raise NotImplementedError(f"'{env_type}' is not supported.")
 
@@ -48,7 +52,7 @@ class EnvManager:
         cls,
         env_type: t.Literal["conda"],
         bento: Bento,
-        is_ephemeral: bool,
+        is_ephemeral: bool = True,
     ) -> EnvManager:
         env_name: str
         if is_ephemeral:

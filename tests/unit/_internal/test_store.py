@@ -1,12 +1,13 @@
+from __future__ import annotations
+
 import os
-import sys
 import time
 import typing as t
 from datetime import datetime
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import attr
-import fs
 import pytest
 
 from bentoml import Tag
@@ -15,23 +16,14 @@ from bentoml._internal.store import StoreItem
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import NotFound
 
-if sys.version_info < (3, 7):
-    from backports.datetime_fromisoformat import MonkeyPatch
-
-    MonkeyPatch.patch_fromisoformat()
-
 if TYPE_CHECKING:
-    from pathlib import Path
-
-    from fs.base import FS
-
     from bentoml._internal.types import PathType
 
 
 @attr.define(repr=False)
 class DummyItem(StoreItem):
     _tag: Tag
-    fs: "FS"
+    _path: Path
     _creation_time: datetime
     store: "DummyStore" = attr.field(init=False)
 
@@ -51,22 +43,21 @@ class DummyItem(StoreItem):
     def create(tag: t.Union[str, Tag], creation_time: t.Optional[datetime] = None):
         creation_time = datetime.now() if creation_time is None else creation_time
         with DummyItem.store.register(tag) as path:
-            dummy_fs = fs.open_fs(path)
-            dummy_fs.writetext("tag", str(tag))
-            dummy_fs.writetext("ctime", creation_time.isoformat())
+            Path(path, "tag").write_text(str(tag))
+            Path(path, "ctime").write_text(creation_time.isoformat())
 
     @classmethod
-    def from_fs(cls, item_fs: "FS") -> "DummyItem":
+    def from_path(cls, path: PathType) -> "DummyItem":
+        path = Path(path)
         return DummyItem(
-            Tag.from_str(item_fs.readtext("tag")),
-            item_fs,
-            datetime.fromisoformat(item_fs.readtext("ctime")),
+            Tag.from_str(path.joinpath("tag").read_text().strip()),
+            path,
+            datetime.fromisoformat(path.joinpath("ctime").read_text().strip()),
         )
 
 
 class DummyStore(Store[DummyItem]):
-    def __init__(self, base_path: "t.Union[PathType, FS]"):
-        super().__init__(base_path, DummyItem)
+    _item_type = DummyItem
 
 
 def test_store(tmpdir: "Path"):

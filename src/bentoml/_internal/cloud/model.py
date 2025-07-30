@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import os
 import tarfile
+import tempfile
 import typing as t
 import warnings
 from concurrent.futures import ThreadPoolExecutor
@@ -11,7 +12,6 @@ from tempfile import mkstemp
 from threading import Lock
 
 import attrs
-import fs
 import httpx
 from simple_di import Provide
 from simple_di import inject
@@ -500,9 +500,9 @@ class ModelAPI:
             tar_file.seek(0, 0)
             tar = tarfile.open(fileobj=tar_file, mode="r")
             with self.spinner.spin(text=f'Extracting model "{_tag}" tar file'):
-                with fs.open_fs("temp://") as temp_fs:
-                    safe_extract_tarfile(tar, temp_fs.getsyspath("/"))
-                    model = StoredModel.from_fs(temp_fs).save(model_store)
+                with tempfile.TemporaryDirectory(prefix="bentoml-model-") as temp_dir:
+                    safe_extract_tarfile(tar, temp_dir)
+                    model = StoredModel.from_path(temp_dir).save(model_store)
                     self.spinner.log(f'[bold green]Successfully pulled model "{_tag}"')
                     return model
 

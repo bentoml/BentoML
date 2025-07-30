@@ -4,13 +4,14 @@ import contextlib
 import importlib
 import logging
 import os
+import shutil
 import sys
+import tempfile
 import types
 import typing as t
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-import fs
-import fs.mirror
 from simple_di import Provide
 from simple_di import inject
 
@@ -153,16 +154,17 @@ def construct_containerfile(
     dockerfile_path = "env/docker/Dockerfile"
     instruction: list[str] = []
 
-    with fs.open_fs("temp://") as temp_fs:
-        tempdir = temp_fs.getsyspath("/")
+    with tempfile.TemporaryDirectory() as tempdir:
         with open(bento.path_of("bento.yaml"), "rb") as bento_yaml:
             options = BaseBentoInfo.from_yaml_file(bento_yaml)
         # tmpdir is our new build context.
-        fs.mirror.mirror(bento._fs, temp_fs, copy_if_newer=True)
+        shutil.copytree(bento.path, tempdir, dirs_exist_ok=True)
 
         # copy models from model store
-        bento_model_dir = temp_fs.makedir("models", recreate=True)
-        hf_model_dir = temp_fs.makedir("hf-models", recreate=True)
+        bento_model_dir = Path(tempdir, "models")
+        hf_model_dir = Path(tempdir, "hf_models")
+        for model_dir in (bento_model_dir, hf_model_dir):
+            model_dir.mkdir(parents=True, exist_ok=True)
         for model in options.all_models:
             if model.registry == "huggingface":
                 model_ref = HuggingFaceModel.from_info(model)
@@ -190,7 +192,7 @@ def construct_containerfile(
                 docker=DockerOptions(**docker_attrs),
                 build_ctx=tempdir,
                 conda=options.conda,
-                bento_fs=temp_fs,
+                bento_fs=Path(tempdir),
                 enable_buildkit=enable_buildkit,
                 add_header=add_header,
             )
@@ -216,14 +218,14 @@ def construct_containerfile(
             assert isinstance(options, BentoInfoV2)
             dockerfile = generate_dockerfile(
                 options.image,
-                temp_fs,
+                Path(tempdir),
                 enable_buildkit=enable_buildkit,
                 add_header=add_header,
                 envs=options.envs,
             )
             instruction.append(dockerfile)
-        temp_fs.writetext(dockerfile_path, "\n".join(instruction))
-        yield tempdir, temp_fs.getsyspath(dockerfile_path)
+        Path(tempdir, dockerfile_path).write_text("\n".join(instruction))
+        yield tempdir, os.path.join(tempdir, dockerfile_path)
 
 
 @inject

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
 import shutil
@@ -10,12 +11,6 @@ from collections import deque
 from functools import partial
 from pathlib import Path
 from threading import Lock
-
-import fs
-import fs.copy
-from fs.base import FS
-
-from bentoml._internal.utils.uri import encode_path_for_uri
 
 if t.TYPE_CHECKING:
     from ..types import PathType
@@ -65,8 +60,8 @@ def safe_extract_tarfile(tar: tarfile.TarFile, destination: str) -> None:
     os.makedirs(destination, exist_ok=True)
     for member in tar.getmembers():
         fn = member.name
-        path = os.path.join(destination, fn)
-        if not fs.path.relativefrom(destination, path):
+        path = os.path.realpath(os.path.join(destination, fn))
+        if not Path(path).is_relative_to(destination):
             logger.warning(
                 "The tar file has a file (%s) trying to unpack to"
                 "outside target directory",
@@ -116,25 +111,6 @@ def validate_or_create_dir(*path: PathType) -> None:
             path_obj.mkdir(parents=True, exist_ok=True)
 
 
-def copy_file_to_fs_folder(
-    src_path: str,
-    dst_fs: FS,
-    dst_folder_path: str = ".",
-    dst_filename: t.Optional[str] = None,
-):
-    """Copy the given file at src_path to dst_fs filesystem, under its dst_folder_path
-    folder with dst_filename as file name. When dst_filename is None, keep the original
-    file name.
-    """
-    src_path = os.path.realpath(os.path.expanduser(src_path))
-    dir_name, file_name = os.path.split(src_path)
-    src_fs = fs.open_fs(encode_path_for_uri(dir_name))
-    dst_filename = file_name if dst_filename is None else dst_filename
-    dst_path = fs.path.join(dst_folder_path, dst_filename)
-    dst_fs.makedir(dst_folder_path, recreate=True)
-    fs.copy.copy_file(src_fs, file_name, dst_fs, dst_path)
-
-
 def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
     """Resolve the abspath of a filepath provided by user. User provided file path can:
     * be a relative path base on ctx dir
@@ -155,44 +131,6 @@ def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
     raise FileNotFoundError(f"file {filepath} not found")
 
 
-def mirror_with_permissions(
-    src_fs: FS, dst_fs: FS, copy_if_newer: bool = True, preserve_time: bool = False
-) -> None:
-    """Mirror the contents of src_fs to dst_fs."""
-    import fs.mirror
-    from fs.osfs import OSFS
-    from fs.permissions import Permissions
-
-    if not isinstance(dst_fs, OSFS):
-        return fs.mirror.mirror(
-            src_fs, dst_fs, copy_if_newer=copy_if_newer, preserve_time=preserve_time
-        )
-
-    def copier(
-        src_fs: FS,
-        src_path: str,
-        dst_fs: FS,
-        dst_path: str,
-        preserve_time: bool = False,
-    ) -> None:
-        fs.copy.copy_file_internal(
-            src_fs,
-            src_path,
-            dst_fs,
-            dst_path,
-            preserve_time=preserve_time,
-        )
-        src_info = src_fs.getinfo(src_path, namespaces=["access"])
-        dst_sys_path = dst_fs.getsyspath(dst_path)
-        if (
-            src_mode := Permissions.get_mode(src_info.get("access", "permissions"))
-        ) & 0o111:
-            os.chmod(dst_sys_path, src_mode)
-
-    fs.mirror._mirror(
-        src_fs,
-        dst_fs,
-        copy_if_newer=copy_if_newer,
-        copy_file=copier,
-        preserve_time=preserve_time,
-    )
+def safe_remove_dir(path: PathType) -> None:
+    with contextlib.suppress(OSError):
+        shutil.rmtree(path, ignore_errors=True)

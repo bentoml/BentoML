@@ -4,10 +4,9 @@ import logging
 import os
 import sys
 import tarfile
+import tempfile
 from io import BytesIO
 from pathlib import Path
-
-import fs
 
 from ...exceptions import BentoMLException
 from ...grpc.utils import LATEST_PROTOCOL_VERSION
@@ -129,9 +128,16 @@ def build_git_repo(url: str, ref: str, subdirectory: str | None, dst_path: str) 
 
     name = os.path.splitext(os.path.basename(url))[0]
 
-    with fs.open_fs("temp://") as temp_fs:
-        dest_dir = temp_fs.getsyspath(name)
-        git_command = ["git", "clone", "--filter=blob:none", "--quiet", url, dest_dir]
+    with tempfile.TemporaryDirectory(prefix="bentoml-git-") as temp_dir:
+        dest_dir = Path(temp_dir, name)
+        git_command = [
+            "git",
+            "clone",
+            "--filter=blob:none",
+            "--quiet",
+            url,
+            str(dest_dir),
+        ]
         env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
         try:
             subprocess.check_call(
@@ -157,10 +163,10 @@ def build_git_repo(url: str, ref: str, subdirectory: str | None, dst_path: str) 
             raise BentoMLException(
                 f"Failed to clone git repository {url}: {e.stderr}"
             ) from e
-        source_dir = os.path.join(dest_dir, subdirectory) if subdirectory else dest_dir
+        source_dir = dest_dir.joinpath(subdirectory) if subdirectory else dest_dir
         build_cmd = [*get_uv_command(), "build", "--sdist"]
         subprocess.check_call(build_cmd, cwd=source_dir)
-        sdist = next(Path(source_dir).glob("dist/*.tar.gz"))
+        sdist = next(source_dir.glob("dist/*.tar.gz"))
         logger.info(f"Built sdist {sdist.name}")
         os.makedirs(dst_path, exist_ok=True)
         shutil.move(sdist, dst_path)

@@ -3,20 +3,21 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
+import tempfile
 import typing as t
+import weakref
 from datetime import datetime
 from datetime import timezone
+from functools import cached_property
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import attr
-import fs
-import fs.errors
 import yaml
 from cattr.gen import make_dict_structure_fn
 from cattr.gen import make_dict_unstructure_fn
 from cattr.gen import override
-from fs.copy import copy_file
-from fs.tempfs import TempFS
 from simple_di import Provide
 from simple_di import inject
 
@@ -26,7 +27,6 @@ from ...exceptions import NotFound
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..models import ModelStore
-from ..models import copy_model
 from ..runner import Runner
 from ..store import Store
 from ..store import StoreItem
@@ -35,9 +35,7 @@ from ..tag import to_snake_case
 from ..types import PathType
 from ..utils import normalize_labels_value
 from ..utils.cattr import bentoml_cattr
-from ..utils.filesystem import copy_file_to_fs_folder
-from ..utils.filesystem import mirror_with_permissions
-from ..utils.uri import encode_path_for_uri
+from ..utils.filesystem import safe_remove_dir
 from .build_config import BentoBuildConfig
 from .build_config import BentoEnvSchema
 from .build_config import BentoPathSpec
@@ -46,8 +44,6 @@ from .build_config import DockerOptions
 from .build_config import PythonOptions
 
 if TYPE_CHECKING:
-    from fs.base import FS
-
     from _bentoml_sdk import Service as NewService
     from _bentoml_sdk.models import Model
     from _bentoml_sdk.service import ServiceConfig
@@ -136,42 +132,27 @@ This is a Machine Learning Service created with BentoML."""
     return doc
 
 
-@attr.define(repr=False, auto_attribs=False)
+@attr.define(repr=False)
 class Bento(StoreItem):
-    _tag: Tag = attr.field()
-    __fs: FS = attr.field()
-
+    _tag: Tag
+    _path: Path = attr.field(converter=Path)
     _info: BaseBentoInfo
 
-    _model_store: ModelStore | None = None
-    _doc: str | None = None
+    _model_store: ModelStore | None = attr.field(init=False)
 
     @staticmethod
     def _export_ext() -> str:
         return "bento"
 
-    @__fs.validator  # type:ignore # attrs validators not supported by pyright
-    def check_fs(self, _attr: t.Any, new_fs: FS):
-        try:
-            models = new_fs.opendir("models")
-        except fs.errors.ResourceNotFound:
-            return
-        else:
-            self._model_store = ModelStore(models)
-
-    def __init__(self, tag: Tag, bento_fs: "FS", info: "BaseBentoInfo"):
-        self._tag = tag
-        self.__fs = bento_fs
-        self.check_fs(None, bento_fs)
-        self._info = info
+    @_model_store.default  # type: ignore # attrs default not supported by pyright
+    def _internal_store(self) -> ModelStore | None:
+        if self._path.joinpath("models").exists():
+            return ModelStore(self._path.joinpath("models"))
+        return None
 
     @property
     def tag(self) -> Tag:
         return self._tag
-
-    @property
-    def _fs(self) -> FS:
-        return self.__fs
 
     @property
     def info(self) -> BaseBentoInfo:
@@ -240,7 +221,7 @@ class Bento(StoreItem):
         bare: bool = False,
         reload: bool = False,
         enabled_features: list[str] = Provide[BentoMLContainer.enabled_features],
-    ) -> Bento:
+    ) -> t.Self:
         from _bentoml_sdk.images import Image
         from _bentoml_sdk.images import populate_image_from_build_config
         from _bentoml_sdk.models import BentoModel
@@ -299,9 +280,11 @@ class Bento(StoreItem):
         logger.debug(
             'Building BentoML service "%s" from build context "%s".', tag, build_ctx
         )
-        bento_fs = TempFS(
-            identifier=f"bentoml_bento_{bento_name}",
-            temp_dir=BentoMLContainer.tmp_bento_store_dir.get(),
+        bento_fs = Path(
+            tempfile.mkdtemp(
+                prefix=f"bentoml_bento_{bento_name}",
+                dir=BentoMLContainer.tmp_bento_store_dir.get(),
+            )
         )
         models: list[BentoModelInfo] = []
 
@@ -324,7 +307,7 @@ class Bento(StoreItem):
                     append_model(BentoModel(model.tag).to_info())
 
         if not bare:
-            ctx_fs = fs.open_fs(encode_path_for_uri(build_ctx))
+            ctx_path = Path(build_ctx).resolve()
 
             # create ignore specs
             specs = BentoPathSpec(build_config.include, build_config.exclude, build_ctx)
@@ -335,24 +318,22 @@ class Bento(StoreItem):
                 raise InvalidArgument(
                     "Paths outside of the build context directory cannot be included; use a symlink or copy those files into the working directory manually."
                 )
-            bento_fs.makedir(BENTO_PROJECT_DIR_NAME)
-            target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
-            with target_fs.open("bentofile.yaml", "w") as bentofile_yaml:
+            bento_fs.joinpath(BENTO_PROJECT_DIR_NAME).mkdir(parents=True, exist_ok=True)
+            target_fs = bento_fs / BENTO_PROJECT_DIR_NAME
+            with target_fs.joinpath("bentofile.yaml").open("w") as bentofile_yaml:
                 build_config.to_yaml(bentofile_yaml)
 
-            for dir_path, _, files in ctx_fs.walk():
+            for root, _, files in os.walk(ctx_path):
                 for f in files:
-                    path = fs.path.combine(dir_path, f.name).lstrip("/")
+                    dir_path = os.path.relpath(root, ctx_path)
+                    path = os.path.join(dir_path, f).replace(os.sep, "/")
                     if specs.includes(path):
-                        if ctx_fs.getsize(path) > 10 * 1024 * 1024:
+                        if ctx_path.joinpath(path).stat().st_size > 10 * 1024 * 1024:
                             logger.warning("File size is larger than 10MiB: %s", path)
-                        target_fs.makedirs(dir_path, recreate=True)
-                        copy_file(ctx_fs, path, target_fs, path)
-                        # Copy executable bit from source to target
-                        src_file = ctx_fs.getsyspath(path)
-                        dst_file = target_fs.getsyspath(path)
-                        if (fmode := os.stat(src_file).st_mode) & 0o111:
-                            os.chmod(dst_file, fmode & 0o777)
+                        target_fs.joinpath(dir_path).mkdir(parents=True, exist_ok=True)
+                        src_file = ctx_path.joinpath(path)
+                        dst_file = target_fs.joinpath(path)
+                        shutil.copy(src_file, dst_file)
             if image is None:
                 # NOTE: we need to generate both Python and Conda
                 # first to make sure we can generate the Dockerfile correctly.
@@ -365,40 +346,35 @@ class Bento(StoreItem):
                 )
 
             # Create `readme.md` file
+            bento_readme = bento_fs.joinpath(BENTO_README_FILENAME)
             if (
                 build_config.description is not None
                 and build_config.description.startswith("file:")
             ):
                 file_name = build_config.description[5:].strip()
-                if not ctx_fs.exists(file_name):
+                if not ctx_path.joinpath(file_name).exists():
                     raise InvalidArgument(f"File {file_name} does not exist.")
-                copy_file_to_fs_folder(
-                    ctx_fs.getsyspath(file_name),
-                    bento_fs,
-                    dst_filename=BENTO_README_FILENAME,
-                )
-            elif build_config.description is None and ctx_fs.exists(
-                BENTO_README_FILENAME
+                shutil.copy(ctx_path.joinpath(file_name), bento_readme)
+            elif (
+                build_config.description is None
+                and ctx_path.joinpath(BENTO_README_FILENAME).exists()
             ):
-                copy_file_to_fs_folder(
-                    ctx_fs.getsyspath(BENTO_README_FILENAME),
-                    bento_fs,
-                    dst_filename=BENTO_README_FILENAME,
-                )
+                shutil.copy(ctx_path.joinpath(BENTO_README_FILENAME), bento_readme)
             else:
-                with bento_fs.open(BENTO_README_FILENAME, "w") as f:
+                with bento_readme.open("w", encoding="utf8") as f:
                     if build_config.description is None:
                         f.write(get_default_svc_readme(svc, version))
                     else:
                         f.write(build_config.description)
 
             # Create 'apis/openapi.yaml' file
-            bento_fs.makedir("apis")
-            with bento_fs.open(fs.path.combine("apis", "openapi.yaml"), "w") as f:
+            bento_apis = bento_fs.joinpath("apis")
+            bento_apis.mkdir(parents=True, exist_ok=True)
+            with bento_apis.joinpath("openapi.yaml").open("w") as f:
                 yaml.dump(svc.openapi_spec, f)
             if not is_legacy:
                 bentoschema = svc.schema()
-                with bento_fs.open(fs.path.combine("apis", "schema.json"), "w") as f:
+                with bento_apis.joinpath("schema.json").open("w") as f:
                     json.dump(bentoschema, f, indent=2)
                 openai_endpoint = None
                 _suffix = "/chat/completions"
@@ -475,7 +451,8 @@ class Bento(StoreItem):
                 image=image.freeze(bento_fs, build_config.envs, platform),
             )
 
-        res = Bento(tag, bento_fs, bento_info)
+        res = cls(tag, bento_fs, bento_info)
+        weakref.finalize(res, safe_remove_dir, bento_fs)
         if bare:
             return res
         # Create bento.yaml
@@ -488,28 +465,24 @@ class Bento(StoreItem):
         return res
 
     @classmethod
-    def from_fs(cls, item_fs: FS) -> Bento:
+    def from_path(cls, path: PathType) -> Bento:
         try:
-            with item_fs.open(BENTO_YAML_FILENAME, "r", encoding="utf-8") as bento_yaml:
+            with open(
+                os.path.join(path, BENTO_YAML_FILENAME), "r", encoding="utf-8"
+            ) as bento_yaml:
                 info = BaseBentoInfo.from_yaml_file(bento_yaml)
-        except fs.errors.ResourceNotFound:
+        except FileNotFoundError:
             raise BentoMLException(
                 f"Failed to load bento because it does not contain a '{BENTO_YAML_FILENAME}'"
-            )
+            ) from None
 
-        res = cls(info.tag, item_fs, info)
+        res = cls(info.tag, path, info)
         try:
             res.validate()
         except BentoMLException as e:
             raise BentoMLException(f"Failed to load bento: {e}") from None
 
         return res
-
-    @classmethod
-    def from_path(cls, item_path: str) -> Bento:
-        item_path = os.path.expanduser(item_path)
-        item_fs = fs.open_fs(encode_path_for_uri(item_path))
-        return cls.from_fs(item_fs)
 
     def export(
         self,
@@ -525,7 +498,8 @@ class Bento(StoreItem):
         from _bentoml_sdk.models import BentoModel
 
         # copy the models to fs
-        models_dir = self._fs.makedir("models", recreate=True)
+        models_dir = self._path.joinpath("models")
+        models_dir.mkdir(parents=True, exist_ok=True)
         for model in self.info.all_models:
             if model.registry != "bentoml":
                 continue
@@ -541,7 +515,7 @@ class Bento(StoreItem):
                 subpath=subpath,
             )
         finally:
-            self._fs.removetree("models")
+            shutil.rmtree(models_dir, ignore_errors=True)
 
     @inject
     def total_size(
@@ -571,27 +545,23 @@ class Bento(StoreItem):
         return total_size
 
     def flush_info(self):
-        with self._fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
+        with self._path.joinpath(BENTO_YAML_FILENAME).open("w") as bento_yaml:
             self.info.dump(bento_yaml)
 
-    @property
+    @cached_property
     def doc(self) -> str:
-        if self._doc is not None:
-            return self._doc
-        if not self._fs.isfile(BENTO_README_FILENAME):
+        bento_readme = self._path.joinpath(BENTO_README_FILENAME)
+        if not bento_readme.exists():
             return ""
-        info = self._fs.getinfo(BENTO_README_FILENAME, ["details"])
         if (
-            info.size > 3 * 1024 * 1024
+            (size := bento_readme.stat().st_size) > 3 * 1024 * 1024
         ):  # 3MB, Limit of bentocloud api is 4MB, leave 1MB for other metadata
             logger.warning(
                 "Bento README is too large (%d bytes > 3MB), skipping upload...",
-                info.size,
+                size,
             )
             return ""
-        with self._fs.open(BENTO_README_FILENAME, "r") as readme_md:
-            self._doc = str(readme_md.read())
-            return self._doc
+        return bento_readme.read_text(encoding="utf-8")
 
     @property
     def creation_time(self) -> datetime:
@@ -609,30 +579,29 @@ class Bento(StoreItem):
             raise BentoMLException(f"Failed to save {self!s}: {e}") from None
 
         with bento_store.register(self.tag) as bento_path:
-            out_fs = fs.open_fs(
-                encode_path_for_uri(bento_path), create=True, writeable=True
-            )
+            out_path = Path(bento_path)
+            out_path.mkdir(parents=True, exist_ok=True)
             if self._model_store is not None:
                 # Move models to the global model store, if any
                 for model in self._model_store.list():
-                    copy_model(
-                        model.tag,
-                        src_model_store=self._model_store,
-                        target_model_store=model_store,
-                    )
-                self._model_store = None
-            mirror_with_permissions(self._fs, out_fs, copy_if_newer=False)
-            try:
-                out_fs.removetree("models")
-            except fs.errors.ResourceNotFound:
-                pass
-            self._fs.close()
-            self.__fs = out_fs
+                    model.save(model_store)
 
-        return self
+            def ignore_models(src_path: str, names: list[str]) -> t.Iterable[str]:
+                if Path(src_path) == self._path and "models" in names:
+                    return ["models"]
+                return []
+
+            shutil.copytree(
+                self._path,
+                out_path,
+                dirs_exist_ok=True,
+                copy_function=shutil.copy,
+                ignore=ignore_models,
+            )
+            return attr.evolve(self, path=out_path)
 
     def validate(self):
-        if not self._fs.isfile(BENTO_YAML_FILENAME):
+        if not self._path.joinpath(BENTO_YAML_FILENAME).is_file():
             raise BentoMLException(
                 f"{self!s} does not contain a {BENTO_YAML_FILENAME}."
             )
@@ -642,8 +611,7 @@ class Bento(StoreItem):
 
 
 class BentoStore(Store[Bento]):
-    def __init__(self, base_path: t.Union[PathType, "FS"]):
-        super().__init__(base_path, Bento)
+    _item_type = Bento
 
 
 @attr.frozen

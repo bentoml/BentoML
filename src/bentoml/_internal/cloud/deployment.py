@@ -12,7 +12,6 @@ from threading import Event
 from threading import Thread
 
 import attr
-import fs
 import rich
 import yaml
 from pathspec import PathSpec
@@ -889,7 +888,7 @@ class Deployment:
         def watch_filter(change: watchfiles.Change, path: str) -> bool:
             if not default_filter(change, path):
                 return False
-            if is_editable and fs.path.isparent(bentoml_project, path):
+            if is_editable and Path(path).is_relative_to(bentoml_project):
                 rel_path = os.path.relpath(path, bentoml_project)
                 return EDITABLE_BENTOML_PATHSPEC.match_file(rel_path)
             rel_path = os.path.relpath(path, bento_dir)
@@ -965,7 +964,7 @@ class Deployment:
                         *watch_dirs, watch_filter=watch_filter, stop_event=stop_event
                     ):
                         if not is_editable or any(
-                            fs.path.isparent(bento_dir, p) for _, p in changes
+                            Path(p).is_relative_to(bento_dir) for _, p in changes
                         ):
                             try:
                                 bento_info = ensure_bento(
@@ -993,7 +992,9 @@ class Deployment:
                         affected_files: set[str] = set()
 
                         for _, path in changes:
-                            if is_editable and fs.path.isparent(bentoml_project, path):
+                            if is_editable and Path(path).is_relative_to(
+                                bentoml_project
+                            ):
                                 rel_path = os.path.join(
                                     EDITABLE_BENTOML_DIR,
                                     os.path.relpath(path, bentoml_project),

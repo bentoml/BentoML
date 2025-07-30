@@ -7,7 +7,6 @@ from threading import Event
 from threading import Thread
 from typing import TYPE_CHECKING
 
-import fs
 from circus.plugins import CircusPlugin
 from watchfiles import watch
 
@@ -86,10 +85,9 @@ class ServiceReloaderPlugin(CircusPlugin):
 
     def should_include(self, path: Path) -> bool:
         # returns True if file with 'path' has changed, else False
-        str_path = path.as_posix()
         for parent, spec in self._specs:
-            if fs.path.isparent(parent, str_path):
-                return spec.includes(fs.path.relativefrom(parent, str_path))
+            if path.is_relative_to(parent):
+                return spec.includes(path.relative_to(parent).as_posix())
         return False
 
     def has_modification(self) -> bool:

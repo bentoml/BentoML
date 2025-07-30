@@ -1,15 +1,11 @@
 from __future__ import annotations
 
 import datetime
-import os
+import shutil
 import typing as t
-from abc import ABC
 from abc import abstractmethod
 from contextlib import contextmanager
-
-import fs
-import fs.errors
-from fs.base import FS
+from pathlib import Path
 
 from ..exceptions import BentoMLException
 from ..exceptions import NotFound
@@ -17,7 +13,6 @@ from .exportable import Exportable
 from .tag import Tag
 from .types import PathType
 from .utils.filesystem import calc_dir_size
-from .utils.uri import encode_path_for_uri
 
 T = t.TypeVar("T")
 
@@ -26,10 +21,6 @@ class StoreItem(Exportable):
     @property
     @abstractmethod
     def tag(self) -> Tag:
-        raise NotImplementedError
-
-    @property
-    def _fs(self) -> FS:
         raise NotImplementedError
 
     @classmethod
@@ -47,14 +38,14 @@ class StoreItem(Exportable):
 
     @property
     def path(self) -> str:
-        return self.path_of("/")
+        return str(self._path)
 
     def path_of(self, item: str) -> str:
-        return self._fs.getsyspath(item)
+        return str(self._path / item.lstrip("/"))
 
     @property
     def file_size(self) -> int:
-        return calc_dir_size(self.path)
+        return calc_dir_size(self._path)
 
     def __repr__(self):
         return f'{self.get_typename()}(tag="{self.tag}")'
@@ -63,79 +54,71 @@ class StoreItem(Exportable):
 Item = t.TypeVar("Item", bound=StoreItem)
 
 
-class Store(ABC, t.Generic[Item]):
-    """An FsStore manages items under the given base filesystem.
+class Store(t.Generic[Item]):
+    """A Store manages items under the given base filesystem.
 
-    Note that FsStore has no consistency checks; it assumes that no direct modification
+    Note that Store has no consistency checks; it assumes that no direct modification
     of the files in its directory has occurred.
 
     """
 
-    _fs: FS
     _item_type: t.Type[Item]
 
-    @abstractmethod
-    def __init__(self, base_path: t.Union[PathType, FS], item_type: t.Type[Item]):
-        self._item_type = item_type
-        if isinstance(base_path, os.PathLike):
-            base_path = base_path.__fspath__()
-        if isinstance(base_path, str):
-            base_path = encode_path_for_uri(base_path)
-        self._fs = fs.open_fs(base_path)
+    def __init__(self, base_path: PathType):
+        self._path = Path(base_path)
 
-    def list(self, tag: t.Optional[t.Union[Tag, str]] = None) -> t.List[Item]:
+    def list(self, tag: Tag | str | None = None) -> t.List[Item]:
         if not tag:
+            # Return all items in the store
             return [
                 ver
-                for _d in sorted(self._fs.listdir("/"))
-                if self._fs.isdir(_d)
-                for ver in self.list(_d)
+                for _d in sorted(self._path.iterdir())
+                if _d.is_dir()
+                for ver in self.list(_d.name)
             ]
 
         _tag = Tag.from_taglike(tag)
         if _tag.version is None:
-            if not self._fs.isdir(_tag.name):
+            item_dir = self._path / _tag.name
+            if not item_dir.is_dir():
                 raise NotFound(
                     f"no {self._item_type.get_typename()}s with name '{_tag.name}' found"
                 )
 
             tags = sorted(
-                [
-                    Tag(_tag.name, f.name)
-                    for f in self._fs.scandir(_tag.name)
-                    if f.is_dir
-                ]
+                Tag(_tag.name, f.name) for f in item_dir.iterdir() if f.is_dir()
             )
             return [self._get_item(t) for t in tags]
         else:
-            return [self._get_item(_tag)] if self._fs.isdir(_tag.path()) else []
+            return [self._get_item(_tag)] if (self._path / _tag.path()).is_dir() else []
 
     def _get_item(self, tag: Tag) -> Item:
         """
         Creates a new instance of Item that represents the item with tag `tag`.
         """
-        return self._item_type.from_fs(self._fs.opendir(tag.path()))
+        return self._item_type.from_path(self._path / tag.path())
 
     def _recreate_latest(self, tag: Tag):
         try:
             items = self.list(tag.name)
         except NotFound:
             raise NotFound(
-                f"no {self._item_type.get_typename()}s with name '{tag.name}' exist in BentoML store {self._fs}"
+                f"no {self._item_type.get_typename()}s with name '{tag.name}' exist in BentoML store {self._path}"
             )
 
         if len(items) == 0:
             raise NotFound(
-                f"no {self._item_type.get_typename()}s with name '{tag.name}' exist in BentoML store {self._fs}"
+                f"no {self._item_type.get_typename()}s with name '{tag.name}' exist in BentoML store {self._path}"
             )
 
         items.sort(reverse=True, key=lambda item: item.creation_time)
-        tag.version = items[0].tag.version
+        latest_version = t.cast(str, items[0].tag.version)
 
-        with self._fs.open(tag.latest_path(), "w") as latest_file:
-            latest_file.write(tag.version)
+        with (self._path / tag.latest_path()).open("w") as latest_file:
+            latest_file.write(latest_version)
+        tag.version = latest_version
 
-    def get(self, tag: t.Union[Tag, str]) -> Item:
+    def get(self, tag: Tag | str) -> Item:
         """
         store.get("my_bento")
         store.get("my_bento:v1.0.0")
@@ -144,84 +127,81 @@ class Store(ABC, t.Generic[Item]):
         _tag = Tag.from_taglike(tag)
         if _tag.version is None or _tag.version == "latest":
             try:
-                _tag.version = self._fs.readtext(_tag.latest_path())
+                _tag.version = (self._path / _tag.latest_path()).read_text().strip()
 
-                if not self._fs.exists(_tag.path()):
+                if not (self._path / _tag.path()).exists():
                     self._recreate_latest(_tag)
-            except fs.errors.ResourceNotFound:
+            except OSError:
                 self._recreate_latest(_tag)
 
         path = _tag.path()
-        if self._fs.exists(path):
+        if (self._path / path).exists():
             return self._get_item(_tag)
 
-        matches = self._fs.glob(f"{path}*/")
-        counts = matches.count().directories
-        if counts == 0:
-            cmd = (
-                "bentoml models pull"
-                if self._item_type.get_typename() == "Model"
-                else "bentoml pull"
-            )
-            raise NotFound(
-                f"{self._item_type.get_typename()} '{tag}' is not found in BentoML store {self._fs}, "
-                f"you may need to run `{cmd}` first"
-            )
-        elif counts == 1:
-            match = next(iter(matches))
-            return self._get_item(Tag(_tag.name, match.info.name))
-        else:
-            vers: t.List[str] = []
-            for match in matches:
-                vers += match.info.name
+        matches = list(p for p in self._path.glob(f"{path}*/") if p.is_dir())
+        if len(matches) == 1:
+            return self._get_item(Tag(_tag.name, matches[0].name))
+        elif len(matches) > 1:
+            vers = [p.name for p in matches]
             raise BentoMLException(
-                f"multiple versions matched by {_tag.version}: {vers}"
+                f"Multiple {_tag.name} versions found: {', '.join(vers)}"
             )
+        # No match found
+        cmd = (
+            "bentoml models pull"
+            if self._item_type.get_typename() == "Model"
+            else "bentoml pull"
+        )
+        raise NotFound(
+            f"{self._item_type.get_typename()} '{tag}' is not found in BentoML store {self._path}, "
+            f"you may need to run `{cmd}` first"
+        )
 
     @contextmanager
     def register(self, tag: str | Tag) -> t.Generator[str, None, None]:
         _tag = Tag.from_taglike(tag)
 
         item_path = _tag.path()
-        if self._fs.exists(item_path):
+        if (self._path / item_path).exists():
             raise BentoMLException(
-                f"Item '{_tag}' already exists in the store {self._fs}"
+                f"Item '{_tag}' already exists in the store {self._path}"
             )
-        self._fs.makedirs(item_path)
+        (self._path / item_path).mkdir(parents=True, exist_ok=True)
         try:
-            yield self._fs.getsyspath(item_path)
+            yield str(self._path / item_path)
         except Exception:
-            self._fs.removetree(item_path)
+            shutil.rmtree(self._path / item_path)
             raise
         # item generation is most likely successful, link latest path
         if (
-            not self._fs.exists(_tag.latest_path())
+            not (latest_file := self._path / _tag.latest_path()).exists()
             or self.get(_tag).creation_time >= self.get(_tag.name).creation_time
         ):
-            with self._fs.open(_tag.latest_path(), "w") as latest_file:
-                latest_file.write(_tag.version)
+            with latest_file.open("w") as f:
+                f.write(_tag.version)
 
-    def delete(self, tag: t.Union[str, Tag]) -> None:
+    def delete(self, tag: str | Tag) -> None:
         _tag = Tag.from_taglike(tag)
 
         if _tag.version == "latest":
             try:
-                _tag.version = self._fs.readtext(_tag.latest_path())
-            except fs.errors.ResourceNotFound:
+                _tag.version = (self._path / _tag.latest_path()).read_text().strip()
+            except OSError:
                 # if latest path doesn't exist, we don't need to delete anything
                 return
 
-        if not self._fs.exists(_tag.path()):
+        tag_path = self._path / _tag.path()
+        if not tag_path.exists():
             raise NotFound(f"{self._item_type.get_typename()} '{tag}' not found")
 
-        self._fs.removetree(_tag.path())
-        if self._fs.isdir(_tag.name):
+        shutil.rmtree(tag_path)
+        if (self._path / _tag.name).is_dir():
             versions = self.list(_tag.name)
             if len(versions) == 0:
                 # if we've removed all versions, remove the directory
-                self._fs.removetree(_tag.name)
+                shutil.rmtree(self._path / _tag.name)
             else:
                 new_latest = sorted(versions, key=lambda x: x.creation_time)[-1]
                 # otherwise, update the latest version
                 assert new_latest.tag.version is not None
-                self._fs.writetext(_tag.latest_path(), new_latest.tag.version)
+                (self._path / _tag.latest_path()).write_text(new_latest.tag.version)

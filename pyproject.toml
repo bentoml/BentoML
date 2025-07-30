@@ -32,7 +32,6 @@ dependencies = [
     "click>=7.0",
     "click-option-group",
     "cloudpickle>=2.0.0",
-    "fs",
     "httpx",
     "numpy",
     "nvidia-ml-py",
@@ -65,6 +64,7 @@ dependencies = [
     "aiosqlite>=0.20.0",
     "questionary>=2.0.1",
     "a2wsgi>=1.10.7",
+    "fsspec>=2025.7.0",
 ]
 dynamic = ["version"]
 [project.urls]
@@ -81,7 +81,9 @@ bentoml = "bentoml_cli.cli:cli"
 all = [
     "bentoml[aws,io,grpc,grpc-reflection,grpc-channelz,tracing,monitor-otlp]",
 ]
-aws = ["fs-s3fs"]
+aws = [
+    "s3fs",
+]
 io = [
     "bentoml[io-image,io-pandas]",
 ]
@@ -258,7 +260,7 @@ known-first-party = ["bentoml", "bentoml_cli", "_bentoml_sdk", "_bentoml_impl"]
 
 [tool.pyright]
 pythonVersion = "3.12"
-include = ["src/", "examples/", "tests/"]
+include = ["src/", "examples/", "tests/", "typings/"]
 exclude = [
     'src/bentoml/_version.py',
     'src/bentoml/__main__.py',

@@ -85,10 +85,11 @@ def is_editable_bentoml() -> bool:
 def get_bentoml_requirement() -> str | None:
     """Returns the requirement string for BentoML."""
     dist = importlib.metadata.distribution("bentoml")
+    no_bentoml_local_url = bool(os.getenv("BENTOML_NO_LOCAL_URL", False))
     direct_url_file = next(
         (f for f in (dist.files or []) if str(f).endswith("direct_url.json")), None
     )
-    if direct_url_file is None:
+    if direct_url_file is None or no_bentoml_local_url:
         return f"bentoml=={BENTOML_VERSION}"
     direct_url_data = json.loads(direct_url_file.read_text())
     if direct_url_data.get("dir_info", {}).get("editable", False):

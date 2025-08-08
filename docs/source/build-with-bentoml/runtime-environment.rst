@@ -311,6 +311,28 @@ To include the script in the image build process:
        .python_packages("torch", "pillow") \
        .run_script("scripts/setup.sh")
 
+BentoML environment variables
+-----------------------------
+
+BentoML recognizes several environment variables that control its behavior during the build process and runtime. These variables can be set in your shell environment before running BentoML commands.
+
+``BENTOML_NO_LOCAL_URL``
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+When set to any truthy value (e.g., ``1``, ``true``, ``yes``), this environment variable forces BentoML to use the standard PyPI version specification (``bentoml==<version>``) in the generated requirements.txt instead of local development URLs or file paths.
+
+This is useful in scenarios where:
+
+- You're building Bentos in environments where local development paths are not accessible
+- You want to ensure reproducible builds that only use published PyPI packages
+- You're deploying to environments that cannot access local file systems or development repositories
+
+.. code-block:: bash
+
+    # Force BentoML to use PyPI version in requirements
+    export BENTOML_NO_LOCAL_URL=1
+    bentoml build
+
 Exclude files
 -------------
 

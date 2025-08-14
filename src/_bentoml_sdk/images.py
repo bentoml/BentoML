@@ -247,8 +247,10 @@ class Image:
             req.name and req.name.lower() == "bentoml" and req.link is not None
             for req in requirements_file.requirements
         )
+        src_wheels = bento_fs / "src/wheels"
         wheels_folder = py_folder.joinpath("wheels")
-        wheels_folder.mkdir(parents=True, exist_ok=True)
+        if src_wheels.exists():
+            shutil.move(src_wheels, wheels_folder)
 
         with requirements_in.open("w") as f:
             f.write(requirements_file.dumps(preserve_one_empty_line=True))

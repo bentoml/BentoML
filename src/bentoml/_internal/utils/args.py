@@ -63,5 +63,5 @@ def use_arguments(
 def set_arguments(arguments: dict[str, Any], override: bool = True) -> None:
     """Set the arguments to be used by use_arguments."""
     if not override:
-        arguments = BentoMLContainer.bento_arguments.get() | arguments
+        arguments |= BentoMLContainer.bento_arguments.get()
     BentoMLContainer.bento_arguments.set(arguments)

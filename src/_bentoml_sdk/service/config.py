@@ -32,6 +32,7 @@ GpuLiteralType = Literal[
     "nvidia-tesla-p100",
     "nvidia-tesla-k80",
     "nvidia-tesla-p4",
+    "amd-mi300x",
 ]
 TpuLiteralType = Literal[
     "v4-2x2x1",

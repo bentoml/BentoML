@@ -169,6 +169,8 @@ class JSONSerde(GenericSerde, Serde):
                 async with httpx.AsyncClient() as client:
                     logger.debug("Request with URL, downloading file from %s", url)
                     resp = await client.get(url)
+                    if not resp.is_success:
+                        raise ValueError(f"Failed to download file from {url}")
                     body = await resp.aread()
         return self.deserialize_model(Payload((body,), metadata=request.headers), cls)
 
@@ -198,6 +200,8 @@ class MultipartSerde(JSONSerde):
 
         async with httpx.AsyncClient() as client:
             resp = await client.get(url)
+            if not resp.is_success:
+                raise ValueError(f"Failed to download file from {url}")
             body = io.BytesIO(await resp.aread())
             parsed = urlparse(url)
             return UploadFile(

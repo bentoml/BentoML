@@ -21,7 +21,7 @@ from _bentoml_sdk.typing_utils import is_union_type
 from _bentoml_sdk.validators import DataframeSchema
 from _bentoml_sdk.validators import TensorSchema
 from bentoml._internal.utils.uri import is_http_url
-from bentoml._internal.utils.uri import is_safe_url
+from bentoml._internal.utils.uri import make_safe_connect
 
 if t.TYPE_CHECKING:
     from starlette.requests import Request
@@ -165,10 +165,11 @@ class JSONSerde(GenericSerde, Serde):
         body = await request.body()
         if issubclass(cls, IORootModel) and cls.multipart_fields:
             url = body.decode("utf-8", "ignore")
-            if is_http_url(url) and is_safe_url(url):
+            if is_http_url(url):
                 async with httpx.AsyncClient() as client:
                     logger.debug("Request with URL, downloading file from %s", url)
-                    resp = await client.get(url)
+                    with make_safe_connect():
+                        resp = await client.get(url)
                     if not resp.is_success:
                         raise ValueError(f"Failed to download file from {url}")
                     body = await resp.aread()
@@ -195,11 +196,10 @@ class MultipartSerde(JSONSerde):
             return obj
 
         url = obj.strip("\"'")
-        if not is_safe_url(url):
-            raise ValueError("URL not allowed for security reasons")
 
         async with httpx.AsyncClient() as client:
-            resp = await client.get(url)
+            with make_safe_connect():
+                resp = await client.get(url)
             if not resp.is_success:
                 raise ValueError(f"Failed to download file from {url}")
             body = io.BytesIO(await resp.aread())

@@ -34,7 +34,8 @@ Build and scale compound AI systems with BentoML:
 - `Multi-agent: CrewAI <https://github.com/bentoml/BentoCrewAI>`_
 - `LLM safety: ShieldGemma <https://github.com/bentoml/BentoShield/>`_
 - `RAG: LlamaIndex <https://github.com/bentoml/rag-tutorials>`_
-- `Phone call agent <https://github.com/bentoml/BentoVoiceAgent>`_
+- `Voice assistants with Pipecat <https://github.com/bentoml/BentoVoiceAgent>`_
+- `Phone agent with Twilio <https://github.com/bentoml/BentoTwilioConversationRelay>`_
 - `Multi-LLM routing <https://github.com/bentoml/llm-router>`_
 
 Image and video

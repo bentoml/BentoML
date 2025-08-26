@@ -273,6 +273,42 @@ However, directly calling synchronous blocking functions within an asynchronous 
 
 In this example, the ``.to_async`` property converts synchronous methods (``txt2img`` and ``synthesize`` of ``SDXLTurboService`` and ``XTTSService`` respectively) into their asynchronous versions, enabling the ``generate_card`` method to perform multiple asynchronous operations concurrently with ``asyncio.gather``.
 
+Custom service start command
+----------------------------
+
+In some cases, you may want your Service to start using a custom process (for example, a different ASGI server or a pre-built binary) instead of the default BentoML worker server. You can achieve this by specifying a ``cmd`` in the ``@bentoml.service`` decorator or by defining a ``__command__`` method on the Service class.
+
+.. code-block:: python
+
+    import bentoml
+
+    @bentoml.service(
+        cmd=[
+            "uvicorn",
+            "myapp:app",
+            "--host",
+            "$BENTOML_HOST",
+            "--port",
+            "$PORT",
+        ]
+    )
+    class ExternalServer:
+        pass
+
+Alternatively, compute the command at runtime:
+
+.. code-block:: python
+
+    @bentoml.service
+    class ExternalServer:
+        @staticmethod
+        def __command__() -> list[str]:
+            return ["myserver", "--port", "$PORT"]
+
+Use this method when there are parameters whose values can only be determined at runtime.
+
+When a custom command is provided, BentoML will launch a single process for that Service using your command. It will set the ``PORT`` environment variable (and ``BENTOML_HOST``/``BENTOML_PORT`` for the entry Service). Your process must listen on the provided ``PORT`` and serve HTTP endpoints. Server-level options like CORS/SSL/timeouts defined in BentoML won't apply automatically—configure them in your own server if needed.
+
 .. _bentoml-tasks:
 
 Tasks

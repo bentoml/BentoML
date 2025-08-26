@@ -1,7 +1,9 @@
+import contextlib
 import ipaddress
 import os
 import pathlib
 import socket
+from typing import no_type_check
 from urllib.parse import quote
 from urllib.parse import unquote
 from urllib.parse import urlparse
@@ -54,43 +56,52 @@ def is_http_url(url: str) -> bool:
     return urlparse(url).scheme in {"http", "https"}
 
 
-def is_safe_url(url: str) -> bool:
-    """Check if URL is safe for download (prevents basic SSRF)."""
+original_create_connection = None
+
+
+@contextlib.contextmanager
+def make_safe_connect():
+    """Patch loop.create_connection() method to reject unsafe URLs."""
+
+    from urllib.request import getproxies
+
+    import httpx
+    from uvloop import Loop
+
+    from bentoml.exceptions import BadInput
+
+    global original_create_connection
+
+    if original_create_connection is None:
+        original_create_connection = Loop.create_connection
+
+    # Do not check connections with proxy servers
+    proxies = [
+        (parsed.hostname, parsed.port)
+        for parsed in map(urlparse, getproxies().values())
+    ]
+
+    @no_type_check
+    async def safe_create_connection(
+        self, protocol_factory, host=None, port=None, **kwargs
+    ):
+        if host is not None and (host, port) not in proxies:
+            try:
+                ip = ipaddress.ip_address(host)
+            except ValueError:
+                raise socket.gaierror(f"Blocked invalid IP address {host}")
+            else:
+                if ip.is_private or ip.is_loopback or ip.is_link_local:
+                    raise socket.gaierror(f"Blocked private IP address {host}")
+        return await original_create_connection(
+            self, protocol_factory, host=host, port=port, **kwargs
+        )
+
+    Loop.create_connection = safe_create_connection
     try:
-        parsed = urlparse(url)
-    except (ValueError, TypeError):
-        return False
-
-    if parsed.scheme not in {"http", "https"}:
-        return False
-
-    hostname = parsed.hostname
-    if not hostname:
-        return False
-
-    if hostname.lower() in {"localhost", "127.0.0.1", "::1", "169.254.169.254"}:
-        return False
-
-    try:
-        ip = ipaddress.ip_address(hostname)
-        return not (ip.is_private or ip.is_loopback or ip.is_link_local)
-    except ValueError:
-        # hostname is not an IP address, need to resolve it
-        pass
-
-    try:
-        addr_info = socket.getaddrinfo(hostname, None)
-    except socket.gaierror:
-        # DNS resolution failed
-        return False
-
-    for info in addr_info:
-        try:
-            ip = ipaddress.ip_address(info[4][0])
-            if ip.is_private or ip.is_loopback or ip.is_link_local:
-                return False
-        except (ValueError, IndexError):
-            # Skip malformed addresses
-            continue
-
-    return True
+        yield
+    except httpx.ConnectError as e:
+        if "All connection attempts failed" in str(e):
+            raise BadInput("Connection blocked due to insecure input URL") from e
+    finally:
+        Loop.create_connection = original_create_connection

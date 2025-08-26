@@ -107,7 +107,7 @@ def create_dependency_watcher(
 ) -> tuple[Watcher, CircusSocket | None, str]:
     from bentoml.serving import create_watcher
 
-    if svc.cmd is not None:
+    if (start_command := svc.start_command) is not None:
         num_workers = 1  # Custom command only runs a single worker
         svc_port = port_stack.enter_context(reserve_free_port())
         if env is None:
@@ -120,9 +120,9 @@ def create_dependency_watcher(
         logger.info(
             "Starting with custom command for dependency service(%s): %s",
             svc.name,
-            svc.cmd,
+            start_command,
         )
-        cmd, *args = [expand_envs(p, env) for p in svc.cmd]
+        cmd, *args = [expand_envs(p, env) for p in start_command]
     else:
         num_workers, worker_envs = scheduler.get_worker_env(svc)
         uri, socket = _get_server_socket(svc, uds_path, port_stack, backlog)
@@ -308,8 +308,8 @@ def serve_http(
                 )
         except ValueError as e:
             raise BentoMLConfigException(f"Invalid host IP address: {host}") from e
-        if svc.cmd is not None:
-            logger.info("Starting with custom command for entry service: %s", svc.cmd)
+        if (cmd := svc.start_command) is not None:
+            logger.info("Starting with custom command for entry service: %s", cmd)
             num_workers = 1  # Custom command only runs a single worker
             env.update(os.environ)
             env.update(
@@ -319,7 +319,7 @@ def serve_http(
                     "BENTOML_PORT": str(port),
                 }
             )
-            server_cmd, *server_args = [expand_envs(p, env) for p in svc.cmd]
+            server_cmd, *server_args = [expand_envs(p, env) for p in cmd]
             bento_path = pathlib.Path(svc.working_dir)
         else:
             sockets.append(

@@ -250,6 +250,7 @@ class ServiceConfig(TypedDict, total=False):
     """
 
     traffic: TrafficSchema
+    extra_ports: list[int]
     backlog: Annotated[int, Ge(64)]
     max_runner_connections: Posint
     resources: ResourceSchema

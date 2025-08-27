@@ -197,6 +197,7 @@ class Bento(StoreItem):
             entry_service=info.entry_service,
             service=info.service,
             bentoml_version=info.bentoml_version,
+            extra_ports=info.extra_ports,
             apis={},
             models=models,
             runners=runners,
@@ -406,6 +407,7 @@ class Bento(StoreItem):
                 service=svc,  # type: ignore # attrs converters do not typecheck
                 entry_service=svc.name,
                 labels=build_config.labels,
+                extra_ports=svc.config.get("extra_ports") if not is_legacy else None,
                 models=models,
                 runners=(
                     [BentoRunnerInfo.from_runner(r) for r in svc.runners]  # type: ignore # attrs converters do not typecheck
@@ -436,6 +438,7 @@ class Bento(StoreItem):
                 tag=tag,
                 service=svc,  # type: ignore # attrs converters do not typecheck
                 entry_service=svc.name,
+                extra_ports=svc.config.get("extra_ports") if not is_legacy else None,
                 labels=build_config.labels,
                 models=models,
                 services=(
@@ -751,7 +754,8 @@ class BaseBentoInfo:
     )
     models: t.List[BentoModelInfo] = attr.field(factory=list)
     # for BentoML 1.2+ SDK
-    entry_service: str = attr.field(factory=str)
+    entry_service: str = ""
+    extra_ports: t.Optional[t.List[int]] = None
     services: t.List[BentoServiceInfo] = attr.field(factory=list)
     envs: t.List[BentoEnvSchema] = attr.field(factory=list)
     schema: t.Dict[str, t.Any] = attr.field(factory=dict)
@@ -906,5 +910,10 @@ bentoml_cattr.register_structure_hook_factory(
 bentoml_cattr.register_unstructure_hook_factory(
     lambda cls: issubclass(cls, BaseBentoInfo),
     # Ignore tag, tag is saved via the name and version field
-    lambda cls: make_dict_unstructure_fn(cls, bentoml_cattr, tag=override(omit=True)),
+    lambda cls: make_dict_unstructure_fn(
+        cls,
+        bentoml_cattr,
+        tag=override(omit=True),
+        extra_ports=override(omit_if_default=True),
+    ),
 )

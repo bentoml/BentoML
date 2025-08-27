@@ -215,7 +215,10 @@ class ServiceAppFactory(BaseAppFactory):
             )
 
             middlewares.append(
-                Middleware(RunnerTrafficMetricsMiddleware, namespace="bentoml_service")
+                Middleware(
+                    RunnerTrafficMetricsMiddleware,
+                    namespace=BentoMLContainer.api_server_config.metrics.namespace.get(),
+                )
             )
 
         # OpenTelemetry middleware

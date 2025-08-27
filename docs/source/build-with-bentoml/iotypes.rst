@@ -338,7 +338,7 @@ Here is an example:
         @bentoml.api
         def classify(
             self,
-            input: Annotated[pd.Dataframe, DataframeSchema(orient="records", columns=["petal_length", "petal_width"])
+            input: Annotated[pd.DataFrame, DataframeSchema(orient="records", columns=["petal_length", "petal_width"])
         ) -> int:
             # Classification logic using the input DataFrame
             ...

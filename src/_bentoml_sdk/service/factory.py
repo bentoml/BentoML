@@ -10,6 +10,7 @@ import sys
 import typing as t
 from functools import lru_cache
 from functools import partial
+from urllib.parse import urlsplit
 
 import anyio.to_thread
 import attrs
@@ -186,6 +187,35 @@ class Service(t.Generic[T]):
         dependency_map = BentoMLContainer.remote_runner_mapping.get()
         url = dependency_map.get(self.name)
         return url.replace("tcp://", "http://") if url else None
+
+    async def get_hosts(self) -> list[str]:
+        """Return a list of IPs of the service"""
+        import httpx
+
+        url = BentoMLContainer.remote_runner_mapping.get().get(self.name)
+        if not url:
+            raise BentoMLException(f"Service {self.name} not found")
+        url = url.replace("tcp://", "http://")
+        if url.startswith("file://"):
+            return ["127.0.0.1"]
+        if not url.startswith("http://"):
+            raise BentoMLException(
+                f"Unable to get hosts for service {self.name} because it is not served as HTTP"
+            )
+        if "BENTOCLOUD_DEPLOYMENT_URL" in os.environ:
+            # BentoCloud environment, the url is to runner-lb
+            headers = {"Runner-Name": self.name, "Resolve-Runner": "1"}
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, headers=headers)
+                if response.is_error:
+                    raise BentoMLException(
+                        f"Failed to get hosts for service {self.name} from cloud"
+                    )
+                await response.aread()
+                return response.json().get("ips", [])
+
+        # Serving locally, the netloc should be the IP
+        return [urlsplit(url).netloc]
 
     def all_services(self, exclude_urls: bool = False) -> dict[str, Service[t.Any]]:
         """Get a map of the service and all recursive dependencies"""

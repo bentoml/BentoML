@@ -80,6 +80,7 @@ class BentoManifestSchema:
     size_bytes: int = attr.field(eq=False)
     entry_service: str = ""
     name: t.Optional[str] = None
+    extra_ports: t.Optional[t.List[int]] = None
     apis: t.Dict[str, BentoApiSchema] = attr.field(factory=dict)
     models: t.List[str] = attr.field(factory=list, eq=False)
     runners: t.Optional[t.List[BentoRunnerSchema]] = attr.field(factory=list)

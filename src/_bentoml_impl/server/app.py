@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import functools
 import inspect
 import logging
@@ -42,7 +43,6 @@ if t.TYPE_CHECKING:
 
     from bentoml._internal import external_typing as ext
     from bentoml._internal.context import ServiceContext
-    from bentoml._internal.types import LifecycleHook
 
 R = t.TypeVar("R")
 logger = logging.getLogger("bentoml.serve")
@@ -418,13 +418,25 @@ class ServiceAppFactory(BaseAppFactory):
 
         return PlainTextResponse("\n", status_code=200)
 
-    @property
-    def on_startup(self) -> list[LifecycleHook]:
-        return [*super().on_startup, self.create_instance]
+    @contextlib.asynccontextmanager
+    async def lifespan(self, app: Starlette) -> t.AsyncGenerator[None, None]:
+        from starlette.applications import Starlette
 
-    @property
-    def on_shutdown(self) -> list[LifecycleHook]:
-        return [*super().on_shutdown, self.destroy_instance]
+        async with contextlib.AsyncExitStack() as stack:
+            await stack.enter_async_context(super().lifespan(app))
+
+            await self.create_instance(app)
+            stack.push_async_callback(self.destroy_instance, app)
+
+            for mount_app, *_ in self.service.mount_apps:
+                if isinstance(mount_app, Starlette):
+                    maybe_state = await stack.enter_async_context(
+                        mount_app.router.lifespan_context(mount_app)
+                    )
+                    if maybe_state is not None:
+                        mount_app.state.update(maybe_state)
+                # TODO: support other ASGI apps
+            yield
 
     async def schema_view(self, request: Request) -> Response:
         schema = self.service.schema()

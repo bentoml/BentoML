@@ -48,6 +48,18 @@ class BaseAppFactory(abc.ABC):
 
         return [with_app_arg(request_tempdir_pool.cleanup)]
 
+    @contextlib.asynccontextmanager
+    async def lifespan(self, app: Starlette) -> t.AsyncGenerator[None, None]:
+        for on_startup in self.on_startup:
+            ret = on_startup(app)
+            if inspect.isawaitable(ret):
+                await ret
+        yield
+        for on_shutdown in self.on_shutdown:
+            ret = on_shutdown(app)
+            if inspect.isawaitable(ret):
+                await ret
+
     def mark_as_ready(self, _: Starlette) -> None:
         self._is_ready = True
 
@@ -68,23 +80,11 @@ class BaseAppFactory(abc.ABC):
 
         from ..configuration import get_debug_mode
 
-        @contextlib.asynccontextmanager
-        async def lifespan(app: Starlette) -> t.AsyncGenerator[None, None]:
-            for on_startup in self.on_startup:
-                ret = on_startup(app)
-                if inspect.isawaitable(ret):
-                    await ret
-            yield
-            for on_shutdown in self.on_shutdown:
-                ret = on_shutdown(app)
-                if inspect.isawaitable(ret):
-                    await ret
-
         return Starlette(
             debug=get_debug_mode(),
             routes=self.routes,
             middleware=self.middlewares,
-            lifespan=lifespan,
+            lifespan=self.lifespan,
         )
 
     @property

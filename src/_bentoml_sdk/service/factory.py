@@ -214,8 +214,8 @@ class Service(t.Generic[T]):
                 await response.aread()
                 return response.json().get("ips", [])
 
-        # Serving locally, the netloc should be the IP
-        return [urlsplit(url).netloc]
+        # Serving locally, the hostname should be the IP
+        return [urlsplit(url).hostname or "127.0.0.1"]
 
     def all_services(self, exclude_urls: bool = False) -> dict[str, Service[t.Any]]:
         """Get a map of the service and all recursive dependencies"""

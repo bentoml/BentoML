@@ -138,11 +138,8 @@ class Service(t.Generic[T]):
     def __hash__(self):
         return hash(self.name)
 
-    @property
-    def start_command(self) -> list[str] | None:
-        if func := getattr(self.inner, "__command__", None):
-            return func()
-        return self.cmd
+    def has_custom_command(self) -> bool:
+        return hasattr(self.inner, "__command__") or self.cmd is not None
 
     @_caller_module.default  # type: ignore
     def _get_caller_module(self) -> str:

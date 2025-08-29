@@ -265,10 +265,6 @@ class Bento(StoreItem):
             )
             build_config.envs.extend(svc.envs)
             build_config.labels.update(svc.labels)
-            if livez_endpoint := svc.config.get("endpoints", {}).get("livez"):
-                build_config.labels["livez_endpoint"] = livez_endpoint
-            if readyz_endpoint := svc.config.get("endpoints", {}).get("readyz"):
-                build_config.labels["readyz_endpoint"] = readyz_endpoint
             if svc.image is not None:
                 image = svc.image
         if not disable_image:

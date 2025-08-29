@@ -92,4 +92,5 @@ Others
 ------
 
 - `BLIP inference API for image captioning and VQA (Visual Question Answering) <https://github.com/bentoml/BentoBlip>`_
-- `Serving Moirai: Time-series forecasting as a service <https://github.com/bentoml/BentoMoirai/>`_
+- `Time-series forecasting with Moirai <https://github.com/bentoml/BentoMoirai/>`_
+- `Time-series forecasting with Facebook Prophet <https://github.com/bentoml/BentoProphet>`_

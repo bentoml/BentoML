@@ -301,8 +301,7 @@ Alternatively, compute the command at runtime:
 
     @bentoml.service
     class ExternalServer:
-        @staticmethod
-        def __command__() -> list[str]:
+        def __command__(self) -> list[str]:
             return ["myserver", "--port", "$PORT"]
 
 Use this method when there are parameters whose values can only be determined at runtime.

@@ -192,12 +192,15 @@ class Service(t.Generic[T]):
         """Return a list of IPs of the service"""
         import httpx
 
+        from _bentoml_impl.server.allocator import ResourceAllocator
+
         url = BentoMLContainer.remote_runner_mapping.get().get(self.name)
         if not url:
             raise BentoMLException(f"Service {self.name} not found")
         url = url.replace("tcp://", "http://")
+        workers, _ = ResourceAllocator().get_worker_env(self)
         if url.startswith("file://"):
-            return ["127.0.0.1"]
+            return ["127.0.0.1"] * workers
         if not url.startswith("http://"):
             raise BentoMLException(
                 f"Unable to get hosts for service {self.name} because it is not served as HTTP"
@@ -215,7 +218,7 @@ class Service(t.Generic[T]):
                 return response.json().get("ips", [])
 
         # Serving locally, the hostname should be the IP
-        return [urlsplit(url).hostname or "127.0.0.1"]
+        return [urlsplit(url).hostname or "127.0.0.1"] * workers
 
     def all_services(self, exclude_urls: bool = False) -> dict[str, Service[t.Any]]:
         """Get a map of the service and all recursive dependencies"""

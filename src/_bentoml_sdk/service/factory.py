@@ -200,7 +200,8 @@ class Service(t.Generic[T]):
         url = url.replace("tcp://", "http://")
         workers, _ = ResourceAllocator().get_worker_env(self)
         if url.startswith("file://"):
-            return ["127.0.0.1"] * workers
+            # UDS connections don't have a port number, use a fake one.
+            return ["127.0.0.1:3000"] * workers
         if not url.startswith("http://"):
             raise BentoMLException(
                 f"Unable to get hosts for service {self.name} because it is not served as HTTP"
@@ -215,10 +216,13 @@ class Service(t.Generic[T]):
                         f"Failed to get hosts for service {self.name} from cloud"
                     )
                 await response.aread()
-                return response.json().get("ips", [])
+                result = response.json()
+                return [
+                    f"{ip}:{result.get('port', 3000)}" for ip in result.get("ips", [])
+                ]
 
         # Serving locally, the hostname should be the IP
-        return [urlsplit(url).hostname or "127.0.0.1"] * workers
+        return [urlsplit(url).netloc] * workers
 
     def all_services(self, exclude_urls: bool = False) -> dict[str, Service[t.Any]]:
         """Get a map of the service and all recursive dependencies"""

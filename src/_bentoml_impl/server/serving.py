@@ -38,25 +38,7 @@ API_SERVER_NAME = "_bento_api_server"
 MAX_AF_UNIX_PATH_LENGTH = 103
 logger = logging.getLogger("bentoml.serve")
 
-if POSIX and not IS_WSL:
-
-    def _get_server_socket(
-        service: AnyService,
-        uds_path: str,
-        port_stack: contextlib.ExitStack,
-        backlog: int,
-    ) -> tuple[str, CircusSocket]:
-        from circus.sockets import CircusSocket
-
-        from bentoml._internal.utils.uri import path_to_uri
-
-        socket_path = os.path.join(uds_path, f"{id(service)}.sock")
-        assert len(socket_path) < MAX_AF_UNIX_PATH_LENGTH
-        return path_to_uri(socket_path), CircusSocket(
-            name=service.name, path=socket_path, backlog=backlog
-        )
-
-elif WINDOWS or IS_WSL:
+if WINDOWS or IS_WSL or "BENTOML_NO_UDS" in os.environ:
 
     def _get_server_socket(
         service: AnyService,
@@ -80,13 +62,19 @@ else:
 
     def _get_server_socket(
         service: AnyService,
-        uds_path: str | None,
+        uds_path: str,
         port_stack: contextlib.ExitStack,
         backlog: int,
     ) -> tuple[str, CircusSocket]:
-        from bentoml.exceptions import BentoMLException
+        from circus.sockets import CircusSocket
 
-        raise BentoMLException("Unsupported platform")
+        from bentoml._internal.utils.uri import path_to_uri
+
+        socket_path = os.path.join(uds_path, f"{id(service)}.sock")
+        assert len(socket_path) < MAX_AF_UNIX_PATH_LENGTH
+        return path_to_uri(socket_path), CircusSocket(
+            name=service.name, path=socket_path, backlog=backlog
+        )
 
 
 _SERVICE_WORKER_SCRIPT = "_bentoml_impl.worker.service"

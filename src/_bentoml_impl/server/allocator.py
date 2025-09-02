@@ -93,12 +93,12 @@ class ResourceAllocator:
         self,
         service: Service[Any],
         services: dict[str, Any] = Provide[BentoMLContainer.config.services],
-    ) -> tuple[int, list[dict[str, str]]]:
+    ) -> tuple[int, dict[str, str]]:
         config = services[service.name]
 
         num_gpus = 0
         num_workers = 1
-        worker_env: list[dict[str, str]] = []
+        worker_env: dict[str, str] = {}
         if "gpu" in (config.get("resources") or {}):
             num_gpus = config["resources"]["gpu"]  # type: ignore
         if config.get("workers"):
@@ -111,8 +111,5 @@ class ResourceAllocator:
         if num_gpus and not self.gpu_allocation_disabled():
             assigned = self.assign_gpus(num_gpus)
             # assign gpus to all workers
-            worker_env = [
-                {"CUDA_VISIBLE_DEVICES": ",".join(map(str, assigned))}
-                for _ in range(num_workers)
-            ]
+            worker_env["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, assigned))
         return num_workers, worker_env

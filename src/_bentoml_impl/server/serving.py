@@ -38,34 +38,18 @@ API_SERVER_NAME = "_bento_api_server"
 MAX_AF_UNIX_PATH_LENGTH = 103
 logger = logging.getLogger("bentoml.serve")
 
-if POSIX and not IS_WSL:
 
-    def _get_server_socket(
-        service: AnyService,
-        uds_path: str,
-        port_stack: contextlib.ExitStack,
-        backlog: int,
-    ) -> tuple[str, CircusSocket]:
-        from circus.sockets import CircusSocket
+def _get_server_socket(
+    service: AnyService,
+    uds_path: str,
+    port_stack: contextlib.ExitStack,
+    backlog: int,
+) -> tuple[str, CircusSocket]:
+    from circus.sockets import CircusSocket
 
-        from bentoml._internal.utils.uri import path_to_uri
+    from bentoml._internal.utils.uri import path_to_uri
 
-        socket_path = os.path.join(uds_path, f"{id(service)}.sock")
-        assert len(socket_path) < MAX_AF_UNIX_PATH_LENGTH
-        return path_to_uri(socket_path), CircusSocket(
-            name=service.name, path=socket_path, backlog=backlog
-        )
-
-elif WINDOWS or IS_WSL:
-
-    def _get_server_socket(
-        service: AnyService,
-        uds_path: str,
-        port_stack: contextlib.ExitStack,
-        backlog: int,
-    ) -> tuple[str, CircusSocket]:
-        from circus.sockets import CircusSocket
-
+    if WINDOWS or IS_WSL or "BENTOML_NO_UDS" in os.environ:
         runner_port = port_stack.enter_context(reserve_free_port())
         runner_host = "127.0.0.1"
 
@@ -76,17 +60,11 @@ elif WINDOWS or IS_WSL:
             backlog=backlog,
         )
 
-else:
-
-    def _get_server_socket(
-        service: AnyService,
-        uds_path: str | None,
-        port_stack: contextlib.ExitStack,
-        backlog: int,
-    ) -> tuple[str, CircusSocket]:
-        from bentoml.exceptions import BentoMLException
-
-        raise BentoMLException("Unsupported platform")
+    socket_path = os.path.join(uds_path, f"{id(service)}.sock")
+    assert len(socket_path) < MAX_AF_UNIX_PATH_LENGTH
+    return path_to_uri(socket_path), CircusSocket(
+        name=service.name, path=socket_path, backlog=backlog
+    )
 
 
 _SERVICE_WORKER_SCRIPT = "_bentoml_impl.worker.service"
@@ -108,12 +86,10 @@ def create_dependency_watcher(
     from bentoml.serving import create_watcher
 
     num_workers, worker_envs = scheduler.get_worker_env(svc)
+    env = env or {}
     if svc.has_custom_command():
         svc_port = port_stack.enter_context(reserve_free_port())
-        if env is None:
-            env = {**os.environ, "PORT": str(svc_port)}
-        else:
-            env = {**os.environ, **env, "PORT": str(svc_port)}
+        env = {**os.environ, **env, "PORT": str(svc_port)}
         uri = f"http://127.0.0.1:{svc_port}"
         socket = None
         cmd = sys.executable
@@ -146,9 +122,7 @@ def create_dependency_watcher(
         ]
         cmd = sys.executable
 
-        if worker_envs:
-            args.extend(["--worker-env", json.dumps(worker_envs)])
-
+    env.update(worker_envs)
     watcher = create_watcher(
         name=f"service_{svc.name}",
         cmd=cmd,
@@ -257,7 +231,7 @@ def serve_http(
         dependency_map = {}
     if service_name and service_name != svc.name:
         svc = svc.find_dependent_by_name(service_name)
-    num_workers, worker_envs = allocator.get_worker_env(svc)
+    num_workers, worker_env = allocator.get_worker_env(svc)
     server_on_deployment(svc)
     uds_path = tempfile.mkdtemp(prefix="bentoml-uds-")
     try:
@@ -314,6 +288,7 @@ def serve_http(
         except ValueError as e:
             raise BentoMLConfigException(f"Invalid host IP address: {host}") from e
         bento_args = BentoMLContainer.bento_arguments.get()
+        env.update(worker_env)
         if svc.has_custom_command():
             env.update(os.environ)
             env.update(
@@ -380,8 +355,6 @@ def serve_http(
                 *timeouts_args,
                 *timeout_args,
             ]
-            if worker_envs:
-                server_args.extend(["--worker-env", json.dumps(worker_envs)])
             if development_mode:
                 server_args.append("--development-mode")
 

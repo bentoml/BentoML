@@ -61,11 +61,11 @@ def test_get_worker_env_gpu(_):
     Foo.inject_config()
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 1
-    assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "0,1"
+    assert worker_env["CUDA_VISIBLE_DEVICES"] == "0,1"
 
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 1
-    assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "2,3"
+    assert worker_env["CUDA_VISIBLE_DEVICES"] == "2,3"
 
 
 @mock.patch(
@@ -86,15 +86,15 @@ def test_get_worker_env_gpu_float(_):
     Foo.inject_config()
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 1
-    assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "0"
+    assert worker_env["CUDA_VISIBLE_DEVICES"] == "0"
 
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 1
-    assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "0"
+    assert worker_env["CUDA_VISIBLE_DEVICES"] == "0"
     Bar.inject_config()
     num_workers, worker_env = s.get_worker_env(Bar)
     assert num_workers == 1
-    assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "1,2"
+    assert worker_env["CUDA_VISIBLE_DEVICES"] == "1,2"
 
 
 @mock.patch(
@@ -132,15 +132,12 @@ def test_get_worker_env_worker_number(_):
     Foo.inject_config()
     num_workers, worker_env = s.get_worker_env(Foo)
     assert num_workers == 2
-    assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "0,1"
-    assert worker_env[1]["CUDA_VISIBLE_DEVICES"] == "0,1"
+    assert worker_env["CUDA_VISIBLE_DEVICES"] == "0,1"
     Bar.inject_config()
     num_workers, worker_env = s.get_worker_env(Bar)
     assert num_workers == 2
-    assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "2"
-    assert worker_env[1]["CUDA_VISIBLE_DEVICES"] == "2"
+    assert worker_env["CUDA_VISIBLE_DEVICES"] == "2"
 
     num_workers, worker_env = s.get_worker_env(Bar)
     assert num_workers == 2
-    assert worker_env[0]["CUDA_VISIBLE_DEVICES"] == "2"
-    assert worker_env[1]["CUDA_VISIBLE_DEVICES"] == "2"
+    assert worker_env["CUDA_VISIBLE_DEVICES"] == "2"

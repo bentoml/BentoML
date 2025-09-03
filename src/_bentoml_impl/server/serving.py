@@ -94,7 +94,6 @@ def create_dependency_watcher(
         socket = None
         cmd = sys.executable
         args = [
-            cmd,
             "-m",
             _RUNNER_WORKER_SCRIPT,
             bento_identifier,

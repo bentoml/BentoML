@@ -59,7 +59,7 @@ This setup process will establish an IAM Role to provide BentoCloud with the nec
 5. In the **Specify stack details** section, provide the following information and click **Next**.
 
    - **Stack name**: ``bentocloud``
-   - **BentoCloudCopilot**: ``arn:aws:iam::303081928216:user/bentocloud-copilot-[organization_name]``
+   - **BentoCloudCopilot**: ``arn:aws:iam::303081928216:role/bentocloud-copilot-[organization_name]``
 
    .. image:: ../../../_static/img/bentocloud/administering/byoc/aws/specify-stack-details.png
       :alt: Screenshot of AWS CloudFormation "Specify stack details" page showing stack name and BentoCloudCopilot ARN input fields

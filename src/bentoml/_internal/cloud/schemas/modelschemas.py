@@ -80,18 +80,16 @@ class BentoManifestSchema:
     size_bytes: int = attr.field(eq=False)
     entry_service: str = ""
     name: t.Optional[str] = None
-    extra_ports: t.Optional[t.List[int]] = None
     apis: t.Dict[str, BentoApiSchema] = attr.field(factory=dict)
     models: t.List[str] = attr.field(factory=list, eq=False)
     runners: t.Optional[t.List[BentoRunnerSchema]] = attr.field(factory=list)
-    services: t.List[BentoServiceInfo] = attr.field(factory=dict)
+    services: t.List[BentoServiceInfo] = attr.field(factory=list)
     envs: t.List[BentoEnvSchema] = attr.field(factory=list)
     schema: t.Dict[str, t.Any] = attr.field(factory=dict)
     version: t.Optional[str] = attr.field(default=None, eq=False)
     dev: bool = attr.field(default=False, eq=False)
     image: t.Optional[ImageInfo] = attr.field(default=None, eq=False)
     spec: int = attr.field(default=1)
-    endpoints: t.Optional[t.Dict[str, str]] = attr.field(default=None)
 
     @property
     def tag(self) -> Tag:

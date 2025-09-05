@@ -30,7 +30,7 @@ To request quotas:
         - Depending on needs:
 
           - T4/A10G GPU: ``Running On-Demand G and VT instances``
-          - A100/H100 GPU: ``Running On-Demand P instances``
+          - A100/H100/H200/B200 GPU: ``Running On-Demand P instances``
 
         - Based on needs
         - Run your workloads that require GPUs.

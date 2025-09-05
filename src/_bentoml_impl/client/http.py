@@ -146,6 +146,8 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         if token:
             default_headers["Authorization"] = f"Bearer {token}"
 
+        self._readyz_endpoint = "/readyz"
+
         if service is not None:
             for name, method in service.apis.items():
                 routes[name] = ClientEndpoint(
@@ -170,6 +172,9 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     "Yatai-Bento-Deployment-Name": server_context.yatai_bento_deployment_name,
                     "Yatai-Bento-Deployment-Namespace": server_context.yatai_bento_deployment_namespace,
                 }
+            )
+            self._readyz_endpoint = service.config.get("endpoints", {}).get(
+                "readyz", self._readyz_endpoint
             )
         self.__attrs_init__(  # type: ignore
             url=url,
@@ -479,7 +484,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
         start = time.monotonic()
         while time.monotonic() - start < timeout:
             try:
-                resp = self.client.get("/readyz")
+                resp = self.client.get(self._readyz_endpoint)
                 if resp.status_code == 200:
                     return
             except (httpx.TimeoutException, httpx.ConnectError):
@@ -495,7 +500,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
     def is_ready(self, timeout: int | None = None) -> bool:
         try:
             resp = self.client.get(
-                "/readyz", timeout=timeout or httpx.USE_CLIENT_DEFAULT
+                self._readyz_endpoint, timeout=timeout or httpx.USE_CLIENT_DEFAULT
             )
             return resp.status_code == 200
         except httpx.TimeoutException:
@@ -691,7 +696,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
         start = time.monotonic()
         while time.monotonic() - start < timeout:
             try:
-                resp = await self.client.get("/readyz")
+                resp = await self.client.get(self._readyz_endpoint)
                 if resp.status_code == 200:
                     return
             except (httpx.TimeoutException, httpx.ConnectError):
@@ -701,7 +706,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
     async def is_ready(self, timeout: int | None = None) -> bool:
         try:
             resp = await self.client.get(
-                "/readyz", timeout=timeout or httpx.USE_CLIENT_DEFAULT
+                self._readyz_endpoint, timeout=timeout or httpx.USE_CLIENT_DEFAULT
             )
             return resp.status_code == 200
         except httpx.TimeoutException:

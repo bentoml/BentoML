@@ -18,8 +18,9 @@ from typing_extensions import TypedDict
 Posint = Annotated[int, Gt(0)]
 Posfloat = Annotated[float, Gt(0.0)]
 GpuLiteralType = Literal[
-    "nvidia-backwell-gb200",
-    "nvidia-backwell-b100",
+    "nvidia-b200",
+    "nvidia-gb200",
+    "nvidia-rtx-pro-6000",
     "nvidia-h200-141gb",
     "nvidia-tesla-h100",
     "nvidia-tesla-t4",
@@ -33,6 +34,8 @@ GpuLiteralType = Literal[
     "nvidia-tesla-k80",
     "nvidia-tesla-p4",
     "amd-mi300x",
+    "amd-mi325x",
+    "amd-mi355x",
 ]
 TpuLiteralType = Literal[
     "v4-2x2x1",

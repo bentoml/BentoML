@@ -98,6 +98,23 @@ To specify the number of workers (for example, ``3``) within a Service:
 
 For more information, see :doc:`/build-with-bentoml/runtime-environment`.
 
+``labels``
+^^^^^^^^^^
+
+``labels`` allows you to set the labels for your Bento. They are key-value pairs that you can use to organize and filter your Bentos.
+
+.. code-block:: python
+
+    @bentoml.service(
+        labels={
+            "owner": "ai-team",
+            "type": "test",
+            "project": "llm",
+        }
+    )
+    class MyService:
+        # Service implementation
+
 .. _envs:
 
 ``envs``

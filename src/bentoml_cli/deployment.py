@@ -261,7 +261,8 @@ def codespace(
 
         $ bentoml code --attach <codespace-name>
     """
-    import questionary
+    from rich.prompt import Prompt
+    from rich_toolkit.menu import Menu
 
     if attach and (env or secret):
         raise CLIException("Cannot specify both --attach and --env or --secret")
@@ -288,16 +289,16 @@ def codespace(
                 ]
             ]
 
-        chosen = questionary.select(
-            message="Select a codespace to attach to or create a new one",
-            choices=[{"name": d.name, "value": d} for d in deployments]
+        choice = Menu["t.Literal['new'] | Deployment"](
+            label="Select a codespace to attach to or create a new one",
+            options=[{"name": d.name, "value": d} for d in deployments]
             + [{"name": "Create a new codespace", "value": "new"}],
         ).ask()
 
-        if chosen == "new":
-            name = questionary.text(
+        if choice == "new":
+            name = Prompt.ask(
                 "Enter a name for the new codespace, or leave it blank to get a random name derived from the service"
-            ).ask()
+            )
             deployment = create_deployment(
                 bento=bento_dir,
                 name=name or None,
@@ -307,14 +308,12 @@ def codespace(
                 env=env,
                 secret=secret,
             )
-        elif chosen is None:
-            return
         else:
             if env or secret:
                 rich.print(
                     "[yellow]Warning:[/] --env and --secret are ignored when attaching to an existing codespace"
                 )
-            deployment = t.cast(Deployment, chosen)
+            deployment = choice
     deployment.watch(bento_dir)
 
 

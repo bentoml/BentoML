@@ -62,9 +62,9 @@ dependencies = [
     "tomli-w",
     "httpx-ws>=0.6.0",
     "aiosqlite>=0.20.0",
-    "questionary>=2.0.1",
     "a2wsgi>=1.10.7",
     "fsspec>=2025.7.0",
+    "rich-toolkit>=0.15.1",
 ]
 dynamic = ["version"]
 [project.urls]

@@ -60,7 +60,7 @@ def safe_extract_tarfile(tar: tarfile.TarFile, destination: str) -> None:
     os.makedirs(destination, exist_ok=True)
     for member in tar.getmembers():
         fn = member.name
-        path = os.path.realpath(os.path.join(destination, fn))
+        path = os.path.abspath(os.path.join(destination, fn))
         if not Path(path).is_relative_to(destination):
             logger.warning(
                 "The tar file has a file (%s) trying to unpack to"

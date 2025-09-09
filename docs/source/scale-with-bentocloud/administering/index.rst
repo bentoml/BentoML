@@ -15,6 +15,12 @@ Guides for users with the Admin role.
 
         Implement custom access control for BentoCloud users.
 
+    .. grid-item-card:: Split staging and production environments
+        :link: split-staging-and-prod
+        :link-type: doc
+
+        Create dedicated organizations for different environments, such as staging and production, and transfer resources between them.
+
     .. grid-item-card:: Bring Your Own Cloud
         :link: bring-your-own-cloud
         :link-type: doc
@@ -22,7 +28,7 @@ Guides for users with the Admin role.
         The BentoCloud BYOC deployment helps you run AI applications in your own environment in a secure and cost-effective way.
 
     .. grid-item-card:: Configure standby instances
-        :link: bring-your-own-cloud
+        :link: configure-standby-instances
         :link-type: doc
 
         Prepare a set number of cloud machines in advance to handle potential demand surges.
@@ -33,5 +39,6 @@ Guides for users with the Admin role.
     :hidden:
 
     manage-users
+    split-staging-and-prod
     bring-your-own-cloud
     configure-standby-instances

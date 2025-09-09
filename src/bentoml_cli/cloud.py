@@ -49,13 +49,14 @@ def cloud_command():
 )
 def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
     """Login to BentoCloud."""
-    import questionary
     from rich.prompt import Confirm
+    from rich.prompt import Prompt
+    from rich_toolkit.menu import Menu
 
     if not api_token:
-        choice = questionary.select(
-            message="How would you like to authenticate BentoML CLI? [Use arrows to move]",
-            choices=[
+        choice = Menu(
+            label="How would you like to authenticate BentoML CLI?",
+            options=[
                 {
                     "name": "Create a new API token with a web browser",
                     "value": "create",
@@ -104,9 +105,7 @@ def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
                 )
                 time.sleep(1)
         elif choice == "paste":
-            api_token = click.prompt(
-                "? Paste your API token", type=str, hide_input=True
-            )
+            api_token = Prompt.ask(":key: Paste your API token", password=True)
     try:
         cloud_rest_client = RestApiClient(endpoint, api_token)
         user = cloud_rest_client.v1.get_current_user()

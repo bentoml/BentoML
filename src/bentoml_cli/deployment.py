@@ -49,6 +49,22 @@ def raise_deployment_config_error(err: BentoMLException, action: str) -> t.NoRet
     ) from None
 
 
+def convert_label_to_dict(label: tuple[str] | None) -> list[dict[str, str]] | None:
+    if label is None:
+        return None
+    collected_labels: list[dict[str, str]] = []
+    if label:
+        for item in label:
+            if "=" in item:
+                name, value = item.split("=", 1)
+            else:
+                raise CLIException(
+                    f"Invalid label format '{item}'. Expected format is key=value."
+                )
+            collected_labels.append({"key": name, "value": value})
+    return collected_labels
+
+
 def convert_env_to_dict(env: tuple[str] | None) -> list[dict[str, str]] | None:
     if env is None:
         return None
@@ -111,6 +127,12 @@ def convert_env_to_dict(env: tuple[str] | None) -> list[dict[str, str]] | None:
     help="Deployment strategy",
 )
 @click.option(
+    "--label",
+    type=click.STRING,
+    help="List of labels pass by --label key=value --label ...",
+    multiple=True,
+)
+@click.option(
     "--env",
     type=click.STRING,
     help="List of environment variables pass by --env key[=value] --env ...",
@@ -158,6 +180,7 @@ def deploy_command(
     scaling_max: int | None,
     instance_type: str | None,
     strategy: str | None,
+    label: tuple[str] | None,
     env: tuple[str] | None,
     secret: tuple[str] | None,
     config_file: str | t.TextIO | None,
@@ -180,6 +203,7 @@ def deploy_command(
         instance_type=instance_type,
         strategy=strategy,
         env=env,
+        label=label,
         secret=secret,
         config_file=config_file,
         config_dict=config_dict,
@@ -362,6 +386,12 @@ def deployment_command():
     help="Deployment strategy",
 )
 @click.option(
+    "--label",
+    type=click.STRING,
+    help="List of labels pass by --label key=value --label ...",
+    multiple=True,
+)
+@click.option(
     "--env",
     type=click.STRING,
     help="List of environment variables pass by --env key[=value] --env ...",
@@ -397,6 +427,7 @@ def update(  # type: ignore
     scaling_max: int | None,
     instance_type: str | None,
     strategy: str | None,
+    label: tuple[str] | None,
     env: tuple[str] | None,
     secret: tuple[str] | None,
     config_file: t.TextIO | None,
@@ -422,6 +453,7 @@ def update(  # type: ignore
         instance_type=instance_type,
         strategy=strategy,
         envs=convert_env_to_dict(env),
+        labels=convert_label_to_dict(label),
         secrets=list(secret) if secret else None,
         config_file=config_file,
         config_dict=cfg_dict,
@@ -483,6 +515,12 @@ def update(  # type: ignore
     help="Deployment strategy",
 )
 @click.option(
+    "--label",
+    type=click.STRING,
+    help="List of labels pass by --label key=value --label ...",
+    multiple=True,
+)
+@click.option(
     "--env",
     type=click.STRING,
     help="List of environment variables pass by --env key[=value] --env ...",
@@ -517,6 +555,7 @@ def apply(  # type: ignore
     scaling_max: int | None,
     instance_type: str | None,
     strategy: str | None,
+    label: tuple[str] | None,
     env: tuple[str] | None,
     secret: tuple[str] | None,
     config_file: str | t.TextIO | None,
@@ -540,6 +579,7 @@ def apply(  # type: ignore
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
+        labels=convert_label_to_dict(label),
         envs=convert_env_to_dict(env),
         secrets=list(secret) if secret else None,
         config_file=config_file,
@@ -852,6 +892,7 @@ def create_deployment(
     scaling_max: int | None = None,
     instance_type: str | None = None,
     strategy: str | None = None,
+    label: tuple[str] | None = None,
     env: tuple[str] | None = None,
     secret: tuple[str] | None = None,
     config_file: str | t.TextIO | None = None,
@@ -874,6 +915,7 @@ def create_deployment(
         scaling_min=scaling_min,
         instance_type=instance_type,
         strategy=strategy,
+        labels=convert_label_to_dict(label),
         envs=convert_env_to_dict(env),
         secrets=list(secret) if secret else None,
         config_file=config_file,

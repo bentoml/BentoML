@@ -66,11 +66,7 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
                 # TODO: support aiohttp client
                 client = instance_client
             else:
-                proxy_port = service.config.get("http", {}).get("proxy_port")
-                if proxy_port is None:
-                    raise BentoMLConfigException(
-                        "proxy_port must be set in service config to use custom command"
-                    )
+                proxy_port = service.config.get("http", {}).get("proxy_port", 8000)
                 proxy_url = f"http://localhost:{proxy_port}"
                 client = await stack.enter_async_context(
                     httpx.AsyncClient(base_url=proxy_url, timeout=None)

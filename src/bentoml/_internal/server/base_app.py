@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.responses import PlainTextResponse
+from starlette.responses import Response
 
 from ..utils import with_app_arg
 

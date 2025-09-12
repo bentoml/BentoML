@@ -89,19 +89,8 @@ class HTTPTrafficMetricsMiddleware:
     ) -> None:
         if not self._is_setup:
             self._setup()
-        if not scope["type"].startswith("http"):
+        if not scope["type"].startswith("http") or scope["path"] == "/metrics":
             await self.app(scope, receive, send)
-            return
-
-        if scope["path"] == "/metrics":
-            from starlette.responses import Response
-
-            response = Response(
-                self.metrics_client.generate_latest(),
-                status_code=200,
-                media_type=self.metrics_client.CONTENT_TYPE_LATEST,
-            )
-            await response(scope, receive, send)
             return
 
         endpoint = scope["path"]
@@ -261,14 +250,7 @@ class RunnerTrafficMetricsMiddleware:
             return
 
         if scope["type"].startswith("http") and scope["path"] == "/metrics":
-            from starlette.responses import Response
-
-            response = Response(
-                self.metrics_client.generate_latest(),
-                status_code=200,
-                media_type=self.metrics_client.CONTENT_TYPE_LATEST,
-            )
-            await response(scope, receive, send)
+            await self.app(scope, receive, send)
             return
 
         endpoint = scope["path"]

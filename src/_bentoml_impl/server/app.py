@@ -19,6 +19,7 @@ from starlette.responses import JSONResponse
 from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 
+from _bentoml_impl.server.proxy import create_proxy_app
 from _bentoml_sdk import Service
 from _bentoml_sdk.service import set_current_service
 from bentoml._internal.container import BentoMLContainer
@@ -26,6 +27,7 @@ from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.resource import system_resources
 from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
+from bentoml._internal.utils import is_async_callable
 from bentoml._internal.utils.metrics import exponential_buckets
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import ServiceUnavailable
@@ -177,6 +179,10 @@ class ServiceAppFactory(BaseAppFactory):
     def __call__(self) -> Starlette:
         app = super().__call__()
         app.add_route("/schema.json", self.schema_view, name="schema")
+
+        if self.service.has_custom_command():
+            # This may obscure all the routes behind, but this is expected.
+            self.service.mount_asgi_app(create_proxy_app(self.service), name="proxy")
 
         for mount_app, path, name in self.service.mount_apps:
             app.router.routes.append(PassiveMount(path, mount_app, name=name))
@@ -418,6 +424,22 @@ class ServiceAppFactory(BaseAppFactory):
 
         return PlainTextResponse("\n", status_code=200)
 
+    async def metrics(self, _: Request) -> Response:  # type: ignore[override]
+        metrics_client = BentoMLContainer.metrics_client.get()
+        metrics_content = await anyio.to_thread.run_sync(metrics_client.generate_latest)
+        if hasattr(self.service.inner, "__metrics__"):
+            func = getattr(self._service_instance, "__metrics__")
+            if not is_async_callable(func):
+                func = functools.partial(anyio.to_thread.run_sync, func)
+            metrics_content = (await func(metrics_content.decode("utf-8"))).encode(
+                "utf-8"
+            )
+        return Response(
+            metrics_content,
+            status_code=200,
+            media_type=metrics_client.CONTENT_TYPE_LATEST,
+        )
+
     @contextlib.asynccontextmanager
     async def lifespan(self, app: Starlette) -> t.AsyncGenerator[None, None]:
         from starlette.applications import Starlette
@@ -430,12 +452,11 @@ class ServiceAppFactory(BaseAppFactory):
 
             for mount_app, *_ in self.service.mount_apps:
                 if isinstance(mount_app, Starlette):
-                    maybe_state = await stack.enter_async_context(
+                    _ = await stack.enter_async_context(
                         mount_app.router.lifespan_context(mount_app)
                     )
-                    if maybe_state is not None:
-                        mount_app.state.update(maybe_state)
-                # TODO: support other ASGI apps
+                else:
+                    pass  # TODO: support other ASGI apps
             yield
 
     async def schema_view(self, request: Request) -> Response:

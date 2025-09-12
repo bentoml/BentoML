@@ -75,6 +75,17 @@ class BaseAppFactory(abc.ABC):
             return PlainTextResponse("\n", status_code=200)
         raise HTTPException(500)
 
+    def metrics(self, _: Request) -> Response:
+        """The Prometheus metrics endpoint."""
+        from ..configuration.containers import BentoMLContainer
+
+        metrics_client = BentoMLContainer.metrics_client.get()
+        return Response(
+            metrics_client.generate_latest(),
+            status_code=200,
+            media_type=metrics_client.CONTENT_TYPE_LATEST,
+        )
+
     def __call__(self) -> Starlette:
         from starlette.applications import Starlette
 
@@ -91,10 +102,14 @@ class BaseAppFactory(abc.ABC):
     def routes(self) -> list[BaseRoute]:
         from starlette.routing import Route
 
+        from ..configuration.containers import BentoMLContainer
+
         routes: list[BaseRoute] = []
         routes.append(Route(path="/livez", name="livez", endpoint=self.livez))
         routes.append(Route(path="/healthz", name="healthz", endpoint=self.livez))
         routes.append(Route(path="/readyz", name="readyz", endpoint=self.readyz))
+        if BentoMLContainer.api_server_config.metrics.enabled.get():
+            routes.append(Route(path="/metrics", name="metrics", endpoint=self.metrics))
         return routes
 
     @property

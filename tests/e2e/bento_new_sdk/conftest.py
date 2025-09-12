@@ -23,3 +23,8 @@ def prepare_models() -> None:
 @pytest.fixture
 def examples() -> Path:
     return EXAMPLE_DIR
+
+
+@pytest.fixture(autouse=True)
+def clear_import_cache() -> None:
+    sys.modules.pop("service", None)

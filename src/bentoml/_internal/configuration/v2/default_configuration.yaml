@@ -46,6 +46,7 @@ services:
   http:
     host: 0.0.0.0
     port: 3000
+    proxy_port: 8000
     cors:
       enabled: false
       access_control_allow_origins: ~

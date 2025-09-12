@@ -121,6 +121,7 @@ _SERVICE_CONFIG = {
     s.Optional("http"): {
         "host": s.And(str, is_valid_ip_address),
         "port": s.And(int, ensure_larger_than_zero),
+        "proxy_port": s.And(int, ensure_larger_than_zero),
         "cors": {
             "enabled": bool,
             "access_control_allow_origins": s.Or([str], str, None),

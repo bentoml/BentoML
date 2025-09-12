@@ -89,6 +89,38 @@ To list available instance types on your BentoCloud account, run:
 
     Choose the instance type that best fits the performance requirements and resource demands of your application. The instance type should be compatible with the deployment environment and supported by the underlying infrastructure.
 
+Labels
+^^^^^^
+You can add labels to your Deployment for better organization and management. Labels are key-value pairs that help you categorize and filter your Deployments based on specific attributes.
+
+.. tab-set::
+
+    .. tab-item:: BentoML CLI
+
+        To add labels via the BentoML CLI, you can use the ``--label`` option:
+
+        .. code-block:: bash
+
+            bentoml deploy --label key1=value1 --label key2=value2
+
+    .. tab-item:: Python API
+
+        When using the Python API, labels are specified through the ``labels`` parameter, which accepts a list of dictionaries. Each dictionary in the list represents a single label. Here's an example:
+
+        .. code-block:: python
+
+            import bentoml
+
+            bentoml.deployment.create(
+                bento="./path_to_your_project",
+                labels=[
+                    {"key": "key1", "value": "value1"},  # First label
+                    {"key": "key2", "value": "value2"}   # Second label
+                ]
+            )
+
+Once set, you can use these labels to filter and manage your Deployments in the BentoCloud dashboard or via the BentoML CLI.
+
 Environment variables
 ^^^^^^^^^^^^^^^^^^^^^
 

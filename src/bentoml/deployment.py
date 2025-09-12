@@ -38,6 +38,7 @@ def create(
     instance_type: str | None = ...,
     strategy: str | None = ...,
     envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = ...,
+    labels: t.List[LabelItemSchema] | t.List[dict[str, str]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
 ) -> Deployment: ...
 
@@ -75,6 +76,7 @@ def create(
     instance_type: str | None = None,
     strategy: str | None = None,
     envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = None,
+    labels: t.List[LabelItemSchema] | t.List[dict[str, str]] | None = None,
     extras: dict[str, t.Any] | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
@@ -101,6 +103,14 @@ def create(
                 for item in envs
             ]
             if envs is not None
+            else None
+        ),
+        labels=(
+            [
+                attr.asdict(item) if isinstance(item, LabelItemSchema) else item
+                for item in labels
+            ]
+            if labels is not None
             else None
         ),
         extras=extras,
@@ -177,6 +187,9 @@ def update(
         | t.List[dict[str, t.Any]]
         | None
     ) = None,
+    labels: (
+        t.List[LabelItemSchema] | t.List[dict[str, str]] | t.List[dict[str, str]] | None
+    ) = None,
     secrets: t.List[str] | None = None,
     extras: dict[str, t.Any] | None = None,
     config_dict: dict[str, t.Any] | None = None,
@@ -199,6 +212,14 @@ def update(
                 for item in envs
             ]
             if envs is not None
+            else None
+        ),
+        labels=(
+            [
+                attr.asdict(item) if isinstance(item, LabelItemSchema) else item
+                for item in labels
+            ]
+            if labels is not None
             else None
         ),
         secrets=secrets,

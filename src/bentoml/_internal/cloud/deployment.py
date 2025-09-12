@@ -72,6 +72,7 @@ class DeploymentConfigParameters:
     scaling_max: int | None = None
     instance_type: str | None = None
     strategy: str | None = None
+    labels: t.List[dict[str, str]] | None = None
     envs: t.List[dict[str, t.Any]] | None = None
     secrets: t.List[str] | None = None
     extras: dict[str, t.Any] | None = None
@@ -119,6 +120,7 @@ class DeploymentConfigParameters:
                     ("cluster", self.cluster),
                     ("access_authorization", self.access_authorization),
                     ("envs", self.envs if self.envs else None),
+                    ("labels", self.labels if self.labels else None),
                     ("secrets", self.secrets),
                     ("dev", self.dev),
                 ]

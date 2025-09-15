@@ -507,6 +507,7 @@ def update(  # type: ignore
     help="Configuration json string",
     default=None,
 )
+@build_args_option
 @inject
 def apply(  # type: ignore
     bento: str | None,

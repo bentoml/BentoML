@@ -85,6 +85,7 @@ class Service(t.Generic[T]):
     config: Config = attrs.field(factory=Config)
     inner: type[T] = _DummyService
     image: t.Optional[Image] = None
+    description: t.Optional[str] = None
     envs: t.List[BentoEnvSchema] = attrs.field(factory=list, converter=convert_envs)
     labels: t.Dict[str, str] = attrs.field(factory=dict)
     models: list[Model[t.Any]] = attrs.field(factory=list)
@@ -541,6 +542,7 @@ def service(
     *,
     name: str | None = None,
     image: Image | None = None,
+    description: str | None = None,
     envs: list[dict[str, str]] | None = None,
     labels: dict[str, str] | None = None,
     cmd: list[str] | None = None,
@@ -567,6 +569,7 @@ def service(
             config=config,
             inner=inner,
             image=image,
+            description=description,
             envs=envs or [],
             labels=labels or {},
             cmd=cmd,

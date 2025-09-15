@@ -264,6 +264,8 @@ class Bento(StoreItem):
             )
             build_config.envs.extend(svc.envs)
             build_config.labels.update(svc.labels)
+            if build_config.description is None and svc.description is not None:
+                object.__setattr__(build_config, "description", svc.description)
             if svc.image is not None:
                 image = svc.image
         if not disable_image:

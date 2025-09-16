@@ -27,6 +27,7 @@ from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.resource import system_resources
 from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
+from bentoml._internal.types import LazyType
 from bentoml._internal.utils import is_async_callable
 from bentoml._internal.utils.metrics import exponential_buckets
 from bentoml.exceptions import BentoMLException
@@ -452,9 +453,12 @@ class ServiceAppFactory(BaseAppFactory):
 
             for mount_app, *_ in self.service.mount_apps:
                 if isinstance(mount_app, Starlette):
-                    _ = await stack.enter_async_context(
+                    await stack.enter_async_context(
                         mount_app.router.lifespan_context(mount_app)
                     )
+                elif LazyType("quart.Quart").isinstance(mount_app):
+                    await mount_app.startup()  # type: ignore[attr-defined]
+                    stack.push_async_callback(mount_app.shutdown)  # type: ignore[attr-defined]
                 else:
                     pass  # TODO: support other ASGI apps
             yield

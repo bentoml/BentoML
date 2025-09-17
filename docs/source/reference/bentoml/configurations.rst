@@ -133,6 +133,8 @@ For more information, see :doc:`/build-with-bentoml/runtime-environment`.
     class MyService:
         # Service implementation
 
+.. _config-traffic:
+
 ``traffic``
 ^^^^^^^^^^^
 

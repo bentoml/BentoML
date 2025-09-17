@@ -495,13 +495,12 @@ def set_build_args(ctx: Context, param: Parameter, value: str | tuple[str]) -> N
         value = (value,)
     arguments: dict[str, str] = {}
     for item in value:
-        for part in item.split(","):
-            key, has_equal, val = part.partition("=")
-            if not has_equal:
-                raise click.BadParameter(
-                    f"Invalid argument format: {part}. Must be in the form of key=value"
-                )
-            arguments[key] = val
+        key, has_equal, val = item.partition("=")
+        if not has_equal:
+            raise click.BadParameter(
+                f"Invalid argument format: {item}. Must be in the form of key=value"
+            )
+        arguments[key] = val
 
     set_arguments(arguments, override=False)
 

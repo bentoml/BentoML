@@ -68,7 +68,6 @@ def _get_server_socket(
 
 
 _SERVICE_WORKER_SCRIPT = "_bentoml_impl.worker.service"
-_RUNNER_WORKER_SCRIPT = "_bentoml_impl.worker.runner"
 
 
 @inject
@@ -87,39 +86,21 @@ def create_dependency_watcher(
 
     num_workers, worker_envs = scheduler.get_worker_env(svc)
     env = env or {}
-    if svc.has_custom_command():
-        svc_port = port_stack.enter_context(reserve_free_port())
-        env = {**os.environ, **env, "PORT": str(svc_port)}
-        uri = f"http://127.0.0.1:{svc_port}"
-        socket = None
-        cmd = sys.executable
-        args = [
-            "-m",
-            _RUNNER_WORKER_SCRIPT,
-            bento_identifier,
-            "--service-name",
-            svc.name,
-            "--worker-id",
-            "$(CIRCUS.WID)",
-            "--args",
-            json.dumps(bento_args),
-        ]
-    else:
-        uri, socket = _get_server_socket(svc, uds_path, port_stack, backlog)
-        args = [
-            "-m",
-            _SERVICE_WORKER_SCRIPT,
-            bento_identifier,
-            "--service-name",
-            svc.name,
-            "--fd",
-            f"$(circus.sockets.{svc.name})",
-            "--worker-id",
-            "$(CIRCUS.WID)",
-            "--args",
-            json.dumps(bento_args),
-        ]
-        cmd = sys.executable
+    uri, socket = _get_server_socket(svc, uds_path, port_stack, backlog)
+    args = [
+        "-m",
+        _SERVICE_WORKER_SCRIPT,
+        bento_identifier,
+        "--service-name",
+        svc.name,
+        "--fd",
+        f"$(circus.sockets.{svc.name})",
+        "--worker-id",
+        "$(CIRCUS.WID)",
+        "--args",
+        json.dumps(bento_args),
+    ]
+    cmd = sys.executable
 
     env.update(worker_envs)
     watcher = create_watcher(
@@ -288,74 +269,54 @@ def serve_http(
             raise BentoMLConfigException(f"Invalid host IP address: {host}") from e
         bento_args = BentoMLContainer.bento_arguments.get()
         env.update(worker_env)
-        if svc.has_custom_command():
-            env.update(os.environ)
-            env.update(
-                {"PORT": str(port), "BENTOML_HOST": host, "BENTOML_PORT": str(port)}
+        sockets.append(
+            CircusSocket(
+                name=API_SERVER_NAME,
+                host=host,
+                port=port,
+                family=family,
+                backlog=backlog,
             )
-            server_cmd = sys.executable
-            server_args = [
-                "-m",
-                _RUNNER_WORKER_SCRIPT,
-                bento_identifier,
-                "--service-name",
-                svc.name,
-                "--worker-id",
-                "$(CIRCUS.WID)",
-                "--args",
-                json.dumps(bento_args),
-            ]
-        else:
-            sockets.append(
-                CircusSocket(
-                    name=API_SERVER_NAME,
-                    host=host,
-                    port=port,
-                    family=family,
-                    backlog=backlog,
-                )
-            )
-            if BentoMLContainer.ssl.enabled.get() and not ssl_certfile:
-                raise BentoMLConfigException(
-                    "ssl_certfile is required when ssl is enabled"
-                )
+        )
+        if BentoMLContainer.ssl.enabled.get() and not ssl_certfile:
+            raise BentoMLConfigException("ssl_certfile is required when ssl is enabled")
 
-            ssl_args = construct_ssl_args(
-                ssl_certfile=ssl_certfile,
-                ssl_keyfile=ssl_keyfile,
-                ssl_keyfile_password=ssl_keyfile_password,
-                ssl_version=ssl_version,
-                ssl_cert_reqs=ssl_cert_reqs,
-                ssl_ca_certs=ssl_ca_certs,
-                ssl_ciphers=ssl_ciphers,
-            )
-            timeouts_args = construct_timeouts_args(
-                timeout_keep_alive=timeout_keep_alive,
-                timeout_graceful_shutdown=timeout_graceful_shutdown,
-            )
-            timeout_args = ["--timeout", str(timeout)] if timeout else []
+        ssl_args = construct_ssl_args(
+            ssl_certfile=ssl_certfile,
+            ssl_keyfile=ssl_keyfile,
+            ssl_keyfile_password=ssl_keyfile_password,
+            ssl_version=ssl_version,
+            ssl_cert_reqs=ssl_cert_reqs,
+            ssl_ca_certs=ssl_ca_certs,
+            ssl_ciphers=ssl_ciphers,
+        )
+        timeouts_args = construct_timeouts_args(
+            timeout_keep_alive=timeout_keep_alive,
+            timeout_graceful_shutdown=timeout_graceful_shutdown,
+        )
+        timeout_args = ["--timeout", str(timeout)] if timeout else []
 
-            server_cmd = sys.executable
-            server_args = [
-                "-m",
-                _SERVICE_WORKER_SCRIPT,
-                bento_identifier,
-                "--fd",
-                f"$(circus.sockets.{API_SERVER_NAME})",
-                "--service-name",
-                svc.name,
-                "--backlog",
-                str(backlog),
-                "--worker-id",
-                "$(CIRCUS.WID)",
-                "--args",
-                json.dumps(bento_args),
-                *ssl_args,
-                *timeouts_args,
-                *timeout_args,
-            ]
-            if development_mode:
-                server_args.append("--development-mode")
+        server_cmd = sys.executable
+        server_args = [
+            "-m",
+            _SERVICE_WORKER_SCRIPT,
+            bento_identifier,
+            "--fd",
+            f"$(circus.sockets.{API_SERVER_NAME})",
+            "--service-name",
+            svc.name,
+            "--backlog",
+            str(backlog),
+            "--worker-id",
+            "$(CIRCUS.WID)",
+            "--args",
+            json.dumps(bento_args),
+            *ssl_args,
+            *timeouts_args,
+            *timeout_args,
+        ]
+        if development_mode:
+            server_args.append("--development-mode")
 
         scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
         watchers.append(

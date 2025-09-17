@@ -306,7 +306,28 @@ Alternatively, compute the command at runtime:
 
 Use this method when there are parameters whose values can only be determined at runtime.
 
-When a custom command is provided, BentoML will launch a single process for that Service using your command. It will set the ``PORT`` environment variable (and ``BENTOML_HOST``/``BENTOML_PORT`` for the entry Service). Your process must listen on the provided ``PORT`` and serve HTTP endpoints. Server-level options like CORS/SSL/timeouts defined in BentoML won't apply automatically—configure them in your own server if needed.
+BentoML operates by establishing a proxy service that directs all requests to the HTTP server initiated by the custom command. The default proxy port is ``8000``, specify a different one if the custom command is listening on another port:
+
+.. code-block:: python
+
+    @bentoml.service(cmd=["myserver", "--port", "$PORT"], http={"proxy_port": 9000})
+    class ExternalServer:
+        pass
+
+Metrics Rewriting
+-----------------
+
+When starting a server with a custom command, it can be helpful to include metrics from that server. Alternatively, you can modify the metrics provided by the Prometheus exporter.
+To achieve this, you can implement the ``__metrics__`` method in your Service class. This method takes the original metrics text as input and returns the modified metrics text:
+
+.. code-block:: python
+
+    @bentoml.service(cmd=["myserver", "--port", "$PORT"])
+    class ExternalServer:
+        def __metrics__(self, original_metrics: str) -> str:
+            # Modify the original metrics as needed
+            modified_metrics = original_metrics.replace('sglang', 'vllm')
+            return modified_metrics
 
 .. _bentoml-tasks:
 

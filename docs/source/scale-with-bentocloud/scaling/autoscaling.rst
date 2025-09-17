@@ -88,7 +88,7 @@ You can enhance concurrency management with an external request queue on BentoCl
 
     If you enable ``external_queue`` in the ``@bentoml.service`` decorator, you must specify a ``concurrency`` value.
 
-It's worth noting that when the external queue is enabled, ``max_concurrency`` will no longer take effect because BentoCloud guarantees the Service will never receive more requests simultaneously than the ``concurrency`` setting allows. Therefore, ``max_concurrency`` is never reached.
+It's worth noting that when the external queue is enabled, ``max_concurrency`` will no longer take effect because BentoCloud guarantees the Service will never receive more requests simultaneously than the ``concurrency`` setting allows. Therefore, ``max_concurrency`` is never reached. For more information, see available fields in :ref:`config-traffic`.
 
 Autoscaling policies
 --------------------

@@ -35,6 +35,10 @@ class Dependency(t.Generic[T]):
     url: str | None = None
     _resolved: t.Any = attrs.field(default=None, init=False)
 
+    def __attrs_post_init__(self) -> None:
+        if self.on is None and self.url is None and self.deployment is None:
+            raise ValueError("Must specify at least one of on, deployment or url")
+
     @t.overload
     def get(self: Dependency[None]) -> RemoteProxy[t.Any]: ...
 

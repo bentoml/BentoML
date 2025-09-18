@@ -19,6 +19,8 @@ from rich.console import Console
 from simple_di import Provide
 from simple_di import inject
 
+from bentoml._internal.cloud.secret import SecretAPI
+
 from ..bento.bento import DEFAULT_BENTO_BUILD_FILES
 from ..bento.bento import Bento
 from ..bento.build_config import BentoBuildConfig
@@ -67,6 +69,7 @@ class DeploymentConfigParameters:
     path_context: str | None = None
     bento: Tag | str | None = None
     cluster: str | None = None
+    context: str | None = None
     access_authorization: bool | None = None
     scaling_min: int | None = None
     scaling_max: int | None = None
@@ -84,8 +87,11 @@ class DeploymentConfigParameters:
     cfg_dict: dict[str, t.Any] | None = None
     _param_config: dict[str, t.Any] | None = None
 
-    def verify(self, create: bool = True):
+    def verify(self, create: bool = True, secret_api: SecretAPI | None = None):
         from bentoml._internal.configuration.containers import BentoMLContainer
+
+        if self.context:
+            BentoMLContainer.cloud_context.set(self.context)
 
         from .secret import SecretAPI
 
@@ -169,7 +175,7 @@ class DeploymentConfigParameters:
                 required_envs = [env.name for env in manifest.envs if not env.value]
                 provided_envs: list[str] = [env["name"] for env in (self.envs or [])]
                 if self.secrets:
-                    secret_api = SecretAPI(BentoMLContainer.rest_api_client.get())
+                    secret_api = secret_api or SecretAPI(BentoMLContainer.rest_api_client.get())
                     for secret_name in self.secrets:
                         secret = secret_api.get(secret_name, cluster=self.cluster)
                         if secret.content.type == "env":

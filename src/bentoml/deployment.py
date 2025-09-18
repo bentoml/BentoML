@@ -118,7 +118,8 @@ def create(
         config_file=config_file,
     )
     try:
-        config_params.verify()
+
+        config_params.verify(secret_api=_cloud_client.secret)
     except BentoMLException as e:
         raise BentoMLException(
             f"Failed to create deployment due to invalid configuration: {e}"
@@ -130,7 +131,6 @@ def create(
 def update(
     name: str | None = ...,
     path_context: str | None = ...,
-    context: str | None = ...,
     cluster: str | None = ...,
     *,
     bento: BentoType | None = ...,
@@ -149,7 +149,6 @@ def update(
 def update(
     name: str | None = ...,
     path_context: str | None = ...,
-    context: str | None = ...,
     cluster: str | None = None,
     *,
     bento: BentoType | None = ...,
@@ -161,7 +160,6 @@ def update(
 def update(
     name: str | None = ...,
     path_context: str | None = ...,
-    context: str | None = ...,
     cluster: str | None = None,
     *,
     bento: BentoType | None = ...,
@@ -228,7 +226,7 @@ def update(
         config_file=config_file,
     )
     try:
-        config_params.verify(create=False)
+        config_params.verify(create=False, secret_api=_cloud_client.secret)
     except BentoMLException as e:
         raise BentoMLException(
             f"Failed to create deployment due to invalid configuration: {e}"
@@ -266,6 +264,7 @@ def apply(
     path_context: str | None = None,
     *,
     bento: BentoType | None = None,
+    context: str | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
@@ -275,11 +274,12 @@ def apply(
         path_context=path_context,
         bento=bento.tag if isinstance(bento, Bento) else bento,
         cluster=cluster,
+        context=context,
         config_dict=config_dict,
         config_file=config_file,
     )
     try:
-        config_params.verify(create=False)
+        config_params.verify(create=False, secret_api=_cloud_client.secret)
     except BentoMLException as e:
         raise BentoMLException(
             f"Failed to create deployment due to invalid configuration: {e}"

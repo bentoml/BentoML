@@ -67,7 +67,6 @@ class DeploymentConfigParameters:
     path_context: str | None = None
     bento: Tag | str | None = None
     cluster: str | None = None
-    context: str | None = None
     access_authorization: bool | None = None
     scaling_min: int | None = None
     scaling_max: int | None = None

@@ -267,7 +267,6 @@ def apply(
     path_context: str | None = None,
     *,
     bento: BentoType | None = None,
-    context: str | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
@@ -277,7 +276,6 @@ def apply(
         path_context=path_context,
         bento=bento.tag if isinstance(bento, Bento) else bento,
         cluster=cluster,
-        context=context,
         config_dict=config_dict,
         config_file=config_file,
     )

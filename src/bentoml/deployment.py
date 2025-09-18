@@ -118,7 +118,11 @@ def create(
         config_file=config_file,
     )
     try:
-        config_params.verify()
+        rest_client = _cloud_client.bento._client  # type: ignore[reportPrivateUsage]
+
+        # Temporarily patch the global REST API client provider to use the correct context
+        with BentoMLContainer.rest_api_client.patch(rest_client):
+            config_params.verify()
     except BentoMLException as e:
         raise BentoMLException(
             f"Failed to create deployment due to invalid configuration: {e}"

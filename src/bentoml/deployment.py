@@ -118,8 +118,7 @@ def create(
         config_file=config_file,
     )
     try:
-
-        config_params.verify(secret_api=_cloud_client.secret)
+        config_params.verify(cloud_client=_cloud_client)
     except BentoMLException as e:
         raise BentoMLException(
             f"Failed to create deployment due to invalid configuration: {e}"

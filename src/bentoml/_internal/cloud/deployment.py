@@ -86,7 +86,9 @@ class DeploymentConfigParameters:
     cfg_dict: dict[str, t.Any] | None = None
     _param_config: dict[str, t.Any] | None = None
 
-    def verify(self, create: bool = True, _cloud_client: BentoCloudClient | None = None):
+    def verify(
+        self, create: bool = True, _cloud_client: BentoCloudClient | None = None
+    ):
         from bentoml._internal.configuration.containers import BentoMLContainer
 
         from .secret import SecretAPI

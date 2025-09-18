@@ -19,8 +19,6 @@ from rich.console import Console
 from simple_di import Provide
 from simple_di import inject
 
-from bentoml._internal.cloud.secret import SecretAPI
-
 from ..bento.bento import DEFAULT_BENTO_BUILD_FILES
 from ..bento.bento import Bento
 from ..bento.build_config import BentoBuildConfig
@@ -90,9 +88,14 @@ class DeploymentConfigParameters:
 
     def verify(self, create: bool = True, cloud_client: BentoCloudClient | None = None):
         from bentoml._internal.configuration.containers import BentoMLContainer
+
         from .secret import SecretAPI
 
-        rest_client = cloud_client.bento._client if cloud_client else BentoMLContainer.rest_api_client.get()  # pyright: ignore[reportPrivateUsage]
+        rest_client = (
+            cloud_client.bento._client
+            if cloud_client
+            else BentoMLContainer.rest_api_client.get()
+        )  # pyright: ignore[reportPrivateUsage]
         secret_api = cloud_client.secret if cloud_client else SecretAPI(rest_client)
 
         if self.config_dict:
@@ -158,14 +161,19 @@ class DeploymentConfigParameters:
                 if self.cli:
                     rich.print(f"building bento from [green]{bento_name}[/] ...")
                 bento_info = ensure_bento(
-                    project_path=bento_name, bare=self.dev, cli=self.cli, _client=rest_client
+                    project_path=bento_name,
+                    bare=self.dev,
+                    cli=self.cli,
+                    _client=rest_client,
                 )
             elif self.dev:  # dev mode and bento is built
                 return
             else:
                 if self.cli:
                     rich.print(f"using bento [green]{bento_name}[/]...")
-                bento_info = ensure_bento(bento=str(bento_name), cli=self.cli, _client=rest_client)
+                bento_info = ensure_bento(
+                    bento=str(bento_name), cli=self.cli, _client=rest_client
+                )
             if create:
                 manifest = (
                     bento_info.get_manifest()

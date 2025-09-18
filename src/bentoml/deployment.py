@@ -165,7 +165,7 @@ def update(
 def update(
     name: str | None = ...,
     path_context: str | None = ...,
-    context: str | None = None,
+    context: str | None = ...,
     cluster: str | None = None,
     *,
     bento: BentoType | None = ...,

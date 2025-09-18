@@ -213,6 +213,7 @@ class ServiceAppFactory(BaseAppFactory):
     @property
     def middlewares(self) -> list[Middleware]:
         from bentoml._internal.container import BentoMLContainer
+        from bentoml._internal.server.http.traffic import MaxConcurrencyMiddleware
 
         middlewares: list[Middleware] = []
         # TrafficMetrics middleware should be the first middleware
@@ -237,6 +238,10 @@ class ServiceAppFactory(BaseAppFactory):
 
         from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
+        skip_paths = [self.service.config.get("endpoints", {}).get("livez", "/health")]
+        if readyz_endpoint := self.service.config.get("endpoints", {}).get("readyz"):
+            skip_paths.append(readyz_endpoint)
+
         middlewares.append(
             Middleware(
                 OpenTelemetryMiddleware,
@@ -259,11 +264,16 @@ class ServiceAppFactory(BaseAppFactory):
                     has_request_content_type=access_log_config.request_content_type.get(),
                     has_response_content_length=access_log_config.response_content_length.get(),
                     has_response_content_type=access_log_config.response_content_type.get(),
-                    skip_paths=access_log_config.skip_paths.get(),
+                    skip_paths=[*access_log_config.skip_paths.get(), *skip_paths],
                 )
             )
         # TimeoutMiddleware and MaxConcurrencyMiddleware
         middlewares.extend(super().middlewares)
+        for middleware in middlewares:
+            if inspect.isclass(middleware.cls) and issubclass(
+                middleware.cls, MaxConcurrencyMiddleware
+            ):
+                middleware.kwargs["skip_paths"] = skip_paths
         for middleware_cls, options in self.service.middlewares:
             middlewares.append(Middleware(middleware_cls, **options))
         # CORS middleware

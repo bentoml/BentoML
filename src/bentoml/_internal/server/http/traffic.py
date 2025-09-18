@@ -53,9 +53,15 @@ class TimeoutMiddleware:
 class MaxConcurrencyMiddleware:
     BYPASS_PATHS = frozenset({"/metrics", "/healthz", "/livez", "/readyz"})
 
-    def __init__(self, app: ext.ASGIApp, max_concurrency: int) -> None:
+    def __init__(
+        self,
+        app: ext.ASGIApp,
+        max_concurrency: int,
+        skip_paths: list[str] | None = None,
+    ) -> None:
         self.app = app
         self._semaphore = asyncio.Semaphore(max_concurrency)
+        self.skip_paths = [*(skip_paths or []), *self.BYPASS_PATHS]
 
     async def __call__(
         self, scope: ext.ASGIScope, receive: ext.ASGIReceive, send: ext.ASGISend
@@ -63,7 +69,7 @@ class MaxConcurrencyMiddleware:
         if scope["type"] not in ("http", "websocket"):
             return await self.app(scope, receive, send)
 
-        if scope["path"] in self.BYPASS_PATHS:
+        if scope["path"] in self.skip_paths:
             return await self.app(scope, receive, send)
 
         if self._semaphore.locked():

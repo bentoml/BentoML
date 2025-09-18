@@ -86,17 +86,17 @@ class DeploymentConfigParameters:
     cfg_dict: dict[str, t.Any] | None = None
     _param_config: dict[str, t.Any] | None = None
 
-    def verify(self, create: bool = True, cloud_client: BentoCloudClient | None = None):
+    def verify(self, create: bool = True, _cloud_client: BentoCloudClient | None = None):
         from bentoml._internal.configuration.containers import BentoMLContainer
 
         from .secret import SecretAPI
 
         rest_client = (
-            cloud_client.bento._client  # pyright: ignore[reportPrivateUsage]
-            if cloud_client
+            _cloud_client.bento._client  # pyright: ignore[reportPrivateUsage]
+            if _cloud_client
             else BentoMLContainer.rest_api_client.get()
         )
-        secret_api = cloud_client.secret if cloud_client else SecretAPI(rest_client)
+        secret_api = _cloud_client.secret if _cloud_client else SecretAPI(rest_client)
 
         if self.config_dict:
             self.cfg_dict = self.config_dict

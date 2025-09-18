@@ -92,7 +92,7 @@ class DeploymentConfigParameters:
         from .secret import SecretAPI
 
         rest_client = (
-            cloud_client.bento._client # pyright: ignore[reportPrivateUsage]
+            cloud_client.bento._client  # pyright: ignore[reportPrivateUsage]
             if cloud_client
             else BentoMLContainer.rest_api_client.get()
         )

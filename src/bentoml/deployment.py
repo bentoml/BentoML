@@ -308,6 +308,52 @@ def terminate(
 
 
 @inject
+def start(
+    name: str,
+    cluster: str | None = None,
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+) -> tuple[Deployment | None, str | None]:
+    """Start a terminated deployment by updating it with no configuration changes.
+
+    Returns:
+        tuple: (deployment, error_message) - deployment is None if error occurred
+    """
+    from ._internal.cloud.schemas.modelschemas import DeploymentStatus
+
+    # First check if deployment exists and get its status
+    try:
+        deployment = get(name=name, cluster=cluster)
+        status = deployment.get_status(refetch=True).status
+
+        if status != DeploymentStatus.Terminated.value:
+            return (
+                None,
+                f"Deployment '{name}' is not terminated (current status: {status}). Only terminated deployments can be started.",
+            )
+    except Exception as e:
+        if "not found" in str(e).lower():
+            return None, f"Deployment '{name}' not found."
+        return None, str(e)
+
+    config_params = DeploymentConfigParameters(
+        name=name,
+        cluster=cluster,
+    )
+    try:
+        config_params.verify(create=False)
+    except BentoMLException as e:
+        return None, f"Failed to start deployment due to invalid configuration: {e}"
+
+    try:
+        deployment = _cloud_client.deployment.update(
+            deployment_config_params=config_params
+        )
+        return deployment, None
+    except Exception as e:
+        return None, str(e)
+
+
+@inject
 def delete(
     name: str,
     cluster: str | None = None,
@@ -343,4 +389,4 @@ def list(
     return _cloud_client.deployment.list(cluster=cluster, search=search, dev=dev, q=q)
 
 
-__all__ = ["create", "get", "update", "apply", "terminate", "delete", "list"]
+__all__ = ["create", "get", "update", "apply", "terminate", "start", "delete", "list"]

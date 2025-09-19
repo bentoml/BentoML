@@ -760,6 +760,25 @@ def terminate(  # type: ignore
 
 
 @deployment_command.command()
+@shared_decorator
+@click.argument(
+    "name",
+    type=click.STRING,
+    required=True,
+)
+def start(  # type: ignore
+    name: str, cluster: str | None
+) -> None:
+    """Start a terminated deployment on BentoCloud."""
+    deployment, error = bentoml.deployment.start(name, cluster=cluster)
+    if error:
+        rich.print(f"[red]✗[/] {error}")
+        raise SystemExit(1)
+    else:
+        rich.print(f"Deployment [green]'{name}'[/] started successfully.")
+
+
+@deployment_command.command()
 @click.argument(
     "name",
     type=click.STRING,

@@ -19,8 +19,6 @@ from rich.console import Console
 from simple_di import Provide
 from simple_di import inject
 
-from bentoml._internal.configuration.containers import BentoMLContainer
-
 from ..bento.bento import DEFAULT_BENTO_BUILD_FILES
 from ..bento.bento import Bento
 from ..bento.build_config import BentoBuildConfig

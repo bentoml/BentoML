@@ -219,6 +219,10 @@ Here is an example ``config-file.yaml`` file:
           deployment_strategy: "Recreate"
         # Add another Service below if you have more
 
+.. tip::
+
+    To view the full schema, click **Equivalent Code** on the **Configuration** page when creating or updating a Deployment on the BentoCloud console.
+
 You can then create a Deployment as below:
 
 .. tab-set::

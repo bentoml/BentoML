@@ -38,6 +38,7 @@ def create(
     instance_type: str | None = ...,
     strategy: str | None = ...,
     envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = ...,
+    secrets: t.List[str] | None = ...,
     labels: t.List[LabelItemSchema] | t.List[dict[str, str]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
 ) -> Deployment: ...
@@ -77,6 +78,7 @@ def create(
     strategy: str | None = None,
     envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = None,
     labels: t.List[LabelItemSchema] | t.List[dict[str, str]] | None = None,
+    secrets: t.List[str] | None = None,
     extras: dict[str, t.Any] | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
@@ -113,6 +115,7 @@ def create(
             if labels is not None
             else None
         ),
+        secrets=secrets,
         extras=extras,
         config_dict=config_dict,
         config_file=config_file,
@@ -130,7 +133,6 @@ def create(
 def update(
     name: str | None = ...,
     path_context: str | None = ...,
-    context: str | None = ...,
     cluster: str | None = ...,
     *,
     bento: BentoType | None = ...,
@@ -149,7 +151,6 @@ def update(
 def update(
     name: str | None = ...,
     path_context: str | None = ...,
-    context: str | None = ...,
     cluster: str | None = None,
     *,
     bento: BentoType | None = ...,
@@ -161,7 +162,6 @@ def update(
 def update(
     name: str | None = ...,
     path_context: str | None = ...,
-    context: str | None = ...,
     cluster: str | None = None,
     *,
     bento: BentoType | None = ...,

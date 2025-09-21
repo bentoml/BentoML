@@ -18,6 +18,7 @@ from pathspec import PathSpec
 from rich.console import Console
 from simple_di import Provide
 from simple_di import inject
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 from ..bento.bento import DEFAULT_BENTO_BUILD_FILES
 from ..bento.bento import Bento
@@ -32,6 +33,7 @@ if t.TYPE_CHECKING:
 
     from ..bento.bento import BentoStore
     from .client import RestApiClient
+    from bentoml._internal.cloud import BentoCloudClient
 
 from ...exceptions import BentoMLException
 from ...exceptions import NotFound
@@ -84,9 +86,7 @@ class DeploymentConfigParameters:
     cfg_dict: dict[str, t.Any] | None = None
     _param_config: dict[str, t.Any] | None = None
 
-    def verify(self, create: bool = True):
-        from bentoml._internal.configuration.containers import BentoMLContainer
-
+    def verify(self, create: bool = True, _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client]):
         from .secret import SecretAPI
 
         if self.config_dict:
@@ -152,14 +152,15 @@ class DeploymentConfigParameters:
                 if self.cli:
                     rich.print(f"building bento from [green]{bento_name}[/] ...")
                 bento_info = ensure_bento(
-                    project_path=bento_name, bare=self.dev, cli=self.cli
+                    project_path=bento_name, bare=self.dev, cli=self.cli, _client=_cloud_client.client,
                 )
             elif self.dev:  # dev mode and bento is built
                 return
             else:
                 if self.cli:
                     rich.print(f"using bento [green]{bento_name}[/]...")
-                bento_info = ensure_bento(bento=str(bento_name), cli=self.cli)
+                bento_info = ensure_bento(bento=str(bento_name), cli=self.cli, _client=_cloud_client.client,
+                )
             if create:
                 manifest = (
                     bento_info.get_manifest()
@@ -169,7 +170,7 @@ class DeploymentConfigParameters:
                 required_envs = [env.name for env in manifest.envs if not env.value]
                 provided_envs: list[str] = [env["name"] for env in (self.envs or [])]
                 if self.secrets:
-                    secret_api = SecretAPI(BentoMLContainer.rest_api_client.get())
+                    secret_api = SecretAPI(_cloud_client.client)
                     for secret_name in self.secrets:
                         secret = secret_api.get(secret_name, cluster=self.cluster)
                         if secret.content.type == "env":
@@ -205,7 +206,7 @@ class DeploymentConfigParameters:
         else:
             return self.cfg_dict.get("cluster")
 
-    def get_config_dict(self, bento: str | None = None):
+    def get_config_dict(self, bento: str | None = None, _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client]):
         if self.cfg_dict is None:
             raise BentoMLException(
                 "DeploymentConfigParameters.verify() must be called first"
@@ -216,7 +217,7 @@ class DeploymentConfigParameters:
                     raise BentoMLException("Bento is required")
                 bento = self.cfg_dict.get("bento")
 
-            info = ensure_bento(bento=bento)
+            info = ensure_bento(bento=bento, _client=_cloud_client.client)
             if info.entry_service == "":
                 # for compatibility
                 self.service_name = "apiserver"

@@ -219,7 +219,8 @@ class DeploymentConfigParameters:
     def get_config_dict(
         self,
         bento: str | None = None,
-        _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+        *,
+        _client: RestApiClient,
     ):
         if self.cfg_dict is None:
             raise BentoMLException(
@@ -231,7 +232,7 @@ class DeploymentConfigParameters:
                     raise BentoMLException("Bento is required")
                 bento = self.cfg_dict.get("bento")
 
-            info = ensure_bento(bento=bento, _client=_cloud_client.client)
+            info = ensure_bento(bento=bento, _client=_client)
             if info.entry_service == "":
                 # for compatibility
                 self.service_name = "apiserver"
@@ -1356,7 +1357,7 @@ class DeploymentAPI:
         ):
             raise ValueError("bento is required")
 
-        config_params = deployment_config_params.get_config_dict()
+        config_params = deployment_config_params.get_config_dict(_client = rest_client)
         config_struct = bentoml_cattr.structure(config_params, CreateDeploymentSchemaV2)
         self._fix_and_validate_schema(config_struct)
 
@@ -1381,6 +1382,7 @@ class DeploymentAPI:
         Returns:
             The DeploymentInfo object.
         """
+        rest_client = self._client
         name = deployment_config_params.get_name()
         if name is None:
             raise ValueError("name is required")
@@ -1391,6 +1393,7 @@ class DeploymentAPI:
 
         config_params = deployment_config_params.get_config_dict(
             orig_dict.get("bento"),
+            _client=rest_client,
         )
         deep_merge(orig_dict, config_params)
         config_struct = bentoml_cattr.structure(orig_dict, UpdateDeploymentSchemaV2)
@@ -1446,7 +1449,8 @@ class DeploymentAPI:
                     f"Deployment cluster cannot be changed, current cluster is {deployment_schema.cluster.name}"
                 )
             config_struct = bentoml_cattr.structure(
-                deployment_config_params.get_config_dict(), UpdateDeploymentSchemaV2
+                deployment_config_params.get_config_dict(_client=rest_client),
+                UpdateDeploymentSchemaV2,
             )
             self._fix_and_validate_schema(config_struct)
 

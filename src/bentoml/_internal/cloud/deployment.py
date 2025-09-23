@@ -29,7 +29,6 @@ if t.TYPE_CHECKING:
     from _bentoml_impl.client import AsyncHTTPClient
     from _bentoml_impl.client import SyncHTTPClient
     from _bentoml_sdk.images import Image
-    from bentoml._internal.cloud import BentoCloudClient
 
     from ..bento.bento import BentoStore
     from .client import RestApiClient
@@ -1357,7 +1356,7 @@ class DeploymentAPI:
         ):
             raise ValueError("bento is required")
 
-        config_params = deployment_config_params.get_config_dict(_client = rest_client)
+        config_params = deployment_config_params.get_config_dict(_client=rest_client)
         config_struct = bentoml_cattr.structure(config_params, CreateDeploymentSchemaV2)
         self._fix_and_validate_schema(config_struct)
 

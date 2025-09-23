@@ -121,7 +121,7 @@ def create(
         config_file=config_file,
     )
     try:
-        config_params.verify()
+        config_params.verify(_client=_cloud_client.client)
     except BentoMLException as e:
         raise BentoMLException(
             f"Failed to create deployment due to invalid configuration: {e}"
@@ -228,7 +228,7 @@ def update(
         config_file=config_file,
     )
     try:
-        config_params.verify(create=False)
+        config_params.verify(create=False, _client=_cloud_client.client)
     except BentoMLException as e:
         raise BentoMLException(
             f"Failed to create deployment due to invalid configuration: {e}"
@@ -279,7 +279,7 @@ def apply(
         config_file=config_file,
     )
     try:
-        config_params.verify(create=False)
+        config_params.verify(create=False, _client=_cloud_client.client)
     except BentoMLException as e:
         raise BentoMLException(
             f"Failed to create deployment due to invalid configuration: {e}"

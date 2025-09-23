@@ -31,6 +31,7 @@ class BentoCloudClient:
         secret: Secret API
     """
 
+    client: RestApiClient
     bento: BentoAPI
     model: ModelAPI
     deployment: DeploymentAPI
@@ -58,7 +59,11 @@ class BentoCloudClient:
         secret = SecretAPI(client)
 
         self.__attrs_init__(
-            bento=bento, model=model, deployment=deployment, secret=secret
+            client=client,
+            bento=bento,
+            model=model,
+            deployment=deployment,
+            secret=secret,
         )
 
     @classmethod

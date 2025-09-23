@@ -88,7 +88,8 @@ class DeploymentConfigParameters:
     def verify(
         self,
         create: bool = True,
-        _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+        *,
+        _client: RestApiClient,
     ):
         from .secret import SecretAPI
 
@@ -158,7 +159,7 @@ class DeploymentConfigParameters:
                     project_path=bento_name,
                     bare=self.dev,
                     cli=self.cli,
-                    _client=_cloud_client.client,
+                    _client=_client,
                 )
             elif self.dev:  # dev mode and bento is built
                 return
@@ -168,7 +169,7 @@ class DeploymentConfigParameters:
                 bento_info = ensure_bento(
                     bento=str(bento_name),
                     cli=self.cli,
-                    _client=_cloud_client.client,
+                    _client=_client,
                 )
             if create:
                 manifest = (
@@ -179,7 +180,7 @@ class DeploymentConfigParameters:
                 required_envs = [env.name for env in manifest.envs if not env.value]
                 provided_envs: list[str] = [env["name"] for env in (self.envs or [])]
                 if self.secrets:
-                    secret_api = SecretAPI(_cloud_client.client)
+                    secret_api = SecretAPI(_client)
                     for secret_name in self.secrets:
                         secret = secret_api.get(secret_name, cluster=self.cluster)
                         if secret.content.type == "env":
@@ -965,7 +966,7 @@ class Deployment:
                         cli=False,
                         dev=True,
                     )
-                    update_config.verify(create=False)
+                    update_config.verify(create=False, _client=self._client)
                     self = deployment_api.update(update_config)
                     target = self._refetch_target(False)
                     needs_update = False

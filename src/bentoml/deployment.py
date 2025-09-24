@@ -18,6 +18,7 @@ from ._internal.cloud.schemas.modelschemas import LabelItemSchema
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.tag import Tag
 from .exceptions import BentoMLException
+from .exceptions import NotFound
 
 if t.TYPE_CHECKING:
     from ._internal.cloud import BentoCloudClient
@@ -312,11 +313,11 @@ def start(
     name: str,
     cluster: str | None = None,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
-) -> tuple[Deployment | None, str | None]:
+) -> Deployment:
     """Start a terminated deployment by updating it with no configuration changes.
 
     Returns:
-        tuple: (deployment, error_message) - deployment is None if error occurred
+        Deployment: The updated deployment
     """
     from ._internal.cloud.schemas.modelschemas import DeploymentStatus
 
@@ -324,33 +325,18 @@ def start(
     try:
         deployment = get(name=name, cluster=cluster)
         status = deployment.get_status(refetch=True).status
-
-        if status != DeploymentStatus.Terminated.value:
-            return (
-                None,
-                f"Deployment '{name}' is not terminated (current status: {status}). Only terminated deployments can be started.",
-            )
     except Exception as e:
         if "not found" in str(e).lower():
-            return None, f"Deployment '{name}' not found."
-        return None, str(e)
+            raise NotFound(f"Deployment '{name}' not found.") from e
+        raise
+    else:
+        if status != DeploymentStatus.Terminated.value:
+            raise BentoMLException(
+                f"Deployment '{name}' is not terminated (current status: {status}). Only terminated deployments can be started.",
+            )
 
-    config_params = DeploymentConfigParameters(
-        name=name,
-        cluster=cluster,
-    )
-    try:
-        config_params.verify(create=False)
-    except BentoMLException as e:
-        return None, f"Failed to start deployment due to invalid configuration: {e}"
-
-    try:
-        deployment = _cloud_client.deployment.update(
-            deployment_config_params=config_params
-        )
-        return deployment, None
-    except Exception as e:
-        return None, str(e)
+    config_params = DeploymentConfigParameters(name=name, cluster=cluster)
+    return _cloud_client.deployment.update(deployment_config_params=config_params)
 
 
 @inject

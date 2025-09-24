@@ -380,10 +380,6 @@ class BentoMLCommandGroup(click.Group):
         self._aliases: dict[str, str] = {}
 
     def add_subcommands(self, group: click.Group) -> None:
-        if not isinstance(group, click.MultiCommand):
-            raise TypeError(
-                "BentoMLCommandGroup.add_subcommands only accepts click.MultiCommand"
-            )
         if isinstance(group, BentoMLCommandGroup):
             # Common wrappers are already applied, call the super() method
             for name, cmd in group.commands.items():

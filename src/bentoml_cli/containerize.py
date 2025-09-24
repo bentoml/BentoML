@@ -86,6 +86,13 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
         # NOTE: if users are using both old and new options, the new option will take
         # precedence, and the old option will be ignored.
         value = normalize_none_type(value)
+        try:  # click 8.3+
+            from click.core import UNSET
+
+            if default_value is UNSET:
+                default_value = None
+        except ImportError:
+            pass
 
         # if given param.name is not in the memoized options, we need to create them.
         if param.name not in ctx.params[MEMO_KEY]:

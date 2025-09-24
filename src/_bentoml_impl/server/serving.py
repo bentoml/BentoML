@@ -82,6 +82,7 @@ def create_dependency_watcher(
     env: dict[str, str] | None = None,
     bento_args: dict[str, t.Any] = Provide[BentoMLContainer.bento_arguments],
 ) -> tuple[Watcher, CircusSocket | None, str]:
+    from bentoml.exceptions import BentoMLException
     from bentoml.serving import create_watcher
 
     num_workers, worker_envs = scheduler.get_worker_env(svc)
@@ -101,6 +102,21 @@ def create_dependency_watcher(
         json.dumps(bento_args),
     ]
     cmd = sys.executable
+
+    # Process environment variables from the service
+    for env_var in svc.envs:
+        if env_var.name in env:
+            continue
+
+        if env_var.name in os.environ:
+            env[env_var.name] = os.environ[env_var.name]
+        elif env_var.value:
+            env[env_var.name] = env_var.value
+        else:
+            raise BentoMLException(
+                f"Environment variable '{env_var.name}' is required but not set. "
+                f"Either set it in the environment or provide a default value in the service definition."
+            )
 
     env.update(worker_envs)
     watcher = create_watcher(
@@ -194,10 +210,10 @@ def serve_http(
         if env_var.name in env:
             continue
 
-        if env_var.value:
-            env[env_var.name] = env_var.value
-        elif env_var.name in os.environ:
+        if env_var.name in os.environ:
             env[env_var.name] = os.environ[env_var.name]
+        elif env_var.value:
+            env[env_var.name] = env_var.value
         else:
             raise BentoMLException(
                 f"Environment variable '{env_var.name}' is required but not set. "

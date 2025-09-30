@@ -111,9 +111,10 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
         try:
             resp = await client.send(req, stream=True)
         except httpx.ConnectError:
-            return fastapi.Response(503)
-        except httpx.RequestError:
-            return fastapi.Response(500)
+            return fastapi.Response(status_code=503)
+        except Exception:
+            logger.exception("Error occurred while proxying request")
+            return fastapi.Response(status_code=500)
 
         return StreamingResponse(
             resp.aiter_raw(),

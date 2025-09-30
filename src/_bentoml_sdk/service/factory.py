@@ -528,6 +528,7 @@ def service(
     *,
     name: str | None = None,
     image: Image | None = None,
+    description: str | None = None,
     envs: list[dict[str, str]] | None = None,
     labels: dict[str, str] | None = None,
     cmd: list[str] | None = None,

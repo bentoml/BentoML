@@ -726,7 +726,7 @@ class ServiceAppFactory(BaseAppFactory):
         # clean the request resources after the response is consumed.
         ctx.response.background.add_task(request.close)
         resp.background = ctx.response.background
-        # XXX: avoid circular reference
+        # XXX: avoid circular reference, to address memory leak in long context run.
         del ctx.response.background
         return resp
 

@@ -726,6 +726,8 @@ class ServiceAppFactory(BaseAppFactory):
         # clean the request resources after the response is consumed.
         ctx.response.background.add_task(request.close)
         resp.background = ctx.response.background
+        # XXX: avoid circular reference
+        del ctx.response.background
         return resp
 
     async def api_endpoint(self, name: str, request: Request) -> Response:

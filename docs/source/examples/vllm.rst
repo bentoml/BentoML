@@ -2,7 +2,7 @@
 LLM inference: vLLM
 ===================
 
-`vLLM <https://github.com/vllm-project/vllm>`_ is a library designed for efficient serving of large language models (LLMs). It provides high serving throughput and efficient attention key-value memory management using PagedAttention and continuous batching. It seamlessly integrates with a variety of LLMs, such as Llama, OPT, Mixtral, StableLM, and Falcon.
+`vLLM <https://github.com/vllm-project/vllm>`_ is a library designed for efficient serving of LLMs, such as gpt-oss, DeepSeek, Qwen, and Llama. It provides high serving throughput and efficient attention key-value memory management using PagedAttention and continuous batching. It supports a variety of inference optimization techniques, including `prefill-decode disaggregation <https://www.bentoml.com/llm/inference-optimization/prefill-decode-disaggregation>`_, `speculative decoding <https://www.bentoml.com/llm/inference-optimization/speculative-decoding>`_, and `KV cache offloading <https://www.bentoml.com/llm/inference-optimization/kv-cache-offloading>`_.
 
 This document demonstrates how to run LLM inference using BentoML and vLLM.
 
@@ -46,123 +46,87 @@ This example is ready for quick deployment and scaling on BentoCloud. With a sin
 Code explanations
 -----------------
 
-You can find `the source code in GitHub <https://github.com/bentoml/BentoVLLM/tree/main/llama3.1-8b-instruct>`_. Below is a breakdown of the key code implementations within this project.
+You can find `the source code in GitHub <https://github.com/bentoml/BentoVLLM/tree/main/llama3.1-8b-instruct>`_. Below is a breakdown of the key code implementations.
 
-1. Define the model and engine configuration parameters. This example uses Llama 3.1 8B Instruct, which requires `access from Hugging Face <https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct>`_. You can switch to another LLM from the `BentoVLLM repository <https://github.com/bentoml/BentoVLLM>`_ or any other model supported by vLLM.
+1. Define model and GPU configurations. This example uses Llama-3.1-8B-Instruct, which requires `access from Hugging Face <https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct>`_. You can switch to another LLM from the `BentoVLLM repository <https://github.com/bentoml/BentoVLLM>`_ or any other model supported by vLLM.
 
    .. code-block:: python
       :caption: `service.py`
 
-      ENGINE_CONFIG = {
-            'model': 'meta-llama/Meta-Llama-3.1-8B-Instruct',
-            'max_model_len': 2048,
-            'dtype': 'half',
-            'enable_prefix_caching': True,
-      }
+      import pydantic
+      import bentoml
 
-2. Use the ``@bentoml.service`` decorator to define a BentoML Service, where you can customize how the model will be served. The decorator lets you set :doc:`configurations </reference/bentoml/configurations>` like timeout and GPU resources to use on BentoCloud. In the case of Llama 3.1 8B Instruct, it requires at least an NVIDIA L4 GPU for optimal performance.
+      # Use Pydantic to validate data
+      class BentoArgs(pydantic.BaseModel):
+        name: str = 'llama3.1-8b-instruct'
+        gpu_type: str = 'nvidia-h100-80gb'
+        tp: int = 1 # One GPU here for tensor parallelism
+        model_id: str = 'meta-llama/Meta-Llama-3.1-8B-Instruct'
+        # Other optional fields omitted for brevity
+
+      bento_args = bentoml.use_arguments(BentoArgs)
+
+   Specifications are defined using :doc:`template arguments </build-with-bentoml/template-arguments>`, which allow you to pass dynamic and validated parameters at serve, build, and deploy time. You can reference them just like regular Python variables.
+
+2. Define :doc:`the runtime environment </build-with-bentoml/runtime-environment>` for a Bento, the unified distribution format in BentoML. A Bento is packaged with all the source code, Python dependencies, model references, and environment setup, making it easy to deploy consistently across different environments.
+
+   .. code-block:: python
+      :caption: `service.py`
+
+      image = (
+        bentoml.images.Image(python_version='3.12').system_packages('curl', 'git').requirements_file('requirements.txt')
+      )
+
+3. Use the ``@bentoml.service`` decorator to define a BentoML :doc:`Service </build-with-bentoml/services>`, where you can customize how the model will be served. The decorator lets you set :doc:`configurations </reference/bentoml/configurations>` like timeout and GPU resources to use on BentoCloud.
+
+   For some of the fields, you can simply reference the template arguments defined above:
 
    .. code-block:: python
       :caption: `service.py`
 
       @bentoml.service(
-         name='bentovllm-llama3.1-8b-instruct-service',
-         traffic={'timeout': 300},
-         resources={'gpu': 1, 'gpu_type': 'nvidia-l4'},
-         envs=[{'name': 'HF_TOKEN'}],
+        name=bento_args.name,
+        envs=[
+            {'name': 'UV_NO_PROGRESS', 'value': '1'},
+            {'name': 'UV_TORCH_BACKEND', 'value': 'cu128'},
+            # Env vars here for uv and vllm
+        ],
+        image=image, # Apply the runtime specs
+        traffic={'timeout': 300},
+        resources={
+            'gpu': bento_args.tp,
+            'gpu_type': bento_args.gpu_type
+        },
+        # More optional fields
       )
-      class VLLM:
-         model_id = ENGINE_CONFIG['model']
-         model = bentoml.models.HuggingFaceModel(model_id, exclude=['*.pth', '*.pt'])
+      class LLM:
 
-         def __init__(self) -> None:
-            ...
-
-   Within the class, :ref:`load the model from Hugging Face <load-models>` and define it as a class variable. The ``HuggingFaceModel`` method provides an efficient mechanism for loading AI models to accelerate model deployment on BentoCloud, reducing image build time and cold start time.
-
-3. The ``@bentoml.service`` decorator also allows you to :doc:`define the runtime environment </build-with-bentoml/runtime-environment>` for a Bento, the unified distribution format in BentoML. A Bento is packaged with all the source code, Python dependencies, model references, and environment setup, making it easy to deploy consistently across different environments.
-
-   Here is an example:
+4. Within the class, :ref:`load the model from Hugging Face <load-models>` and define it as a class variable. The ``HuggingFaceModel`` method provides an efficient mechanism for loading AI models to accelerate model deployment on BentoCloud, reducing image build time and cold start time.
 
    .. code-block:: python
       :caption: `service.py`
 
-      my_image = bentoml.images.Image(python_version='3.11') \
-                    .requirements_file("requirements.txt")
+      ...
+      class LLM:
+        hf_model = bentoml.models.HuggingFaceModel(bento_args.model_id, exclude=[".pth", ".pt", "original/**/*"])
 
-      @bentoml.service(
-            image=my_image, # Apply the specifications
-            ...
-      )
-      class VLLM:
-            ...
-
-4. Use the ``@bentoml.asgi_app`` decorator to mount a FastAPI application, which provides OpenAI-compatible endpoints for chat completions and model listing. The ``path='/v1'`` sets the base path for the API. This allows you to serve the model inference logic alongside the FastAPI application in the same Service. For more information, see :doc:`/build-with-bentoml/asgi`.
+5. The Service can run vLLM's built-in HTTP server and exposes OpenAI-compatible endpoints. You can add extra CLI arguments here as needed.
 
    .. code-block:: python
       :caption: `service.py`
 
-      openai_api_app = fastapi.FastAPI()
+      ...
+      class LLM:
+        hf_model = hf_model
 
-      @bentoml.asgi_app(openai_api_app, path='/v1')
-      @bentoml.service(
-          ...
-      )
-      class VLLM:
-          model_id = ENGINE_CONFIG['model']
-          model = bentoml.models.HuggingFaceModel(model_id, exclude=['*.pth', '*.pt'])
+        def __command__(self) -> list[str]:
+          return [
+            'vllm', 'serve', self.hf_model,
+            # ...extra CLI args (compilation, max length, kv dtype, etc.)
+            '--served-model-name', bento_args.model_id,
+          ]
 
-          def __init__(self) -> None:
-              import vllm.entrypoints.openai.api_server as vllm_api_server
-
-              # Define the OpenAI-compatible endpoints
-              OPENAI_ENDPOINTS = [
-                  ['/chat/completions', vllm_api_server.create_chat_completion, ['POST']],
-                  ['/models', vllm_api_server.show_available_models, ['GET']],
-              ]
-
-              # Register each endpoint
-              for route, endpoint, methods in OPENAI_ENDPOINTS:
-                  openai_api_app.add_api_route(path=route, endpoint=endpoint, methods=methods, include_in_schema=True)
-              ...
-
-5. Use the ``@bentoml.api`` decorator to define an HTTP endpoint ``generate`` for the model inference logic. It will asynchronously stream the responses to the client and perform chat completions using OpenAI-compatible API calls.
-
-   .. code-block:: python
-      :caption: `service.py`
-
-      class VLLM:
-          ...
-
-          @bentoml.api
-          async def generate(
-              self,
-              prompt: str = 'Who are you? Please respond in pirate speak!',
-              max_tokens: typing_extensions.Annotated[
-                  int, annotated_types.Ge(128), annotated_types.Le(MAX_TOKENS)
-              ] = MAX_TOKENS,
-          ) -> typing.AsyncGenerator[str, None]:
-              from openai import AsyncOpenAI
-
-              # Create an AsyncOpenAI client to communicate with the model
-              client = AsyncOpenAI(base_url='http://127.0.0.1:3000/v1', api_key='dummy')
-              try:
-                  # Send the request to OpenAI for chat completion
-                  completion = await client.chat.completions.create(
-                      model=self.model_id,
-                      messages=[dict(role='user', content=[dict(type='text', text=prompt)])],
-                      stream=True,
-                      max_tokens=max_tokens,
-                  )
-
-                  # Stream the results back to the client
-                  async for chunk in completion:
-                      yield chunk.choices[0].delta.content or ''
-              except Exception:
-                  # Handle any exceptions by logging the error
-                  logger.error(traceback.format_exc())
-                  yield 'Internal error found. Check server logs for more information'
-                  return
+That's all you need for the basic setup. If you want to explore advanced options, like FlashAttention, AMD ROCm support, and KV cache configuration, see `the complete source code on GitHub <https://github.com/bentoml/BentoVLLM/blob/main/llama3.1-8b-instruct/service.py>`_. BentoML allows you to fully customize inference code for your use case.
 
 Try it out
 ----------
@@ -196,7 +160,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
         bentoml secret create huggingface HF_TOKEN=<your-api-key>
         bentoml deploy --secret huggingface
 
-3. Once it is up and running on BentoCloud, you can call the endpoint in the following ways:
+3. Once it is up and running on BentoCloud, you can call the OpenAI-compatible endpoints as below:
 
    .. tab-set::
 
@@ -204,22 +168,6 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
 		.. image:: ../../_static/img/examples/vllm/llama3-1-on-bentocloud.png
 		   :alt: Screenshot of Llama 3.1 model deployed on BentoCloud showing the chat interface with example prompts and responses
-
-    .. tab-item:: Python client
-
-       Create a :doc:`BentoML client </build-with-bentoml/clients>` to call the endpoint. Make sure you replace the Deployment URL with your own on BentoCloud. Refer to :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:obtain the endpoint url` for details.
-
-       .. code-block:: python
-
-          import bentoml
-
-          with bentoml.SyncHTTPClient("https://bentovllm-llama-3-1-8-b-instruct-service-pozo-e3c1c7db.mt-guc1.bentoml.ai") as client:
-                response_generator = client.generate(
-                    prompt="Who are you? Please respond in pirate speak!",
-                    max_tokens=1024,
-                )
-                for response in response_generator:
-                    print(response, end='')
 
     .. tab-item:: OpenAI-compatible endpoints
 
@@ -229,7 +177,7 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
             from openai import OpenAI
 
-            client = OpenAI(base_url='https://bentovllm-llama-3-1-8-b-instruct-service-pozo-e3c1c7db.mt-guc1.bentoml.ai/v1', api_key='na')
+            client = OpenAI(base_url='https://llama-3-1-8-b-instruct-ckng-d3767914.mt-guc1.bentoml.ai/v1', api_key='na')
 
             # Use the following func to get the available models
             # client.models.list()
@@ -259,18 +207,6 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
             export OPENAI_API_KEY={YOUR_BENTOCLOUD_API_TOKEN}
 
         Make sure you replace the Deployment URL in the above code snippet. Refer to :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:obtain the endpoint url` to retrieve the endpoint URL.
-
-    .. tab-item:: CURL
-
-       .. code-block:: bash
-
-          curl -s -X POST \
-            'https://bentovllm-llama-3-1-8-b-instruct-service-pozo-e3c1c7db.mt-guc1.bentoml.ai/generate' \
-            -H 'Content-Type: application/json' \
-            -d '{
-                "max_tokens": 1024,
-                "prompt": "Who are you? Please respond in pirate speak!"
-            }'
 
 4. To make sure the Deployment automatically scales within a certain replica range, add the scaling flags:
 
@@ -318,6 +254,6 @@ BentoML allows you to run and test your code locally, so that you can quickly va
 
       To run this project with Llama 3.1 8B Instruct locally, you need an NVIDIA GPU with at least 16G VRAM.
 
-3. Visit or send API requests to `http://localhost:3000 <http://localhost:3000/>`_.
+3. Call the OpenAI-compatible endpoints at `http://localhost:3000/v1 <http://localhost:3000/v1>`_ (the default base URL).
 
 For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.

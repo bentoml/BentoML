@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 # Python supported versions
-SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 # CUDA supported versions
 SUPPORTED_CUDA_VERSIONS = [
     "12.0.0",

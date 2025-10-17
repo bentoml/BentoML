@@ -26,7 +26,7 @@ class HTTPTrafficMetricsMiddleware:
         self,
         app: ext.ASGIApp,
         namespace: str = "bentoml_api_server",
-        skip_paths: Sequence[str] = ("/metrics", "/healthz", "/livez", "/readyz"),
+        skip_paths: Sequence[str] = ("/metrics", "/healthz", "/livez", "/readyz", '/health'),
     ):
         self.app = app
         self.namespace = namespace

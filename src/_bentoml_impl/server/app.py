@@ -216,7 +216,12 @@ class ServiceAppFactory(BaseAppFactory):
         from bentoml._internal.server.http.traffic import MaxConcurrencyMiddleware
 
         middlewares: list[Middleware] = []
-        # TrafficMetrics middleware should be the first middleware
+        access_log_config = BentoMLContainer.api_server_config.logging.access
+
+        skip_paths = [self.service.config.get("endpoints", {}).get("livez", "/health")]
+        if readyz_endpoint := self.service.config.get("endpoints", {}).get("readyz"):
+            skip_paths.append(readyz_endpoint)
+
         if self.enable_metrics:
             from bentoml._internal.server.http.instruments import (
                 RunnerTrafficMetricsMiddleware,
@@ -226,6 +231,7 @@ class ServiceAppFactory(BaseAppFactory):
                 Middleware(
                     RunnerTrafficMetricsMiddleware,
                     namespace=BentoMLContainer.api_server_config.metrics.namespace.get(),
+                    skip_paths=[*access_log_config.skip_paths.get(), *skip_paths],
                 )
             )
 
@@ -238,10 +244,6 @@ class ServiceAppFactory(BaseAppFactory):
 
         from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
-        skip_paths = [self.service.config.get("endpoints", {}).get("livez", "/health")]
-        if readyz_endpoint := self.service.config.get("endpoints", {}).get("readyz"):
-            skip_paths.append(readyz_endpoint)
-
         middlewares.append(
             Middleware(
                 OpenTelemetryMiddleware,
@@ -253,7 +255,6 @@ class ServiceAppFactory(BaseAppFactory):
             )
         )
         # AccessLog middleware
-        access_log_config = BentoMLContainer.api_server_config.logging.access
         if access_log_config.enabled.get():
             from bentoml._internal.server.http.access import AccessLogMiddleware
 

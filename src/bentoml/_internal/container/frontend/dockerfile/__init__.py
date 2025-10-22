@@ -98,7 +98,7 @@ CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
             "supported_architectures": SUPPORTED_ARCHITECTURES,
         },
         "cuda": {
-            "image": "nvidia/cuda:{spec_version}-cudnn8-runtime-ubuntu20.04",
+            "image": "nvidia/cuda:{spec_version}-cudnn-runtime-ubuntu24.04",
             "supported_architectures": ["amd64", "arm64"],
         },
         "miniconda": {

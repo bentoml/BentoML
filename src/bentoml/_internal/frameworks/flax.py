@@ -28,14 +28,14 @@ if TYPE_CHECKING:
     from flax import struct
     from flax.core import FrozenDict
     from jax._src.lib.xla_bridge import XlaBackend
-    from jax.lib import xla_bridge
+    from jax.extend import backend
 
     from ...types import ModelSignature
     from .. import external_typing as ext
     from ..models.model import ModelSignaturesType
     from ..tag import Tag
 else:
-    xla_bridge = LazyLoader("xla_bridge", globals(), "jax.lib.xla_bridge")
+    backend = LazyLoader("backend", globals(), "jax.extend.backend")
 
 try:
     from flax import linen as nn
@@ -267,7 +267,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
 
         def __init__(self):
             super().__init__()
-            self.device = xla_bridge.get_backend().platform
+            self.device = backend.get_backend().platform
 
             self.model, self.state_dict = load_model(bento_model, device=self.device)
             self.params = self.state_dict["params"]

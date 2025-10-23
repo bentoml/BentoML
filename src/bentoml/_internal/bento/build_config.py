@@ -67,7 +67,9 @@ def _convert_python_version(py_version: str | None) -> str | None:
     target_python_version = f"{major}.{minor}"
     if target_python_version != py_version:
         logger.warning(
-            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. To use the exact python version, use a custom docker base image. See https://docs.bentoml.com/en/latest/concepts/bento.html#custom-base-image-advanced",
+            "BentoML will install the latest 'python%s' instead of the specified 'python%s'. "
+            "To use the exact python version, use a custom docker base image. "
+            "See https://docs.bentoml.com/en/latest/reference/bentoml/bento-build-options.html#docker-options-table",
             target_python_version,
             py_version,
         )

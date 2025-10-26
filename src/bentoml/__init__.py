@@ -74,6 +74,7 @@ if TYPE_CHECKING:
     from _bentoml_impl.frameworks import lightgbm
     from _bentoml_impl.frameworks import mlflow
     from _bentoml_impl.frameworks import sklearn
+    from _bentoml_impl.frameworks import spacy
     from _bentoml_impl.frameworks import xgboost
 
     from . import bentos
@@ -187,6 +188,7 @@ else:
         "bentoml.unsloth", globals(), "_bentoml_impl.frameworks.unsloth"
     )
     mlflow = _LazyLoader("bentoml.mlflow", globals(), "_bentoml_impl.frameworks.mlflow")
+    spacy = _LazyLoader("bentoml.spacy", globals(), "_bentoml_impl.frameworks.spacy")
     detectron = _LazyLoader(
         "bentoml.detectron",
         globals(),

@@ -303,7 +303,11 @@ class ServiceAppFactory(BaseAppFactory):
         # Call on_startup hook with optional ctx or context parameter
         for name in dir(self.service.inner):
             member = getattr(self.service.inner, name)
-            if callable(member) and getattr(member, "__bentoml_startup_hook__", False):
+            if (
+                not name.startswith("__")
+                and callable(member)
+                and getattr(member, "__bentoml_startup_hook__", False)
+            ):
                 logger.info("Running startup hook: %s", name)
                 result = getattr(
                     self._service_instance, name
@@ -362,7 +366,11 @@ class ServiceAppFactory(BaseAppFactory):
         # Call on_shutdown hook with optional ctx or context parameter
         for name in dir(self.service.inner):
             member = getattr(self.service.inner, name)
-            if callable(member) and getattr(member, "__bentoml_shutdown_hook__", False):
+            if (
+                not name.startswith("__")
+                and callable(member)
+                and getattr(member, "__bentoml_shutdown_hook__", False)
+            ):
                 logger.info("Running cleanup hook: %s", name)
                 result = getattr(
                     self._service_instance, name

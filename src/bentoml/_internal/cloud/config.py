@@ -82,16 +82,12 @@ class CloudClientConfig:
             if ctx.name == context:
                 return ctx
         raise CloudRESTApiClientError(
-            f"No cloud context {context} found",
-            error_code=HTTPStatus.UNAUTHORIZED,
+            f"No cloud context {context} found", error_code=HTTPStatus.UNAUTHORIZED
         )
 
     def set_current_context(self, context: str | None) -> CloudClientContext:
         """Set current context to a new context default."""
-        try:
-            new_context = self.get_context(context)
-        except CloudRESTApiClientError as err:
-            raise err from None
+        new_context = self.get_context(context)
         new_config = attr.evolve(self, current_context_name=new_context.name)
         new_config.to_yaml_file()
         return new_context

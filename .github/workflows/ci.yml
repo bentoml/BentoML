@@ -214,22 +214,22 @@ jobs:
           cache: pip
           python-version: '3.11'
       - name: Download e2e coverage
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: coverage-e2e-data-*
           merge-multiple: true
       - name: Download monitoring coverage
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: coverage-monitoring-data-*
           merge-multiple: true
       - name: Download integrations coverage
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: coverage-integrations-data-*
           merge-multiple: true
       - name: Download unit coverage
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: coverage-unit-data-*
           merge-multiple: true

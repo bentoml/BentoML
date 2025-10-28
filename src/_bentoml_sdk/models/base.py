@@ -19,6 +19,7 @@ from bentoml._internal.models.model import copy_model
 from bentoml._internal.tag import Tag
 from bentoml._internal.types import PathType
 from bentoml._internal.utils.filesystem import calc_dir_size
+from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import NotFound
 
 if t.TYPE_CHECKING:
@@ -98,7 +99,12 @@ class BentoModel(Model[StoredModel]):
         stored = self.stored
         if stored is not None:
             return BentoModelInfo.from_bento_model(stored, alias)
-        model = self._get_remote_model()
+        try:
+            model = self._get_remote_model()
+        except BentoMLException as e:
+            raise BentoMLException(
+                f"Model {self.tag} could not be found locally and failed to fetch from remote because {e}."
+            ) from e
         if model is None:
             raise NotFound(f"Model {self.tag} not found either locally or remotely.")
         tag = Tag(self.tag.name, model.version)
@@ -132,9 +138,15 @@ class BentoModel(Model[StoredModel]):
                     target_model_store=model_store,
                 )
             return stored
-        cloud_client = BentoMLContainer.bentocloud_client.get()
-        model = cloud_client.model.pull(self.tag, model_store=model_store)
-        assert model is not None, "non-bentoml model"
+        try:
+            cloud_client = BentoMLContainer.bentocloud_client.get()
+            model = cloud_client.model.pull(self.tag, model_store=model_store)
+        except BentoMLException as e:
+            raise BentoMLException(
+                f"Model {self.tag} could not be found locally and failed to fetch from remote because {e}."
+            ) from e
+        if model is None:
+            raise NotFound(f"Model {self.tag} not found either locally or remotely.")
         return model
 
     def to_create_schema(self) -> CreateModelSchema:

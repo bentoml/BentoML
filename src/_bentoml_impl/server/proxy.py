@@ -11,10 +11,12 @@ from starlette.requests import Request
 
 from _bentoml_sdk import Service
 from bentoml import get_current_service
+from bentoml import server_context
 from bentoml._internal.utils import expand_envs
 from bentoml.exceptions import BentoMLConfigException
 
 if t.TYPE_CHECKING:
+    from anyio.abc._subprocesses import Process
     from starlette.applications import Starlette
 
 logger = logging.getLogger("bentoml.server")
@@ -48,18 +50,13 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
     ) -> t.AsyncGenerator[dict[str, t.Any], None]:
         server_instance = get_current_service()
         assert server_instance is not None, "Current service is not initialized"
+        # Only start process for the first worker or when replicate_process is True
+        should_start_process = (
+            service.config.get("replicate_process", False)
+            or server_context.worker_index == 1
+        )
         async with contextlib.AsyncExitStack() as stack:
-            if cmd_getter := getattr(server_instance, "__command__", None):
-                if not callable(cmd_getter):
-                    raise TypeError(
-                        f"__command__ must be a callable that returns a list of strings, got {type(cmd_getter)}"
-                    )
-                cmd = cast("list[str]", cmd_getter())
-            else:
-                cmd = service.cmd
-            assert cmd is not None, "must have a command"
-            cmd = [expand_envs(c) for c in cmd]
-            logger.info("Running service with command: %s", " ".join(cmd))
+            proc: Process | None = None
             if (
                 instance_client := getattr(server_instance, "client", None)
             ) is not None and isinstance(instance_client, httpx.AsyncClient):
@@ -71,8 +68,20 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
                 client = await stack.enter_async_context(
                     httpx.AsyncClient(base_url=proxy_url, timeout=None)
                 )
-            proc = await anyio.open_process(cmd, stdout=None, stderr=None)
-            while proc.returncode is None:
+            if should_start_process:
+                if cmd_getter := getattr(server_instance, "__command__", None):
+                    if not callable(cmd_getter):
+                        raise TypeError(
+                            f"__command__ must be a callable that returns a list of strings, got {type(cmd_getter)}"
+                        )
+                    cmd = cast("list[str]", cmd_getter())
+                else:
+                    cmd = service.cmd
+                assert cmd is not None, "must have a command"
+                cmd = [expand_envs(c) for c in cmd]
+                logger.info("Running service with command: %s", " ".join(cmd))
+                proc = await anyio.open_process(cmd, stdout=None, stderr=None)
+            while proc is None or proc.returncode is None:
                 if await _check_health(client, health_endpoint):
                     break
                 await anyio.sleep(0.5)
@@ -87,8 +96,9 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
                 service.context.state.update(state)
                 yield state
             finally:
-                proc.terminate()
-                await proc.wait()
+                if proc is not None:
+                    proc.terminate()
+                    await proc.wait()
 
     assert service.has_custom_command(), "Service does not have custom command"
     app = fastapi.FastAPI(lifespan=lifespan)

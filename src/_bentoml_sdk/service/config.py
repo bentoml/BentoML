@@ -259,6 +259,7 @@ class ServiceConfig(TypedDict, total=False):
     max_runner_connections: Posint
     resources: ResourceSchema
     workers: WorkerSchema
+    replicate_process: bool
     threads: Posint
     metrics: MetricSchema
     logging: LoggingSchema

@@ -2,7 +2,7 @@
 Bring Your Own Cloud
 ====================
 
-BentoCloud's Bring Your Own Cloud (BYOC) option, part of the Enterprise plan, combines the advantages of both self-hosting and fully managed services. This means it not only ensures data privacy and security for you and your organization but also helps you offload operations and maintenance burdens.
+BentoCloud's `Bring Your Own Cloud (BYOC) <https://www.bentoml.com/llm/infrastructure-and-operations/bring-your-own-cloud>`_ option, part of the Enterprise plan, combines the advantages of both self-hosting and fully managed services. This means it not only ensures data privacy and security for you and your organization but also helps you offload operations and maintenance burdens.
 
 BentoCloud's BYOC offers a full featured AI inference platform which can be deployed into any organization's private cloud environment for maximum control and customization.
 

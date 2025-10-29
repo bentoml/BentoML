@@ -80,6 +80,7 @@ _SERVICE_CONFIG = {
         None,
     ),
     s.Optional("extra_ports"): s.Or([int], None),
+    s.Optional("replicate_process"): bool,
     s.Optional("workers"): s.Or(
         lambda s: s == "cpu_count",
         s.And(int, ensure_larger_than_zero),

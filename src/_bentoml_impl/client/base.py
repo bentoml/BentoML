@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import abc
 import functools
+import io
+import mimetypes
+import pathlib
 import typing as t
 from http import HTTPStatus
 
@@ -9,6 +12,8 @@ import attrs
 import httpx
 
 from _bentoml_sdk import IODescriptor
+from _bentoml_sdk.typing_utils import is_image_type
+from bentoml._internal.utils.uri import is_http_url
 from bentoml.exceptions import BentoMLException
 
 T = t.TypeVar("T")
@@ -95,3 +100,37 @@ class AbstractClient(abc.ABC):
         if "__call__" not in self.endpoints:
             raise TypeError("This service is not callable.")
         return self.call("__call__", *args, **kwargs)
+
+
+class ClientFileManager:
+    def __init__(self) -> None:
+        self._opened_files: list[io.BufferedReader] = []
+
+    def get_file(self, value: t.Any) -> str | tuple[str, t.IO[bytes], str | None]:
+        if isinstance(value, str) and not is_http_url(value):
+            value = pathlib.Path(value)
+        if is_image_type(type(value)):
+            fp = getattr(value, "_fp", value.fp)
+            fname = getattr(fp, "name", None)
+            fmt = value.format.lower()
+            return (
+                pathlib.Path(fname).name if fname else f"upload-image.{fmt}",
+                fp,
+                f"image/{fmt}",
+            )
+        elif isinstance(value, pathlib.PurePath):
+            file = open(value, "rb")
+            self._opened_files.append(file)
+            return (value.name, file, mimetypes.guess_type(value)[0])
+        elif isinstance(value, str):
+            return value
+        else:
+            assert isinstance(value, t.BinaryIO)
+            filename = pathlib.Path(getattr(value, "name", "upload-file")).name
+            content_type = mimetypes.guess_type(filename)[0]
+            return (filename, value, content_type)
+
+    def close(self) -> None:
+        while self._opened_files:
+            file = self._opened_files.pop()
+            file.close()

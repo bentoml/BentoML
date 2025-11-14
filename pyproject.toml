@@ -65,6 +65,7 @@ dependencies = [
     "a2wsgi>=1.10.7",
     "fsspec>=2025.7.0",
     "rich-toolkit>=0.15.1",
+    "aiohttp-asgi-connector>=1.1.2",
 ]
 dynamic = ["version"]
 [project.urls]

@@ -5,7 +5,7 @@
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:af56d1e285db7d2f8f1029c83022bf4a42eec85f94a92987aece8f5d74738c3f"
+content_hash = "sha256:24ab8a1f03c5f9c39a7b1322634c098053e1d1a17d9b0f1a078d80bbd24bb33d"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -148,6 +148,21 @@ files = [
     {file = "aiohttp-3.11.10-cp39-cp39-win32.whl", hash = "sha256:47ad15a65fb41c570cd0ad9a9ff8012489e68176e7207ec7b82a0940dddfd8be"},
     {file = "aiohttp-3.11.10-cp39-cp39-win_amd64.whl", hash = "sha256:c6b9e6d7e41656d78e37ce754813fa44b455c3d0d0dced2a047def7dc5570b74"},
     {file = "aiohttp-3.11.10.tar.gz", hash = "sha256:b1fc6b45010a8d0ff9e88f9f2418c6fd408c99c211257334aff41597ebece42e"},
+]
+
+[[package]]
+name = "aiohttp-asgi-connector"
+version = "1.1.2"
+requires_python = ">=3.8"
+summary = "AIOHTTP Connector for running ASGI applications"
+groups = ["default"]
+dependencies = [
+    "aiohttp<3.11,>=3.1.0; python_version ~= \"3.8.0\"",
+    "aiohttp>=3.1.0; python_version >= \"3.9\"",
+]
+files = [
+    {file = "aiohttp_asgi_connector-1.1.2-py3-none-any.whl", hash = "sha256:9f0d76a2b0c131d790a0c7f56baf939d10daf4c1a0fa8d6bd4974d3da57745aa"},
+    {file = "aiohttp_asgi_connector-1.1.2.tar.gz", hash = "sha256:6e89b1c0b422787b6021e28de5d381a702435b0a56a2828d0c39e4f73c114f78"},
 ]
 
 [[package]]

@@ -15,7 +15,6 @@ from datetime import date
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
-from reprlib import recursive_repr as _recursive_repr
 from typing import TYPE_CHECKING
 from typing import overload
 
@@ -24,13 +23,11 @@ from ..types import LazyType
 if TYPE_CHECKING:
     import attr
     from starlette.applications import Starlette
-    from typing_extensions import Self
 
     from ..types import MetadataDict
     from ..types import MetadataType
 
     P = t.ParamSpec("P")
-    F = t.Callable[P, t.Any]
 
 
 C = t.TypeVar("C")
@@ -345,63 +342,6 @@ class cached_contextmanager:
                     self._cache.pop(cache_key)
 
         return _func
-
-
-class compose:
-    """
-    Function composition: compose(f, g)(...) is equivalent to f(g(...)).
-    Refer to https://github.com/mentalisttraceur/python-compose for original implementation.
-
-    Args:
-        *functions: Functions (or other callables) to compose.
-
-    Raises:
-        TypeError: If no arguments are given, or any argument is not callable.
-    """
-
-    def __init__(self: Self, *functions: F[t.Any]):
-        if not functions:
-            raise TypeError(f"{self!r} needs at least one argument.")
-        _functions: list[F[t.Any]] = []
-        for function in reversed(functions):
-            if not callable(function):
-                raise TypeError(f"{self!r} arguments must be callable.")
-            if isinstance(function, compose):
-                _functions.extend(function.functions)
-            else:
-                _functions.append(function)
-        self.__wrapped__ = _functions[0]
-        self._wrappers = tuple(_functions[1:])
-
-    def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        """Call the composed function."""
-        result = self.__wrapped__(*args, **kwargs)
-        for function in self._wrappers:
-            result = function(result)
-        return result
-
-    def __get__(self, obj: t.Any, typ_: type | None = None):
-        """Get the composed function as a bound method."""
-        wrapped = self.__wrapped__
-        try:
-            bind = type(wrapped).__get__
-        except AttributeError:
-            return self
-        bound_wrapped = bind(wrapped, obj, typ_)
-        if bound_wrapped is wrapped:
-            return self
-        bound_self = type(self)(bound_wrapped)
-        bound_self._wrappers = self._wrappers
-        return bound_self
-
-    @_recursive_repr("<...>")
-    def __repr__(self):
-        return f"{self!r}({','.join(map(repr, reversed(self.functions)))})"
-
-    @property
-    def functions(self):
-        """Read-only tuple of the composed callables, in order of execution."""
-        return (self.__wrapped__,) + tuple(self._wrappers)
 
 
 def get_original_func(obj: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:

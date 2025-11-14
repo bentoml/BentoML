@@ -328,6 +328,16 @@ class ServiceAppFactory(BaseAppFactory):
                 app=app,
                 media_type="application/json",
             )
+        await proxy.__aenter__()
+        await asyncio.gather(
+            *(
+                real.__aenter__()
+                for dep_name in self.service.dependencies
+                if isinstance(
+                    (real := getattr(self._service_instance, dep_name)), RemoteProxy
+                )
+            )
+        )
         self._service_instance.__self_proxy__ = proxy  # type: ignore[attr-defined]
         self._service_instance.to_async = proxy.to_async  # type: ignore[attr-defined]
         self._service_instance.to_sync = proxy.to_sync  # type: ignore[attr-defined]
@@ -435,8 +445,8 @@ class ServiceAppFactory(BaseAppFactory):
 
         if BentoMLContainer.api_server_config.runner_probe.enabled.get():
             dependency_statuses: list[t.Coroutine[None, None, bool]] = []
-            for dependency in self.service.dependencies.values():
-                real = dependency.get()
+            for dep_name in self.service.dependencies:
+                real = getattr(self._service_instance, dep_name)
                 if isinstance(real, RemoteProxy):
                     dependency_statuses.append(real.is_ready())
             runners_ready = all(await asyncio.gather(*dependency_statuses))

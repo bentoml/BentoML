@@ -41,6 +41,14 @@ class Payload:
     def total_bytes(self) -> int:
         return sum(len(d) for d in self.data)
 
+    def iter_bytes(self) -> t.Iterator[bytes]:
+        for chunk in self.data:
+            yield t.cast(bytes, chunk)
+
+    async def aiter_bytes(self) -> t.AsyncIterator[bytes]:
+        for chunk in self.data:
+            yield t.cast(bytes, chunk)
+
     @property
     def headers(self) -> t.Mapping[str, str]:
         return {"content-length": str(self.total_bytes()), **self.metadata}

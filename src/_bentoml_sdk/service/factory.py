@@ -400,6 +400,7 @@ class Service(t.Generic[T]):
             instance = self.inner()
             instance.to_async = _AsyncWrapper(instance, self.apis.keys())
             instance.to_sync = _SyncWrapper(instance, self.apis.keys())
+            instance.bento_service = self
             return instance
         except Exception:
             logger.exception("Initializing service error")

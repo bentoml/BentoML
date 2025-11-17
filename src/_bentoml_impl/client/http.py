@@ -4,7 +4,6 @@ import inspect
 import io
 import json
 import logging
-import mimetypes
 import os
 import pathlib
 import tempfile
@@ -20,9 +19,7 @@ import attr
 import httpx
 
 from _bentoml_sdk import IODescriptor
-from _bentoml_sdk.typing_utils import is_image_type
 from bentoml import __version__
-from bentoml._internal.utils.uri import is_http_url
 from bentoml._internal.utils.uri import uri_to_path
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import NotFound
@@ -32,6 +29,7 @@ from ..serde import Payload
 from ..tasks import ResultStatus
 from .base import AbstractClient
 from .base import ClientEndpoint
+from .base import ClientFileManager
 from .base import map_exception
 from .task import AsyncTask
 from .task import Task
@@ -54,14 +52,6 @@ logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
 
 
-def to_async_iterable(iterable: t.Iterable[T]) -> t.AsyncIterable[T]:
-    async def _gen() -> t.AsyncIterator[T]:
-        for item in iterable:
-            yield item
-
-    return _gen()
-
-
 @attr.define(slots=False)
 class HTTPClient(AbstractClient, t.Generic[C]):
     client_cls: t.ClassVar[type[C]]  # type: ignore
@@ -75,7 +65,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
     server_ready_timeout: float | None = None
     service: Service[t.Any] | None = None
 
-    _opened_files: list[io.BufferedReader] = attr.field(init=False, factory=list)
+    _file_manager: ClientFileManager = attr.field(init=False, factory=ClientFileManager)
     _temp_dir: tempfile.TemporaryDirectory[str] = attr.field(init=False)
     _setup_done: bool = attr.field(init=False, default=False)
 
@@ -232,9 +222,9 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     "POST",
                     endpoint.route,
                     headers=headers,
-                    content=to_async_iterable(payload.data)
-                    if issubclass(self.client_cls, httpx.AsyncClient)
-                    else payload.data,
+                    content=payload.aiter_bytes()
+                    if isinstance(self.client, httpx.AsyncClient)
+                    else payload.iter_bytes(),
                 )
         assert self.media_type == "application/json", (
             "Non-JSON request is not supported"
@@ -254,7 +244,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 args = ()
                 passthrough = True
             elif endpoint.input.get("type") == "file":
-                file = self._get_file(value)
+                file = self._file_manager.get_file(value)
                 if isinstance(file, str):
                     content = file
                 else:
@@ -269,9 +259,9 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 payload = self.serde.serialize(value, endpoint.input)
                 headers.update(payload.headers)
                 content = (
-                    to_async_iterable(payload.data)
-                    if issubclass(self.client_cls, httpx.AsyncClient)
-                    else payload.data
+                    payload.aiter_bytes()
+                    if isinstance(self.client, httpx.AsyncClient)
+                    else payload.iter_bytes()
                 )
             if not passthrough:
                 return self.client.build_request(
@@ -308,35 +298,11 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         return self.client.build_request(
             "POST",
             endpoint.route,
-            content=to_async_iterable(payload.data)
-            if issubclass(self.client_cls, httpx.AsyncClient)
-            else payload.data,
+            content=payload.aiter_bytes()
+            if isinstance(self.client, httpx.AsyncClient)
+            else payload.iter_bytes(),
             headers=headers,
         )
-
-    def _get_file(self, value: t.Any) -> str | tuple[str, t.IO[bytes], str | None]:
-        if isinstance(value, str) and not is_http_url(value):
-            value = pathlib.Path(value)
-        if is_image_type(type(value)):
-            fp = getattr(value, "_fp", value.fp)
-            fname = getattr(fp, "name", None)
-            fmt = value.format.lower()
-            return (
-                pathlib.Path(fname).name if fname else f"upload-image.{fmt}",
-                fp,
-                f"image/{fmt}",
-            )
-        elif isinstance(value, pathlib.PurePath):
-            file = open(value, "rb")
-            self._opened_files.append(file)
-            return (value.name, file, mimetypes.guess_type(value)[0])
-        elif isinstance(value, str):
-            return value
-        else:
-            assert isinstance(value, t.BinaryIO)
-            filename = pathlib.Path(getattr(value, "name", "upload-file")).name
-            content_type = mimetypes.guess_type(filename)[0]
-            return (filename, value, content_type)
 
     def _build_multipart(
         self,
@@ -368,7 +334,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 value = [value]
 
             for v in value:
-                file = self._get_file(v)
+                file = self._file_manager.get_file(v)
                 if isinstance(file, str):
                     data[name] = file
                 else:
@@ -608,9 +574,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
             else:
                 return self._parse_response(endpoint, resp)
         finally:
-            for f in self._opened_files:
-                f.close()
-            self._opened_files.clear()
+            self._file_manager.close()
 
     def _parse_response(self, endpoint: ClientEndpoint, resp: httpx.Response) -> t.Any:
         payload = Payload((resp.read(),), resp.headers)
@@ -757,9 +721,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
             data = resp.json()
             return AsyncTask(data["task_id"], __endpoint, self)
         finally:
-            for f in self._opened_files:
-                f.close()
-            self._opened_files.clear()
+            self._file_manager.close()
 
     async def _get_task_status(
         self, __endpoint: ClientEndpoint, /, task_id: str
@@ -832,9 +794,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
             else:
                 return await self._parse_response(endpoint, resp)
         finally:
-            for f in self._opened_files:
-                f.close()
-            self._opened_files.clear()
+            self._file_manager.close()
 
     async def _parse_response(
         self, endpoint: ClientEndpoint, resp: httpx.Response

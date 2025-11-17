@@ -4,7 +4,7 @@ from .base import AbstractClient
 from .http import AsyncHTTPClient as _AsyncHTTPClient
 from .http import HTTPClient
 from .http import SyncHTTPClient as _SyncHTTPClient
-from .proxy import RemoteProxy
+from .proxy2 import RemoteProxy
 from .task import AsyncTask
 from .task import Task
 

@@ -13,7 +13,7 @@ from bentoml.exceptions import BentoMLException
 from .factory import Service
 
 if t.TYPE_CHECKING:
-    from _bentoml_impl.client.proxy import RemoteProxy
+    from _bentoml_impl.client import RemoteProxy
 
 T = t.TypeVar("T")
 
@@ -53,7 +53,7 @@ class Dependency(t.Generic[T]):
             BentoMLContainer.remote_runner_mapping
         ],
     ) -> T | RemoteProxy[t.Any]:
-        from _bentoml_impl.client.proxy import RemoteProxy
+        from _bentoml_impl.client import RemoteProxy
 
         media_type = "application/json"
         if self.deployment and self.url:

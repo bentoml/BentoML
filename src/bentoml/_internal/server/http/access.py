@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from contextvars import ContextVar
 from timeit import default_timer
 from typing import TYPE_CHECKING
 from typing import Sequence
@@ -9,31 +8,9 @@ from typing import Sequence
 if TYPE_CHECKING:
     from ... import external_typing as ext
 
-REQ_CONTENT_LENGTH = "REQUEST_CONTENT_LENGTH"
-REQ_CONTENT_TYPE = "REQUEST_CONTENT_TYPE"
-RESP_CONTENT_LENGTH = "RESPONSE_CONTENT_LENGTH"
-RESP_CONTENT_TYPE = "RESPONSE_CONTENT_TYPE"
 
 CONTENT_LENGTH = b"content-length"
 CONTENT_TYPE = b"content-type"
-
-status: ContextVar[int] = ContextVar("ACCESS_LOG_STATUS_CODE")
-request_content_length: ContextVar[bytes] = ContextVar(
-    "ACCESS_LOG_REQ_CONTENT_LENGTH",
-    default=b"",
-)
-request_content_type: ContextVar[bytes] = ContextVar(
-    "ACCESS_LOG_REQ_CONTENT_TYPE",
-    default=b"",
-)
-response_content_length: ContextVar[bytes] = ContextVar(
-    "ACCESS_LOG_RESP_CONTENT_LENGTH",
-    default=b"",
-)
-response_content_type: ContextVar[bytes] = ContextVar(
-    "ACCESS_LOG_RESP_CONTENT_TYPE",
-    default=b"",
-)
 
 
 class AccessLogMiddleware:
@@ -82,13 +59,17 @@ class AccessLogMiddleware:
             address = f"{client[0]}:{client[1]}"
         else:
             address = "_"
-
+        request_content_length = b""
+        request_content_type = b""
+        response_content_length = b""
+        response_content_type = b""
+        status = 0
         if self.has_request_content_length or self.has_request_content_type:
             for key, value in scope["headers"]:
                 if key == CONTENT_LENGTH:
-                    request_content_length.set(value)
+                    request_content_length = value
                 elif key == CONTENT_TYPE:
-                    request_content_type.set(value)
+                    request_content_type = value
 
         async def wrapped_receive() -> "ext.ASGIMessage":
             message = await receive()
@@ -106,15 +87,21 @@ class AccessLogMiddleware:
             return message
 
         async def wrapped_send(message: "ext.ASGIMessage") -> None:
+            nonlocal \
+                status, \
+                request_content_length, \
+                request_content_type, \
+                response_content_length, \
+                response_content_type
             latency = max(default_timer() - start, 0) * 1000
             if message["type"] == "http.response.start":
-                status.set(message["status"])
+                status = message["status"]
                 if self.has_response_content_length or self.has_response_content_type:
                     for key, value in message["headers"]:
                         if key == CONTENT_LENGTH:
-                            response_content_length.set(value)
+                            response_content_length = value
                         elif key == CONTENT_TYPE:
-                            response_content_type.set(value)
+                            response_content_type = value
             elif message["type"] == "websocket.close":
                 self.logger.info(
                     "%s (scheme=%s,path=%s) - Connection closed", address, scheme, path
@@ -131,19 +118,17 @@ class AccessLogMiddleware:
                 if "more_body" in message and message["more_body"]:
                     await send(message)
                     return
-
                 request = [f"scheme={scheme}", f"method={method}", f"path={path}"]
                 if self.has_request_content_type:
-                    request.append(f"type={request_content_type.get().decode()}")
+                    request.append(f"type={request_content_type.decode()}")
                 if self.has_request_content_length:
-                    request.append(f"length={request_content_length.get().decode()}")
+                    request.append(f"length={request_content_length.decode()}")
 
-                response = [f"status={status.get()}"]
+                response = [f"status={status}"]
                 if self.has_response_content_type:
-                    response.append(f"type={response_content_type.get().decode()}")
+                    response.append(f"type={response_content_type.decode()}")
                 if self.has_response_content_length:
-                    response.append(f"length={response_content_length.get().decode()}")
-
+                    response.append(f"length={response_content_length.decode()}")
                 await send(message)
                 self.logger.info(
                     "%s (%s) (%s) %.3fms",

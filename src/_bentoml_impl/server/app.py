@@ -438,7 +438,7 @@ class ServiceAppFactory(BaseAppFactory):
             for dependency in self.service.dependencies.values():
                 real = dependency.get()
                 if isinstance(real, RemoteProxy):
-                    dependency_statuses.append(real.is_ready())
+                    dependency_statuses.append(real.is_ready(5))
             runners_ready = all(await asyncio.gather(*dependency_statuses))
 
             if not runners_ready:

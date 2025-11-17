@@ -40,6 +40,7 @@ from .config import ServiceConfig as Config
 logger = logging.getLogger("bentoml.serve")
 
 T = t.TypeVar("T")
+T_co = t.TypeVar("T_co", covariant=True)
 
 if t.TYPE_CHECKING:
     from bentoml._internal import external_typing as ext
@@ -78,12 +79,12 @@ class _DummyService:
 
 
 @attrs.define
-class Service(t.Generic[T]):
+class Service(t.Generic[T_co]):
     """A Bentoml service that can be served by BentoML server."""
 
     name: str
     config: Config = attrs.field(factory=Config)
-    inner: type[T] = _DummyService
+    inner: type[T_co] = _DummyService
     image: t.Optional[Image] = None
     description: t.Optional[str] = None
     envs: t.List[BentoEnvSchema] = attrs.field(factory=list, converter=convert_envs)
@@ -395,7 +396,7 @@ class Service(t.Generic[T]):
                     blocks.run_startup_events()
             delattr(self.inner, "__bentoml_gradio_apps__")
 
-    def __call__(self) -> T:
+    def __call__(self) -> T_co:
         try:
             instance = self.inner()
             instance.to_async = _AsyncWrapper(instance, self.apis.keys())

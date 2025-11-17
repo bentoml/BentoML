@@ -107,7 +107,7 @@ CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
         },
         "default_install_command": "apt-get update && apt-get install -q -y --no-install-recommends "
         "--allow-remove-essential ca-certificates gnupg2 bash build-essential git",
-        "install_command": "apt-get install -q -y {packages}",
+        "install_command": "apt-get install -q -y -o Dpkg::Options::=--force-confdef {packages}",
     },
     "alpine": {
         "supported_python_versions": SUPPORTED_PYTHON_VERSIONS,

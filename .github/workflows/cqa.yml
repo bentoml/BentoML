@@ -28,7 +28,7 @@ jobs:
   spelling:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Set up PDM
         uses: pdm-project/setup-pdm@v4
         with:

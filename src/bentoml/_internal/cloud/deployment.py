@@ -176,6 +176,36 @@ class DeploymentConfigParameters:
                     if isinstance(bento_info, Bento)
                     else bento_info
                 )
+
+                # NOTE:
+                #   envs defined on the service via @bentoml.service(envs=[...])
+                #   are stored on the Bento manifest (manifest.envs). Historically
+                #   they were only used for validation here (empty value => required),
+                #   and for image build (spec v2).
+                #
+                #   When users run `bentoml deploy .` they expect those envs with
+                #   default values to also show up as deployment envs on BentoCloud.
+                #   To honour that expectation, we treat manifest envs with a value
+                #   as default deployment envs, unless they are explicitly set via
+                #   CLI flags or a config file.
+                if self.cli and self.config_dict is None and self.config_file is None:
+                    # Only envs coming from CLI flags are in self.envs here.
+                    existing_env_names = {
+                        env["name"] for env in (self.envs or []) if "name" in env
+                    }
+                    default_envs = [
+                        {"name": env.name, "value": env.value}
+                        for env in manifest.envs
+                        if env.value and env.name not in existing_env_names
+                    ]
+                    if default_envs:
+                        if self.envs is None:
+                            self.envs = []
+                        self.envs.extend(default_envs)
+                        # Keep cfg_dict in sync so that get_config_dict() sends
+                        # these defaults to BentoCloud.
+                        self.cfg_dict["envs"] = self.envs
+
                 required_envs = [env.name for env in manifest.envs if not env.value]
                 provided_envs: list[str] = [env["name"] for env in (self.envs or [])]
                 if self.secrets:

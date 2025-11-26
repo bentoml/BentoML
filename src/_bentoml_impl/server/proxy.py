@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import logging
 import typing as t
@@ -98,7 +99,11 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
             finally:
                 if proc is not None:
                     proc.terminate()
-                    await proc.wait()
+                    try:
+                        await asyncio.wait_for(proc.wait(), timeout=30.0)
+                    except asyncio.TimeoutError:
+                        proc.kill()
+                        await proc.wait()
 
     assert service.has_custom_command(), "Service does not have custom command"
     app = fastapi.FastAPI(lifespan=lifespan)

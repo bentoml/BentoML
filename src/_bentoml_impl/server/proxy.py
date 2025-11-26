@@ -66,7 +66,13 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
                 proxy_port = service.config.get("http", {}).get("proxy_port", 8000)
                 proxy_url = f"http://localhost:{proxy_port}"
                 client = await stack.enter_async_context(
-                    httpx.AsyncClient(base_url=proxy_url, timeout=None)
+                    httpx.AsyncClient(
+                        base_url=proxy_url,
+                        timeout=None,
+                        limits=httpx.Limits(
+                            max_connections=512, max_keepalive_connections=64
+                        ),
+                    )
                 )
             if should_start_process:
                 if cmd_getter := getattr(server_instance, "__command__", None):

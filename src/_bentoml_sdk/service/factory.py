@@ -138,6 +138,13 @@ class Service(t.Generic[T_co]):
             self.mount_apps.extend(pre_mount_apps)
             delattr(self.inner, "__bentoml_mounted_apps__")
 
+        if self.config.get("workers") is None and self.has_custom_command():
+            from bentoml._internal.resource import system_resources
+
+            resources = system_resources()
+            workers = min(16, int(resources["cpu"] / 2))
+            self.config["workers"] = workers
+
     def __hash__(self):
         return hash(self.name)
 

@@ -142,7 +142,7 @@ class Service(t.Generic[T_co]):
             from bentoml._internal.resource import system_resources
 
             resources = system_resources()
-            workers = min(16, int(resources["cpu"] / 2))
+            workers = min(16, int(resources["cpu"] / 2) + 1)
             self.config["workers"] = workers
 
     def __hash__(self):

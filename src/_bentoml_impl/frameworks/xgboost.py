@@ -75,7 +75,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> xgb.Booster | xgb.XGBM
         import bentoml
         # target model must be from the BentoML model store
         booster = bentoml.xgboost.load_model("my_xgboost_model")
-    """  # noqa: LN001
+    """
     if not isinstance(bento_model, bentoml.Model):
         bento_model = bentoml.models.get(bento_model)
         assert isinstance(bento_model, bentoml.Model)
@@ -179,7 +179,7 @@ def save_model(
 
         # `save` the booster to BentoML modelstore:
         bento_model = bentoml.xgboost.save_model("my_xgboost_model", bst, booster_params=param)
-    """  # noqa: LN001
+    """
     if isinstance(model, xgb.Booster):
         model_class = "Booster"
     elif isinstance(model, XGBModel):

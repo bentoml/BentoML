@@ -5,18 +5,18 @@ from types import TracebackType
 
 from numpy.typing import NDArray
 
-from . import service_pb2
-from . import model_config_pb2 as model_config_pb2
-from . import service_pb2_grpc as service_pb2_grpc
-from ..utils import raise_error as raise_error
-from ..utils import np_to_triton_dtype as np_to_triton_dtype
-from ..utils import triton_to_np_dtype as triton_to_np_dtype
-from ..utils import serialized_byte_size as serialized_byte_size
-from ..utils import serialize_bf16_tensor as serialize_bf16_tensor
-from ..utils import serialize_byte_tensor as serialize_byte_tensor
+from ..utils import InferenceServerException
 from ..utils import deserialize_bf16_tensor as deserialize_bf16_tensor
 from ..utils import deserialize_bytes_tensor as deserialize_bytes_tensor
-from ..utils import InferenceServerException
+from ..utils import np_to_triton_dtype as np_to_triton_dtype
+from ..utils import raise_error as raise_error
+from ..utils import serialize_bf16_tensor as serialize_bf16_tensor
+from ..utils import serialize_byte_tensor as serialize_byte_tensor
+from ..utils import serialized_byte_size as serialized_byte_size
+from ..utils import triton_to_np_dtype as triton_to_np_dtype
+from . import model_config_pb2 as model_config_pb2
+from . import service_pb2
+from . import service_pb2_grpc as service_pb2_grpc
 
 INT32_MAX: int = ...
 MAX_GRPC_MESSAGE_SIZE = INT32_MAX

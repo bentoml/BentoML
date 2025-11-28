@@ -266,7 +266,7 @@ class AsyncOpenTelemetryServerInterceptor(aio.ServerInterceptor):
                         except Exception as e:
                             # We are interested in uncaught exception, otherwise
                             # it will be handled by gRPC.
-                            if type(e) != Exception:
+                            if type(e) is not Exception:
                                 span.record_exception(e)
                             raise e
 

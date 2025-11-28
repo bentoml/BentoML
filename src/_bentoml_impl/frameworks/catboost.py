@@ -64,7 +64,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> cb.CatBoost:
         import bentoml
         # target model must be from the BentoML model store
         booster = bentoml.catboost.load_model("my_catboost_model")
-    """  # noqa: LN001
+    """
     if not isinstance(bento_model, bentoml.Model):
         bento_model = bentoml.models.get(bento_model)
 

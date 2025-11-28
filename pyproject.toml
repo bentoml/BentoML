@@ -232,6 +232,13 @@ testpaths = ["tests"]
 # similar to black's
 line-length = 88
 target-version = "py310"
+extend-exclude = [
+    "docs/**/*.py",
+    "**/*_grpc.py",
+    "**/*_pb2.py",
+    "**/*_grpc.pyi",
+    "**/*_pb2.pyi",
+]
 
 [tool.ruff.lint]
 # We ignore E501 (line too long) here because we keep user-visible strings on one line.

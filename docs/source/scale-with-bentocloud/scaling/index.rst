@@ -14,7 +14,7 @@ Read how-to guides to scale inference on BentoCloud.
         :link-type: doc
 
         Configure concurrency and autoscaling to achieve optimal resource utilization and cost-efficiency for your AI workloads.
-    
+
     .. grid-item-card:: Gateways
         :link: gateways
         :link-type: doc

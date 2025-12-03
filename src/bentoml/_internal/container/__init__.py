@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 from simple_di import Provide
 from simple_di import inject
 
+from ...exceptions import BentoMLException
 from ...exceptions import InvalidArgument
 from ..configuration.containers import BentoMLContainer
 from ..utils.cattr import bentoml_cattr
@@ -24,6 +25,7 @@ from .generate import generate_containerfile
 if TYPE_CHECKING:
     from ..bento import Bento
     from ..bento import BentoStore
+    from ..bento.build_config import BentoEnvSchema
     from ..tag import Tag
     from .base import Arguments
 
@@ -110,6 +112,19 @@ def enable_buildkit(
         return get_backend(backend).enable_buildkit
     else:
         raise ValueError("Either backend or builder must be provided.")
+
+
+def split_envs_by_stage(
+    envs: t.Sequence[BentoEnvSchema],
+) -> tuple[list[BentoEnvSchema], list[BentoEnvSchema]]:
+    runtime_envs: list[BentoEnvSchema] = []
+    build_envs: list[BentoEnvSchema] = []
+    for env in envs:
+        if getattr(env, "stage", "all") == "build":
+            build_envs.append(env)
+        else:
+            runtime_envs.append(env)
+    return runtime_envs, build_envs
 
 
 # XXX: Sync with BentoML extra dependencies found in pyproject.toml
@@ -216,12 +231,19 @@ def construct_containerfile(
             from _bentoml_impl.docker import generate_dockerfile
 
             assert isinstance(options, BentoInfoV2)
+            runtime_envs, build_env = split_envs_by_stage(options.envs)
+            if build_env and not enable_buildkit:
+                raise BentoMLException(
+                    "stage='build' environment variables require BuildKit. "
+                    "Enable BuildKit for your backend (e.g. set DOCKER_BUILDKIT=1)."
+                )
             dockerfile = generate_dockerfile(
                 options.image,
                 Path(tempdir),
                 enable_buildkit=enable_buildkit,
                 add_header=add_header,
-                envs=options.envs,
+                envs=runtime_envs,
+                secret_envs=build_env,
             )
             instruction.append(dockerfile)
         Path(tempdir, dockerfile_path).write_text("\n".join(instruction))
@@ -241,14 +263,45 @@ def build(
     bento = _bento_store.get(bento_tag)
 
     builder = get_backend(backend)
+    buildkit_enabled = enable_buildkit(builder=builder)
+    _, build_stage_envs = split_envs_by_stage(bento.info.envs)
+    secret_specs: list[str] = []
+    if build_stage_envs:
+        if not buildkit_enabled:
+            raise BentoMLException(
+                "stage='build' environment variables require BuildKit. "
+                "Enable BuildKit for your backend (e.g. set DOCKER_BUILDKIT=1)."
+            )
+        for env in build_stage_envs:
+            secret_value = env.value or os.environ.get(env.name)
+            if secret_value is None:
+                raise BentoMLException(
+                    f"Environment variable '{env.name}' (stage='build') is required during image build."
+                )
+            secret_file = tempfile.NamedTemporaryFile("w", delete=False)
+            secret_file.write(secret_value)
+            secret_file.flush()
+            secret_file.close()
+            clean_context.callback(lambda path=secret_file.name: os.remove(path))
+            secret_specs.append(f"id={env.name},src={secret_file.name}")
+
     context_path, dockerfile = clean_context.enter_context(
         construct_containerfile(
             bento,
             features=features,
-            enable_buildkit=enable_buildkit(builder=builder),
+            enable_buildkit=buildkit_enabled,
         )
     )
     try:
+        if secret_specs:
+            existing_secret = kwargs.get("secret")
+            if existing_secret is None:
+                merged_secret: tuple[str, ...] = tuple(secret_specs)
+            elif isinstance(existing_secret, (tuple, list)):
+                merged_secret = tuple(existing_secret) + tuple(secret_specs)
+            else:
+                merged_secret = (existing_secret, *secret_specs)
+            kwargs["secret"] = merged_secret
         kwargs.update({"file": dockerfile, "context_path": context_path})
         return builder.build(**kwargs)
     except Exception as e:  # pylint: disable=broad-except
@@ -386,4 +439,5 @@ __all__ = [
     "register_backend",
     "get_backend",
     "REGISTERED_BACKENDS",
+    "split_envs_by_stage",
 ]

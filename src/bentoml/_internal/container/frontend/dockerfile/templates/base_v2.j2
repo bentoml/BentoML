@@ -4,6 +4,21 @@
 {% set bento__entrypoint = expands_bento_path('env', 'docker', 'entrypoint.sh', bento_path=bento__path) %}
 {% set __enable_buildkit__ = bento__enable_buildkit | default(False) -%}
 {% set __bento_envs__ = bento__envs | default([]) %}
+{% set __bento_secret_envs__ = bento__secret_envs | default([]) %}
+{% set __secret_mounts__ = "" %}
+{% set __secret_exports__ = "" %}
+{% if __bento_secret_envs__ and __enable_buildkit__ %}
+{% set mounts = [] %}
+{% for env in __bento_secret_envs__ %}
+{% do mounts.append("--mount=type=secret,id=%s" % env.name) %}
+{% endfor %}
+{% set __secret_mounts__ = " ".join(mounts) + " " %}
+{% set secret_exports = [] %}
+{% for env in __bento_secret_envs__ %}
+{% do secret_exports.append('export %s="$(cat /run/secrets/%s)"' % (env.name, env.name)) %}
+{% endfor %}
+{% set __secret_exports__ = " && ".join(secret_exports) + " && " %}
+{% endif %}
 {% if __enable_buildkit__ %}
 # 1.2.1 is the current docker frontend that both buildkitd and kaniko supports.
 # syntax = {{ bento__buildkit_frontend }}
@@ -50,9 +65,12 @@ ENV BENTOML_HF_CACHE_DIR={{ bento__path }}/hf-models
 ENV BENTOML_CONTAINERIZED=true
 
 {% for env in __bento_envs__ %}
+{% set stage = env.stage | default("all") -%}
+{% if stage != "runtime" -%}
 ARG {{ env.name }}{% if env.value %}={{ env.value }}{% endif %}
 
 ENV {{ env.name }}=${{ env.name }}
+{% endif -%}
 {% endfor %}
 
 RUN mkdir $BENTO_PATH && chown {{ bento__user }}:{{ bento__user }} $BENTO_PATH -R
@@ -62,10 +80,10 @@ WORKDIR $BENTO_PATH
 {% block SETUP_BENTO_COMPONENTS %}
 COPY --chown={{ bento__user }}:{{ bento__user }} ./env/docker ./env/docker/
 {% for command in __options__commands %}
-RUN {{ command }}
+{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {% endcall -%} {{ __secret_exports__ }}{{ command }}
 {% endfor %}
-RUN command -v uv >/dev/null || pip install uv
-RUN UV_PYTHON_INSTALL_DIR=/app/python/ uv venv --python {{ __options__python_version }} /app/.venv && \
+{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {% endcall -%} {{ __secret_exports__ }}command -v uv >/dev/null || pip install uv
+{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {% endcall -%} {{ __secret_exports__ }}UV_PYTHON_INSTALL_DIR=/app/python/ uv venv --python {{ __options__python_version }} /app/.venv && \
     chown -R {{ bento__user }}:{{ bento__user }} /app/.venv
 ENV VIRTUAL_ENV=/app/.venv
 ENV UV_COMPILE_BYTECODE=1
@@ -75,10 +93,10 @@ ENV PATH=/app/.venv/bin:${PATH}
 
 COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
 # install python packages
-{% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} uv --directory ./env/python/ pip install -r requirements.txt
+{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {{ __pip_cache__ }} {% endcall -%} {{ __secret_exports__ }}uv --directory ./env/python/ pip install -r requirements.txt
 
 {% for command in __options__post_commands %}
-RUN {{ command }}
+{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {% endcall -%} {{ __secret_exports__ }}{{ command }}
 {% endfor %}
 
 COPY --chown={{ bento__user }}:{{ bento__user }} . ./

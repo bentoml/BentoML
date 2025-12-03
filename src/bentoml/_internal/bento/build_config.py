@@ -772,11 +772,18 @@ def _model_spec_structure_hook(
     return cls.from_item(d)
 
 
+EnvStage = t.Literal["all", "build", "runtime"]
+
+
 @attr.define(eq=True)
 class BentoEnvSchema:
     __forbid_extra_keys__ = False
     name: str
     value: str = ""
+    stage: EnvStage = attr.field(
+        default="all",
+        validator=attr.validators.in_(("all", "build", "runtime")),
+    )
 
 
 bentoml_cattr.register_structure_hook(ModelSpec, _model_spec_structure_hook)

@@ -17,9 +17,6 @@ treat GPUs from hyperscalers and neoclouds as
 **one logical, multi-region GPU cluster**, enabling high availability and
 cost-efficient scaling without operational complexity.
 
-.. contents::
-   :local:
-   :depth: 2
 
 
 How Gateways Work

@@ -4,7 +4,7 @@ Scale Across Multiple Regions with Gateways
 
 Modern GPU operations are hindered by fragmented suppliers with inconsistent
 environments, variable cost and reliability, unpredictable access to committed
-versus on-demand capacity, and limited regional GPU availability,all of which
+versus on-demand capacity, and limited regional GPU availability, all of which
 make it difficult for teams to provision efficiently, avoid vendor lock-in, and
 reliably scale inference workloads without overpaying or encountering capacity
 shortages.

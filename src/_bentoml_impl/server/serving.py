@@ -106,7 +106,7 @@ def create_dependency_watcher(
     # Process environment variables from the service
     for env_var in svc.envs:
         # Exclude Build Time environment variables
-        if getattr(env_var, "stage", "all") == "build":
+        if env_var.stage == "build":
             continue
         if env_var.name in env:
             continue
@@ -211,7 +211,7 @@ def serve_http(
     # Process environment variables from the service
     for env_var in svc.envs:
         # Exclude Build Time environment variables
-        if getattr(env_var, "stage", "all") == "build":
+        if env_var.stage == "build":
             continue
         if env_var.name in env:
             continue
@@ -247,7 +247,7 @@ def serve_http(
                     dependency_env = env.copy()
                     for env_var in dep_svc.envs:
                         # Exclude Build Time environment variables
-                        if getattr(env_var, "stage", "all") == "build":
+                        if env_var.stage == "build":
                             continue
                         if env_var.name in dependency_env:
                             continue

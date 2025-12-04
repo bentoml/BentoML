@@ -198,8 +198,7 @@ class DeploymentConfigParameters:
                         for env in manifest.envs
                         if env.value
                         and env.name not in existing_env_names
-                        and getattr(env, "stage", "all")
-                        != "build"  # Exclude build time only env
+                        and env.stage != "build"  # Exclude build time only env
                     ]
                     if default_envs:
                         if self.envs is None:
@@ -212,7 +211,7 @@ class DeploymentConfigParameters:
                 required_envs = [
                     env.name
                     for env in manifest.envs
-                    if getattr(env, "stage", "all") != "build" and not env.value
+                    if env.stage != "build" and not env.value
                 ]
                 provided_envs: list[str] = [env["name"] for env in (self.envs or [])]
                 if self.secrets:

@@ -120,7 +120,7 @@ def split_envs_by_stage(
     runtime_envs: list[BentoEnvSchema] = []
     build_envs: list[BentoEnvSchema] = []
     for env in envs:
-        if getattr(env, "stage", "all") == "build":
+        if env.stage == "build":
             build_envs.append(env)
         else:
             runtime_envs.append(env)
@@ -303,6 +303,7 @@ def build(
                 merged_secret = (existing_secret, *secret_specs)
             kwargs["secret"] = merged_secret
         kwargs.update({"file": dockerfile, "context_path": context_path})
+        breakpoint()
         return builder.build(**kwargs)
     except Exception as e:  # pylint: disable=broad-except
         logger.error(

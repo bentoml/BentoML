@@ -273,7 +273,7 @@ def build(
                 "Enable BuildKit for your backend (e.g. set DOCKER_BUILDKIT=1)."
             )
         for env in build_stage_envs:
-            secret_value = env.value or os.environ.get(env.name)
+            secret_value = os.getenv(env.name, env.value)
             if secret_value is None:
                 raise BentoMLException(
                     f"Environment variable '{env.name}' (stage='build') is required during image build."

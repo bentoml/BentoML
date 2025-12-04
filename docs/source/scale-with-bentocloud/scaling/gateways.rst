@@ -4,15 +4,15 @@ Scale across multiple regions with Gateways
 
 Modern GPU operations are hindered by fragmented suppliers with inconsistent
 environments, variable cost and reliability, unpredictable access to committed
-versus on-demand capacity, and limited regional GPU availability. These issues 
-make it difficult to provision compute efficiently, avoid vendor lock-in, and 
+versus on-demand capacity, and limited regional GPU availability. These issues
+make it difficult to provision compute efficiently, avoid vendor lock-in, and
 reliably scale inference without overpaying or encountering capacity shortages.
 
 BentoCloud Gateways solve this by providing a unified abstraction for operating 
-**distributed GPU clusters** across clouds, regions, and vendors. You can scale 
+**distributed GPU clusters** across clouds, regions, and vendors. You can scale
 inference elastically on mixed GPU fleets while exposing a **single, stable endpoint**
-to your clients. This lets you treat GPUs from hyperscalers and neoclouds as 
-**one logical, multi-region GPU cluster**, enabling high availability and 
+to your clients. This lets you treat GPUs from hyperscalers and neoclouds as
+**one logical, multi-region GPU cluster**, enabling high availability and
 cost-efficient scaling without operational complexity.
 
 How Gateways work
@@ -23,14 +23,14 @@ Gateways route requests to the best available Deployments while hiding infrastru
 Consistent endpoint URL
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Each Gateway exposes a single HTTPS endpoint. BentoCloud routes requests to the 
-optimal upstream Deployments based on model name, request parameters, or user-defined 
+Each Gateway exposes a single HTTPS endpoint. BentoCloud routes requests to the
+optimal upstream Deployments based on model name, request parameters, or user-defined
 routing policies.
 
 Heterogeneous cluster abstraction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Gateways unify diverse infrastructure types under a consistent, normalized execution environment, 
+Gateways unify diverse infrastructure types under a consistent, normalized execution environment,
 including:
 
 * Managed Kubernetes clusters
@@ -38,7 +38,7 @@ including:
 * Virtual machines
 * Neocloud GPU providers
 
-BentoCloud abstracts GPU SKUs into capacity units based on real throughput, 
+BentoCloud abstracts GPU SKUs into capacity units based on real throughput,
 ensuring predictable scheduling across heterogeneous fleets.
 
 Vendor-agnostic routing
@@ -55,8 +55,8 @@ to:
 Multi-region elasticity
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Gateways automatically use committed GPUs for baseline workloads. When demand exceeds 
-local capacity, they burst into other regions that have available elastic capacity. 
+Gateways automatically use committed GPUs for baseline workloads. When demand exceeds
+local capacity, they burst into other regions that have available elastic capacity.
 This ensures high availability and smooth handling of traffic spikes.
 
 Creating a Gateway

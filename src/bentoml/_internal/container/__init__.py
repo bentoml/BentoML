@@ -298,7 +298,7 @@ def build(
             if existing_secret is None:
                 merged_secret: tuple[str, ...] = tuple(secret_specs)
             elif isinstance(existing_secret, (tuple, list)):
-                merged_secret = tuple(existing_secret) + tuple(secret_specs)
+                merged_secret = (*existing_secret, *secret_specs)
             else:
                 merged_secret = (existing_secret, *secret_specs)
             kwargs["secret"] = merged_secret

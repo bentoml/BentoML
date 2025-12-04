@@ -15,9 +15,9 @@
 {% set __secret_mounts__ = " ".join(mounts) + " " %}
 {% set secret_exports = [] %}
 {% for env in __bento_secret_envs__ %}
-{% do secret_exports.append('export %s="$(cat /run/secrets/%s)"' % (env.name, env.name)) %}
+{% do secret_exports.append('%s="$(cat /run/secrets/%s)"' % (env.name, env.name)) %}
 {% endfor %}
-{% set __secret_exports__ = " && ".join(secret_exports) + " && " %}
+{% set __secret_exports__ = " ".join(secret_exports) + " " %}
 {% endif %}
 
 {% if __enable_buildkit__ %}

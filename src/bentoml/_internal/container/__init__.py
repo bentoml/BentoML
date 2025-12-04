@@ -303,7 +303,6 @@ def build(
                 merged_secret = (existing_secret, *secret_specs)
             kwargs["secret"] = merged_secret
         kwargs.update({"file": dockerfile, "context_path": context_path})
-        breakpoint()
         return builder.build(**kwargs)
     except Exception as e:  # pylint: disable=broad-except
         logger.error(

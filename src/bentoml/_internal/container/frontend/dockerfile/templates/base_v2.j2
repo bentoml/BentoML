@@ -65,8 +65,6 @@ ENV BENTOML_HOME={{ bento__home }}
 ENV BENTOML_HF_CACHE_DIR={{ bento__path }}/hf-models
 ENV BENTOML_CONTAINERIZED=true
 
-{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {% endcall -%} {{ __secret_exports__ }}echo "DEBUG: Listing all build secrets:" && ls -l /run/secrets || true && for s in /run/secrets/*; do echo "SECRET $s:" && cat "$s" || true; done
-
 {% for env in __bento_envs__ %}
 {% set stage = env.stage | default("all") -%}
 {% if stage != "runtime" -%}

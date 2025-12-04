@@ -68,7 +68,7 @@ ENV BENTOML_CONTAINERIZED=true
 {% for env in __bento_envs__ %}
 {% set stage = env.stage | default("all") -%}
 {% if stage != "runtime" -%}
-ARG {{ env.name }}{% if env.value %}={{ env.value }}{% endif %}
+ARG {{ env.name }}{% if env.value %}={{ env.value | bash_quote }}{% endif %}
 
 ENV {{ env.name }}=${{ env.name }}
 {% endif -%}

@@ -67,7 +67,7 @@ Console or programmatically via the API.
 
 * **Name**: The Gateway name becomes the prefix of the public endpoint ``<name>.example.com``.
 * **Domain**: The domain forms the suffix of the public endpoint ``name.<example.com>``.
-* **Protocol**: The protocol defines how BentoCloud interprets and routes requests. For example, with the `OpenAI Chat Completions` protocol, routing is based on the ``model`` field in the request; only Deployments that support that model receive the request.
+* **Protocol**: The protocol defines how BentoCloud interprets and routes requests. For example, with the ``OpenAI Chat Completions`` protocol, routing is based on the ``model`` field in the request; only Deployments that support that model receive the request.
 * **Load balancing strategy**
     * **Overflow Routing**: Routes requests to the highest-ranked Deployment first. Once it reaches capacity, overflow traffic proceeds to the next Deployment.
     * **Capacity-Based Round Robin**: Distributes requests proportionally according to each Deployment’s currently available capacity.

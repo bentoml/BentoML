@@ -17,6 +17,7 @@ from bentoml._internal.configuration import DEFAULT_LOCK_PLATFORM
 from bentoml._internal.configuration import get_bentoml_requirement
 from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.configuration import get_quiet_mode
+from bentoml._internal.container import split_envs_by_stage
 from bentoml._internal.container.frontend.dockerfile import CONTAINER_METADATA
 from bentoml._internal.container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
 from bentoml.exceptions import BentoMLConfigException
@@ -24,6 +25,7 @@ from bentoml.exceptions import BentoMLException
 
 if t.TYPE_CHECKING:
     from bentoml._internal.bento.build_config import BentoEnvSchema
+
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -196,8 +198,15 @@ class Image:
         docker_folder = bento_fs.joinpath("env", "docker")
         docker_folder.mkdir(parents=True, exist_ok=True)
         dockerfile_path = docker_folder.joinpath("Dockerfile")
+        runtime_envs, build_stage_envs = split_envs_by_stage(envs)
         dockerfile_path.write_text(
-            generate_dockerfile(info, bento_fs, enable_buildkit=False, envs=envs),
+            generate_dockerfile(
+                info,
+                bento_fs,
+                enable_buildkit=bool(build_stage_envs),
+                envs=runtime_envs,
+                secret_envs=build_stage_envs,
+            ),
         )
         for script_name, target_path in self.scripts.items():
             shutil.copy(script_name, bento_fs / target_path)

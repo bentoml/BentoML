@@ -60,6 +60,12 @@ class PathMetadata(t.TypedDict):
     mounted: bool
 
 
+class ServiceEnvConfig(t.TypedDict, total=False):
+    name: str
+    value: str
+    stage: t.Literal["all", "build", "runtime"]
+
+
 def with_config(
     func: t.Callable[t.Concatenate["Service[t.Any]", P], R],
 ) -> t.Callable[t.Concatenate["Service[t.Any]", P], R]:
@@ -70,7 +76,7 @@ def with_config(
     return wrapper
 
 
-def convert_envs(envs: t.List[t.Dict[str, t.Any]]) -> t.List[BentoEnvSchema]:
+def convert_envs(envs: t.List[ServiceEnvConfig]) -> t.List[BentoEnvSchema]:
     return [BentoEnvSchema(**env) for env in envs]
 
 
@@ -538,7 +544,7 @@ def service(
     name: str | None = None,
     image: Image | None = None,
     description: str | None = None,
-    envs: list[dict[str, str]] | None = None,
+    envs: list[ServiceEnvConfig] | None = None,
     labels: dict[str, str] | None = None,
     cmd: list[str] | None = None,
     service_class: type[Service[T]] = Service,
@@ -553,7 +559,7 @@ def service(
     name: str | None = None,
     image: Image | None = None,
     description: str | None = None,
-    envs: list[dict[str, str]] | None = None,
+    envs: list[ServiceEnvConfig] | None = None,
     labels: dict[str, str] | None = None,
     cmd: list[str] | None = None,
     service_class: type[Service[T]] = Service,

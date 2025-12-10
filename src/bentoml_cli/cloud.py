@@ -403,6 +403,79 @@ def create_api_token(
     _create()
 
 
+@api_token_command.command(name="get")
+@click.argument(
+    "token_uid",
+    nargs=1,
+    type=click.STRING,
+    required=True,
+)
+@click.option(
+    "-o",
+    "--output",
+    help="Display the output of this command.",
+    type=click.Choice(["json", "yaml", "table"]),
+    default="table",
+)
+def get_api_token(token_uid: str, output: str) -> None:  # type: ignore (not accessed)
+    """Get an API token by UID from BentoCloud."""
+    import json as json_mod
+
+    import yaml
+    from rich.syntax import Syntax
+    from rich.table import Table
+    from simple_di import Provide
+    from simple_di import inject
+
+    from bentoml._internal.cloud import BentoCloudClient
+
+    @inject
+    def _get(
+        _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+    ) -> None:
+        try:
+            token = _cloud_client.api_token.get(token_uid=token_uid)
+        except BentoMLException as e:
+            _raise_api_token_error(e, "get")
+
+        if token is None:
+            raise BentoMLException(f"API token with UID '{token_uid}' not found")
+
+        if output == "table":
+            table = Table(box=None, expand=True)
+            table.add_column("Field", style="bold")
+            table.add_column("Value", overflow="fold")
+
+            table.add_row("Name", token.name)
+            table.add_row("UID", token.uid)
+            table.add_row("Description", token.description or "-")
+            table.add_row("Created At", token.created_at.strftime("%Y-%m-%d %H:%M:%S"))
+            table.add_row(
+                "Expired At",
+                token.expired_at.strftime("%Y-%m-%d %H:%M:%S")
+                if token.expired_at
+                else "Never",
+            )
+            table.add_row(
+                "Last Used At",
+                token.last_used_at.strftime("%Y-%m-%d %H:%M:%S")
+                if token.last_used_at
+                else "Never",
+            )
+            table.add_row("Is Expired", str(token.is_expired))
+            table.add_row("Scopes", ", ".join(token.scopes) if token.scopes else "-")
+            table.add_row("Created By", token.created_by or token.user.name)
+            rich.print(table)
+        elif output == "json":
+            info = json_mod.dumps(token.to_dict(), indent=2, default=str)
+            rich.print(info)
+        elif output == "yaml":
+            info = yaml.dump(token.to_dict(), indent=2, sort_keys=False)
+            rich.print(Syntax(info, "yaml", background_color="default"))
+
+    _get()
+
+
 @api_token_command.command(name="delete")
 @click.argument(
     "token_uid",

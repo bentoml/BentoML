@@ -28,6 +28,8 @@ MODULE_ATTRS = {
     "use_arguments": "._internal.utils.args:use_arguments",
     "Bento": "._internal.bento:Bento",
     "BentoCloudClient": "._internal.cloud:BentoCloudClient",
+    "ApiToken": "._internal.cloud.api_token:ApiToken",
+    "ApiTokenAPI": "._internal.cloud.api_token:ApiTokenAPI",
     "Context": "._internal.context:ServiceContext",
     "server_context": "._internal.context:server_context",
     "Model": "._internal.models:Model",
@@ -82,6 +84,8 @@ if TYPE_CHECKING:
     # BentoML built-in types
     from ._internal.bento import Bento
     from ._internal.cloud import BentoCloudClient
+    from ._internal.cloud.api_token import ApiToken
+    from ._internal.cloud.api_token import ApiTokenAPI
     from ._internal.configuration import load_config
     from ._internal.configuration import save_config
     from ._internal.configuration import set_serialization_strategy
@@ -332,6 +336,8 @@ __all__ = [
     "Model",
     "monitoring",
     "BentoCloudClient",  # BentoCloud REST API Client
+    "ApiToken",
+    "ApiTokenAPI",
     # bento APIs
     "list",
     "get",

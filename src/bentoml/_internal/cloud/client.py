@@ -16,6 +16,8 @@ from wsproto.utilities import LocalProtocolError
 from ...exceptions import CloudRESTApiClientError
 from ...exceptions import NotFound
 from ..configuration import BENTOML_VERSION
+from .schemas.schemasv1 import ApiTokenListSchema
+from .schemas.schemasv1 import ApiTokenSchema
 from .schemas.schemasv1 import BentoListSchema
 from .schemas.schemasv1 import BentoRepositorySchema
 from .schemas.schemasv1 import BentoSchema
@@ -23,6 +25,7 @@ from .schemas.schemasv1 import BentoWithRepositoryListSchema
 from .schemas.schemasv1 import ClusterFullSchema
 from .schemas.schemasv1 import ClusterListSchema
 from .schemas.schemasv1 import CompleteMultipartUploadSchema
+from .schemas.schemasv1 import CreateApiTokenSchema
 from .schemas.schemasv1 import CreateBentoRepositorySchema
 from .schemas.schemasv1 import CreateBentoSchema
 from .schemas.schemasv1 import CreateDeploymentSchema as CreateDeploymentSchemaV1
@@ -563,6 +566,39 @@ class RestApiClientV1(BaseRestApiClient):
         resp = self.session.patch(url, json=schema_to_object(secret))
         self._check_resp(resp)
         return schema_from_object(resp.json(), SecretSchema)
+
+    def list_api_tokens(
+        self,
+        count: int = 100,
+        search: str | None = None,
+        start: int = 0,
+    ) -> ApiTokenListSchema:
+        url = "/api/v1/api_tokens"
+        params: dict[str, t.Any] = {"start": start, "count": count}
+        if search:
+            params["search"] = search
+        resp = self.session.get(url, params=params)
+        self._check_resp(resp)
+        return schema_from_object(resp.json(), ApiTokenListSchema)
+
+    def create_api_token(self, req: CreateApiTokenSchema) -> ApiTokenSchema:
+        url = "/api/v1/api_tokens"
+        resp = self.session.post(url, json=schema_to_object(req))
+        self._check_resp(resp)
+        return schema_from_object(resp.json(), ApiTokenSchema)
+
+    def get_api_token(self, token_uid: str) -> ApiTokenSchema | None:
+        url = f"/api/v1/api_tokens/{token_uid}"
+        resp = self.session.get(url)
+        if self._is_not_found(resp):
+            return None
+        self._check_resp(resp)
+        return schema_from_object(resp.json(), ApiTokenSchema)
+
+    def delete_api_token(self, token_uid: str) -> None:
+        url = f"/api/v1/api_tokens/{token_uid}"
+        resp = self.session.delete(url)
+        self._check_resp(resp)
 
 
 class RestApiClientV2(BaseRestApiClient):

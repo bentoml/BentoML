@@ -7,6 +7,7 @@ import psutil
 def create_bentoml_cli() -> click.Command:
     from bentoml._internal.configuration import BENTOML_VERSION
     from bentoml._internal.context import server_context
+    from bentoml_cli.api_token import api_token_command
     from bentoml_cli.bentos import bento_command
     from bentoml_cli.cloud import cloud_command
     from bentoml_cli.containerize import containerize_command
@@ -48,6 +49,7 @@ def create_bentoml_cli() -> click.Command:
     bentoml_cli.add_command(codespace)
     bentoml_cli.add_command(deployment_command)
     bentoml_cli.add_command(secret_command)
+    bentoml_cli.add_command(api_token_command)
     # Load commands from extensions
     for ep in get_entry_points("bentoml.commands"):
         bentoml_cli.add_command(ep.load())

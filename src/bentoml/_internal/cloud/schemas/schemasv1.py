@@ -364,3 +364,37 @@ class UpdateSecretSchema:
     __forbid_extra_keys__ = False
     content: SecretContentSchema
     description: t.Optional[str] = attr.field(default=None)
+
+
+@attr.define
+class ApiTokenSchema(ResourceSchema):
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    description: str
+    scopes: t.List[str]
+    user: UserSchema
+    organization: OrganizationSchema
+    expired_at: t.Optional[datetime] = attr.field(default=None)
+    last_used_at: t.Optional[datetime] = attr.field(default=None)
+    is_expired: bool = attr.field(default=False)
+    is_api_token: bool = attr.field(default=True)
+    is_organization_token: bool = attr.field(default=False)
+    is_global_access: bool = attr.field(default=False)
+    token: t.Optional[str] = attr.field(default=None)  # Only returned on create
+
+
+@attr.define
+class ApiTokenListSchema(BaseListSchema):
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    items: t.List[ApiTokenSchema]
+
+
+@attr.define
+class CreateApiTokenSchema:
+    __omit_if_default__ = True
+    __forbid_extra_keys__ = False
+    name: str
+    description: t.Optional[str] = attr.field(default=None)
+    scopes: t.Optional[t.List[str]] = attr.field(default=None)
+    expired_at: t.Optional[datetime] = attr.field(default=None)

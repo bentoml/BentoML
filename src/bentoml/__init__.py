@@ -28,6 +28,8 @@ MODULE_ATTRS = {
     "use_arguments": "._internal.utils.args:use_arguments",
     "Bento": "._internal.bento:Bento",
     "BentoCloudClient": "._internal.cloud:BentoCloudClient",
+    "ApiToken": "._internal.cloud.api_token:ApiToken",
+    "ApiTokenAPI": "._internal.cloud.api_token:ApiTokenAPI",
     "Context": "._internal.context:ServiceContext",
     "server_context": "._internal.context:server_context",
     "Model": "._internal.models:Model",
@@ -82,6 +84,8 @@ if TYPE_CHECKING:
     # BentoML built-in types
     from ._internal.bento import Bento
     from ._internal.cloud import BentoCloudClient
+    from ._internal.cloud.api_token import ApiToken
+    from ._internal.cloud.api_token import ApiTokenAPI
     from ._internal.configuration import load_config
     from ._internal.configuration import save_config
     from ._internal.configuration import set_serialization_strategy
@@ -139,6 +143,7 @@ if TYPE_CHECKING:
     from . import monitoring  # Monitoring API
     from . import cloud  # Cloud API
     from . import deployment  # deployment API
+    from . import api_token  # API token management
     from . import validators  # validators
 
     # isort: on
@@ -290,6 +295,7 @@ else:
     monitoring = _LazyLoader("bentoml.monitoring", globals(), "bentoml.monitoring")
     cloud = _LazyLoader("bentoml.cloud", globals(), "bentoml.cloud")
     deployment = _LazyLoader("bentoml.deployment", globals(), "bentoml.deployment")
+    api_token = _LazyLoader("bentoml.api_token", globals(), "bentoml.api_token")
     validators = _LazyLoader("bentoml.validators", globals(), "bentoml.validators")
     del _LazyLoader, FrameworkImporter
 
@@ -332,6 +338,8 @@ __all__ = [
     "Model",
     "monitoring",
     "BentoCloudClient",  # BentoCloud REST API Client
+    "ApiToken",
+    "ApiTokenAPI",
     # bento APIs
     "list",
     "get",
@@ -371,6 +379,7 @@ __all__ = [
     "gradio",
     "cloud",
     "deployment",
+    "api_token",
     "triton",
     "monitor",
     "load_config",

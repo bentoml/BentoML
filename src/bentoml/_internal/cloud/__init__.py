@@ -4,6 +4,7 @@ import attrs
 
 from bentoml._internal.cloud.client import RestApiClient
 
+from .api_token import ApiTokenAPI
 from .base import Spinner
 from .bento import BentoAPI
 from .config import DEFAULT_ENDPOINT
@@ -29,6 +30,7 @@ class BentoCloudClient:
         model: Model API
         deployment: Deployment API
         secret: Secret API
+        api_token: API Token API
     """
 
     client: RestApiClient
@@ -36,6 +38,7 @@ class BentoCloudClient:
     model: ModelAPI
     deployment: DeploymentAPI
     secret: SecretAPI
+    api_token: ApiTokenAPI
 
     def __init__(
         self,
@@ -57,6 +60,7 @@ class BentoCloudClient:
         model = ModelAPI(client, spinner=spinner)
         deployment = DeploymentAPI(client)
         secret = SecretAPI(client)
+        api_token = ApiTokenAPI(client)
 
         self.__attrs_init__(
             client=client,
@@ -64,6 +68,7 @@ class BentoCloudClient:
             model=model,
             deployment=deployment,
             secret=secret,
+            api_token=api_token,
         )
 
     @classmethod

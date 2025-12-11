@@ -2,7 +2,7 @@
 BentoCloud CLI
 ==============
 
-This page provides API reference for accessing BentoCloud and managing Deployments using the BentoML CLI.
+This page provides API reference for accessing BentoCloud and managing resources using the BentoML CLI.
 
 .. click:: bentoml_cli.cloud:cloud_command
    :prog: bentoml cloud
@@ -18,4 +18,8 @@ This page provides API reference for accessing BentoCloud and managing Deploymen
 
 .. click:: bentoml_cli.secret:secret_command
    :prog: bentoml secret
+   :nested: full
+
+.. click:: bentoml_cli.api_token:api_token_command
+   :prog: bentoml api-token
    :nested: full

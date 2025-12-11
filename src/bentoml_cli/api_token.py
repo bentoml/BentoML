@@ -5,7 +5,7 @@ import typing as t
 import click
 import rich
 
-from bentoml._internal.configuration.containers import BentoMLContainer
+import bentoml.api_token
 from bentoml.exceptions import BentoMLException
 from bentoml_cli.utils import BentoMLCommandGroup
 
@@ -29,66 +29,93 @@ def api_token_command():
 def list_api_tokens(
     search: str | None,
     output: str,
-) -> None:  # type: ignore (not accessed)
+) -> None:
     """List all API tokens on BentoCloud."""
     import json as json_mod
 
     import yaml
     from rich.syntax import Syntax
     from rich.table import Table
-    from simple_di import Provide
-    from simple_di import inject
 
-    from bentoml._internal.cloud import BentoCloudClient
+    try:
+        tokens = bentoml.api_token.list(search=search)
+    except BentoMLException as e:
+        _raise_api_token_error(e, "list")
 
-    @inject
-    def _list(
-        _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
-    ) -> None:
+    if output == "table":
+        table = Table(box=None, expand=True)
+        table.add_column("Name", overflow="fold")
+        table.add_column("UID", overflow="fold")
+        table.add_column("Created_At", overflow="fold")
+        table.add_column("Expired_At", overflow="fold")
+        table.add_column("Last_Used_At", overflow="fold")
+        table.add_column("Scopes", overflow="fold")
+
+        for token in tokens:
+            expired_at = (
+                token.expired_at.strftime("%Y-%m-%d %H:%M:%S")
+                if token.expired_at
+                else "Never"
+            )
+            last_used_at = (
+                token.last_used_at.strftime("%Y-%m-%d %H:%M:%S")
+                if token.last_used_at
+                else "Never"
+            )
+            table.add_row(
+                token.name,
+                token.uid,
+                token.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                expired_at,
+                last_used_at,
+                ", ".join(token.scopes) if token.scopes else "-",
+            )
+        rich.print(table)
+    elif output == "json":
+        res: t.List[dict[str, t.Any]] = [t.to_dict() for t in tokens]
+        info = json_mod.dumps(res, indent=2, default=str)
+        rich.print(info)
+    elif output == "yaml":
+        res: t.List[dict[str, t.Any]] = [t.to_dict() for t in tokens]
+        info = yaml.dump(res, indent=2, sort_keys=False)
+        rich.print(Syntax(info, "yaml", background_color="default"))
+
+
+def _parse_expiration(expires_str: str | None) -> "t.Any":
+    """Parse expiration string into datetime."""
+    from datetime import datetime
+    from datetime import timedelta
+
+    if not expires_str:
+        return None
+
+    expires_str = expires_str.strip()
+
+    # Try parsing duration format (e.g., 30d, 1w, 24h)
+    if expires_str[-1].lower() in ("d", "w", "h"):
         try:
-            tokens = _cloud_client.api_token.list(search=search)
-        except BentoMLException as e:
-            _raise_api_token_error(e, "list")
+            value = int(expires_str[:-1])
+            unit = expires_str[-1].lower()
+            if unit == "d":
+                return datetime.now() + timedelta(days=value)
+            elif unit == "w":
+                return datetime.now() + timedelta(weeks=value)
+            elif unit == "h":
+                return datetime.now() + timedelta(hours=value)
+        except ValueError:
+            pass
 
-        if output == "table":
-            table = Table(box=None, expand=True)
-            table.add_column("Name", overflow="fold")
-            table.add_column("UID", overflow="fold")
-            table.add_column("Created_At", overflow="fold")
-            table.add_column("Expired_At", overflow="fold")
-            table.add_column("Last_Used_At", overflow="fold")
-            table.add_column("Scopes", overflow="fold")
+    # Try parsing ISO date format
+    for fmt in ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+        try:
+            return datetime.strptime(expires_str, fmt)
+        except ValueError:
+            continue
 
-            for token in tokens:
-                expired_at = (
-                    token.expired_at.strftime("%Y-%m-%d %H:%M:%S")
-                    if token.expired_at
-                    else "Never"
-                )
-                last_used_at = (
-                    token.last_used_at.strftime("%Y-%m-%d %H:%M:%S")
-                    if token.last_used_at
-                    else "Never"
-                )
-                table.add_row(
-                    token.name,
-                    token.uid,
-                    token.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                    expired_at,
-                    last_used_at,
-                    ", ".join(token.scopes) if token.scopes else "-",
-                )
-            rich.print(table)
-        elif output == "json":
-            res: t.List[dict[str, t.Any]] = [t.to_dict() for t in tokens]
-            info = json_mod.dumps(res, indent=2, default=str)
-            rich.print(info)
-        elif output == "yaml":
-            res: t.List[dict[str, t.Any]] = [t.to_dict() for t in tokens]
-            info = yaml.dump(res, indent=2, sort_keys=False)
-            rich.print(Syntax(info, "yaml", background_color="default"))
-
-    _list()
+    raise click.BadParameter(
+        f"Invalid expiration format: {expires_str}. "
+        "Use duration (e.g., '30d', '1w', '24h') or date (e.g., '2024-12-31')."
+    )
 
 
 @api_token_command.command(name="create")
@@ -130,7 +157,7 @@ def create_api_token(
     scope: tuple[str, ...],
     expires: str | None,
     output: str,
-) -> None:  # type: ignore (not accessed)
+) -> None:
     """Create a new API token on BentoCloud.
 
     \b
@@ -143,99 +170,53 @@ def create_api_token(
 
     \b
     Examples:
-      bentoml cloud api-token create my-token --scope api --scope read_cluster
-      bentoml cloud api-token create my-token -s api -s write_organization --expires 30d
+      bentoml api-token create my-token --scope api --scope read_cluster
+      bentoml api-token create my-token -s api -s write_organization --expires 30d
     """
     import json as json_mod
-    from datetime import datetime
-    from datetime import timedelta
 
     import yaml
     from rich.panel import Panel
     from rich.syntax import Syntax
-    from simple_di import Provide
-    from simple_di import inject
 
-    from bentoml._internal.cloud import BentoCloudClient
+    expired_at = _parse_expiration(expires)
+    scopes = list(scope) if scope else None
 
-    def parse_expiration(expires_str: str | None) -> datetime | None:
-        if not expires_str:
-            return None
+    try:
+        token = bentoml.api_token.create(
+            name=name,
+            description=description,
+            scopes=scopes,
+            expired_at=expired_at,
+        )
+    except BentoMLException as e:
+        _raise_api_token_error(e, "create")
 
-        expires_str = expires_str.strip()
-
-        # Try parsing duration format (e.g., 30d, 1w, 24h)
-        if expires_str[-1].lower() in ("d", "w", "h"):
-            try:
-                value = int(expires_str[:-1])
-                unit = expires_str[-1].lower()
-                if unit == "d":
-                    return datetime.now() + timedelta(days=value)
-                elif unit == "w":
-                    return datetime.now() + timedelta(weeks=value)
-                elif unit == "h":
-                    return datetime.now() + timedelta(hours=value)
-            except ValueError:
-                pass
-
-        # Try parsing ISO date format
-        for fmt in ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S"):
-            try:
-                return datetime.strptime(expires_str, fmt)
-            except ValueError:
-                continue
-
-        raise click.BadParameter(
-            f"Invalid expiration format: {expires_str}. "
-            "Use duration (e.g., '30d', '1w', '24h') or date (e.g., '2024-12-31')."
+    # Display the token value prominently since it's only shown once
+    if token.token:
+        rich.print(
+            Panel(
+                f"[bold green]{token.token}[/bold green]",
+                title="[bold yellow]API Token (save this - it won't be shown again!)[/bold yellow]",
+                border_style="yellow",
+            )
         )
 
-    @inject
-    def _create(
-        _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
-    ) -> None:
-        expired_at = parse_expiration(expires)
-        scopes = list(scope) if scope else None
-
-        try:
-            token = _cloud_client.api_token.create(
-                name=name,
-                description=description,
-                scopes=scopes,
-                expired_at=expired_at,
-            )
-        except BentoMLException as e:
-            _raise_api_token_error(e, "create")
-
-        # Display the token value prominently since it's only shown once
-        if token.token:
-            rich.print(
-                Panel(
-                    f"[bold green]{token.token}[/bold green]",
-                    title="[bold yellow]API Token (save this - it won't be shown again!)[/bold yellow]",
-                    border_style="yellow",
-                )
-            )
-
-        if output == "table":
-            rich.print(f"\nToken [green]{token.name}[/] created successfully")
-            rich.print(f"  UID: {token.uid}")
-            if token.description:
-                rich.print(f"  Description: {token.description}")
-            if token.expired_at:
-                rich.print(
-                    f"  Expires: {token.expired_at.strftime('%Y-%m-%d %H:%M:%S')}"
-                )
-            else:
-                rich.print("  Expires: Never")
-        elif output == "json":
-            info = json_mod.dumps(token.to_dict(), indent=2, default=str)
-            rich.print(info)
-        elif output == "yaml":
-            info = yaml.dump(token.to_dict(), indent=2, sort_keys=False)
-            rich.print(Syntax(info, "yaml", background_color="default"))
-
-    _create()
+    if output == "table":
+        rich.print(f"\nToken [green]{token.name}[/] created successfully")
+        rich.print(f"  UID: {token.uid}")
+        if token.description:
+            rich.print(f"  Description: {token.description}")
+        if token.expired_at:
+            rich.print(f"  Expires: {token.expired_at.strftime('%Y-%m-%d %H:%M:%S')}")
+        else:
+            rich.print("  Expires: Never")
+    elif output == "json":
+        info = json_mod.dumps(token.to_dict(), indent=2, default=str)
+        rich.print(info)
+    elif output == "yaml":
+        info = yaml.dump(token.to_dict(), indent=2, sort_keys=False)
+        rich.print(Syntax(info, "yaml", background_color="default"))
 
 
 @api_token_command.command(name="get")
@@ -252,63 +233,53 @@ def create_api_token(
     type=click.Choice(["json", "yaml", "table"]),
     default="table",
 )
-def get_api_token(token_uid: str, output: str) -> None:  # type: ignore (not accessed)
+def get_api_token(token_uid: str, output: str) -> None:
     """Get an API token by UID from BentoCloud."""
     import json as json_mod
 
     import yaml
     from rich.syntax import Syntax
     from rich.table import Table
-    from simple_di import Provide
-    from simple_di import inject
 
-    from bentoml._internal.cloud import BentoCloudClient
+    try:
+        token = bentoml.api_token.get(token_uid=token_uid)
+    except BentoMLException as e:
+        _raise_api_token_error(e, "get")
 
-    @inject
-    def _get(
-        _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
-    ) -> None:
-        try:
-            token = _cloud_client.api_token.get(token_uid=token_uid)
-        except BentoMLException as e:
-            _raise_api_token_error(e, "get")
+    if token is None:
+        raise BentoMLException(f"API token with UID '{token_uid}' not found")
 
-        if token is None:
-            raise BentoMLException(f"API token with UID '{token_uid}' not found")
+    if output == "table":
+        table = Table(box=None, expand=True)
+        table.add_column("Field", style="bold")
+        table.add_column("Value", overflow="fold")
 
-        if output == "table":
-            table = Table(box=None, expand=True)
-            table.add_column("Field", style="bold")
-            table.add_column("Value", overflow="fold")
-
-            table.add_row("Name", token.name)
-            table.add_row("UID", token.uid)
-            table.add_row("Description", token.description or "-")
-            table.add_row("Created At", token.created_at.strftime("%Y-%m-%d %H:%M:%S"))
-            table.add_row(
-                "Expired At",
-                token.expired_at.strftime("%Y-%m-%d %H:%M:%S")
-                if token.expired_at
-                else "Never",
-            )
-            table.add_row(
-                "Last Used At",
-                token.last_used_at.strftime("%Y-%m-%d %H:%M:%S")
-                if token.last_used_at
-                else "Never",
-            )
-            table.add_row("Is Expired", str(token.is_expired))
-            table.add_row("Scopes", ", ".join(token.scopes) if token.scopes else "-")
-            table.add_row("Created By", token.created_by or token.user.name)
-            rich.print(table)
-        elif output == "json":
-            info = json_mod.dumps(token.to_dict(), indent=2, default=str)
-            rich.print(info)
-        elif output == "yaml":
-            info = yaml.dump(token.to_dict(), indent=2, sort_keys=False)
-            rich.print(Syntax(info, "yaml", background_color="default"))
-
-    _get()
+        table.add_row("Name", token.name)
+        table.add_row("UID", token.uid)
+        table.add_row("Description", token.description or "-")
+        table.add_row("Created At", token.created_at.strftime("%Y-%m-%d %H:%M:%S"))
+        table.add_row(
+            "Expired At",
+            token.expired_at.strftime("%Y-%m-%d %H:%M:%S")
+            if token.expired_at
+            else "Never",
+        )
+        table.add_row(
+            "Last Used At",
+            token.last_used_at.strftime("%Y-%m-%d %H:%M:%S")
+            if token.last_used_at
+            else "Never",
+        )
+        table.add_row("Is Expired", str(token.is_expired))
+        table.add_row("Scopes", ", ".join(token.scopes) if token.scopes else "-")
+        table.add_row("Created By", token.created_by or token.user.name)
+        rich.print(table)
+    elif output == "json":
+        info = json_mod.dumps(token.to_dict(), indent=2, default=str)
+        rich.print(info)
+    elif output == "yaml":
+        info = yaml.dump(token.to_dict(), indent=2, sort_keys=False)
+        rich.print(Syntax(info, "yaml", background_color="default"))
 
 
 @api_token_command.command(name="delete")
@@ -318,24 +289,13 @@ def get_api_token(token_uid: str, output: str) -> None:  # type: ignore (not acc
     type=click.STRING,
     required=True,
 )
-def delete_api_token(token_uid: str) -> None:  # type: ignore (not accessed)
+def delete_api_token(token_uid: str) -> None:
     """Delete an API token on BentoCloud."""
-    from simple_di import Provide
-    from simple_di import inject
-
-    from bentoml._internal.cloud import BentoCloudClient
-
-    @inject
-    def _delete(
-        _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
-    ) -> None:
-        try:
-            _cloud_client.api_token.delete(token_uid=token_uid)
-            rich.print(f"API token [green]{token_uid}[/] deleted successfully")
-        except BentoMLException as e:
-            _raise_api_token_error(e, "delete")
-
-    _delete()
+    try:
+        bentoml.api_token.delete(token_uid=token_uid)
+        rich.print(f"API token [green]{token_uid}[/] deleted successfully")
+    except BentoMLException as e:
+        _raise_api_token_error(e, "delete")
 
 
 def _raise_api_token_error(err: "BentoMLException", action: str) -> "t.NoReturn":

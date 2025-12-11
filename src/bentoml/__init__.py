@@ -143,6 +143,7 @@ if TYPE_CHECKING:
     from . import monitoring  # Monitoring API
     from . import cloud  # Cloud API
     from . import deployment  # deployment API
+    from . import api_token  # API token management
     from . import validators  # validators
 
     # isort: on
@@ -294,6 +295,7 @@ else:
     monitoring = _LazyLoader("bentoml.monitoring", globals(), "bentoml.monitoring")
     cloud = _LazyLoader("bentoml.cloud", globals(), "bentoml.cloud")
     deployment = _LazyLoader("bentoml.deployment", globals(), "bentoml.deployment")
+    api_token = _LazyLoader("bentoml.api_token", globals(), "bentoml.api_token")
     validators = _LazyLoader("bentoml.validators", globals(), "bentoml.validators")
     del _LazyLoader, FrameworkImporter
 
@@ -377,6 +379,7 @@ __all__ = [
     "gradio",
     "cloud",
     "deployment",
+    "api_token",
     "triton",
     "monitor",
     "load_config",

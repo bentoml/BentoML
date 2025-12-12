@@ -2,11 +2,12 @@
 BentoCloud API
 ==============
 
-This page provides API reference for creating and managing BentoCloud Deployments.
+This page provides API reference for managing BentoCloud resources including Deployments and API tokens.
 
 .. seealso::
 
-    See :doc:`/scale-with-bentocloud/deployment/manage-deployments` for usage details.
+    - :doc:`/scale-with-bentocloud/deployment/manage-deployments` for Deployment usage details
+    - :doc:`/scale-with-bentocloud/manage-api-tokens` for API token usage details
 
 Create
 ------
@@ -68,3 +69,38 @@ Remove a Deployment from BentoCloud.
 .. autofunction:: bentoml.deployment.delete
 
 For more information, see :ref:`scale-with-bentocloud/deployment/manage-deployments:delete`.
+
+API Token Management
+====================
+
+The ``bentoml.api_token`` module provides functions for managing API tokens on BentoCloud programmatically.
+
+List API tokens
+---------------
+
+List all API tokens in your organization.
+
+.. autofunction:: bentoml.api_token.list
+
+Create an API token
+-------------------
+
+Create a new API token with specified scopes and expiration.
+
+.. autofunction:: bentoml.api_token.create
+
+Get API token
+-------------
+
+Retrieve details about a specific API token by its UID.
+
+.. autofunction:: bentoml.api_token.get
+
+Delete API token
+----------------
+
+Delete an API token by its UID.
+
+.. autofunction:: bentoml.api_token.delete
+
+For more information and examples, see :doc:`/scale-with-bentocloud/manage-api-tokens`.

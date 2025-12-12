@@ -152,6 +152,104 @@ You can use a token with **Protected Endpoint Access** to access a protected Ben
       4. Click **Save**.
       5. Access the exposed URL of your Protected Deployment again and you should be able to access it.
 
+Manage API tokens programmatically
+-----------------------------------
+
+You can manage API tokens programmatically using the BentoML Python SDK. This is useful for automation, CI/CD pipelines, and integrating token management into your workflows.
+
+List API tokens
+^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+    import bentoml
+
+    # List all tokens
+    tokens = bentoml.api_token.list()
+    for token in tokens:
+        print(f"{token.name}: {token.uid}")
+
+    # Search for specific tokens
+    tokens = bentoml.api_token.list(search="my-token")
+
+Create an API token
+^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+    import bentoml
+    from datetime import datetime, timedelta
+
+    # Create a token with specific scopes
+    token = bentoml.api_token.create(
+        name="ci-cd-token",
+        description="Token for CI/CD pipeline",
+        scopes=["api", "read_cluster"],
+        expired_at=datetime.now() + timedelta(days=30)
+    )
+
+    # Save the token value - it won't be shown again!
+    print(f"Token value: {token.token}")
+
+Available scopes:
+
+- ``api``: General API access for managing BentoCloud resources
+- ``read_organization``: Read organization data
+- ``write_organization``: Write organization data
+- ``read_cluster``: Read cluster data
+- ``write_cluster``: Write cluster data
+
+Get API token details
+^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+    import bentoml
+
+    # Get token by UID
+    token = bentoml.api_token.get("token_uid_here")
+    if token:
+        print(f"Name: {token.name}")
+        print(f"Scopes: {token.scopes}")
+        print(f"Expires: {token.expired_at}")
+        print(f"Last used: {token.last_used_at}")
+
+Delete an API token
+^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+    import bentoml
+
+    # Delete a token by UID
+    bentoml.api_token.delete("token_uid_here")
+
+For the complete API reference, see :doc:`/reference/bentocloud/bentocloud-api`.
+
+Manage API tokens using the CLI
+--------------------------------
+
+You can also manage API tokens using the BentoML CLI:
+
+.. code-block:: bash
+
+    # List all tokens
+    bentoml api-token list
+
+    # Create a new token
+    bentoml api-token create my-token \
+        --scope api --scope read_cluster \
+        --expires 30d \
+        --description "My CI/CD token"
+
+    # Get token details
+    bentoml api-token get <token_uid>
+
+    # Delete a token
+    bentoml api-token delete <token_uid>
+
+For the complete CLI reference, see :doc:`/reference/bentocloud/bentocloud-cli`.
+
 Use environment variables for API authentication
 ------------------------------------------------
 

@@ -149,10 +149,7 @@ def _do_import(
         while True:
             path, name = os.path.split(path)
             module_name_parts.append(name)
-            if (
-                not os.path.exists(os.path.join(path, "__init__.py"))
-                or path == working_dir
-            ):
+            if path == working_dir:
                 break
         module_name = ".".join(module_name_parts[::-1])
     else:
@@ -208,9 +205,9 @@ def _do_import(
             attrs_str, instance = instances[0]
         else:
             raise ImportServiceError(
-                f'Multiple Service instances found in module "{module_name}", use '
-                '"<module>:<svc_variable_name>" to specify the service instance or '
-                "define only one service instance per python module/file"
+                f'Multiple `bentoml.Service` instances found in module "{module_name}", use '
+                f'"{module_name}:<svc_variable_name>" to specify the service instance or '
+                "define only one service instance per python module."
             )
 
     # set import_str for retrieving the service import origin
@@ -435,4 +432,6 @@ def load(
                     f"If you are attempting to import bento by tag: '{e2}'.\n"
                     f"If you are importing by python module path: '{e1}'."
                 ) from e2
+            except ValueError:  # not a valid bento tag
+                raise e1
     return svc

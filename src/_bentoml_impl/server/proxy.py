@@ -5,6 +5,7 @@ import contextlib
 import logging
 import typing as t
 
+import aiohttp
 import anyio
 import httpx
 from pyparsing import cast
@@ -23,16 +24,16 @@ if t.TYPE_CHECKING:
 logger = logging.getLogger("bentoml.server")
 
 
-async def _check_health(client: httpx.AsyncClient, health_endpoint: str) -> bool:
+async def _check_health(client: aiohttp.ClientSession, health_endpoint: str) -> bool:
     try:
-        response = await client.get(health_endpoint, timeout=5.0)
-        if response.status_code == 404:
+        response = await client.get(health_endpoint, timeout=aiohttp.ClientTimeout(5))
+        if response.status == 404:
             raise BentoMLConfigException(
                 f"Health endpoint {health_endpoint} not found (404). Please make sure the health "
                 "endpoint is correctly configured in the service config."
             )
-        return response.is_success
-    except (httpx.HTTPError, httpx.RequestError):
+        return response.ok
+    except aiohttp.ClientError:
         return False
 
 
@@ -57,22 +58,20 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
             or server_context.worker_index == 1
         )
         async with contextlib.AsyncExitStack() as stack:
+            proxy_port = service.config.get("http", {}).get("proxy_port", 8000)
+            proxy_url = f"http://localhost:{proxy_port}"
             proc: Process | None = None
             if (
                 instance_client := getattr(server_instance, "client", None)
-            ) is not None and isinstance(instance_client, httpx.AsyncClient):
+            ) is not None and isinstance(instance_client, aiohttp.ClientSession):
                 # TODO: support aiohttp client
                 client = instance_client
             else:
-                proxy_port = service.config.get("http", {}).get("proxy_port", 8000)
-                proxy_url = f"http://localhost:{proxy_port}"
                 client = await stack.enter_async_context(
-                    httpx.AsyncClient(
+                    aiohttp.ClientSession(
                         base_url=proxy_url,
-                        timeout=None,
-                        limits=httpx.Limits(
-                            max_connections=512, max_keepalive_connections=64
-                        ),
+                        timeout=aiohttp.ClientTimeout(),
+                        connector=aiohttp.TCPConnector(limit=512),
                     )
                 )
             if should_start_process:
@@ -99,7 +98,12 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
 
             app.state.client = client
             try:
-                state = {"proc": proc, "client": client}
+                state = {
+                    "proc": proc,
+                    "client": await stack.enter_async_context(
+                        httpx.AsyncClient(base_url=proxy_url, timeout=None)
+                    ),  # For backward compatibility
+                }
                 service.context.state.update(state)
                 yield state
             finally:
@@ -120,28 +124,38 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
         methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
     )
     async def reverse_proxy(request: Request, path: str):
-        url = httpx.URL(
-            path=f"/{path}", query=request.url.query.encode("utf-8") or None
-        )
-        client = t.cast(httpx.AsyncClient, app.state.client)
+        from contextlib import AsyncExitStack
+
+        import yarl
+        from starlette.background import BackgroundTask
+
+        url = yarl.URL.build(path=f"/{path}", query=request.url.query or None)
+        client = t.cast(aiohttp.ClientSession, app.state.client)
         headers = dict(request.headers)
         headers.pop("host", None)
-        req = client.build_request(
-            method=request.method, url=url, headers=headers, content=request.stream()
-        )
+        stack = AsyncExitStack()
         try:
-            resp = await client.send(req, stream=True)
-        except httpx.ConnectError:
-            return fastapi.Response(status_code=503)
+            resp = await stack.enter_async_context(
+                client.request(
+                    url=url,
+                    method=request.method,
+                    headers=headers,
+                    data=request.stream(),
+                )
+            )
+        except aiohttp.ClientError as e:
+            await stack.aclose()
+            return fastapi.Response(content=str(e), status_code=503)
         except Exception:
             logger.exception("Error occurred while proxying request")
+            await stack.aclose()
             return fastapi.Response(status_code=500)
 
         return StreamingResponse(
-            resp.aiter_raw(),
-            status_code=resp.status_code,
+            resp.content.iter_any(),
+            status_code=resp.status,
             headers=resp.headers,
-            background=resp.aclose,
+            background=BackgroundTask(stack.aclose),
         )
 
     return app

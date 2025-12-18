@@ -93,8 +93,11 @@ ENV PATH=/app/.venv/bin:${PATH}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/") %}
 
 COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
+{% for name in __options__build_include %}
+COPY --chown={{ bento__user }}:{{ bento__user }} ./src/{{ name }} ./src/{{ name }}
+{% endfor %}
 # install python packages
-{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {{ __pip_cache__ }} {% endcall -%} {{ __secret_exports__ }}uv --directory ./env/python/ pip install -r requirements.txt
+{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {{ __pip_cache__ }} {% endcall -%} {{ __secret_exports__ }}uv --directory ./src pip install -r $BENTO_PATH/env/python/requirements.txt
 
 {% for command in __options__post_commands %}
 {% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {% endcall -%} {{ __secret_exports__ }}{{ command }}

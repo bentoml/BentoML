@@ -49,6 +49,7 @@ class Image:
     pack_git_packages: bool = True
     python_requirements: str = ""
     post_commands: t.List[str] = attrs.field(factory=list)
+    build_include_paths: t.List[str] = attrs.field(factory=list)
     scripts: t.Dict[str, str] = attrs.field(factory=dict, init=False)
     _after_pip_install: bool = attrs.field(init=False, default=False, repr=False)
     _uv_lock: bool = attrs.field(init=False, default=False, repr=False)
@@ -173,6 +174,19 @@ class Image:
         self.scripts[script] = target_script
         return self
 
+    def build_include(self, *file_paths: str) -> t.Self:
+        """Include additional files in the build context. Supports chaining call.
+        The path is relative to the bento context root.
+
+        Example:
+
+        .. code-block:: python
+
+            image = Image("debian:latest").build_include("data/", "config.yaml")
+        """
+        self.build_include_paths.extend(file_paths)
+        return self
+
     def freeze(
         self, bento_fs: Path, envs: list[BentoEnvSchema], platform_: str | None = None
     ) -> ImageInfo:
@@ -193,6 +207,7 @@ class Image:
             commands=self.commands,
             python_requirements=python_requirements,
             post_commands=self.post_commands,
+            build_include=self.build_include_paths,
         )
         # Prepare env/docker files
         docker_folder = bento_fs.joinpath("env", "docker")
@@ -257,14 +272,11 @@ class Image:
             for req in requirements_file.requirements
         )
         src_wheels = bento_fs / "src/wheels"
-        wheels_folder = py_folder.joinpath("wheels")
-        if src_wheels.exists():
-            shutil.move(src_wheels, wheels_folder)
 
         with requirements_in.open("w") as f:
             f.write(requirements_file.dumps(preserve_one_empty_line=True))
             if not has_bentoml_req:
-                sdist_name = build_bentoml_sdist(str(wheels_folder))
+                sdist_name = build_bentoml_sdist(str(src_wheels))
                 bento_req = get_bentoml_requirement()
                 if bento_req is not None:
                     logger.info(
@@ -277,7 +289,7 @@ class Image:
             requirements_out.parent.mkdir(parents=True, exist_ok=True)
             requirements_out.write_text(requirements_in.read_text())
             PythonOptions.fix_dep_urls(
-                str(requirements_out), str(wheels_folder), self.pack_git_packages
+                str(requirements_out), str(src_wheels), self.pack_git_packages
             )
             return requirements_out.read_text()
         lock_args = [
@@ -309,7 +321,7 @@ class Image:
                 cmd,
                 text=True,
                 stderr=subprocess.DEVNULL if get_quiet_mode() else None,
-                cwd=py_folder,
+                cwd=bento_fs / "src",
             )
         except subprocess.CalledProcessError as e:
             raise BentoMLException(
@@ -319,8 +331,10 @@ class Image:
             ) from e
 
         PythonOptions.fix_dep_urls(
-            str(requirements_out), str(wheels_folder), self.pack_git_packages
+            str(requirements_out), str(src_wheels), self.pack_git_packages
         )
+        if src_wheels.is_dir():
+            self.build_include("wheels")
         return requirements_out.read_text()
 
 

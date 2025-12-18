@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pydantic
+from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 import bentoml
@@ -91,3 +92,43 @@ def test_service_root_input(tmp_path: Path):
 
         assert resp.status_code == 200
         assert resp.text == "root-hello"
+
+
+app = FastAPI()
+
+
+@bentoml.service(path_prefix="/test-path")
+@bentoml.asgi_app(app, path="/fastapi")
+class PrefixedService:
+    @bentoml.api()
+    def ping(self) -> str:
+        return "pong"
+
+    @app.get("/greet/{name}")
+    def greet(self, name: str):
+        return {"message": f"hello {name}"}
+
+
+def test_service_with_path_prefix():
+    assert PrefixedService.path_prefix == "/test-path"
+    assert PrefixedService.config["endpoints"]["livez"] == "/test-path/livez"
+
+    with TestClient(app=PrefixedService.to_asgi(True)) as client:
+        resp = client.get("/test-path")
+        assert resp.status_code == 200
+
+        resp = client.get("/test-path/livez")
+        assert resp.status_code == 200
+
+        resp = client.get("/test-path/metrics")
+        assert resp.status_code == 200
+
+        resp = client.get("/test-path/fastapi/greet/world")
+
+        assert resp.status_code == 200
+        assert resp.json() == {"message": "hello world"}
+
+        resp = client.post("/test-path/ping")
+
+        assert resp.status_code == 200
+        assert resp.text == "pong"

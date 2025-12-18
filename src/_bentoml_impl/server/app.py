@@ -30,6 +30,7 @@ from bentoml._internal.server.http_app import log_exception
 from bentoml._internal.types import LazyType
 from bentoml._internal.utils import is_async_callable
 from bentoml._internal.utils.metrics import exponential_buckets
+from bentoml._internal.utils.uri import join_paths
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import ServiceUnavailable
 
@@ -181,6 +182,9 @@ class ServiceAppFactory(BaseAppFactory):
         app = super().__call__()
         app.add_route("/schema.json", self.schema_view, name="schema")
 
+        def build_path(*path_segments: str) -> str:
+            return join_paths(self.service.path_prefix, *path_segments)
+
         if self.service.has_custom_command():
             # This may obscure all the routes behind, but this is expected.
             self.service.mount_asgi_app(create_proxy_app(self.service), name="proxy")
@@ -191,18 +195,22 @@ class ServiceAppFactory(BaseAppFactory):
         if self.is_main:
             if BentoMLContainer.new_index:
                 assets = Path(__file__).parent / "assets"
-                app.mount("/assets", StaticFiles(directory=assets), name="assets")
+                app.mount(
+                    build_path("assets"), StaticFiles(directory=assets), name="assets"
+                )
             else:
                 from bentoml._internal import server
 
                 assets = Path(server.__file__).parent / "static_content"
                 app.mount(
-                    "/static_content",
+                    build_path("static_content"),
                     StaticFiles(directory=assets),
                     name="static_content",
                 )
-                app.add_route("/docs.json", self.openapi_spec_view, name="openapi-spec")
-            app.add_route("/", self.index_page, name="index")
+                app.add_route(
+                    build_path("docs.json"), self.openapi_spec_view, name="openapi-spec"
+                )
+            app.add_route(build_path("/"), self.index_page, name="index")
 
         return app
 
@@ -610,13 +618,11 @@ class ServiceAppFactory(BaseAppFactory):
     def routes(self) -> list[BaseRoute]:
         from starlette.routing import Route
 
-        routes = super().routes
+        routes = self.get_system_routes(self.service.path_prefix)
 
         for name, method in self.service.apis.items():
             api_endpoint = functools.partial(self.api_endpoint_wrapper, name)
-            route_path = method.route
-            if not route_path.startswith("/"):
-                route_path = "/" + route_path
+            route_path = join_paths(self.service.path_prefix, method.route)
             routes.append(Route(route_path, api_endpoint, methods=["POST"], name=name))
             if method.is_task:
                 routes.append(

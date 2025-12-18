@@ -167,6 +167,7 @@ def main(
     from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
     from bentoml._internal.utils.args import set_arguments
+    from bentoml._internal.utils.uri import join_paths
 
     if args:
         set_arguments(json.loads(args))
@@ -193,7 +194,9 @@ def main(
     BentoMLContainer.development_mode.set(development_mode)
 
     server_context.service_name = service.name
-    server_context.service_routes = [api.route for api in service.apis.values()]
+    server_context.service_routes = [
+        join_paths(service.path_prefix, api.route) for api in service.apis.values()
+    ]
     if service.bento is None:
         server_context.bento_name = service.name
         server_context.bento_version = "not available"

@@ -146,7 +146,9 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
         except aiohttp.ClientError as e:
             logger.error("Client error occurred while proxying request: %s", str(e))
             await stack.aclose()
-            return fastapi.Response(content="Upstream service unavailable.", status_code=503)
+            return fastapi.Response(
+                content="Upstream service unavailable.", status_code=503
+            )
         except Exception:
             logger.exception("Error occurred while proxying request")
             await stack.aclose()

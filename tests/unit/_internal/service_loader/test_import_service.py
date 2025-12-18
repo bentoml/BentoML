@@ -43,7 +43,7 @@ def test_load_multi_service_module():
     assert svc.name == "test-bento-service-in-module-ii"
 
     with pytest.raises(
-        ImportServiceError, match="Multiple Service instances found in module"
+        ImportServiceError, match="Multiple `bentoml.Service` instances found in module"
     ):
         import_service("bento_service_in_module.multi_service")
 
@@ -54,6 +54,6 @@ def test_load_multi_service_module():
     assert svc.name == "test-multi-service-in-package-ii"
 
     with pytest.raises(
-        ImportServiceError, match="Multiple Service instances found in module"
+        ImportServiceError, match="Multiple `bentoml.Service` instances found in module"
     ):
         import_service("multi_service_in_package")

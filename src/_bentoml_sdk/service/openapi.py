@@ -21,6 +21,7 @@ from bentoml._internal.service.openapi.utils import exception_schema
 from bentoml._internal.types import LazyType
 from bentoml._internal.utils import deep_merge
 from bentoml._internal.utils.cattr import bentoml_cattr
+from bentoml._internal.utils.uri import join_paths
 from bentoml.exceptions import InternalServerError
 from bentoml.exceptions import InvalidArgument
 from bentoml.exceptions import NotFound
@@ -38,10 +39,9 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
     mounted_app_paths = {}
     schema_components: dict[str, dict[str, Schema]] = {}
 
-    def join_path(prefix: str, path: str) -> str:
-        return f"{prefix.rstrip('/')}/{path.lstrip('/')}"
-
     for app, path, _ in svc.mount_apps:
+        if svc.path_prefix:
+            path = path[len(svc.path_prefix) :]
         if LazyType["fastapi.FastAPI"]("fastapi.FastAPI").isinstance(app):
             from fastapi.openapi.utils import get_openapi
 
@@ -52,7 +52,7 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
             )
             mounted_app_paths.update(
                 {
-                    join_path(path, k): bentoml_cattr.structure(v, PathItem)
+                    join_paths(path, k): bentoml_cattr.structure(v, PathItem)
                     for k, v in openapi["paths"].items()
                 }
             )

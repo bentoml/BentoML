@@ -102,6 +102,45 @@ Each API endpoint has a unique route (URL path). By default, the route is derive
         result = self.pipeline(text)
         return result[0]['summary_text']
 
+Service path prefix
+^^^^^^^^^^^^^^^^^^^
+
+You can add a path prefix to all API endpoints of a Service using the ``path_prefix`` parameter in the ``@bentoml.service`` decorator. This is useful when you want to group all endpoints of a Service under a common URL path.
+
+.. code-block:: python
+
+    @bentoml.service(path_prefix="/v1")
+    class Summarization:
+        @bentoml.api
+        def summarize(self, text: str) -> str:
+            result = self.pipeline(text)
+            return result[0]['summary_text']
+
+In this example, the ``summarize`` endpoint will be available at ``/v1/summarize`` instead of ``/summarize``. The path prefix is also applied to:
+
+- All API endpoints defined with ``@bentoml.api``
+- Mounted ASGI applications via ``@bentoml.asgi_app`` or ``mount_asgi_app()``
+- Health check endpoints (``/livez`` and ``/readyz``)
+
+For example, if you mount an ASGI application with ``@bentoml.asgi_app(app, path="/chat")`` and set ``path_prefix="/v1"`` on the Service, the application will be available at ``/v1/chat``.
+
+.. code-block:: python
+
+    from fastapi import FastAPI
+
+    chat_app = FastAPI()
+
+    @bentoml.service(path_prefix="/v1")
+    @bentoml.asgi_app(chat_app, path="/chat")
+    class MyService:
+        ...
+
+    # chat_app routes are now available under /v1/chat
+
+.. note::
+
+    This is different from the ``route`` parameter in ``@bentoml.api``, which customizes the path for a single endpoint. ``path_prefix`` applies to the entire Service.
+
 .. _inference-context:
 
 Inference context

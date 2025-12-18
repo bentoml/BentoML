@@ -12,6 +12,8 @@ from starlette.middleware import Middleware
 from starlette.responses import PlainTextResponse
 from starlette.responses import Response
 
+from bentoml._internal.utils.uri import join_paths
+
 from ..utils import with_app_arg
 
 if TYPE_CHECKING:
@@ -99,19 +101,46 @@ class BaseAppFactory(abc.ABC):
             lifespan=self.lifespan,
         )
 
-    @property
-    def routes(self) -> list[BaseRoute]:
+    def get_system_routes(self, path_prefix: str = "") -> list[BaseRoute]:
         from starlette.routing import Route
 
         from ..configuration.containers import BentoMLContainer
 
         routes: list[BaseRoute] = []
-        routes.append(Route(path="/livez", name="livez", endpoint=self.livez))
-        routes.append(Route(path="/healthz", name="healthz", endpoint=self.livez))
-        routes.append(Route(path="/readyz", name="readyz", endpoint=self.readyz))
+        routes.append(
+            Route(
+                path=join_paths(path_prefix, "/livez"),
+                name="livez",
+                endpoint=self.livez,
+            )
+        )
+        routes.append(
+            Route(
+                path=join_paths(path_prefix, "/healthz"),
+                name="healthz",
+                endpoint=self.livez,
+            )
+        )
+        routes.append(
+            Route(
+                path=join_paths(path_prefix, "/readyz"),
+                name="readyz",
+                endpoint=self.readyz,
+            )
+        )
         if BentoMLContainer.api_server_config.metrics.enabled.get():
-            routes.append(Route(path="/metrics", name="metrics", endpoint=self.metrics))
+            routes.append(
+                Route(
+                    path=join_paths(path_prefix, "/metrics"),
+                    name="metrics",
+                    endpoint=self.metrics,
+                )
+            )
         return routes
+
+    @property
+    def routes(self) -> list[BaseRoute]:
+        return self.get_system_routes()
 
     @property
     def middlewares(self) -> list[Middleware]:

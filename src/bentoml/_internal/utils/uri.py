@@ -105,3 +105,13 @@ def make_safe_connect():
             raise BadInput("Connection blocked due to insecure input URL") from e
     finally:
         Loop.create_connection = original_create_connection
+
+
+def join_paths(*paths: str) -> str:
+    """Join multiple paths into a single path, ensuring proper separators."""
+    result = ""
+    for path in paths:
+        if not path:
+            continue
+        result = result.rstrip("/") + "/" + path.lstrip("/")
+    return result or "/"

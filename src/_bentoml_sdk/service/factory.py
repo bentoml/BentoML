@@ -26,6 +26,7 @@ from bentoml._internal.context import ServiceContext
 from bentoml._internal.models import Model as StoredModel
 from bentoml._internal.utils import deprecated
 from bentoml._internal.utils import dict_filter_none
+from bentoml._internal.utils.uri import join_paths
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
 from bentoml.legacy import Runner
@@ -93,6 +94,7 @@ class Service(t.Generic[T_co]):
     inner: type[T_co] = _DummyService
     image: t.Optional[Image] = None
     description: t.Optional[str] = None
+    path_prefix: str = ""
     envs: t.List[BentoEnvSchema] = attrs.field(factory=list, converter=convert_envs)
     labels: t.Dict[str, str] = attrs.field(factory=dict)
     models: list[Model[t.Any]] = attrs.field(factory=list)
@@ -141,7 +143,8 @@ class Service(t.Generic[T_co]):
 
         pre_mount_apps = getattr(self.inner, "__bentoml_mounted_apps__", [])
         if pre_mount_apps:
-            self.mount_apps.extend(pre_mount_apps)
+            for app, path, name in pre_mount_apps:
+                self.mount_asgi_app(app, path=path, name=name)
             delattr(self.inner, "__bentoml_mounted_apps__")
 
         if self.config.get("workers") is None and self.has_custom_command():
@@ -150,6 +153,14 @@ class Service(t.Generic[T_co]):
             resources = system_resources()
             workers = min(16, int(resources["cpu"] / 2) or 1)
             self.config["workers"] = workers
+
+        if self.path_prefix:
+            livez_endpoint = join_paths(self.path_prefix, "livez")
+            readyz_endpoint = join_paths(self.path_prefix, "readyz")
+            self.config.setdefault("endpoints", {}).setdefault("livez", livez_endpoint)
+            self.config.setdefault("endpoints", {}).setdefault(
+                "readyz", readyz_endpoint
+            )
 
     def __hash__(self):
         return hash(self.name)
@@ -271,26 +282,9 @@ class Service(t.Generic[T_co]):
         return get_default_svc_readme(self)
 
     def schema(self) -> dict[str, t.Any]:
-        def _build_full_path(*path_segments: str) -> str:
-            # Combines URL path segments into a normalized path.
-            # Ensures it starts with '/' and has no trailing '/' (unless it's just '/').
-            # Collapses multiple slashes.
-            parts: list[str] = []
-            for segment in path_segments:
-                if not segment:
-                    continue
-                # Split by '/' and filter out empty strings that result from '//' or trailing/leading '/'
-                parts.extend(p for p in segment.split("/") if p)
-
-            if not parts:
-                return "/"
-
-            normalized_path = "/" + "/".join(parts)
-            return normalized_path
-
         # Add API method routes (these are already full paths from method.route)
         all_paths: dict[str, PathMetadata] = dict(
-            (_build_full_path(method.route), {"mounted": False})
+            (join_paths(self.path_prefix, method.route), {"mounted": False})
             for method in self.apis.values()
         )
 
@@ -309,23 +303,24 @@ class Service(t.Generic[T_co]):
                         item_specific_path = route_item.path
                         # current_prefix is the path *to* this app.
                         # item_specific_path is relative to this app.
-                        full_item_path = _build_full_path(
-                            current_prefix, item_specific_path
-                        )
+                        full_item_path = join_paths(current_prefix, item_specific_path)
                         all_paths[full_item_path] = {"mounted": True}
 
                         if hasattr(route_item, "app") and route_item.app is not None:
                             extract_routes_from_asgi_app(route_item.app, full_item_path)
 
         for mounted_app, mount_path_prefix, _ in self.mount_apps:
-            normalized_base_prefix = _build_full_path(mount_path_prefix)
+            normalized_base_prefix = join_paths(mount_path_prefix)
             extract_routes_from_asgi_app(mounted_app, normalized_base_prefix)
-
+        routes = [method.schema() for method in self.apis.values()]
+        if self.path_prefix:
+            for route in routes:
+                route["route"] = join_paths(self.path_prefix, route["route"])
         return dict_filter_none(
             {
                 "name": self.name,
                 "type": "service",
-                "routes": [method.schema() for method in self.apis.values()],
+                "routes": routes,
                 "description": getattr(self.inner, "__doc__", None),
                 "paths": all_paths,
             }
@@ -380,7 +375,7 @@ class Service(t.Generic[T_co]):
     def mount_asgi_app(
         self, app: ext.ASGIApp, path: str = "/", name: str | None = None
     ) -> None:
-        self.mount_apps.append((app, path, name))  # type: ignore
+        self.mount_apps.append((app, join_paths(self.path_prefix, path), name))  # type: ignore
 
     def mount_wsgi_app(
         self, app: ext.WSGIApp, path: str = "/", name: str | None = None
@@ -544,6 +539,7 @@ def service(
     name: str | None = None,
     image: Image | None = None,
     description: str | None = None,
+    path_prefix: str | None = None,
     envs: list[ServiceEnvConfig] | None = None,
     labels: dict[str, str] | None = None,
     cmd: list[str] | None = None,
@@ -559,6 +555,7 @@ def service(
     name: str | None = None,
     image: Image | None = None,
     description: str | None = None,
+    path_prefix: str | None = None,
     envs: list[ServiceEnvConfig] | None = None,
     labels: dict[str, str] | None = None,
     cmd: list[str] | None = None,
@@ -566,6 +563,20 @@ def service(
     **kwargs: Unpack[Config],
 ) -> t.Any:
     """Mark a class as a BentoML service.
+
+    Args:
+        name: The name of the service. Defaults to the class name.
+        image: The image to use for the service.
+        description: A description of the service.
+        path_prefix: A URL path prefix to apply to all API endpoints of this service.
+            For example, setting ``path_prefix="/v1"`` will make an endpoint
+            ``/predict`` available at ``/v1/predict``. This also applies to mounted
+            ASGI applications and health check endpoints.
+        envs: Environment variables to set for the service.
+        labels: Labels to attach to the service.
+        cmd: A custom command to start the service.
+        **kwargs: Additional service configurations such as ``traffic``, ``resources``,
+            ``workers``, etc.
 
     Example:
 
@@ -586,6 +597,7 @@ def service(
             inner=inner,
             image=image,
             description=description,
+            path_prefix=path_prefix,
             envs=envs or [],
             labels=labels or {},
             cmd=cmd,

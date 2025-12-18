@@ -228,6 +228,11 @@ class OTLPSchema(TypedDict, total=False):
     )  # type: ignore
 
 
+class RunnerConnectionSchema(TypedDict, total=False):
+    max_requests: Posint
+    max_age: Posfloat
+
+
 class TracingSchema(TypedDict, total=False):
     exporter_type: Literal["zipkin", "jaeger", "otlp", "in_memory"]
     sample_rate: Annotated[float, Ge(0.0), Le(1.0)]
@@ -257,6 +262,7 @@ class ServiceConfig(TypedDict, total=False):
     extra_ports: list[int]
     backlog: Annotated[int, Ge(64)]
     max_runner_connections: Posint
+    runner_connection: RunnerConnectionSchema
     resources: ResourceSchema
     workers: WorkerSchema
     replicate_process: bool

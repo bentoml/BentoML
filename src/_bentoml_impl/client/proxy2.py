@@ -58,6 +58,67 @@ async def map_exception(resp: aiohttp.ClientResponse) -> BentoMLException:
     return exc(await resp.text(), error_code=status)
 
 
+class SessionManager:
+    def __init__(
+        self,
+        url: str,
+        timeout: float,
+        headers: dict[str, str],
+        app: ASGIApp | None = None,
+        max_age: float = 300.0,
+        max_requests: int = 100,
+    ) -> None:
+        self.max_age = max_age
+        self.max_requests = max_requests
+
+        self._session: aiohttp.ClientSession | None = None
+        self._created_at = 0.0
+        self._request_count = 0
+
+        parsed = urlparse(url)
+        connector: aiohttp.BaseConnector | None = None
+        if app is not None:
+            from aiohttp_asgi_connector import ASGIApplicationConnector
+
+            connector = ASGIApplicationConnector(app)  # type: ignore[arg-type]
+            url = "http://127.0.0.1:3000"
+        elif parsed.scheme == "file":
+            from aiohttp import UnixConnector
+
+            connector = UnixConnector(path=uri_to_path(url))
+            url = "http://127.0.0.1:3000"
+        elif parsed.scheme == "tcp":
+            url = f"http://{parsed.netloc}"
+        self._make_client = lambda: aiohttp.ClientSession(
+            base_url=url,
+            headers=headers,
+            timeout=aiohttp.ClientTimeout(total=timeout),
+            connector=connector,
+        )
+
+    def _should_refresh(self) -> bool:
+        if (time.monotonic() - self._created_at) > self.max_age:
+            return True
+        if self._request_count > self.max_requests:
+            return True
+        return False
+
+    async def get_session(self) -> aiohttp.ClientSession:
+        if self._session is None or self._should_refresh():
+            if self._session is not None:
+                await self._session.close()
+            self._session = self._make_client()
+            self._created_at = time.monotonic()
+            self._request_count = 0
+        self._request_count += 1
+        return self._session
+
+    async def close(self) -> None:
+        if self._session is not None:
+            await self._session.close()
+            self._session = None
+
+
 @attr.define(slots=False)
 class AsyncClient(AbstractClient):
     url: str
@@ -82,6 +143,8 @@ class AsyncClient(AbstractClient):
         server_ready_timeout: float | None = None,
         token: str | None = None,
         timeout: float = 30,
+        max_age: float = 300.0,
+        max_requests: int = 100,
         app: ASGIApp | None = None,
     ) -> None:
         """Create a client instance from a URL.
@@ -142,43 +205,18 @@ class AsyncClient(AbstractClient):
             server_ready_timeout=server_ready_timeout,
             service=service,
         )
+        self._session_manager = SessionManager(
+            url=url,
+            timeout=timeout,
+            headers=default_headers,
+            app=app,
+            max_age=max_age,
+            max_requests=max_requests,
+        )
 
     @_temp_dir.default  # type: ignore
     def default_temp_dir(self) -> tempfile.TemporaryDirectory[str]:
         return tempfile.TemporaryDirectory(prefix="bentoml-client-")
-
-    @staticmethod
-    def _make_client(
-        url: str,
-        headers: t.Mapping[str, str],
-        timeout: float,
-        app: ASGIApp | None = None,
-    ) -> aiohttp.ClientSession:
-        parsed = urlparse(url)
-        connector: aiohttp.BaseConnector | None = None
-        if app is not None:
-            from aiohttp_asgi_connector import ASGIApplicationConnector
-
-            connector = ASGIApplicationConnector(app)  # type: ignore[arg-type]
-            url = "http://127.0.0.1:3000"
-        elif parsed.scheme == "file":
-            from aiohttp import UnixConnector
-
-            connector = UnixConnector(path=uri_to_path(url))
-            url = "http://127.0.0.1:3000"
-        elif parsed.scheme == "tcp":
-            url = f"http://{parsed.netloc}"
-
-        return aiohttp.ClientSession(
-            base_url=url,
-            headers=headers,
-            timeout=aiohttp.ClientTimeout(total=timeout),
-            connector=connector,
-        )
-
-    @cached_property
-    def client(self) -> aiohttp.ClientSession:
-        return self._make_client(self.url, self.default_headers, self.timeout, self.app)
 
     @cached_property
     def serde(self) -> Serde:
@@ -187,8 +225,9 @@ class AsyncClient(AbstractClient):
         return ALL_SERDE[self.media_type]()
 
     async def close(self) -> None:
-        if "client" in vars(self):
-            await self.client.close()
+        await self._session_manager.close()
+        self._file_manager.close()
+        self._temp_dir.cleanup()
 
     def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         try:
@@ -210,8 +249,8 @@ class AsyncClient(AbstractClient):
             await self.wait_until_server_ready(self.server_ready_timeout)
         if self.service is None:
             schema_url = urljoin(self.url, "/schema.json")
-
-            async with self.client.get("/schema.json") as resp:
+            client = await self._session_manager.get_session()
+            async with client.get("/schema.json") as resp:
                 if not resp.ok:
                     raise BentoMLException(f"Failed to fetch schema from {schema_url}")
                 for route in (await resp.json())["routes"]:
@@ -231,8 +270,9 @@ class AsyncClient(AbstractClient):
             timeout = self.timeout
         end = time.monotonic() + timeout
         while (current := time.monotonic()) < end:
+            client = await self._session_manager.get_session()
             try:
-                async with self.client.get(
+                async with client.get(
                     self._readyz_endpoint, timeout=aiohttp.ClientTimeout(end - current)
                 ) as resp:
                     if resp.status == 200:
@@ -242,8 +282,9 @@ class AsyncClient(AbstractClient):
         raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
 
     async def is_ready(self, timeout: int | None = None) -> bool:
+        client = await self._session_manager.get_session()
         try:
-            resp = await self.client.get(
+            resp = await client.get(
                 self._readyz_endpoint,
                 timeout=aiohttp.ClientTimeout(timeout) if timeout else None,
             )
@@ -262,11 +303,12 @@ class AsyncClient(AbstractClient):
     async def _submit(
         self, __endpoint: ClientEndpoint, /, *args: t.Any, **kwargs: t.Any
     ) -> AsyncTask:
+        client = await self._session_manager.get_session()
         try:
             headers = CIMultiDict[str]()
             body = self._build_payload(__endpoint, args, kwargs, headers)
             url = f"{__endpoint.route}/submit"
-            async with self.client.post(url, data=body, headers=headers) as resp:
+            async with client.post(url, data=body, headers=headers) as resp:
                 if not resp.ok:
                     raise BentoMLException(
                         f"Error making request: {resp.status}: {await resp.text()}",
@@ -293,11 +335,11 @@ class AsyncClient(AbstractClient):
         *,
         headers: t.Mapping[str, str] | None = None,
     ) -> t.Any:
+        client = await self._session_manager.get_session()
         try:
-            self.client.request
             headers = CIMultiDict({"Content-Type": self.media_type, **(headers or {})})
             body = self._build_payload(endpoint, args, kwargs, headers)
-            resp = await self.client.post(endpoint.route, data=body, headers=headers)
+            resp = await client.post(endpoint.route, data=body, headers=headers)
             if not resp.ok:
                 raise await map_exception(resp)
             if endpoint.stream_output:
@@ -514,7 +556,8 @@ class AsyncClient(AbstractClient):
     async def _get_task_status(
         self, __endpoint: ClientEndpoint, /, task_id: str
     ) -> ResultStatus:
-        async with self.client.get(
+        client = await self._session_manager.get_session()
+        async with client.get(
             f"{__endpoint.route}/status", params={"task_id": task_id}
         ) as resp:
             if not resp.ok:
@@ -523,7 +566,8 @@ class AsyncClient(AbstractClient):
             return ResultStatus(data["status"])
 
     async def _cancel_task(self, __endpoint: ClientEndpoint, /, task_id: str) -> None:
-        async with self.client.put(
+        client = await self._session_manager.get_session()
+        async with client.put(
             f"{__endpoint.route}/cancel", params={"task_id": task_id}
         ) as resp:
             if not resp.ok:
@@ -532,7 +576,8 @@ class AsyncClient(AbstractClient):
     async def _retry_task(
         self, __endpoint: ClientEndpoint, /, task_id: str
     ) -> AsyncTask:
-        async with self.client.post(
+        client = await self._session_manager.get_session()
+        async with client.post(
             f"{__endpoint.route}/retry", params={"task_id": task_id}
         ) as resp:
             if not resp.ok:
@@ -543,7 +588,8 @@ class AsyncClient(AbstractClient):
     async def _get_task_result(
         self, __endpoint: ClientEndpoint, /, task_id: str
     ) -> t.Any:
-        async with self.client.get(
+        client = await self._session_manager.get_session()
+        async with client.get(
             f"{__endpoint.route}/get", params={"task_id": task_id}
         ) as resp:
             if not resp.ok:
@@ -623,8 +669,15 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
             timeout = (
                 svc_config.get(service.name, {}).get("traffic", {}).get("timeout") or 60
             ) * 1.01  # get the service timeout add 1% margin for the client
+            runner_conn_config = svc_config.get(service.name, {}).get(
+                "runner_connection", {}
+            )
+            max_age = runner_conn_config.get("max_age", 300.0)
+            max_requests = runner_conn_config.get("max_requests", 100)
         else:
             timeout = 60
+            max_age = 300.0
+            max_requests = 100
         self._async = AsyncClient(
             url,
             media_type=media_type,
@@ -632,6 +685,8 @@ class RemoteProxy(AbstractClient, t.Generic[T]):
             timeout=timeout,
             server_ready_timeout=0,
             app=app,
+            max_age=max_age,
+            max_requests=max_requests,
         )
         self._sync = SyncClient(self._async)
         if service is not None:

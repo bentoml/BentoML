@@ -95,6 +95,10 @@ _SERVICE_CONFIG = {
     },
     s.Optional("backlog"): s.And(int, ensure_larger_than(64)),
     s.Optional("max_runner_connections"): s.And(int, ensure_larger_than_zero),
+    s.Optional("runner_connection"): {
+        s.Optional("max_requests"): s.And(int, ensure_larger_than_zero),
+        s.Optional("max_age"): s.And(float, ensure_larger_than_zero),
+    },
     s.Optional("metrics"): {
         "enabled": bool,
         "namespace": str,

@@ -57,6 +57,7 @@ def list_command(
         table.add_column("Secret", overflow="fold")
         table.add_column("Created_At", overflow="fold")
         table.add_column("Mount_As", overflow="fold")
+        table.add_column("Stage", overflow="fold")
         table.add_column("Keys", overflow="fold")
         table.add_column("Path", overflow="fold")
         table.add_column("Cluster", overflow="fold")
@@ -72,6 +73,7 @@ def list_command(
                 secret.name,
                 secret.created_at.strftime("%Y-%m-%d %H:%M:%S"),
                 mountAs,
+                secret.content.stage or "-",
                 ", ".join(keys),
                 secret.content.path if secret.content.path else "-",
                 secret.cluster.name,
@@ -173,6 +175,14 @@ def map_choice_to_type(ctx: Context, params: Parameter, value: t.Any):
     callback=map_choice_to_type,
 )
 @click.option(
+    "-s",
+    "--stage",
+    type=click.Choice(["build", "runtime", "all"]),
+    default="runtime",
+    show_default=True,
+    help="Availability stage of the secret",
+)
+@click.option(
     "--cluster",
     type=click.STRING,
     help="Name of the cluster",
@@ -208,6 +218,7 @@ def create(
     key_vals: t.List[tuple[str, str]],
     from_literal: bool,
     from_file: t.List[tuple[str, str]],
+    stage: t.Literal["build", "runtime", "all"],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     """Create a secret on BentoCloud.
@@ -236,6 +247,7 @@ def create(
             description=description,
             path=path,
             key_vals=key_vals,
+            stage=stage,
         )
         rich.print(f"Secret [green]{secret.name}[/] created successfully")
     except BentoMLException as e:
@@ -301,6 +313,14 @@ def delete(
     callback=map_choice_to_type,
 )
 @click.option(
+    "-s",
+    "--stage",
+    type=click.Choice(["build", "runtime", "all"]),
+    default="runtime",
+    show_default=True,
+    help="Availability stage of the secret",
+)
+@click.option(
     "-p",
     "--path",
     type=click.STRING,
@@ -331,6 +351,7 @@ def apply(
     key_vals: t.List[t.Tuple[str, str]],
     from_literal: bool,
     from_file: t.List[t.Tuple[str, str]],
+    stage: t.Literal["build", "runtime", "all"],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     """Apply a secret update on BentoCloud.
@@ -359,6 +380,7 @@ def apply(
             description=description,
             path=path,
             key_vals=key_vals,
+            stage=stage,
         )
         rich.print(f"Secret [green]{secret.name}[/] applied successfully")
     except BentoMLException as e:

@@ -70,6 +70,7 @@ class SecretAPI:
         description: str | None = None,
         path: str | None = None,
         key_vals: t.List[t.Tuple[str, str]] = [],
+        stage: str | None = None,
     ) -> Secret:
         """
         Create a new secret.
@@ -90,6 +91,7 @@ class SecretAPI:
             content=SecretContentSchema(
                 type=type,
                 path=path,
+                stage=stage,
                 items=[
                     SecretItem(key=key_val[0], value=key_val[1]) for key_val in key_vals
                 ],
@@ -121,6 +123,7 @@ class SecretAPI:
         description: str | None = None,
         path: str | None = None,
         key_vals: t.List[t.Tuple[str, str]] = [],
+        stage: str | None = None,
     ) -> Secret:
         """
         Update an existing secret.
@@ -139,6 +142,7 @@ class SecretAPI:
             content=SecretContentSchema(
                 type=type,
                 path=path,
+                stage=stage,
                 items=[
                     SecretItem(key=key_val[0], value=key_val[1]) for key_val in key_vals
                 ],

@@ -330,6 +330,8 @@ class SecretContentSchema:
     type: str
     items: t.List[SecretItem]
     path: t.Optional[str] = attr.field(default=None)
+    # Secret availability stage: build-time only, runtime only, or both.
+    stage: t.Optional[str] = attr.field(default=None)
 
 
 @attr.define

@@ -45,6 +45,12 @@ To create a secret from the BentoML command line interface, use the ``secret`` s
 
    bentoml secret create tmy-secret key1=value1 key2=value2
 
+Use the ``--stage`` flag to control when the secret is available: ``build`` (image build only), ``runtime`` (deployment only), or ``all`` (both). For example, to make a build-time-only secret:
+
+.. code-block:: bash
+
+   bentoml secret create hello-secret API_KEY=abc123 --stage build
+
 
 Modify a secret
 ---------------

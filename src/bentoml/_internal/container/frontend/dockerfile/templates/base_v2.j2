@@ -97,7 +97,10 @@ COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
 COPY --chown={{ bento__user }}:{{ bento__user }} ./src/{{ name }} ./src/{{ name }}
 {% endfor %}
 # install python packages
-{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {{ __pip_cache__ }} {% endcall -%} {{ __secret_exports__ }}uv --directory ./src pip install -r $BENTO_PATH/env/python/requirements.txt
+{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {{ __pip_cache__ }} {% endcall -%} if [ -d ./env/python/wheels ]; \
+    then INSTALL_ROOT="./env/python/"; \
+    else INSTALL_ROOT="./src"; \
+    fi; {{ __secret_exports__ }}uv --directory $INSTALL_ROOT pip install -r $BENTO_PATH/env/python/requirements.txt
 
 {% for command in __options__post_commands %}
 {% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {% endcall -%} {{ __secret_exports__ }}{{ command }}

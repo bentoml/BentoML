@@ -103,7 +103,7 @@ class ResourceAllocator:
             num_gpus = config["resources"]["gpu"]  # type: ignore
         if config.get("workers"):
             if (workers := config["workers"]) == "cpu_count":
-                num_workers = int(self.system_resources["cpu"])
+                num_workers = int(self.system_resources["cpu"]) or 1
                 # don't assign gpus to workers
                 return num_workers, worker_env
             else:  # workers is a number

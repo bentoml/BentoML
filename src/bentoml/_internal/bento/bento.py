@@ -849,7 +849,6 @@ class ImageInfo:
     commands: t.List[str] = attr.field(factory=list)
     python_requirements: str = ""
     post_commands: t.List[str] = attr.field(factory=list)
-    build_include: t.List[str] = attr.field(factory=list)
 
 
 @attr.frozen(repr=False)

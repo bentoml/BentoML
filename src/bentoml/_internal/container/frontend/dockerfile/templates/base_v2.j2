@@ -93,9 +93,6 @@ ENV PATH=/app/.venv/bin:${PATH}
 {% set __pip_cache__ = common.mount_cache("/root/.cache/") %}
 
 COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
-{% for name in __options__build_include %}
-COPY --chown={{ bento__user }}:{{ bento__user }} ./src/{{ name }} ./src/{{ name }}
-{% endfor %}
 # install python packages
 {% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {{ __pip_cache__ }} {% endcall -%} if [ -d ./env/python/wheels ]; \
     then INSTALL_ROOT="./env/python/"; \

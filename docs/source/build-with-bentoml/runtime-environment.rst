@@ -311,46 +311,6 @@ To include the script in the image build process:
        .python_packages("torch", "pillow") \
        .run_script("scripts/setup.sh")
 
-``build_include()``
-^^^^^^^^^^^^^^^^^^^
-
-Include additional files in the build context that are available during the pip install phase. This is useful when you have local wheel files, data files, or configuration files that need to be accessible during package installation.
-
-The file paths are relative to the bento context root (typically the directory where your ``service.py`` resides).
-
-.. code-block:: python
-
-   import bentoml
-
-   image = bentoml.images.Image(python_version='3.11') \
-       .build_include("data/", "config/settings.yaml") \
-       .python_packages("./wheels/my_package-1.0.0-py3-none-any.whl")
-
-In this example:
-
-- The ``data/`` directory and ``config/settings.yaml`` file are copied into the build context before Python packages are installed
-- This allows the local wheel file in ``wheels/`` to be accessible during installation
-
-.. note::
-
-   Files included via ``build_include()`` are copied into the ``src/`` directory inside the container. They are available at ``$BENTO_PATH/src/<path>`` during the build and runtime.
-
-.. note::
-
-   If a ``wheels/`` directory exists in your project, BentoML automatically includes it in the build context. You don't need to explicitly call ``build_include("wheels")`` in this case.
-
-A common use case is including prebuilt wheels that need to be installed:
-
-.. code-block:: python
-
-   import bentoml
-
-   image = bentoml.images.Image(python_version='3.11') \
-       .python_packages(
-           "./wheels/custom_lib-0.1.0-py3-none-any.whl",
-           "./wheels/another_lib-2.0.0-py3-none-any.whl"
-       )
-
 BentoML environment variables
 -----------------------------
 

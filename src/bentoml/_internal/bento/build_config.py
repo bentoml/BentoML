@@ -693,7 +693,7 @@ class PythonOptions:
             if not link:
                 continue
 
-            if "/env/python/wheels" in link.url:
+            if "/env/python/wheels" in link.url or "/src/wheels" in link.url:
                 filename = link.filename
             elif pack_git_packages and link.url.startswith("git+"):
                 # We are only able to handle SSH Git URLs

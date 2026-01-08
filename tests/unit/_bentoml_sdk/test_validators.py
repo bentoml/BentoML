@@ -16,7 +16,9 @@ def test_file_schema_decode_with_path_separator_in_filename(tmp_path: Path):
         filename="subdir/nested/document.pdf",
     )
 
-    with patch("bentoml._internal.context.request_temp_dir", return_value=str(tmp_path)):
+    with patch(
+        "bentoml._internal.context.request_temp_dir", return_value=str(tmp_path)
+    ):
         result = FileSchema().decode(upload_file)
 
     assert isinstance(result, Path)

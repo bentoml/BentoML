@@ -155,8 +155,9 @@ class FileSchema:
                 raise ValueError(
                     f"Invalid content type {media_type}, expected {self.content_type}"
                 )
+        suffix = os.path.basename(filename) if filename else None
         with tempfile.NamedTemporaryFile(
-            suffix=filename, dir=request_temp_dir(), delete=False
+            suffix=suffix, dir=request_temp_dir(), delete=False
         ) as f:
             f.write(body)
             return Path(f.name)

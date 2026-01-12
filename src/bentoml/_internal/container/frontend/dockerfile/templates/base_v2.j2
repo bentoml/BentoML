@@ -94,9 +94,9 @@ ENV PATH=/app/.venv/bin:${PATH}
 
 COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
 # install python packages
-{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {{ __pip_cache__ }} {% endcall -%} if [ -d ./env/python/wheels ]; \
-    then INSTALL_ROOT="./env/python/"; \
-    else INSTALL_ROOT="./src"; \
+{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {{ __pip_cache__ }} {% endcall -%} if [ -d ./src ]; \
+    then INSTALL_ROOT="./src"; \
+    else INSTALL_ROOT="./env/python"; \
     fi; {{ __secret_exports__ }}uv --directory $INSTALL_ROOT pip install -r $BENTO_PATH/env/python/requirements.txt
 
 {% for command in __options__post_commands %}

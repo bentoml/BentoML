@@ -595,6 +595,7 @@ class Bento(StoreItem):
                 dirs_exist_ok=True,
                 copy_function=shutil.copy,
                 ignore=ignore_models,
+                symlinks=True,
             )
             return attr.evolve(self, path=out_path)
 

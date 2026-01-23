@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING
 import attr
 
 from ...exceptions import BentoMLException
-from ..utils.filesystem import resolve_user_filepath
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -56,7 +55,7 @@ class Arguments(ListStr):
     def _(self, args: PathType, opt: str = ""):
         if args is not None:
             if os.path.exists(str(args)):
-                args = resolve_user_filepath(str(args), ctx=None)
+                args = os.path.abspath(str(args))
             self.extend((f"--{opt}", str(args)))
 
     @construct_args.register(type(None))

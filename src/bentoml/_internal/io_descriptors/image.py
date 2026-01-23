@@ -250,7 +250,7 @@ class Image(
         if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(sample):
             sample = PIL.Image.fromarray(sample)
         elif isinstance(sample, str):
-            p = resolve_user_filepath(sample, ctx=None)
+            p = resolve_user_filepath(sample, ctx=None, secure=False)
             try:
                 with open(p, "rb") as f:
                     sample = PIL.Image.open(f)

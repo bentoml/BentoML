@@ -413,7 +413,7 @@ def build_bentofile(
         set_arguments(args)
     if bentofile:
         try:
-            bentofile = resolve_user_filepath(bentofile, None)
+            bentofile = resolve_user_filepath(bentofile, None, secure=False)
         except FileNotFoundError:
             raise InvalidArgument(f'bentofile "{bentofile}" not found')
         else:

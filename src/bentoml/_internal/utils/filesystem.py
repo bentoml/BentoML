@@ -111,7 +111,9 @@ def validate_or_create_dir(*path: PathType) -> None:
             path_obj.mkdir(parents=True, exist_ok=True)
 
 
-def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
+def resolve_user_filepath(
+    filepath: str, ctx: t.Optional[str], secure: bool = True
+) -> str:
     """Resolve the abspath of a filepath provided by user. User provided file path can:
     * be a relative path base on ctx dir
     * contain leading "~" for HOME directory
@@ -119,18 +121,41 @@ def resolve_user_filepath(filepath: str, ctx: t.Optional[str]) -> str:
     """
     # Return if filepath exist after expanduser
 
-    _path = os.path.expanduser(os.path.expandvars(filepath))
+    _path = Path(os.path.expanduser(os.path.expandvars(filepath)))
 
     # Try finding file in ctx if provided
-    if not os.path.isabs(_path) and ctx:
-        _path = os.path.expanduser(os.path.join(ctx, filepath))
-
-    if os.path.exists(_path):
-        return os.path.realpath(_path)
-
-    raise FileNotFoundError(f"file {filepath} not found")
+    if not _path.is_absolute():
+        ctx = os.path.expanduser(ctx) if ctx else os.getcwd()
+        _path = Path(ctx).joinpath(_path)
+    elif secure:
+        raise ValueError(f"Absolute path {filepath} is not allowed")
+    _path = _path.resolve()
+    if not _path.exists():
+        raise FileNotFoundError(f"file {filepath} not found")
+    if secure:
+        cwd = Path().resolve()
+        if not _path.is_relative_to(cwd):
+            raise ValueError(
+                f"Accessing file outside of current working directory is not allowed: {_path}"
+            )
+        if any(part.startswith(".") for part in _path.parts):
+            raise ValueError(f"Accessing hidden files is not allowed: {_path}")
+        if any(_path.is_relative_to(item) for item in ("/etc", "/proc")):
+            raise ValueError(f"Accessing system files is not allowed: {_path}")
+    return str(_path)
 
 
 def safe_remove_dir(path: PathType) -> None:
     with contextlib.suppress(OSError):
         shutil.rmtree(path, ignore_errors=True)
+
+
+@contextlib.contextmanager
+def chdir(new_dir: PathType) -> t.Generator[None, None, None]:
+    """Context manager for changing the current working directory. This is not thread-safe."""
+    prev_dir = os.getcwd()
+    os.chdir(new_dir)
+    try:
+        yield
+    finally:
+        os.chdir(prev_dir)

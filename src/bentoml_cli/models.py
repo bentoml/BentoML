@@ -301,7 +301,7 @@ def pull(
 
     if bentofile:
         try:
-            bentofile = resolve_user_filepath(bentofile, None)
+            bentofile = resolve_user_filepath(bentofile, None, secure=False)
         except FileNotFoundError:
             raise InvalidArgument(f'file "{bentofile}" not found')
         else:

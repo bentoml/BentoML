@@ -20,6 +20,8 @@ from bentoml._internal.configuration import get_quiet_mode
 from bentoml._internal.container import split_envs_by_stage
 from bentoml._internal.container.frontend.dockerfile import CONTAINER_METADATA
 from bentoml._internal.container.frontend.dockerfile import CONTAINER_SUPPORTED_DISTROS
+from bentoml._internal.utils.filesystem import chdir
+from bentoml._internal.utils.filesystem import resolve_user_filepath
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.exceptions import BentoMLException
 
@@ -97,6 +99,7 @@ class Image:
         """
         if self.post_commands:
             raise BentoMLConfigException("Can't separate adding python requirements")
+        file_path = resolve_user_filepath(file_path, None)
         self.python_requirements += Path(file_path).read_text().rstrip("\n") + "\n"
         self._after_pip_install = True
         return self
@@ -112,6 +115,7 @@ class Image:
         """
         if self.post_commands:
             raise BentoMLConfigException("Can't separate adding python requirements")
+        file_path = resolve_user_filepath(file_path, None)
         with Path(file_path).open("rb") as f:
             pyproject_toml = tomllib.load(f)
         dependencies = pyproject_toml.get("project", {}).get("dependencies", {})
@@ -164,7 +168,7 @@ class Image:
             image = Image("debian:latest").run_script("script.sh")
         """
         commands = self.post_commands if self._after_pip_install else self.commands
-        script = Path(script).resolve().as_posix()
+        script = resolve_user_filepath(script, None)
         # Files under /env/docker will be copied into the env image layer
         target_script = (
             f"./env/docker/script__{hashlib.md5(script.encode()).hexdigest()}"
@@ -327,8 +331,6 @@ class Image:
 def populate_image_from_build_config(
     image: Image | None, build_config: BentoBuildConfig, build_ctx: str
 ) -> Image | None:
-    from bentoml._internal.utils.filesystem import resolve_user_filepath
-
     fallback_message = "fallback to bento v1" if image is None else "it will be ignored"
     if not build_config.conda.is_empty():
         logger.warning(
@@ -392,12 +394,12 @@ def populate_image_from_build_config(
         image.python_packages(
             *(f"--find-links {link}" for link in python_options.find_links)
         )
-    if python_options.requirements_txt:
-        image.requirements_file(
-            resolve_user_filepath(python_options.requirements_txt, build_ctx)
-        )
-    elif python_options.packages:
-        image.python_packages(*python_options.packages)
-    if docker_options.setup_script:
-        image.run_script(docker_options.setup_script)
+
+    with chdir(build_ctx):
+        if python_options.requirements_txt:
+            image.requirements_file(python_options.requirements_txt)
+        elif python_options.packages:
+            image.python_packages(*python_options.packages)
+        if docker_options.setup_script:
+            image.run_script(docker_options.setup_script)
     return image

@@ -95,7 +95,9 @@ class DeploymentConfigParameters:
         if self.config_dict:
             self.cfg_dict = self.config_dict
         elif isinstance(self.config_file, str):
-            real_path = resolve_user_filepath(self.config_file, self.path_context)
+            real_path = resolve_user_filepath(
+                self.config_file, self.path_context, secure=False
+            )
             try:
                 with open(real_path, "r") as file:
                     self.cfg_dict = yaml.safe_load(file)
@@ -313,7 +315,7 @@ def get_args_from_config(
         cluster = config_dict["cluster"]
 
     if isinstance(config_file, str):
-        real_path = resolve_user_filepath(config_file, path_context)
+        real_path = resolve_user_filepath(config_file, path_context, secure=False)
         try:
             with open(real_path, "r") as file:
                 file_dict = yaml.safe_load(file)

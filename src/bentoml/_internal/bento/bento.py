@@ -35,6 +35,7 @@ from ..tag import to_snake_case
 from ..types import PathType
 from ..utils import normalize_labels_value
 from ..utils.cattr import bentoml_cattr
+from ..utils.filesystem import resolve_user_filepath
 from ..utils.filesystem import safe_remove_dir
 from .build_config import BentoBuildConfig
 from .build_config import BentoEnvSchema
@@ -349,9 +350,13 @@ class Bento(StoreItem):
                 build_config.description is not None
                 and build_config.description.startswith("file:")
             ):
-                file_name = build_config.description[5:].strip()
-                if not ctx_path.joinpath(file_name).exists():
-                    raise InvalidArgument(f"File {file_name} does not exist.")
+                try:
+                    file_name = resolve_user_filepath(
+                        build_config.description[5:].strip(), str(ctx_path)
+                    )
+                except (FileNotFoundError, ValueError) as e:
+                    raise InvalidArgument(str(e)) from None
+
                 shutil.copy(ctx_path.joinpath(file_name), bento_readme)
             elif (
                 build_config.description is None

@@ -103,7 +103,7 @@ def parse_kvs_argument_callback(
         if not key or not val:
             raise click.BadParameter(f"Invalid key-value pair: {key_val}")
         if val.startswith("@"):
-            filename = resolve_user_filepath(val[1:], ctx=None)
+            filename = resolve_user_filepath(val[1:], ctx=None, secure=False)
             if not os.path.exists(filename) or not os.path.isfile(filename):
                 raise click.BadParameter(f"Invalid file path: {filename}")
             # read the file content
@@ -123,7 +123,7 @@ def read_dotenv_callback(
     env_map: dict[str, str] = {}
 
     for path in value:
-        path = resolve_user_filepath(path, ctx=None)
+        path = resolve_user_filepath(path, ctx=None, secure=False)
         if not os.path.exists(path) or not os.path.isfile(path):
             raise click.BadParameter(f"Invalid file path: {path}")
         with open(path, "r") as f:

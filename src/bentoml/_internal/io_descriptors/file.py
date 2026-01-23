@@ -162,7 +162,7 @@ class File(
         if isinstance(sample, t.IO):
             sample = FileLike[bytes](sample, "<sample>")
         elif isinstance(sample, (str, os.PathLike)):
-            p = resolve_user_filepath(sample, ctx=None)
+            p = resolve_user_filepath(sample, ctx=None, secure=False)
             mime = mimetypes.guess_type(p)[0]
             self._mime_type = mime
             with open(p, "rb") as f:

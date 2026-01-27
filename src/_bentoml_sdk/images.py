@@ -335,13 +335,6 @@ class Image:
         )
         if src_wheels.is_dir():
             self.build_include("wheels")
-            # XXX: for forward compatibility, create symlink at the old location
-            try:
-                py_folder.joinpath("wheels").symlink_to(
-                    "../../src/wheels", target_is_directory=True
-                )
-            except OSError:
-                pass
         return requirements_out.read_text()
 
 

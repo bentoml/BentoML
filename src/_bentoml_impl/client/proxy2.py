@@ -75,24 +75,38 @@ class SessionManager:
         self._created_at = 0.0
         self._request_count = 0
 
-        parsed = urlparse(url)
+        # Store config for _make_session
+        self._app = app
+        self._headers = headers
+        self._timeout = aiohttp.ClientTimeout(total=timeout)
+        self._parsed_url = urlparse(url)
+
+    def _make_client(self) -> aiohttp.ClientSession:
+        """Create a new session with a fresh connector.
+
+        Each session gets its own connector so session.close() properly
+        cleans up. This avoids issues with shared connector lifecycle on refresh.
+        """
         connector: aiohttp.BaseConnector | None = None
-        if app is not None:
+        if self._app is not None:
             from aiohttp_asgi_connector import ASGIApplicationConnector
 
-            connector = ASGIApplicationConnector(app)  # type: ignore[arg-type]
-            url = "http://127.0.0.1:3000"
-        elif parsed.scheme == "file":
+            connector = ASGIApplicationConnector(self._app)  # type: ignore[arg-type]
+            base_url = "http://127.0.0.1:3000"
+        elif self._parsed_url.scheme == "file":
             from aiohttp import UnixConnector
 
-            connector = UnixConnector(path=uri_to_path(url))
-            url = "http://127.0.0.1:3000"
-        elif parsed.scheme == "tcp":
-            url = f"http://{parsed.netloc}"
-        self._make_client = lambda: aiohttp.ClientSession(
-            base_url=url,
-            headers=headers,
-            timeout=aiohttp.ClientTimeout(total=timeout),
+            connector = UnixConnector(path=uri_to_path(self._parsed_url.geturl()))
+            base_url = "http://127.0.0.1:3000"
+        elif self._parsed_url.scheme == "tcp":
+            base_url = f"http://{self._parsed_url.netloc}"
+        else:
+            base_url = self._parsed_url.geturl()
+
+        return aiohttp.ClientSession(
+            base_url=base_url,
+            headers=self._headers,
+            timeout=self._timeout,
             connector=connector,
         )
 

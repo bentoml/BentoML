@@ -27,6 +27,7 @@ from ...exceptions import NotFound
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..models import ModelStore
+from ..models import copy_model
 from ..runner import Runner
 from ..store import Store
 from ..store import StoreItem
@@ -587,7 +588,16 @@ class Bento(StoreItem):
             if self._model_store is not None:
                 # Move models to the global model store, if any
                 for model in self._model_store.list():
-                    model.save(model_store)
+                    copied = copy_model(
+                        model.tag,
+                        src_model_store=self._model_store,
+                        target_model_store=model_store,
+                    )
+                    if not copied:
+                        logger.warning(
+                            "Model %s already exists in the global model store, skipping copy.",
+                            model.tag,
+                        )
 
             def ignore_models(src_path: str, names: list[str]) -> t.Iterable[str]:
                 if Path(src_path) == self._path and "models" in names:

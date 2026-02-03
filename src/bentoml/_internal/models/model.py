@@ -700,18 +700,20 @@ def copy_model(
     *,
     src_model_store: ModelStore,
     target_model_store: ModelStore,
-):
+) -> bool:
     """copy a model from src model store to target modelstore, and do nothing if the
-    model tag already exist in target model store
+    model tag already exist in target model store.
+    Returns True if the model is copied, False if the model already exists in target model store.
     """
     try:
         target_model_store.get(model_tag)  # if model tag already found in target
-        return
+        return False
     except NotFound:
         pass
 
     model = src_model_store.get(model_tag)
     model.save(target_model_store)
+    return True
 
 
 def _ModelInfo_dumper(dumper: yaml.Dumper, info: ModelInfo) -> yaml.Node:

@@ -77,7 +77,7 @@ def _validate_docker_tag(tag: str) -> str:
         r"""
         ^(
         [a-z0-9]+      # alphanumeric
-        (.|_{1,2}|-+)? # seperators
+        (.|_{1,2}|-+)? # separators
         )*$
         """,
         re.VERBOSE,

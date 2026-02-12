@@ -104,8 +104,7 @@ def safe_extract_tarfile(tar: tarfile.TarFile, destination: str) -> None:
             real_path = os.path.realpath(path)
             if not Path(real_path).is_relative_to(dest):
                 logger.warning(
-                    "The tar file has a file (%s) resolving outside"
-                    " target directory",
+                    "The tar file has a file (%s) resolving outside target directory",
                     fn,
                 )
                 fp.close()

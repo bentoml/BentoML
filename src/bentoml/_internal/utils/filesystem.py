@@ -58,10 +58,11 @@ class TempfilePool:
 def safe_extract_tarfile(tar: tarfile.TarFile, destination: str) -> None:
     # Borrowed from pip but continue on error
     os.makedirs(destination, exist_ok=True)
+    dest = os.path.realpath(destination)
     for member in tar.getmembers():
         fn = member.name
-        path = os.path.abspath(os.path.join(destination, fn))
-        if not Path(path).is_relative_to(destination):
+        path = os.path.abspath(os.path.join(dest, fn))
+        if not Path(path).is_relative_to(dest):
             logger.warning(
                 "The tar file has a file (%s) trying to unpack to"
                 "outside target directory",
@@ -71,6 +72,17 @@ def safe_extract_tarfile(tar: tarfile.TarFile, destination: str) -> None:
         if member.isdir():
             os.makedirs(path, exist_ok=True)
         elif member.issym():
+            target = os.path.normpath(
+                os.path.join(os.path.dirname(path), member.linkname)
+            )
+            if not Path(target).is_relative_to(dest):
+                logger.warning(
+                    "The tar file has a symlink (%s -> %s) pointing outside"
+                    " target directory",
+                    fn,
+                    member.linkname,
+                )
+                continue
             try:
                 tar._extract_member(member, path)
             except Exception as exc:
@@ -88,6 +100,14 @@ def safe_extract_tarfile(tar: tarfile.TarFile, destination: str) -> None:
                 continue
             os.makedirs(os.path.dirname(path), exist_ok=True)
             if fp is None:
+                continue
+            real_path = os.path.realpath(path)
+            if not Path(real_path).is_relative_to(dest):
+                logger.warning(
+                    "The tar file has a file (%s) resolving outside target directory",
+                    fn,
+                )
+                fp.close()
                 continue
             with open(path, "wb") as destfp:
                 shutil.copyfileobj(fp, destfp)

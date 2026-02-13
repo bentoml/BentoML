@@ -88,8 +88,10 @@ def _result_to_record_batch(result: t.Any) -> t.Any:
             [pyarrow.array(result)], names=["output"]
         )
     elif isinstance(result, dict):
-        arrays = [pyarrow.array(v) if not isinstance(v, pyarrow.Array) else v
-                  for v in result.values()]
+        arrays = [
+            pyarrow.array(v) if not isinstance(v, pyarrow.Array) else v
+            for v in result.values()
+        ]
         return pyarrow.RecordBatch.from_arrays(arrays, names=list(result.keys()))
     else:
         return pyarrow.RecordBatch.from_arrays(

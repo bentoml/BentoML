@@ -1,4 +1,3 @@
-
 """
 Integration test for AnyIO NoEventLoopError fix
 
@@ -9,15 +8,16 @@ This test demonstrates the fix working in both scenarios:
 
 import asyncio
 import functools
-import tempfile
+
 
 # Mock the fixed SyncClient.run_async method
 def fixed_run_async(callable, *args, **kwargs):
     """Fixed version of run_async that handles AnyIO context properly"""
-    
+
     try:
         # Try to get the current AnyIO token if we're in an AnyIO context
         import anyio.lowlevel
+
         token = anyio.lowlevel.current_token()
         return anyio.from_thread.run(
             functools.partial(callable, *args, **kwargs), token=token
@@ -25,6 +25,7 @@ def fixed_run_async(callable, *args, **kwargs):
     except (ImportError, LookupError):
         # No AnyIO context found or anyio not available, use standard from_thread.run
         import anyio.from_thread
+
         return anyio.from_thread.run(functools.partial(callable, *args, **kwargs))
 
 
@@ -66,13 +67,13 @@ async def test_async_context():
 async def main():
     """Run all tests"""
     print("🧪 Integration test for AnyIO NoEventLoopError fix\n")
-    
+
     # Test 1: Sync context (baseline)
     sync_ok = test_sync_context()
-    
-    # Test 2: Async context (the fix)  
+
+    # Test 2: Async context (the fix)
     async_ok = await test_async_context()
-    
+
     print("\n📊 Test Results:")
     if sync_ok and async_ok:
         print("🎉 All tests passed! Fix appears to work correctly.")

@@ -104,11 +104,15 @@ class Sqlite3Store(ResultStore[Request, Response]):
         import aiosqlite
 
         return aiosqlite.connect(
-            db_file, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+            db_file,
+            detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
+            timeout=30.0,
         )
 
     async def __aenter__(self) -> "t.Self":
         self._conn = await self._conn
+        await self._conn.execute("PRAGMA journal_mode=WAL")
+        await self._conn.execute("PRAGMA busy_timeout=5000")
         return self
 
     async def __aexit__(self, *_: t.Any) -> None:
@@ -119,7 +123,9 @@ class Sqlite3Store(ResultStore[Request, Response]):
         import sqlite3
 
         with sqlite3.connect(
-            db_file, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+            db_file,
+            detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
+            timeout=30.0,
         ) as conn:
             conn.execute(
                 textwrap.dedent("""\

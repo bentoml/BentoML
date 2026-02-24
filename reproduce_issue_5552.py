@@ -13,10 +13,14 @@ print("=" * 50)
 
 print("\nPROBLEM DESCRIPTION:")
 print("When Kubernetes readiness probes are enabled (/readyz) for a Bento service")
-print("that uses bentoml.depends(...), there's a gradual memory increase and TCP socket churn.")
+print(
+    "that uses bentoml.depends(...), there's a gradual memory increase and TCP socket churn."
+)
 print("\nRoot cause:")
-print("1. Readiness checks call dependency resolution repeatedly")  
-print("2. For remote dependencies, Dependency.get() creates new RemoteProxy(...).as_service() repeatedly")
+print("1. Readiness checks call dependency resolution repeatedly")
+print(
+    "2. For remote dependencies, Dependency.get() creates new RemoteProxy(...).as_service() repeatedly"
+)
 print("3. AsyncHTTPClient.is_ready() doesn't close HTTP responses properly")
 print("4. This causes connection churn over time")
 
@@ -35,7 +39,7 @@ print("           resp = await self.client.get(...)")
 print("           return resp.status_code == 200  # ❌ No response closure")
 print("   ```")
 print("   AFTER:")
-print("   ```")  
+print("   ```")
 print("   async def is_ready(self, timeout: int | None = None) -> bool:")
 print("       try:")
 print("           resp = await self.client.get(...)")
@@ -75,7 +79,7 @@ print("   ```")
 
 print("\nIMPACT:")
 print("✅ Eliminates memory growth during intensive readiness checks")
-print("✅ Reduces TCP connection churn") 
+print("✅ Reduces TCP connection churn")
 print("✅ Maintains full backward compatibility")
 print("✅ Zero configuration needed - automatic fix")
 print("✅ Critical for production Kubernetes deployments with health checks")

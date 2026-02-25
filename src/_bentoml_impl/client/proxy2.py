@@ -18,7 +18,6 @@ from urllib.parse import urlparse
 
 import aiohttp
 import anyio.from_thread
-import anyio.lowlevel
 import attr
 from multidict import CIMultiDict
 
@@ -626,15 +625,7 @@ class SyncClient(AbstractClient):
     def run_async(
         callable: t.Callable[P, t.Awaitable[T]], *args: P.args, **kwargs: P.kwargs
     ) -> T:
-        try:
-            # Try to get the current AnyIO token if we're in an AnyIO context
-            token = anyio.lowlevel.current_token()
-            return anyio.from_thread.run(
-                functools.partial(callable, *args, **kwargs), token=token
-            )
-        except LookupError:
-            # No AnyIO context found, use standard from_thread.run
-            return anyio.from_thread.run(functools.partial(callable, *args, **kwargs))
+        return anyio.from_thread.run(functools.partial(callable, *args, **kwargs))
 
     def call(self, __name: str, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         coro = self._async_client.call(__name, *args, **kwargs)

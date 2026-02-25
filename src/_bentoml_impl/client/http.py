@@ -672,7 +672,9 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
             resp = await self.client.get(
                 self._readyz_endpoint, timeout=timeout or httpx.USE_CLIENT_DEFAULT
             )
-            return resp.status_code == 200
+            status = resp.status_code
+            await resp.aclose()
+            return status == 200
         except httpx.TimeoutException:
             logger.warning("Timed out waiting for runner to be ready")
             return False

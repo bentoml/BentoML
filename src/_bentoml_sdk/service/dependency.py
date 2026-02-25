@@ -55,6 +55,9 @@ class Dependency(t.Generic[T]):
     ) -> T | RemoteProxy[t.Any]:
         from _bentoml_impl.client import RemoteProxy
 
+        if self._resolved is not None:
+            return self._resolved
+
         media_type = "application/json"
         if self.deployment and self.url:
             raise BentoMLException("Cannot specify both deployment and url")
@@ -111,6 +114,7 @@ class Dependency(t.Generic[T]):
         remote_proxy = t.cast("RemoteProxy[t.Any]", self._resolved)
         if asyncio.iscoroutinefunction(getattr(remote_proxy, "close", None)):
             await remote_proxy.close()
+        self._resolved = None
 
 
 @t.overload

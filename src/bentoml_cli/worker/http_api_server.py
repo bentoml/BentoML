@@ -12,9 +12,11 @@ import click
 @click.option(
     "--fd",
     type=click.INT,
-    required=True,
+    required=False,
     help="File descriptor of the socket to listen on",
 )
+@click.option("--host", type=click.STRING, required=False, default=None)
+@click.option("--port", type=click.INT, required=False, default=None)
 @click.option(
     "--runner-map",
     type=click.STRING,
@@ -105,7 +107,9 @@ import click
 )
 def main(
     bento_identifier: str,
-    fd: int,
+    fd: int | None,
+    host: str | None,
+    port: int | None,
     runner_map: str | None,
     backlog: int,
     working_dir: str | None,
@@ -200,9 +204,23 @@ def main(
     import uvicorn
 
     # skip the uvicorn internal supervisor
-    sock = socket.socket(fileno=fd)
+    if fd is not None:
+        sock = socket.socket(fileno=fd)
+        sockets = [sock]
+    elif host and port:
+        from bentoml._internal.utils import create_listen_sock
+
+        # If multiple workers are started, enable SO_REUSEPORT for better load balancing
+        # This is only supported on UNIX systems.
+        sock = create_listen_sock(
+            host, port, backlog=backlog, enable_so_reuseport=not psutil.WINDOWS
+        )
+        sockets = [sock]
+    else:
+        raise ValueError("Either '--fd' or '--host' and '--port' must be provided.")
+
     config = uvicorn.Config(svc.asgi_app, **uvicorn_options)
-    uvicorn.Server(config).run(sockets=[sock])
+    uvicorn.Server(config).run(sockets=sockets)
 
 
 if __name__ == "__main__":

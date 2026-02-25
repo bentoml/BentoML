@@ -163,17 +163,13 @@ def split_with_quotes(
     return parts
 
 
-@contextlib.contextmanager
-def reserve_free_port(
-    host: str = "localhost",
-    port: int | None = None,
-    prefix: t.Optional[str] = None,
-    max_retry: int = 50,
+def create_listen_sock(
+    host: str,
+    port: int,
+    *,
+    backlog: int = 2048,
     enable_so_reuseport: bool = False,
-) -> t.Iterator[int]:
-    """
-    detect free port and reserve until exit the context
-    """
+) -> socket.socket:
     import psutil
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -187,6 +183,23 @@ def reserve_free_port(
 
             if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT) == 0:
                 raise RuntimeError("Failed to set SO_REUSEPORT.") from None
+
+    sock.bind((host, port))
+    sock.listen(backlog)
+    return sock
+
+
+@contextlib.contextmanager
+def reserve_free_port(
+    host: str = "localhost",
+    port: int | None = None,
+    prefix: t.Optional[str] = None,
+    max_retry: int = 50,
+    enable_so_reuseport: bool = False,
+) -> t.Iterator[int]:
+    """
+    detect free port and reserve until exit the context
+    """
     if prefix is not None:
         prefix_num = int(prefix) * 10 ** (5 - len(prefix))
         suffix_range = min(65535 - prefix_num, 10 ** (5 - len(prefix)))
@@ -194,7 +207,9 @@ def reserve_free_port(
             suffix = random.randint(0, suffix_range)
             port = int(f"{prefix_num + suffix}")
             try:
-                sock.bind((host, port))
+                sock = create_listen_sock(
+                    host, port, enable_so_reuseport=enable_so_reuseport
+                )
                 break
             except OSError:
                 continue
@@ -203,10 +218,10 @@ def reserve_free_port(
                 f"Cannot find free port with prefix {prefix} after {max_retry} retries."
             ) from None
     else:
-        if port:
-            sock.bind((host, port))
-        else:
-            sock.bind((host, 0))
+        sock = create_listen_sock(
+            host, port or 0, enable_so_reuseport=enable_so_reuseport
+        )
+
     try:
         yield sock.getsockname()[1]
     finally:

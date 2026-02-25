@@ -438,14 +438,6 @@ def serve_http_production(
     except ValueError as e:
         raise BentoMLConfigException(f"Invalid host IP address: {host}") from e
 
-    circus_socket_map[API_SERVER_NAME] = CircusSocket(
-        name=API_SERVER_NAME,
-        host=host,
-        port=port,
-        family=family,
-        backlog=backlog,
-    )
-
     ssl_args = construct_ssl_args(
         ssl_certfile=ssl_certfile,
         ssl_keyfile=ssl_keyfile,
@@ -465,8 +457,6 @@ def serve_http_production(
         "-m",
         SCRIPT_API_SERVER,
         bento_identifier,
-        "--fd",
-        f"$(circus.sockets.{API_SERVER_NAME})",
         "--runner-map",
         json.dumps(runner_bind_map),
         "--working-dir",
@@ -479,6 +469,21 @@ def serve_http_production(
         *timeouts_args,
         *timeout_args,
     ]
+
+    use_sockets = True
+    if psutil.POSIX and api_workers > 1 and not IS_WSL:
+        # Use SO_REUSEPORT for better load balancing when multiple workers are used on POSIX systems
+        api_server_args.extend(["--host", host, "--port", str(port)])
+        use_sockets = False
+    else:
+        api_server_args.extend(["--fd", f"$(circus.sockets.{API_SERVER_NAME})"])
+        circus_socket_map[API_SERVER_NAME] = CircusSocket(
+            name=API_SERVER_NAME,
+            host=host,
+            port=port,
+            family=family,
+            backlog=backlog,
+        )
 
     if development_mode:
         api_server_args.append("--development-mode")
@@ -495,6 +500,7 @@ def serve_http_production(
             working_dir=working_dir,
             numprocesses=api_workers,
             close_child_stdin=close_child_stdin,
+            use_sockets=use_sockets,
             env=env,
         )
     )

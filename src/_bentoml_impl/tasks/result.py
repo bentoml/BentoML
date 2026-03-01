@@ -111,7 +111,6 @@ class Sqlite3Store(ResultStore[Request, Response]):
 
     async def __aenter__(self) -> "t.Self":
         self._conn = await self._conn
-        await self._conn.execute("PRAGMA journal_mode=WAL")
         await self._conn.execute("PRAGMA busy_timeout=5000")
         return self
 
@@ -127,6 +126,8 @@ class Sqlite3Store(ResultStore[Request, Response]):
             detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
             timeout=30.0,
         ) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=5000")
             conn.execute(
                 textwrap.dedent("""\
                 CREATE TABLE IF NOT EXISTS result (
@@ -199,7 +200,7 @@ class Sqlite3Store(ResultStore[Request, Response]):
 
     async def set_status(self, task_id: str, status: ResultStatus) -> None:
         await self._conn.execute(
-            "UPDATE result SET status = ?, updated_at = ? WHERE task_id = ? AND status = ?",
+            "UPDATE result SET status = ?, executed_at = ? WHERE task_id = ? AND status = ?",
             (
                 status.value,
                 datetime.datetime.now(tz=datetime.timezone.utc),

@@ -257,18 +257,16 @@ custom_pipeline: list[Model] = [
                     "__call__": [
                         Input(
                             input_args=["i love you"],
-                            expected=lambda out: nested_simplify(
-                                out["score"], decimals=4
-                            )
-                            == 0.5036,
+                            expected=lambda out: (
+                                nested_simplify(out["score"], decimals=4) == 0.5036
+                            ),
                         ),
                         Input(
                             input_args=["I hate you"],
                             input_kwargs={"second_text": "I love you"},
-                            expected=lambda out: nested_simplify(
-                                out["score"], decimals=4
-                            )
-                            == 0.5036,
+                            expected=lambda out: (
+                                nested_simplify(out["score"], decimals=4) == 0.5036
+                            ),
                         ),
                     ],
                 },
@@ -483,8 +481,9 @@ vit_pretrained: list[Model] = [
                     "__call__": [
                         Input(
                             input_args=[im],
-                            expected=lambda output: output["pixel_values"][0].shape
-                            == (3, 224, 224),
+                            expected=lambda output: (
+                                output["pixel_values"][0].shape == (3, 224, 224)
+                            ),
                         )
                     ]
                 }

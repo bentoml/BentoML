@@ -118,8 +118,9 @@ def compatible_option(*param_decls: str, **attrs: t.Any):
                         )
                         new_format = " ".join(
                             map(
-                                lambda s: "--%s %s=%s"
-                                % (equivalent[0], opt.lstrip("--"), s),
+                                lambda s: (
+                                    "--%s %s=%s" % (equivalent[0], opt.lstrip("--"), s)
+                                ),
                                 value,
                             )
                         )

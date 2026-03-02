@@ -387,16 +387,18 @@ def serve_http(
         )
         arbiter.exit_stack.callback(shutil.rmtree, uds_path, ignore_errors=True)
         arbiter.start(
-            cb=lambda _: logger.info(  # type: ignore
-                'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
-                scheme.upper(),
-                bento_identifier,
-                scheme,
-                log_host,
-                port,
-            )
-            if not svc.has_custom_command()
-            else None,
+            cb=lambda _: (
+                logger.info(  # type: ignore
+                    'Starting production %s BentoServer from "%s" listening on %s://%s:%d (Press CTRL+C to quit)',
+                    scheme.upper(),
+                    bento_identifier,
+                    scheme,
+                    log_host,
+                    port,
+                )
+                if not svc.has_custom_command()
+                else None
+            ),
         )
         return Server(url=f"{scheme}://{log_host}:{port}", arbiter=arbiter)
     except Exception:

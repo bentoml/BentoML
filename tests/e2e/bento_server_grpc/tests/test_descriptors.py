@@ -143,12 +143,14 @@ async def test_json(host: str):
             data={
                 "serialized_bytes": b'{"request_id": "123", "iris_features": {"sepal_len":2.34,"sepal_width":1.58, "petal_len":6.52, "petal_width":3.23}}'
             },
-            assert_data=lambda resp: resp.json  # type: ignore (bad lambda types)
-            == make_iris_proto(
-                sepal_len=struct_pb2.Value(number_value=2.34),
-                sepal_width=struct_pb2.Value(number_value=1.58),
-                petal_len=struct_pb2.Value(number_value=6.52),
-                petal_width=struct_pb2.Value(number_value=3.23),
+            assert_data=lambda resp: (
+                resp.json  # type: ignore (bad lambda types)
+                == make_iris_proto(
+                    sepal_len=struct_pb2.Value(number_value=2.34),
+                    sepal_width=struct_pb2.Value(number_value=1.58),
+                    petal_len=struct_pb2.Value(number_value=6.52),
+                    petal_width=struct_pb2.Value(number_value=3.23),
+                )
             ),
         )
         await async_client_call(
@@ -211,8 +213,10 @@ async def test_file(host: str, bin_file: str):
             "predict_file",
             channel=channel,
             data={"file": pb.File(kind="application/octet-stream", content=fb)},
-            assert_data=lambda resp: resp.file.content == b"\x810\x899"
-            and resp.file.kind == "application/octet-stream",
+            assert_data=lambda resp: (
+                resp.file.content == b"\x810\x899"
+                and resp.file.kind == "application/octet-stream"
+            ),
         )
         await async_client_call(
             "predict_file",
@@ -329,10 +333,12 @@ async def test_pandas(host: str):
                     columns=[pb.Series(int64_values=[23])],
                 ),
             },
-            assert_data=lambda resp: resp.dataframe  # type: ignore (bad lambda types)
-            == pb.DataFrame(
-                column_names=["col1"],
-                columns=[pb.Series(int64_values=[46])],
+            assert_data=lambda resp: (
+                resp.dataframe  # type: ignore (bad lambda types)
+                == pb.DataFrame(
+                    column_names=["col1"],
+                    columns=[pb.Series(int64_values=[46])],
+                )
             ),
         )
         await async_client_call(
@@ -360,8 +366,9 @@ async def test_pandas_series(host: str):
             "echo_series_from_sample",
             channel=channel,
             data={"series": pb.Series(float_values=[1.0, 2.0, 3.0])},
-            assert_data=lambda resp: resp.series
-            == pb.Series(float_values=[1.0, 2.0, 3.0]),
+            assert_data=lambda resp: (
+                resp.series == pb.Series(float_values=[1.0, 2.0, 3.0])
+            ),
         )
 
 

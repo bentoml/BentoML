@@ -1,11 +1,11 @@
 import socket
-import pytest
-import psutil
+
 from bentoml._internal.utils import create_listen_sock
+
 
 def test_create_listen_sock():
     host = "127.0.0.1"
-    port = 0 # Let OS pick a port
+    port = 0  # Let OS pick a port
     sock = create_listen_sock(host, port)
     try:
         assert sock.family == socket.AF_INET
@@ -15,6 +15,7 @@ def test_create_listen_sock():
         assert name[1] > 0
     finally:
         sock.close()
+
 
 def test_create_listen_sock_reuseport():
     host = "127.0.0.1"

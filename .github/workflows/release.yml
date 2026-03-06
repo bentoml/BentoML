@@ -3,11 +3,18 @@ on:
   push:
     tags:
       - "*"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to release, such as a tag name"
+        required: false
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
       - name: Setup Python
         uses: actions/setup-python@v6
         with:

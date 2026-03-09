@@ -126,7 +126,7 @@ jobs:
       - name: Set up Docker Buildx
         if: ${{ matrix.os == 'ubuntu-latest' }}
         id: buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v7
       - name: Set up Python
@@ -175,7 +175,7 @@ jobs:
       - name: Set up Docker Buildx
         if: ${{ matrix.os == 'ubuntu-latest' }}
         id: buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v7
       - name: Set up Python

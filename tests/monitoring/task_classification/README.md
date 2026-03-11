@@ -181,7 +181,7 @@ docker run -p 3000:3000 iris_classifier:invwzzsw7li6zckb2ie5eubhd --mount type=b
 
 ## What's Next?
 
-- 👉 [Pop into our Slack community!](https://l.bentoml.com/join-slack) We're happy to help with any issue you face or even just to meet you and hear what you're working on.
+- 👉 [Pop into our community forum](https://forum.modular.com/c/bento/31) We're happy to help with any issue you face or even just to meet you and hear what you're working on.
 - Dive deeper into the [Core Concepts](https://docs.bentoml.com/en/latest/concepts/index.html) in BentoML
 - Learn how to use BentoML with other ML Frameworks at [Frameworks Guide](https://docs.bentoml.com/en/latest/frameworks/index.html) or check out other [gallery projects](https://github.com/bentoml/BentoML/tree/main/examples)
 - Learn more about model deployment options for Bento:

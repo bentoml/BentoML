@@ -10,12 +10,9 @@ making changes to it and make contributions. BentoML is made by the thriving com
 behind it, and you're always welcome to make contributions to the project and the
 documentation.
 
-Before starting to make a contribution to the docs, make sure to check the
-[issues page](https://github.com/bentoml/BentoML/issues) and the `#bentoml-contributors`
-channel in the [community Slack](https://l.bentoml.com/join-slack), to make sure no one
-else is working on the same thing and to get feedback from the community for larger
-proposals.
-
+Before starting to make a contribution to the docs, check the
+[issues page](https://github.com/bentoml/BentoML/issues) to make sure no one
+else is working on the same thing and get feedback from our [forum](https://forum.modular.com/c/bento/31) for larger proposals.
 
 ---
 

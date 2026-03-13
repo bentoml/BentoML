@@ -6,13 +6,12 @@
 
 ## Unified Model Serving Framework
 
-🍱 Build model inference APIs and multi-model serving systems with any open-source or custom AI models. 👉 [Join our Slack community!](https://l.bentoml.com/join-slack)
+🍱 Build model inference APIs and multi-model serving systems with any open-source or custom AI models. 👉 [Join our forum](https://forum.modular.com/c/bento/31)!
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202-green.svg)](https://github.com/bentoml/BentoML?tab=Apache-2.0-1-ov-file)
 [![Releases](https://img.shields.io/github/v/release/bentoml/bentoml.svg)](https://github.com/bentoml/bentoml/releases)
 [![CI](https://github.com/bentoml/bentoml/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bentoml/BentoML/actions/workflows/ci.yml?query=branch%3Amain)
 [![Twitter](https://badgen.net/badge/icon/@bentomlai/1DA1F2?icon=twitter&label=Follow)](https://twitter.com/bentomlai)
-[![Community](https://badgen.net/badge/Join/Community/cyan?icon=slack)](https://l.bentoml.com/join-slack)
 
 ## What is BentoML?
 
@@ -151,7 +150,7 @@ See [Documentation](https://docs.bentoml.com) for more tutorials and guides.
 
 ## Community
 
-Get involved and join our [Community Slack 💬](https://l.bentoml.com/join-slack), where thousands of AI/ML engineers help each other, contribute to the project, and talk about building AI products.
+Get involved and join our [Community Forum 💬](https://forum.modular.com/c/bento/31), where thousands of AI/ML engineers help each other, contribute to the project, and talk about building AI products.
 
 To report a bug or suggest a feature request, use
 [GitHub Issues](https://github.com/bentoml/BentoML/issues/new/choose).
@@ -164,7 +163,7 @@ There are many ways to contribute to the project:
 - Investigate [issues](https://github.com/bentoml/BentoML/issues) and review other developers' [pull requests](https://github.com/bentoml/BentoML/pulls).
 - Contribute code or [documentation](https://docs.bentoml.com/en/latest/index.html) to the project by submitting a GitHub pull request.
 - Check out the [Contributing Guide](https://github.com/bentoml/BentoML/blob/main/CONTRIBUTING.md) and [Development Guide](https://github.com/bentoml/BentoML/blob/main/DEVELOPMENT.md) to learn more.
-- Share your feedback and discuss roadmap plans in the `#bentoml-contributors` channel [here](https://l.bentoml.com/join-slack).
+- Share your feedback and discuss roadmap plans in our [forum](https://forum.modular.com/c/bento/31).
 
 Thanks to all of our amazing contributors!
 

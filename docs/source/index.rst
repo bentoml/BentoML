@@ -126,9 +126,9 @@ Stay informed
 The BentoML team uses the following channels to announce important updates like major product releases and share tutorials, case studies, as well as community news.
 
 - `BentoML Blog <http://bentoml.com/blog>`_
-- `BentoML X account <http://twitter.com/bentomlai>`_
+- `BentoML X account <https://x.com/bentomlai>`_
 - `BentoML LinkedIn account <https://www.linkedin.com/company/bentoml/>`_
-- `BentoML Slack community <https://l.bentoml.com/join-slack>`_
+- `BentoML community forum <https://forum.modular.com/c/bento/31>`_
 
 To receive release notifications, star and watch the `BentoML project on GitHub <https://github.com/bentoml/bentoml>`_.
 For release notes and detailed changelogs, see the `Releases <https://github.com/bentoml/BentoML/releases>`_ page.
@@ -206,7 +206,7 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    :target: https://github.com/bentoml/bentoml/actions
 .. |documentation_status| image:: https://readthedocs.org/projects/bentoml/badge/?version=latest&style=flat-square
    :target: https://docs.bentoml.com/
-.. |join_slack| image:: https://badgen.net/badge/Join/Community%20Slack/cyan?icon=slack&style=flat-square
-   :target: https://l.bentoml.com/join-slack
+.. |join_slack| image:: https://badgen.net/badge/Join/Community%20Forum/cyan?style=flat-square
+   :target: https://forum.modular.com/c/bento/31
 .. |github_stars| image:: https://img.shields.io/github/stars/bentoml/BentoML?color=%23c9378a&label=github&logo=github&style=flat-square
    :target: https://github.com/bentoml/bentoml

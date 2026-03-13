@@ -307,4 +307,4 @@ This example creates a workflow that:
 
 .. note::
 
-   In some cases, you may want to stream output directly from one LLM to another LLM as input to build a compound LLM system. This is not yet supported in BentoML, but it is on its roadmap. If you are interested in this topic, you are welcome to join our discussion in the `BentoML Slack community <https://l.bentoml.com/join-slack>`_ or `raise an issue in GitHub <https://github.com/bentoml/BentoML/issues/new/choose>`_.
+   In some cases, you may want to stream output directly from one LLM to another LLM as input to build a compound LLM system. This is not yet supported in BentoML, but it is on its roadmap. If you are interested in this topic, you are welcome to join our discussion in the `community forum <https://forum.modular.com/c/bento/31>`_ or `raise an issue in GitHub <https://github.com/bentoml/BentoML/issues/new/choose>`_.

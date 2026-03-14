@@ -101,9 +101,33 @@ class PrometheusClient:
         if self.multiproc:
             registry = self.prometheus_client.CollectorRegistry()
             self.prometheus_client.multiprocess.MultiProcessCollector(registry)
+            # Reorder histogram samples to match the Prometheus exposition format:
+            # _bucket entries first, then _count, then _sum.
+            # MultiProcessCollector produces _sum/_count before _bucket due to
+            # dict insertion order in its accumulation logic.
+            for metric in registry.collect():
+                if metric.type == "histogram":
+                    metric.samples.sort(key=self._histogram_sample_sort_key)
             return self.prometheus_client.generate_latest(registry)
         else:
             return self.prometheus_client.generate_latest()
+
+    @staticmethod
+    def _histogram_sample_sort_key(
+        sample: t.Any,
+    ) -> tuple[tuple[tuple[str, str], ...], int, float]:
+        # Group by all labels except 'le', then order: _bucket (0), _count (1), _sum (2)
+        non_le_labels = tuple(
+            (k, v) for k, v in sorted(sample.labels.items()) if k != "le"
+        )
+        if sample.name.endswith("_bucket"):
+            le_value = float(sample.labels.get("le", 0))
+            return (non_le_labels, 0, le_value)
+        elif sample.name.endswith("_count"):
+            return (non_le_labels, 1, 0)
+        elif sample.name.endswith("_sum"):
+            return (non_le_labels, 2, 0)
+        return (non_le_labels, 3, 0)
 
     def text_string_to_metric_families(self) -> t.Generator[Metric, None, None]:
         yield from self.prometheus_client.parser.text_string_to_metric_families(

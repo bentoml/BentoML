@@ -255,7 +255,7 @@ class DockerOptions:
 
         if self.setup_script:
             try:
-                setup_script = resolve_user_filepath(self.setup_script, build_ctx)
+                setup_script = resolve_user_filepath(self.setup_script, build_ctx, secure=False)
             except FileNotFoundError as e:
                 raise InvalidArgument(f"Invalid setup_script file: {e}") from None
             if not os.access(setup_script, os.X_OK):
@@ -271,7 +271,7 @@ class DockerOptions:
         # This template then can be used later to containerize.
         if self.dockerfile_template is not None:
             shutil.copy2(
-                resolve_user_filepath(self.dockerfile_template, build_ctx),
+                resolve_user_filepath(self.dockerfile_template, build_ctx, secure=False),
                 docker_folder / "Dockerfile.template",
             )
 

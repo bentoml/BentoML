@@ -305,6 +305,10 @@ class Bento(StoreItem):
             for runner in svc.runners:
                 for model in runner.models:
                     append_model(BentoModel(model.tag).to_info())
+        elif not is_legacy and svc.models:
+            # For 1.2+ services, get models from the service if not explicitly specified
+            for model in svc.models:
+                append_model(BentoModel(model.tag).to_info())
 
         if not bare:
             ctx_path = Path(build_ctx).resolve()

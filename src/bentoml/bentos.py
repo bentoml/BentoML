@@ -439,6 +439,11 @@ def build_bentofile(
     if new_attrs:
         build_config = attr.evolve(build_config, **new_attrs)
 
+    # Apply default values to build_config to ensure proper configuration
+    # This is necessary because with_defaults() converts BentoBuildConfig to FilledBentoBuildConfig
+    # which has proper defaults for include, exclude, docker, python, conda options
+    build_config = build_config.with_defaults()
+
     bento = Bento.create(
         build_config=build_config,
         version=version,

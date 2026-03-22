@@ -191,3 +191,6 @@ export BENTOML_DO_NOT_TRACK=True
 
 
 <!-- fix-issue-491: Allow specifying the schema of the endpoints for the Swagger -->
+
+
+<!-- fix-issue-2368: Support darts time series models -->

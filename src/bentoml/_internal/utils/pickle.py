@@ -4,6 +4,9 @@ import io
 import pickle
 import typing as t
 
+from _bentoml_impl.safe_pickle import PICKLE_SERDE_ALLOWED_CLASSES
+from _bentoml_impl.safe_pickle import safe_pickle_loads
+
 # Pickle protocol 5 with out-of-band data. ref: https://peps.python.org/pep-0574/
 
 # This is originally intended for numpy ndarray/pandas dataframe
@@ -88,6 +91,6 @@ def fixed_torch_loads(bs: bytes, **kwargs: t.Any) -> t.Any:
 
 def loads_or_fix_torch(bs: bytes):
     try:
-        return pickle.loads(bs)
+        return safe_pickle_loads(bs, allowed_classes=PICKLE_SERDE_ALLOWED_CLASSES)
     except RuntimeError:
         return fixed_torch_loads(bs)

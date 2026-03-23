@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 
 from simple_di import inject
 
+from _bentoml_impl.safe_pickle import safe_pickle_loads
+
 from ....exceptions import MissingDependencyException
 from ...runner.container import DataContainer
 from ...runner.container import DataContainerRegistry
@@ -79,7 +81,9 @@ class JaxArrayContainer(DataContainer[jax.Array, jax.Array]):
         cls,
         payload: Payload,
     ) -> jax.Array:
-        return jnp.asarray(pickle.loads(payload.data))
+        return jnp.asarray(
+            safe_pickle_loads(payload.data, allowed_classes=(np.ndarray,))
+        )
 
     @classmethod
     @inject

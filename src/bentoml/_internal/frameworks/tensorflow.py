@@ -9,6 +9,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING
 
 import bentoml
+from _bentoml_impl.safe_pickle import safe_pickle_loads
 from bentoml import Tag
 from bentoml.exceptions import MissingDependencyException
 from bentoml.exceptions import NotFound
@@ -384,7 +385,10 @@ class TensorflowTensorContainer(
         cls,
         payload: Payload,
     ) -> tf_ext.EagerTensor:
-        return pickle.loads(payload.data)
+        return safe_pickle_loads(
+            payload.data,
+            allowed_classes=(tf.Tensor, type(tf.constant(0))),
+        )
 
     @classmethod
     def batch_to_payloads(

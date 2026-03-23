@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from simple_di import Provide
 from simple_di import inject
 
+from _bentoml_impl.safe_pickle import safe_pickle_loads
 from bentoml.exceptions import BentoMLException
 from bentoml.exceptions import ServiceUnavailable
 
@@ -298,7 +299,7 @@ class RunnerAppFactory(BaseAppFactory):
                 params: Params[t.Any] = _deserialize_single_param(request, r_)
 
             else:
-                params: Params[t.Any] = pickle.loads(r_)
+                params = safe_pickle_loads(r_, allowed_classes=(Params, Payload))
 
             try:
                 payload = await infer(params)

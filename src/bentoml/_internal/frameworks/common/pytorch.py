@@ -11,6 +11,7 @@ from simple_di import Provide
 from simple_di import inject
 
 import bentoml
+from _bentoml_impl.safe_pickle import safe_pickle_loads
 
 from ....exceptions import MissingDependencyException
 from ...configuration.containers import BentoMLContainer
@@ -169,7 +170,9 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
             ret = plasma_db.get(plasma.ObjectID(payload.data))
 
         else:
-            ret = pickle.loads(payload.data)
+            import numpy as np
+
+            ret = safe_pickle_loads(payload.data, allowed_classes=(np.ndarray,))
         return torch.from_numpy(ret).requires_grad_(False)
 
     @classmethod

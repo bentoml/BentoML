@@ -7,6 +7,7 @@ import logging
 import pickle
 import posixpath
 import typing as t
+from http import HTTPStatus
 from urllib.parse import unquote
 from urllib.parse import urlparse
 
@@ -16,12 +17,15 @@ from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile
 from typing_extensions import get_args
 
+from _bentoml_impl.safe_pickle import PICKLE_SERDE_ALLOWED_CLASSES
+from _bentoml_impl.safe_pickle import safe_pickle_loads
 from _bentoml_sdk.typing_utils import is_list_type
 from _bentoml_sdk.typing_utils import is_union_type
 from _bentoml_sdk.validators import DataframeSchema
 from _bentoml_sdk.validators import TensorSchema
 from bentoml._internal.utils.uri import is_http_url
 from bentoml._internal.utils.uri import make_safe_connect
+from bentoml.exceptions import BentoMLException
 
 if t.TYPE_CHECKING:
     from starlette.requests import Request
@@ -270,18 +274,40 @@ class PickleSerde(GenericSerde, Serde):
         return Payload(data, metadata)
 
     def deserialize_value(self, payload: Payload) -> t.Any:
-        if "buffer-lengths" not in payload.metadata:
-            return pickle.loads(b"".join(payload.data))
-        buffer_lengths = list(map(int, payload.metadata["buffer-lengths"].split(",")))
-        data_stream = b"".join(payload.data)
-        data = memoryview(data_stream)
-        start = buffer_lengths[0]
-        main_bytes = data[:start]
-        buffers: list[pickle.PickleBuffer] = []
-        for length in buffer_lengths[1:]:
-            buffers.append(pickle.PickleBuffer(data[start : start + length]))
-            start += length
-        return pickle.loads(main_bytes, buffers=buffers)
+        try:
+            if "buffer-lengths" not in payload.metadata:
+                return safe_pickle_loads(
+                    b"".join(payload.data),
+                    allowed_classes=PICKLE_SERDE_ALLOWED_CLASSES,
+                )
+            buffer_lengths = list(
+                map(int, payload.metadata["buffer-lengths"].split(","))
+            )
+            data_stream = b"".join(payload.data)
+            data = memoryview(data_stream)
+            start = buffer_lengths[0]
+            main_bytes = data[:start]
+            buffers: list[pickle.PickleBuffer] = []
+            for length in buffer_lengths[1:]:
+                buffers.append(pickle.PickleBuffer(data[start : start + length]))
+                start += length
+            return safe_pickle_loads(
+                main_bytes,
+                allowed_classes=PICKLE_SERDE_ALLOWED_CLASSES,
+                buffers=buffers,
+            )
+        except (
+            AttributeError,
+            EOFError,
+            IndexError,
+            TypeError,
+            ValueError,
+            pickle.UnpicklingError,
+        ) as exc:
+            raise BentoMLException(
+                "Unsupported pickle payload",
+                error_code=HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
+            ) from exc
 
 
 ALL_SERDE: t.Mapping[str, type[Serde]] = {

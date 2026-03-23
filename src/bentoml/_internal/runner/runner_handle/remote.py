@@ -12,6 +12,8 @@ import typing as t
 from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 
+from _bentoml_impl.safe_pickle import safe_pickle_loads
+
 from ....exceptions import RemoteException
 from ....exceptions import ServiceUnavailable
 from ...configuration.containers import BentoMLContainer
@@ -260,7 +262,7 @@ class RemoteRunnerClient(RunnerHandle):
             ) from None
 
         if content_type == "application/vnd.bentoml.multiple_outputs":
-            payloads = pickle.loads(body)
+            payloads = safe_pickle_loads(body, allowed_classes=(Payload,))
             return tuple(AutoContainer.from_payload(payload) for payload in payloads)
 
         container = content_type.strip("application/vnd.bentoml.")

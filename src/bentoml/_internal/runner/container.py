@@ -8,6 +8,8 @@ import pickle
 import typing as t
 from typing import Any
 
+from _bentoml_impl.safe_pickle import safe_pickle_loads
+
 from ..types import LazyType
 from ..utils.lazy_loader import LazyLoader
 from ..utils.pickle import fixed_torch_loads
@@ -309,7 +311,7 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
     ) -> ext.NpNDArray:
         format = payload.meta.get("format", "default")
         if format == "default":
-            return pickle.loads(payload.data)
+            return safe_pickle_loads(payload.data, allowed_classes=(np.ndarray,))
 
         # format can be either "default" or "pickle5"
         if payload.meta["with_buffer"]:
@@ -412,8 +414,10 @@ class PandasDataFrameContainer(
         cls,
         payload: Payload,
     ) -> ext.PdDataFrame:
+        import pandas as pd
+
         if payload.meta["format"] == "default":
-            return pickle.loads(payload.data)
+            return safe_pickle_loads(payload.data, allowed_classes=(pd.DataFrame,))
 
         if payload.meta["with_buffer"]:
             bs_str = t.cast(str, payload.meta["pickle_bytes_str"])

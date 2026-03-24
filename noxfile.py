@@ -35,7 +35,7 @@ FRAMEWORK_DEPENDENCIES = {
     "sklearn": ["scikit-learn"],
     "tensorflow": ["tensorflow"],
     "torchscript": [],
-    "xgboost": ["xgboost", "scikit-learn<1.6"],
+    "xgboost": ["xgboost<3.2", "scikit-learn<1.6"],
     "detectron": ["detectron2"],
     "transformers": ["transformers", "tokenizer"],
 }

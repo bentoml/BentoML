@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import platform
+import shlex
 import shutil
 import subprocess
 import sys
@@ -84,7 +85,7 @@ class Image:
         )
         self.commands.append(
             CONTAINER_METADATA[self.distro]["install_command"].format(
-                packages=" ".join(packages)
+                packages=" ".join(shlex.quote(package) for package in packages)
             )
         )
         return self

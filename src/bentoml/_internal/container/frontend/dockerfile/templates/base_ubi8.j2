@@ -9,6 +9,6 @@ USER root
 {% if __options__system_packages is not none %}
 # Install user-defined system package
 {% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache("/var/cache/yum") }} {% endcall -%} set -eux && \
-    yum install -y {{ __options__system_packages | join(' ') }}
+    yum install -y {{ __options__system_packages | map('bash_quote') | join(' ') }}
 {% endif -%}
 {% endblock %}

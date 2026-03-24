@@ -11,7 +11,7 @@ ENV ENV /root/.bashrc
 {% if __options__system_packages is not none %}
 # Install user-defined system package
 {% call common.RUN(__enable_buildkit__) -%} {{ common.mount_cache("/var/cache/apk") }} {% endcall -%} set -eux \
-    apk add --update {{ __options__system_packages | join(' ') }}
+    apk add --update {{ __options__system_packages | map('bash_quote') | join(' ') }}
 {% endif -%}
 {% endblock %}
 

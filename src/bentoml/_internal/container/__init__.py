@@ -177,7 +177,7 @@ def construct_containerfile(
 
         # copy models from model store
         bento_model_dir = Path(tempdir, "models")
-        hf_model_dir = Path(tempdir, "hf_models")
+        hf_model_dir = Path(tempdir, "hf-models")
         for model_dir in (bento_model_dir, hf_model_dir):
             model_dir.mkdir(parents=True, exist_ok=True)
         for model in options.all_models:

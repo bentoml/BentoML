@@ -171,7 +171,7 @@ def construct_containerfile(
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(bento.path_of("bento.yaml"), "rb") as bento_yaml:
-            options = BaseBentoInfo.from_yaml_file(bento_yaml)
+            options = BaseBentoInfo.from_yaml_file(bento_yaml, tag=bento.tag)
         # tmpdir is our new build context.
         shutil.copytree(bento.path, tempdir, dirs_exist_ok=True)
 

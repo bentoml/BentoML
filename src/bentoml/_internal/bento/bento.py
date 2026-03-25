@@ -470,11 +470,23 @@ class Bento(StoreItem):
 
     @classmethod
     def from_path(cls, path: PathType) -> Bento:
+        path = Path(path)
+        # Try to infer the tag from the directory structure (store_base/name/version/)
+        # This provides a fallback for old bento.yaml files that lack name/version fields.
+        inferred_tag: Tag | None = None
+        try:
+            version = path.name
+            name = path.parent.name
+            if name and version:
+                inferred_tag = Tag(name, version)
+        except (ValueError, TypeError):
+            pass
+
         try:
             with open(
                 os.path.join(path, BENTO_YAML_FILENAME), "r", encoding="utf-8"
             ) as bento_yaml:
-                info = BaseBentoInfo.from_yaml_file(bento_yaml)
+                info = BaseBentoInfo.from_yaml_file(bento_yaml, tag=inferred_tag)
         except FileNotFoundError:
             raise BentoMLException(
                 f"Failed to load bento because it does not contain a '{BENTO_YAML_FILENAME}'"
@@ -797,7 +809,9 @@ class BaseBentoInfo:
         return yaml.safe_dump(self.to_dict(), stream, sort_keys=False)
 
     @classmethod
-    def from_yaml_file(cls, stream: t.IO[t.Any]) -> BaseBentoInfo:
+    def from_yaml_file(
+        cls, stream: t.IO[t.Any], tag: Tag | None = None
+    ) -> BaseBentoInfo:
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -806,9 +820,27 @@ class BaseBentoInfo:
 
         assert yaml_content is not None
 
-        yaml_content["tag"] = Tag(yaml_content["name"], yaml_content["version"])
-        del yaml_content["name"]
-        del yaml_content["version"]
+        try:
+            yaml_content["tag"] = Tag(yaml_content["name"], yaml_content["version"])
+            del yaml_content["name"]
+            del yaml_content["version"]
+        except KeyError:
+            if tag is not None:
+                yaml_content["tag"] = tag
+                yaml_content.pop("name", None)
+                yaml_content.pop("version", None)
+            else:
+                missing = []
+                if "name" not in yaml_content:
+                    missing.append("name")
+                if "version" not in yaml_content:
+                    missing.append("version")
+                raise BentoMLException(
+                    f"Missing required field(s) {', '.join(missing)} in {BENTO_YAML_FILENAME}. "
+                    f"This may be caused by an incompatible bento created with an older version of BentoML. "
+                    f"Consider re-building the bento with the current version of BentoML or "
+                    f"removing the outdated bento from the store."
+                ) from None
 
         # For backwards compatibility for bentos created prior to version 1.0.0rc1
         if "runners" in yaml_content:

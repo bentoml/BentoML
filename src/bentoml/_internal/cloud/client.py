@@ -231,9 +231,7 @@ class RestApiClientV1(BaseRestApiClient):
         self._check_resp(resp)
         return schema_from_object(resp.json(), BentoSchema)
 
-    def delete_bento(
-        self, bento_repository_name: str, version: str
-    ) -> None:
+    def delete_bento(self, bento_repository_name: str, version: str) -> None:
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}"
         resp = self.session.delete(url)
         self._check_resp(resp)

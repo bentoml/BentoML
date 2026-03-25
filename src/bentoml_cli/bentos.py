@@ -255,9 +255,7 @@ def bento_management_commands() -> click.Group:
                         f'Deleting all versions is not supported for cloud bentos. Please specify a version, e.g. "{tag.name}:<version>"'
                     )
                 if not yes:
-                    if not click.confirm(
-                        f"delete bento {tag} from BentoCloud?"
-                    ):
+                    if not click.confirm(f"delete bento {tag} from BentoCloud?"):
                         return
                 cloud_client.bento.delete(tag.name, tag.version)
                 rich.print(f"Bento {tag} deleted from BentoCloud.")

@@ -188,3 +188,6 @@ export BENTOML_DO_NOT_TRACK=True
 ### License
 
 [Apache License 2.0](https://github.com/bentoml/BentoML/blob/main/LICENSE)
+
+
+<!-- fix-issue-491: Allow specifying the schema of the endpoints for the Swagger -->

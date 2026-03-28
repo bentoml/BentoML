@@ -323,6 +323,7 @@ class Bento(StoreItem):
             with target_fs.joinpath("bentofile.yaml").open("w") as bentofile_yaml:
                 build_config.to_yaml(bentofile_yaml)
 
+            is_src_layout = build_config.python.is_src_layout
             for root, _, files in os.walk(ctx_path):
                 for f in files:
                     dir_path = os.path.relpath(root, ctx_path)
@@ -330,9 +331,13 @@ class Bento(StoreItem):
                     if specs.includes(path):
                         if ctx_path.joinpath(path).stat().st_size > 10 * 1024 * 1024:
                             logger.warning("File size is larger than 10MiB: %s", path)
-                        target_fs.joinpath(dir_path).mkdir(parents=True, exist_ok=True)
+                        dest_path = path
+                        if is_src_layout and path.startswith("src/"):
+                            dest_path = path[4:]
+                        dest_dir = os.path.dirname(dest_path)
+                        target_fs.joinpath(dest_dir).mkdir(parents=True, exist_ok=True)
                         src_file = ctx_path.joinpath(path)
-                        dst_file = target_fs.joinpath(path)
+                        dst_file = target_fs.joinpath(dest_path)
                         shutil.copy(src_file, dst_file)
             if image is None:
                 # NOTE: we need to generate both Python and Conda

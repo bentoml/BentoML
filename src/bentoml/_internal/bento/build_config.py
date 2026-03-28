@@ -477,6 +477,7 @@ class PythonOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
+    is_src_layout: t.Optional[bool] = None
 
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
@@ -606,7 +607,6 @@ class PythonOptions:
                     f.write(f"{bentoml_req}\n")
                 elif sdist_name:
                     f.write(f"./wheels/{sdist_name}\n")
-
             is_empty = f.tell() == 0
 
         if self.lock_packages and not is_empty:
@@ -673,6 +673,8 @@ class PythonOptions:
             new_attrs["lock_packages"] = self.pack_git_packages is not False
         if self.pack_git_packages is None:
             new_attrs["pack_git_packages"] = True
+        if self.is_src_layout is None:
+            new_attrs["is_src_layout"] = False
         return attr.evolve(self, **new_attrs) if new_attrs else self
 
     @staticmethod
@@ -906,7 +908,9 @@ class BentoBuildConfig:
         return cls.load(yaml_content)
 
     @classmethod
-    def from_pyproject(cls, stream: t.BinaryIO) -> BentoBuildConfig:
+    def from_pyproject(
+        cls, stream: t.BinaryIO, base_dir: str | None = None
+    ) -> BentoBuildConfig:
         if sys.version_info >= (3, 11):
             import tomllib
         else:
@@ -920,13 +924,17 @@ class BentoBuildConfig:
         python_packages = build_config.python.packages or []
         python_packages.extend(dependencies)
         object.__setattr__(build_config.python, "packages", python_packages)
+        if build_config.python.is_src_layout is None:
+            # Default auto-discovery: if src/ exists in the same directory as pyproject.toml
+            if base_dir and os.path.isdir(os.path.join(base_dir, "src")):
+                object.__setattr__(build_config.python, "is_src_layout", True)
         return build_config
 
     @classmethod
     def from_file(cls, path: str) -> BentoBuildConfig:
         if os.path.basename(path) == "pyproject.toml":
             with open(path, "rb") as f:
-                return cls.from_pyproject(f)
+                return cls.from_pyproject(f, base_dir=os.path.dirname(path))
         else:
             with open(path, encoding="utf-8") as f:
                 return cls.from_yaml(f)

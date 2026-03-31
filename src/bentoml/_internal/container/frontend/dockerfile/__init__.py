@@ -24,10 +24,16 @@ logger = logging.getLogger(__name__)
 SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 # CUDA supported versions
 SUPPORTED_CUDA_VERSIONS = [
-    "12.0.0",
-    "12.0.1",
-    "12.1.0",
+    "12.8.1",
+    "12.8.0",
+    "12.6.3",
+    "12.6.2",
+    "12.6.1",
+    "12.6.0",
     "12.1.1",
+    "12.1.0",
+    "12.0.1",
+    "12.0.0",
     "11.8.0",
     "11.7.1",
     "11.6.2",
@@ -36,7 +42,15 @@ SUPPORTED_CUDA_VERSIONS = [
 ]
 # Mapping from user provided version argument to the full version target to install
 ALLOWED_CUDA_VERSION_ARGS = {
-    "12": "12.1.1",
+    "12": "12.8.1",
+    "12.8": "12.8.1",
+    "12.8.1": "12.8.1",
+    "12.8.0": "12.8.0",
+    "12.6": "12.6.3",
+    "12.6.3": "12.6.3",
+    "12.6.2": "12.6.2",
+    "12.6.1": "12.6.1",
+    "12.6.0": "12.6.0",
     "12.1": "12.1.1",
     "12.1.1": "12.1.1",
     "12.1.0": "12.1.0",
@@ -126,6 +140,25 @@ CONTAINER_METADATA: dict[str, dict[str, t.Any]] = {
 }
 
 CONTAINER_SUPPORTED_DISTROS = list(CONTAINER_METADATA.keys())
+
+# CUDA versions that use ubuntu24.04 with the newer cudnn naming (no version number).
+# Older versions use ubuntu22.04 with cudnn8.
+_CUDA_UBUNTU2404_VERSIONS = {"12.6.0", "12.6.1", "12.6.2", "12.6.3", "12.8.0", "12.8.1"}
+
+
+def get_cuda_base_image(distro: str, cuda_version: str) -> str:
+    """Return the full CUDA base image tag for *distro* and *cuda_version*."""
+    meta = CONTAINER_METADATA[distro]
+    if "cuda" not in meta:
+        raise BentoMLException(f"Distro '{distro}' does not support CUDA.")
+
+    if distro == "debian":
+        if cuda_version in _CUDA_UBUNTU2404_VERSIONS:
+            return f"nvidia/cuda:{cuda_version}-cudnn-runtime-ubuntu24.04"
+        return f"nvidia/cuda:{cuda_version}-cudnn8-runtime-ubuntu22.04"
+
+    # For other distros (e.g. ubi8), use the static template.
+    return meta["cuda"]["image"].format(spec_version=cuda_version)
 
 
 def get_supported_spec(spec: t.Literal["python", "miniconda", "cuda"]) -> list[str]:

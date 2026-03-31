@@ -13,6 +13,7 @@ from jinja2.loaders import FileSystemLoader
 from ..configuration.containers import BentoMLContainer
 from ..utils.filesystem import resolve_user_filepath
 from .frontend.dockerfile import DistroSpec
+from .frontend.dockerfile import get_cuda_base_image
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +93,7 @@ def get_templates_variables(
             python_version = python_version.replace(".", "")
         base_image = spec.image.format(spec_version=python_version)
         if docker.cuda_version is not None:
-            base_image = spec.image.format(spec_version=docker.cuda_version)
+            base_image = get_cuda_base_image(docker.distro, docker.cuda_version)
 
     # bento__env
     default_env = {**DEFAULT_BENTO_ENVS, **bento_env}

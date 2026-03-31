@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from bentoml._internal.container.frontend.dockerfile import (
-    ALLOWED_CUDA_VERSION_ARGS,
-    SUPPORTED_CUDA_VERSIONS,
-    get_cuda_base_image,
-)
 from bentoml._internal.bento.build_config import DockerOptions
+from bentoml._internal.container.frontend.dockerfile import ALLOWED_CUDA_VERSION_ARGS
+from bentoml._internal.container.frontend.dockerfile import SUPPORTED_CUDA_VERSIONS
+from bentoml._internal.container.frontend.dockerfile import get_cuda_base_image
 
 
 class TestSupportedCudaVersions:
@@ -34,7 +32,9 @@ class TestGetCudaBaseImage:
             ("12.6.0", "nvidia/cuda:12.6.0-cudnn-runtime-ubuntu24.04"),
         ],
     )
-    def test_debian_new_cuda_versions_use_ubuntu2404(self, cuda_version, expected_image):
+    def test_debian_new_cuda_versions_use_ubuntu2404(
+        self, cuda_version, expected_image
+    ):
         assert get_cuda_base_image("debian", cuda_version) == expected_image
 
     @pytest.mark.parametrize(
@@ -47,7 +47,9 @@ class TestGetCudaBaseImage:
             ("11.2.2", "nvidia/cuda:11.2.2-cudnn8-runtime-ubuntu22.04"),
         ],
     )
-    def test_debian_old_cuda_versions_use_ubuntu2204(self, cuda_version, expected_image):
+    def test_debian_old_cuda_versions_use_ubuntu2204(
+        self, cuda_version, expected_image
+    ):
         assert get_cuda_base_image("debian", cuda_version) == expected_image
 
     def test_ubi8_uses_static_template(self):
@@ -64,7 +66,10 @@ class TestGetCudaBaseImage:
 class TestDockerOptionsCudaVersion:
     """Verify that DockerOptions properly validates and converts cuda_version."""
 
-    @pytest.mark.parametrize("shorthand, expected", [("12", "12.8.1"), ("12.6", "12.6.3"), ("12.8", "12.8.1")])
+    @pytest.mark.parametrize(
+        "shorthand, expected",
+        [("12", "12.8.1"), ("12.6", "12.6.3"), ("12.8", "12.8.1")],
+    )
     def test_shorthand_resolves(self, shorthand, expected):
         opts = DockerOptions(cuda_version=shorthand)
         assert opts.cuda_version == expected

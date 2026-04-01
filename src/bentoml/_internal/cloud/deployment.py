@@ -5,6 +5,7 @@ import contextlib
 import hashlib
 import logging
 import os
+import shlex
 import time
 import typing as t
 from pathlib import Path
@@ -1644,8 +1645,9 @@ def _build_requirements_txt(bento_dir: str, image: Image | None) -> bytes:
 def _build_setup_script(bento_dir: str, image: Image | None) -> bytes:
     content = b""
     config = BentoBuildConfig.from_bento_dir(bento_dir)
-    if config.docker.system_packages:
-        content += f"apt-get update && apt-get install -y {' '.join(config.docker.system_packages)} || exit 1\n".encode()
+    if system_packages := config.docker.system_packages:
+        quoted = " ".join(shlex.quote(p) for p in system_packages)
+        content += f"apt-get update && apt-get install -y {quoted} || exit 1\n".encode()
     if image and image.commands:
         content += "\n".join(image.commands).encode() + b"\n"
     return content

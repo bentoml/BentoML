@@ -133,6 +133,7 @@ python:
   extra_index_url: null
   pip_args: null
   wheels: null
+  is_src_layout: false
 conda:
   environment_yml: null
   channels: null

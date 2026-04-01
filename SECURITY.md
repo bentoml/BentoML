@@ -23,3 +23,12 @@ If you discover a potential security vulnerability, we kindly request that you r
 * Your contact information for further communication.
 
 Alternatively, you can [open a security advisory](https://github.com/bentoml/BentoML/security/advisories/new) on GitHub.
+
+## Exceptions
+
+The following reports are out of scope and will not be accepted as
+security vulnerabilities:
+
+* Reports about pickle-related vulnerabilities in the runner service or
+  dependency service. We consider these scenarios to be purely
+  theoretical and not a practical vulnerability in BentoML.

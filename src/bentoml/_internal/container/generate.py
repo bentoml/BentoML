@@ -7,8 +7,8 @@ import typing as t
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
+from jinja2.sandbox import SandboxedEnvironment as Environment
 
 from ..configuration.containers import BentoMLContainer
 from ..utils.filesystem import resolve_user_filepath
@@ -153,7 +153,7 @@ def generate_containerfile(
         os.path.join(os.path.dirname(__file__), "frontend", frontend, "templates")
     ]
     ENVIRONMENT = Environment(
-        extensions=["jinja2.ext.do", "jinja2.ext.loopcontrols", "jinja2.ext.debug"],
+        extensions=["jinja2.ext.loopcontrols"],
         trim_blocks=True,
         lstrip_blocks=True,
         loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True),

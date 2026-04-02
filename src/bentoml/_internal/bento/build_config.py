@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 # Docker defaults
-DEFAULT_CUDA_VERSION = "11.6.2"
+DEFAULT_CUDA_VERSION = "12.8.1"
 DEFAULT_CONTAINER_DISTRO = "debian"
 
 CONDA_ENV_YAML_FILE_NAME = "environment.yml"

@@ -36,6 +36,4 @@ def test_generate_containerfile_cache_mounts_use_sharing_locked(tmp_path) -> Non
     cache_mounts = re.findall(r"--mount=type=cache[^ ]+", dockerfile)
     assert len(cache_mounts) > 0, "expected at least one cache mount"
     for mount in cache_mounts:
-        assert "sharing=locked" in mount, (
-            f"cache mount missing sharing=locked: {mount}"
-        )
+        assert "sharing=locked" in mount, f"cache mount missing sharing=locked: {mount}"

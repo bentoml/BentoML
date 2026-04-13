@@ -338,7 +338,7 @@ class Bento(StoreItem):
                         target_fs.joinpath(dest_dir).mkdir(parents=True, exist_ok=True)
                         src_file = ctx_path.joinpath(path)
                         dst_file = target_fs.joinpath(dest_path)
-                        shutil.copy(src_file, dst_file)
+                        shutil.copy(src_file, dst_file, follow_symlinks=False)
             if image is None:
                 # NOTE: we need to generate both Python and Conda
                 # first to make sure we can generate the Dockerfile correctly.

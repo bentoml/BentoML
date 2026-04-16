@@ -1,4 +1,4 @@
-{%- macro mount_cache(target, extra_args="") -%}--mount=type=cache,target={{ target }}{{ extra_args }}{%- endmacro -%}
+{%- macro mount_cache(target, extra_args="") -%}--mount=type=cache,sharing=locked,target={{ target }}{{ extra_args }}{%- endmacro -%}
 
 {%- macro RUN(enable_buildkit=True) -%}
 {% if not enable_buildkit %}RUN {% else -%}RUN {{ caller() }} {%- endif -%}

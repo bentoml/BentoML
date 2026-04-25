@@ -512,7 +512,11 @@ class SyncGrpcClient(SyncClient):
     ) -> None:
         protocol_version = kwargs.get("protocol_version", LATEST_PROTOCOL_VERSION)
 
-        with GrpcClient._create_channel(
+        # Use SyncGrpcClient._create_channel — the wrapper class GrpcClient does
+        # not define _create_channel, and the AsyncGrpcClient version returns an
+        # async channel that is incompatible with the sync ``with`` below.
+        # See bentoml/BentoML#4683.
+        with SyncGrpcClient._create_channel(
             f"{host}:{port}",
             ssl=kwargs.get("ssl", False),
             ssl_client_credentials=kwargs.get("ssl_client_credentials", None),
@@ -725,7 +729,13 @@ if __name__ == '__main__':
             raise BentoMLException("\n".join(exception_message))
         pb, _ = import_generated_stubs(protocol_version)
 
-        with GrpcClient._create_channel(
+        # Use ``cls._create_channel`` — the wrapper class ``GrpcClient`` does
+        # not define ``_create_channel``, and the ``AsyncGrpcClient`` version
+        # returns an async channel that is incompatible with the sync ``with``
+        # below. Using ``cls`` (rather than hardcoding ``SyncGrpcClient``) lets
+        # subclasses of ``SyncGrpcClient`` override the channel factory.
+        # See bentoml/BentoML#4683.
+        with cls._create_channel(
             server_url.replace(r"localhost", "0.0.0.0"),
             ssl=kwargs.get("ssl", False),
             ssl_client_credentials=kwargs.get("ssl_client_credentials", None),

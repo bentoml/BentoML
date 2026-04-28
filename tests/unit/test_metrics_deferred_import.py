@@ -8,6 +8,7 @@ prometheus_client had already initialised in single-process mode.
 The fix defers the prometheus_client import inside __getattr__ so the import
 always happens after the worker has set PROMETHEUS_MULTIPROC_DIR.
 """
+
 from __future__ import annotations
 
 import os
@@ -110,6 +111,7 @@ def test_multiple_histograms_all_collected_in_multiprocess_mode():
             os.environ["PROMETHEUS_MULTIPROC_DIR"] = old_env
         # Clean up multiprocess DB files.
         import shutil  # noqa: PLC0415
+
         shutil.rmtree(tmp, ignore_errors=True)
         # Remove prometheus_client from sys.modules so other tests start clean.
         for key in list(sys.modules.keys()):

@@ -16,6 +16,7 @@ By deferring the import to first attribute access we ensure that
 ``prometheus_client`` always sees the correct ``PROMETHEUS_MULTIPROC_DIR``
 value that the worker has already set.
 """
+
 from __future__ import annotations
 
 import warnings

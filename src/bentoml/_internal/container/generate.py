@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import importlib
 import logging
 import os
 import shlex
 import typing as t
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -49,6 +51,13 @@ def expands_bento_path(*path: str, bento_path: str = BENTO_PATH) -> str:
     Note on using "/": the returned path is meant to be used in the generated Dockerfile.
     """
     return "/".join([bento_path, *path])
+
+
+def normalize_line(s: str) -> str:
+    """
+    Normalize a line by stripping leading and trailing whitespaces and replacing multiple spaces with a single space.
+    """
+    return " ".join(s.strip().split())
 
 
 J2_FUNCTION: dict[str, F[t.Any]] = {"expands_bento_path": expands_bento_path}
@@ -108,6 +117,23 @@ def get_templates_variables(
     }
 
 
+@lru_cache(maxsize=1)
+def build_environment() -> Environment:
+    templates_path = importlib.import_module(
+        "bentoml._internal.container.frontend.dockerfile.templates"
+    ).__path__
+    environment = Environment(
+        extensions=["jinja2.ext.loopcontrols"],
+        trim_blocks=True,
+        lstrip_blocks=True,
+        loader=FileSystemLoader(templates_path, followlinks=True),
+    )
+    environment.filters["bash_quote"] = shlex.quote
+    environment.filters["normalize_line"] = normalize_line
+    environment.globals["expands_bento_path"] = expands_bento_path
+    return environment
+
+
 def generate_containerfile(
     docker: DockerOptions,
     build_ctx: str,
@@ -150,16 +176,10 @@ def generate_containerfile(
 
         Overriding templates variables: bento__uid_gid, bento__user, bento__home, bento__path, bento__enable_buildkit
     """
-    TEMPLATES_PATH = [
-        os.path.join(os.path.dirname(__file__), "frontend", frontend, "templates")
-    ]
-    ENVIRONMENT = Environment(
-        extensions=["jinja2.ext.loopcontrols"],
-        trim_blocks=True,
-        lstrip_blocks=True,
-        loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True),
-    )
-    ENVIRONMENT.filters["bash_quote"] = shlex.quote
+    templates_path = importlib.import_module(
+        "bentoml._internal.container.frontend.dockerfile.templates"
+    ).__path__
+    ENVIRONMENT = build_environment()
 
     if docker.cuda_version is not None:
         release_type = "cuda"
@@ -176,16 +196,16 @@ def generate_containerfile(
     logger.debug(
         'Using base Dockerfile template: "%s" (path: "%s")',
         base,
-        os.path.join(TEMPLATES_PATH[0], base),
+        os.path.join(templates_path[0], base),
     )
 
     user_templates = docker.dockerfile_template
     if user_templates is not None:
         dir_path = os.path.dirname(resolve_user_filepath(user_templates, build_ctx))
         user_templates = os.path.basename(user_templates)
-        TEMPLATES_PATH.append(dir_path)
+        templates_path.append(dir_path)
         environment = ENVIRONMENT.overlay(
-            loader=FileSystemLoader(TEMPLATES_PATH, followlinks=True)
+            loader=FileSystemLoader(templates_path, followlinks=True)
         )
         template = environment.get_template(
             user_templates,

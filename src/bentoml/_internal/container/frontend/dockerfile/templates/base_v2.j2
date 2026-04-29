@@ -8,16 +8,15 @@
 {% set __secret_mounts__ = "" %}
 {% set __secret_exports__ = "" %}
 {% if __bento_secret_envs__ and __enable_buildkit__ %}
-{% set mounts = [] %}
+{% set secret_envs = namespace(mounts="", exports="") %}
 {% for env in __bento_secret_envs__ %}
-{% do mounts.append("--mount=type=secret,id=%s" % env.name) %}
+{% set secret_envs.mounts = secret_envs.mounts + "--mount=type=secret,id=%s " % env.name %}
 {% endfor %}
-{% set __secret_mounts__ = " ".join(mounts) + " " %}
-{% set secret_exports = [] %}
+{% set __secret_mounts__ = secret_envs.mounts %}
 {% for env in __bento_secret_envs__ %}
-{% do secret_exports.append('%s="$(cat /run/secrets/%s)"' % (env.name, env.name)) %}
+{% set secret_envs.exports = secret_envs.exports + '%s="$(cat /run/secrets/%s)" ' % (env.name, env.name) %}
 {% endfor %}
-{% set __secret_exports__ = " ".join(secret_exports) + " " %}
+{% set __secret_exports__ = secret_envs.exports %}
 {% endif %}
 
 {% if __enable_buildkit__ %}
@@ -35,7 +34,7 @@
 
 # Block SETUP_BENTO_BASE_IMAGE
 {% block SETUP_BENTO_BASE_IMAGE %}
-FROM {{ __options__base_image }} AS base-container
+FROM {{ __options__base_image|normalize_line }} AS base-container
 
 ENV LANG=C.UTF-8
 
@@ -68,9 +67,9 @@ ENV BENTOML_CONTAINERIZED=true
 {% for env in __bento_envs__ %}
 {% set stage = env.stage | default("all") -%}
 {% if stage != "runtime" -%}
-ARG {{ env.name }}{% if env.value %}={{ env.value | bash_quote }}{% endif %}
+ARG {{ env.name|normalize_line }}{% if env.value %}={{ env.value | bash_quote }}{% endif %}
 
-ENV {{ env.name }}=${{ env.name }}
+ENV {{ env.name|normalize_line }}=${{ env.name|normalize_line }}
 {% endif -%}
 {% endfor %}
 

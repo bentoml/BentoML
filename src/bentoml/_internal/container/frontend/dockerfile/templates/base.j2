@@ -18,7 +18,7 @@
 
 # Block SETUP_BENTO_BASE_IMAGE
 {% block SETUP_BENTO_BASE_IMAGE %}
-FROM {{ __base_image__ }} as base-container
+FROM {{ __base_image__|normalize_line }} as base-container
 
 ENV LANG=C.UTF-8
 

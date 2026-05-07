@@ -129,7 +129,8 @@ class FileSchema:
         media_type: str | None = None
 
         if isinstance(obj, str):
-            return obj
+            body = obj.encode("utf-8")
+            filename = None
         if isinstance(obj, PurePath):
             return Path(obj)
         if isinstance(obj, UploadFile):

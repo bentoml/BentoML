@@ -590,6 +590,18 @@ def serve_grpc_production(
     svc = load(bento_identifier, working_dir=working_dir)
 
     if not isinstance(svc, Service):
+        try:
+            from _bentoml_sdk import Service as NewService
+        except ImportError:
+            NewService = None  # type: ignore[assignment]
+        if NewService is not None and isinstance(svc, NewService):
+            raise BentoMLException(
+                "gRPC serving is not supported for services defined with the "
+                "`@bentoml.service` decorator (the bentoml>=1.2 programming "
+                "model). Use `bentoml serve` to run the service over HTTP, or "
+                "rewrite it using the legacy `bentoml.Service` API if gRPC is "
+                "required."
+            )
         raise BentoMLException(f"{type(svc)} type doesn't support gRPC serving")
 
     from circus.sockets import CircusSocket  # type: ignore

@@ -126,7 +126,7 @@ def build_environment() -> Environment:
         extensions=["jinja2.ext.loopcontrols"],
         trim_blocks=True,
         lstrip_blocks=True,
-        loader=FileSystemLoader(templates_path, followlinks=True),
+        loader=FileSystemLoader(templates_path, followlinks=False),
     )
     environment.filters["bash_quote"] = shlex.quote
     environment.filters["normalize_line"] = normalize_line
@@ -205,7 +205,7 @@ def generate_containerfile(
         user_templates = os.path.basename(user_templates)
         templates_path.append(dir_path)
         environment = ENVIRONMENT.overlay(
-            loader=FileSystemLoader(templates_path, followlinks=True)
+            loader=FileSystemLoader(templates_path, followlinks=False)
         )
         template = environment.get_template(
             user_templates,

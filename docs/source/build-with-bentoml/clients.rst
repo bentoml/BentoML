@@ -99,6 +99,68 @@ To enhance resource management and reduce the risk of connection leaks, we recom
                 summarized_text: str = await client.summarize(text="Your long text to summarize")
                 print(summarized_text)
 
+Start a local server from Python
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For integration tests or local automation, you can start a BentoML server from Python
+and create a client against the running server. For new code, prefer
+``bentoml.serve()`` as a context manager:
+
+.. code-block:: python
+
+    import bentoml
+
+    with bentoml.serve("service.py:Summarization", port=3000) as server:
+        with bentoml.SyncHTTPClient(server.url, server_ready_timeout=60) as client:
+            summarized_text: str = client.summarize(text="Your long text to summarize")
+            print(summarized_text)
+
+If you maintain code that uses the lower-level server classes, start the server before
+calling ``get_client()`` and stop it when the call path is complete. The
+``bentoml.server`` module is deprecated, so use this path only when you need direct
+access to the server class:
+
+.. code-block:: python
+
+    from bentoml.server import HTTPServer
+
+    server = HTTPServer(
+        "service.py:Summarization",
+        production=True,
+        host="127.0.0.1",
+        port=3000,
+    )
+    server.start(text=True)
+
+    try:
+        client = server.get_client()
+        summarized_text: str = client.summarize(text="Your long text to summarize")
+        print(summarized_text)
+    finally:
+        server.stop()
+
+Use ``GrpcServer`` the same way for a gRPC endpoint:
+
+.. code-block:: python
+
+    from bentoml.server import GrpcServer
+
+    server = GrpcServer(
+        "service.py:Summarization",
+        production=True,
+        host="127.0.0.1",
+        port=3000,
+        enable_reflection=True,
+    )
+    server.start(text=True)
+
+    try:
+        client = server.get_client()
+        summarized_text: str = client.summarize(text="Your long text to summarize")
+        print(summarized_text)
+    finally:
+        server.stop()
+
 Check Service readiness
 -----------------------
 

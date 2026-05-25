@@ -25,8 +25,8 @@ from _bentoml_sdk.service import set_current_service
 from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.resource import system_resources
-from bentoml._internal.server.http.traffic import TimeoutMiddleware
 from bentoml._internal.server.base_app import BaseAppFactory
+from bentoml._internal.server.http.traffic import TimeoutMiddleware
 from bentoml._internal.server.http_app import log_exception
 from bentoml._internal.types import LazyType
 from bentoml._internal.utils import is_async_callable

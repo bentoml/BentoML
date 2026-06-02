@@ -64,3 +64,25 @@ def test_generate_containerfile_normalizes_custom_base_image(tmp_path) -> None:
 
     assert "FROM python:3.11-slim RUN touch /tmp/pwned as base-container" in dockerfile
     assert "\nRUN touch /tmp/pwned" not in dockerfile
+
+
+def test_generate_containerfile_custom_base_image_without_python_version(
+    tmp_path,
+) -> None:
+    # Regression test for #5198: a custom base_image with no python_version must
+    # not emit `uv venv -p None`, which crashes `bentoml containerize`. uv must
+    # also be auto-installed rather than assumed present on the base image.
+    docker = DockerOptions(base_image="custom-base-image:latest").with_defaults()
+    assert docker.python_version is None
+
+    dockerfile = generate_containerfile(
+        docker,
+        str(tmp_path),
+        conda=CondaOptions(),
+        bento_fs=tmp_path,
+    )
+
+    assert "uv venv" in dockerfile
+    assert "-p None" not in dockerfile
+    assert "--python None" not in dockerfile
+    assert "command -v uv >/dev/null || pip install uv" in dockerfile

@@ -113,9 +113,7 @@ def make_safe_connect():
             yield
         except httpx.ConnectError as e:
             if "All connection attempts failed" in str(e):
-                raise BadInput(
-                    "Connection blocked due to insecure input URL"
-                ) from e
+                raise BadInput("Connection blocked due to insecure input URL") from e
         finally:
             socket.getaddrinfo = _original_getaddrinfo
         return

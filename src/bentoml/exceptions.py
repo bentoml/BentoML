@@ -55,7 +55,7 @@ class InternalServerError(BentoMLException):
     Request, or python API function parameters, but got internal issues while
     processing.
 
-    * Note to BentoML developers: raise this exception only when exceptions happend
+    * Note to BentoML developers: raise this exception only when exceptions happen
     in the users' code (runner or service) and want to surface it to the user.
     """
 

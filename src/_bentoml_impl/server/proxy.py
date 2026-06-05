@@ -52,24 +52,33 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
     ) -> t.AsyncGenerator[dict[str, t.Any], None]:
         server_instance = get_current_service()
         assert server_instance is not None, "Current service is not initialized"
-        # Only start process for the first worker or when replicate_process is True
-        should_start_process = (
+        http_config = service.config.get("http", {})
+        proxy_host = http_config.get("proxy_host", "localhost")
+        proxy_port = http_config.get("proxy_port", 8000)
+        proxy_url = f"http://{proxy_host}:{proxy_port}"
+        health_url = f"{proxy_url}/{health_endpoint.lstrip('/')}"
+        # A remote proxy host points at an externally managed upstream server,
+        # so this process must not try to spawn the command locally.
+        is_remote_proxy = proxy_host not in ("localhost", "127.0.0.1", "::1")
+        # Only start the process for the first worker (or when replicate_process
+        # is True), and never when proxying to a remote host.
+        should_start_process = not is_remote_proxy and (
             service.config.get("replicate_process", False)
             or server_context.worker_index == 1
         )
         async with contextlib.AsyncExitStack() as stack:
-            proxy_port = service.config.get("http", {}).get("proxy_port", 8000)
-            proxy_url = f"http://localhost:{proxy_port}"
             proc: Process | None = None
             if (
                 instance_client := getattr(server_instance, "client", None)
             ) is not None and isinstance(instance_client, aiohttp.ClientSession):
-                # TODO: support aiohttp client
+                # Use the user-provided session as-is. We always build absolute
+                # URLs (see the health check and reverse_proxy below), so the
+                # user's client does not need a base_url pointing at BentoML's
+                # internal proxy port.
                 client = instance_client
             else:
                 client = await stack.enter_async_context(
                     aiohttp.ClientSession(
-                        base_url=proxy_url,
                         timeout=aiohttp.ClientTimeout(),
                         connector=aiohttp.TCPConnector(limit=512),
                     )
@@ -88,7 +97,7 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
                 logger.info("Running service with command: %s", " ".join(cmd))
                 proc = await anyio.open_process(cmd, stdout=None, stderr=None)
             while proc is None or proc.returncode is None:
-                if await _check_health(client, health_endpoint):
+                if await _check_health(client, health_url):
                     break
                 await anyio.sleep(0.5)
             else:
@@ -97,6 +106,7 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
                 )
 
             app.state.client = client
+            app.state.proxy_url = proxy_url
             try:
                 state = {
                     "proc": proc,
@@ -129,7 +139,11 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
         import yarl
         from starlette.background import BackgroundTask
 
-        url = yarl.URL.build(path=f"/{path}", query=request.url.query or None)
+        # Build an absolute URL so the proxy works for both BentoML's own client
+        # and a user-provided session that has no base_url configured.
+        url = (yarl.URL(app.state.proxy_url) / path.lstrip("/")).with_query(
+            request.url.query or None
+        )
         client = t.cast(aiohttp.ClientSession, app.state.client)
         headers = dict(request.headers)
         headers.pop("host", None)

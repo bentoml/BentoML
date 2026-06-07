@@ -220,6 +220,9 @@ def generate_containerfile(
     else:
         python_packages = {}
 
+    # Check if pylock_toml option was passed in configuration context
+    pylock_file = bento_fs.joinpath("env/python/pylock.toml")
+
     return template.render(
         **get_templates_variables(
             docker,
@@ -227,9 +230,11 @@ def generate_containerfile(
             bento_fs,
             python_packages=python_packages,
             _is_cuda=release_type == "cuda",
+            _has_pylock=pylock_file.exists(),
             **override_bento_env,
         )
     )
+
 
 
 def resolve_package_versions(requirement: str) -> dict[str, str]:

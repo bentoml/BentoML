@@ -236,7 +236,6 @@ def generate_containerfile(
     )
 
 
-
 def resolve_package_versions(requirement: str) -> dict[str, str]:
     from pip_requirements_parser import RequirementsFile
 

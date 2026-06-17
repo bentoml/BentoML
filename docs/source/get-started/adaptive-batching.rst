@@ -102,6 +102,21 @@ When you specify ``max_batch_size`` and ``max_latency_ms`` parameters, BentoML e
 
     When using a synchronous endpoint in one Service to call a batchable endpoint in another Service, it sends only one request at a time and waits for a response before sending the next. This is due to the default concurrency of 1 for synchronous endpoints. To enable concurrent requests and allow batching, set the ``threads=N`` parameter in the ``@bentoml.service`` decorator.
 
+Observe adaptive batching
+-------------------------
+
+When Prometheus metrics are enabled, BentoML exports adaptive batching signals for both Service and Runner dispatchers. These metrics make it easier to see whether requests are filling batches, waiting on the optimizer window, or spending too long in the queue.
+
+Service metrics use the ``bentoml_service`` namespace. Runner metrics use the ``bentoml_runner`` namespace.
+
+- ``adaptive_batch_size``: Number of queued jobs released in each adaptive batch.
+- ``adaptive_batch_item_count``: Number of input items in each released batch after payload-size aware splitting.
+- ``adaptive_batch_queue_size``: Number of queued jobs seen by the dispatcher at release time.
+- ``adaptive_batch_queue_delay_seconds``: Queue wait for the oldest job in each released batch.
+- ``adaptive_batch_dispatch_total``: Number of batches released by reason. Reasons include ``training``, ``max_batch_size``, and ``optimizer``.
+
+For example, if ``adaptive_batch_queue_delay_seconds`` rises while ``adaptive_batch_item_count`` stays low, the endpoint is waiting without forming useful batches. Lowering ``max_latency_ms`` or increasing upstream concurrency can reduce wasted wait. If ``adaptive_batch_dispatch_total`` is dominated by ``max_batch_size`` and request duration is high, the model may need a smaller ``max_batch_size`` or more workers.
+
 More BentoML examples with batchable APIs: `SentenceTransformers <https://github.com/bentoml/BentoSentenceTransformers>`_, `CLIP <https://github.com/bentoml/BentoClip>`_ and `ColPali <https://github.com/bentoml/BentoColPali>`_.
 
 Handle multiple parameters

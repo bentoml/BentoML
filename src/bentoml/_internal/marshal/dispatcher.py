@@ -100,6 +100,19 @@ T_IN = t.TypeVar("T_IN")
 T_OUT = t.TypeVar("T_OUT")
 
 
+@attr.frozen
+class DispatchMetrics:
+    reason: str
+    training: bool
+    queue_size: int
+    job_count: int
+    item_count: int
+    max_batch_size: int
+    oldest_queue_wait_seconds: float
+    newest_queue_wait_seconds: float
+    request_batch_sizes: tuple[int, ...]
+
+
 @attr.define
 class Job(t.Generic[T_IN, T_OUT]):
     enqueue_time: float
@@ -129,6 +142,7 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
         fallback: t.Callable[[], T_OUT],
         get_batch_size: t.Callable[[T_IN], int] = lambda x: x.sample.batch_size,
         batch_dim: tuple[int, int] = (0, 0),
+        dispatch_observer: t.Callable[[DispatchMetrics], None] | None = None,
     ) -> None:
         ...
         """
@@ -153,8 +167,14 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
         )  # TODO(bojiang): maxlen
         self.get_batch_size = get_batch_size
         self.batch_dim = batch_dim
+        self.dispatch_observer = dispatch_observer
         # at most 1 batch can be processed at the same time
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
+
+    def set_dispatch_observer(
+        self, dispatch_observer: t.Callable[[DispatchMetrics], None] | None
+    ) -> None:
+        self.dispatch_observer = dispatch_observer
 
     def shutdown(self) -> None:
         if self._controller is not None:
@@ -246,7 +266,7 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                 # call
                 self._sema.acquire()
                 inputs_info = tuple(self._get_inputs())
-                self._loop.create_task(self.outbound_call(inputs_info, training=True))
+                self._dispatch(inputs_info, reason="training", training=True)
         except Exception:
             logger.exception("Error in training optimizer")
 
@@ -320,7 +340,12 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                 # call
                 self._sema.acquire()
                 inputs_info = tuple(self._get_inputs())
-                self._loop.create_task(self.outbound_call(inputs_info))
+                reason = (
+                    "max_batch_size"
+                    if self._get_item_count(inputs_info) >= self.max_batch_size
+                    else "optimizer"
+                )
+                self._dispatch(inputs_info, reason=reason)
             except Exception:
                 logger.exception("Error processing batch requests")
 
@@ -332,6 +357,65 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
         async with self._wake_event:
             self._wake_event.notify_all()
         return await future
+
+    def _dispatch(
+        self,
+        inputs_info: tuple[Job[T_IN, T_OUT], ...],
+        *,
+        reason: str,
+        training: bool = False,
+    ) -> None:
+        dispatch_time = time.time()
+        for input_info in inputs_info:
+            input_info.dispatch_time = dispatch_time
+        self._observe_dispatch(inputs_info, reason, training, dispatch_time)
+        self._loop.create_task(self.outbound_call(inputs_info, training=training))
+
+    def _observe_dispatch(
+        self,
+        inputs_info: tuple[Job[T_IN, T_OUT], ...],
+        reason: str,
+        training: bool,
+        dispatch_time: float,
+    ) -> None:
+        if self.dispatch_observer is None or not inputs_info:
+            return
+
+        batch_sizes = self._get_batch_sizes(inputs_info)
+
+        metrics = DispatchMetrics(
+            reason=reason,
+            training=training,
+            queue_size=len(self._queue) + len(inputs_info),
+            job_count=len(inputs_info),
+            item_count=sum(batch_sizes),
+            max_batch_size=self.max_batch_size,
+            oldest_queue_wait_seconds=max(
+                dispatch_time - inputs_info[0].enqueue_time, 0
+            ),
+            newest_queue_wait_seconds=max(
+                dispatch_time - inputs_info[-1].enqueue_time, 0
+            ),
+            request_batch_sizes=tuple(batch_sizes),
+        )
+        try:
+            self.dispatch_observer(metrics)
+        except Exception:
+            logger.exception("Error in dynamic batching dispatch observer")
+
+    def _get_item_count(self, inputs_info: tuple[Job[T_IN, T_OUT], ...]) -> int:
+        return sum(self._get_batch_sizes(inputs_info))
+
+    def _get_batch_sizes(
+        self, inputs_info: tuple[Job[T_IN, T_OUT], ...]
+    ) -> tuple[int, ...]:
+        batch_sizes: list[int] = []
+        for input_info in inputs_info:
+            try:
+                batch_sizes.append(self.get_batch_size(input_info.data))
+            except Exception:
+                batch_sizes.append(1)
+        return tuple(batch_sizes)
 
     async def outbound_call(
         self, inputs_info: tuple[Job[T_IN, T_OUT], ...], training: bool = False

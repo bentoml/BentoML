@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from starlette.responses import Response
     from starlette.routing import BaseRoute
 
+    from ..marshal.dispatcher import DispatchMetrics
     from ..runner.runner import Runner
     from ..runner.runner import RunnerMethod
     from ..types import LifecycleHook
@@ -103,6 +104,82 @@ class RunnerAppFactory(BaseAppFactory):
             ],
             buckets=exponential_buckets(1, 2, max_max_batch_size),
         )
+        self.adaptive_batch_item_count_hist = metrics_client.Histogram(
+            namespace="bentoml_runner",
+            name="adaptive_batch_item_count",
+            documentation="Runner adaptive batch item count after payload-size aware splitting",
+            labelnames=[
+                "runner_name",
+                "worker_index",
+                "method_name",
+                "service_version",
+                "service_name",
+            ],
+            buckets=exponential_buckets(1, 2, max_max_batch_size),
+        )
+        self.adaptive_batch_queue_size_hist = metrics_client.Histogram(
+            namespace="bentoml_runner",
+            name="adaptive_batch_queue_size",
+            documentation="Runner adaptive batch queued jobs at dispatch time",
+            labelnames=[
+                "runner_name",
+                "worker_index",
+                "method_name",
+                "service_version",
+                "service_name",
+            ],
+            buckets=exponential_buckets(1, 2, max_max_batch_size),
+        )
+        self.adaptive_batch_queue_delay_hist = metrics_client.Histogram(
+            namespace="bentoml_runner",
+            name="adaptive_batch_queue_delay_seconds",
+            documentation="Queue wait for the oldest job in each runner adaptive batch",
+            labelnames=[
+                "runner_name",
+                "worker_index",
+                "method_name",
+                "service_version",
+                "service_name",
+            ],
+        )
+        self.adaptive_batch_dispatch_total = metrics_client.Counter(
+            namespace="bentoml_runner",
+            name="adaptive_batch_dispatch_total",
+            documentation="Runner adaptive batch dispatches by release reason",
+            labelnames=[
+                "runner_name",
+                "worker_index",
+                "method_name",
+                "service_version",
+                "service_name",
+                "dispatch_reason",
+            ],
+        )
+
+        for method_name, dispatcher in self.dispatchers.items():
+            dispatcher.set_dispatch_observer(
+                functools.partial(self._observe_adaptive_batch_dispatch, method_name)
+            )
+
+    def _observe_adaptive_batch_dispatch(
+        self, method_name: str, metrics: DispatchMetrics
+    ) -> None:
+        labels = {
+            "runner_name": self.runner.name,
+            "worker_index": self.worker_index,
+            "method_name": method_name,
+            "service_version": server_context.bento_version,
+            "service_name": server_context.bento_name,
+        }
+        self.adaptive_batch_size_hist.labels(**labels).observe(metrics.job_count)  # type: ignore
+        self.adaptive_batch_item_count_hist.labels(**labels).observe(metrics.item_count)  # type: ignore
+        self.adaptive_batch_queue_size_hist.labels(**labels).observe(metrics.queue_size)  # type: ignore
+        self.adaptive_batch_queue_delay_hist.labels(**labels).observe(  # type: ignore
+            metrics.oldest_queue_wait_seconds
+        )
+        self.adaptive_batch_dispatch_total.labels(
+            **labels, dispatch_reason=metrics.reason
+        ).inc()
 
     @property
     def on_startup(self) -> list[LifecycleHook]:
@@ -227,14 +304,6 @@ class RunnerAppFactory(BaseAppFactory):
                 async def infer_batch(
                     params_list: t.Sequence[Params[t.Any]],
                 ) -> list[Payload] | list[tuple[Payload, ...]]:
-                    self.adaptive_batch_size_hist.labels(  # type: ignore
-                        runner_name=self.runner.name,
-                        worker_index=self.worker_index,
-                        method_name=runner_method.name,
-                        service_version=server_context.bento_version,
-                        service_name=server_context.bento_name,
-                    ).observe(len(params_list))
-
                     if not params_list:
                         return []
 

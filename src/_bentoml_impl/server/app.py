@@ -24,6 +24,7 @@ from _bentoml_sdk import Service
 from _bentoml_sdk.service import set_current_service
 from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
+from bentoml._internal.marshal.dispatcher import DispatchMetrics
 from bentoml._internal.resource import system_resources
 from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.server.http_app import log_exception
@@ -133,6 +134,10 @@ class ServiceAppFactory(BaseAppFactory):
                 ),
                 batch_dim=method.batch_dim,
             )
+            if self.enable_metrics:
+                self.dispatchers[name].set_dispatch_observer(
+                    functools.partial(self._observe_adaptive_batch_dispatch, name)
+                )
 
     @functools.cached_property
     def adaptive_batch_size_hist(self) -> Histogram:
@@ -159,6 +164,106 @@ class ServiceAppFactory(BaseAppFactory):
             ],
             buckets=exponential_buckets(1, 2, max_max_batch_size),
         )
+
+    @functools.cached_property
+    def adaptive_batch_item_count_hist(self) -> Histogram:
+        metrics_client = BentoMLContainer.metrics_client.get()
+        return metrics_client.Histogram(
+            namespace="bentoml_service",
+            name="adaptive_batch_item_count",
+            documentation="Service adaptive batch item count after payload-size aware splitting",
+            labelnames=[
+                "runner_name",
+                "worker_index",
+                "method_name",
+                "service_version",
+                "service_name",
+            ],
+            buckets=exponential_buckets(1, 2, self._max_batch_size),
+        )
+
+    @functools.cached_property
+    def adaptive_batch_queue_size_hist(self) -> Histogram:
+        metrics_client = BentoMLContainer.metrics_client.get()
+        return metrics_client.Histogram(
+            namespace="bentoml_service",
+            name="adaptive_batch_queue_size",
+            documentation="Service adaptive batch queued jobs at dispatch time",
+            labelnames=[
+                "runner_name",
+                "worker_index",
+                "method_name",
+                "service_version",
+                "service_name",
+            ],
+            buckets=exponential_buckets(1, 2, self._max_batch_size),
+        )
+
+    @functools.cached_property
+    def adaptive_batch_queue_delay_hist(self) -> Histogram:
+        metrics_client = BentoMLContainer.metrics_client.get()
+        return metrics_client.Histogram(
+            namespace="bentoml_service",
+            name="adaptive_batch_queue_delay_seconds",
+            documentation="Queue wait for the oldest job in each service adaptive batch",
+            labelnames=[
+                "runner_name",
+                "worker_index",
+                "method_name",
+                "service_version",
+                "service_name",
+            ],
+        )
+
+    @functools.cached_property
+    def adaptive_batch_dispatch_total(self) -> t.Any:
+        metrics_client = BentoMLContainer.metrics_client.get()
+        return metrics_client.Counter(
+            namespace="bentoml_service",
+            name="adaptive_batch_dispatch_total",
+            documentation="Service adaptive batch dispatches by release reason",
+            labelnames=[
+                "runner_name",
+                "worker_index",
+                "method_name",
+                "service_version",
+                "service_name",
+                "dispatch_reason",
+            ],
+        )
+
+    @functools.cached_property
+    def _max_batch_size(self) -> int:
+        return max(
+            (
+                method.max_batch_size
+                for method in self.service.apis.values()
+                if method.batchable
+            ),
+            default=100,
+        )
+
+    def _observe_adaptive_batch_dispatch(
+        self, method_name: str, metrics: DispatchMetrics
+    ) -> None:
+        from bentoml._internal.context import server_context
+
+        labels = {
+            "runner_name": self.service.name,
+            "worker_index": server_context.worker_index,
+            "method_name": method_name,
+            "service_version": server_context.bento_version,
+            "service_name": server_context.bento_name,
+        }
+        self.adaptive_batch_size_hist.labels(**labels).observe(metrics.job_count)  # type: ignore
+        self.adaptive_batch_item_count_hist.labels(**labels).observe(metrics.item_count)  # type: ignore
+        self.adaptive_batch_queue_size_hist.labels(**labels).observe(metrics.queue_size)  # type: ignore
+        self.adaptive_batch_queue_delay_hist.labels(**labels).observe(  # type: ignore
+            metrics.oldest_queue_wait_seconds
+        )
+        self.adaptive_batch_dispatch_total.labels(
+            **labels, dispatch_reason=metrics.reason
+        ).inc()
 
     async def index_page(self, _: Request) -> Response:
         from starlette.responses import FileResponse
@@ -674,18 +779,8 @@ class ServiceAppFactory(BaseAppFactory):
         async def inner_infer(
             batches: t.Sequence[t.Any], **kwargs: t.Any
         ) -> t.Sequence[t.Any]:
-            from bentoml._internal.context import server_context
             from bentoml._internal.runner.container import AutoContainer
             from bentoml._internal.utils import is_async_callable
-
-            if self.enable_metrics:
-                self.adaptive_batch_size_hist.labels(  # type: ignore
-                    runner_name=self.service.name,
-                    worker_index=server_context.worker_index,
-                    method_name=name,
-                    service_version=server_context.bento_version,
-                    service_name=server_context.bento_name,
-                ).observe(len(batches))
 
             if len(batches) == 0:
                 return []

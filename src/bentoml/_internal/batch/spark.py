@@ -90,15 +90,15 @@ def _result_to_record_batch(
         )
     if isinstance(first, list):
         if isinstance(first[0], dict) if first else False:
-            return pa.RecordBatch.from_pandas(pd.concat([pd.DataFrame(r) for r in results], ignore_index=True))
+            return pa.RecordBatch.from_pandas(
+                pd.concat([pd.DataFrame(r) for r in results], ignore_index=True)
+            )
         return pa.RecordBatch.from_pandas(
             pd.DataFrame({output_schema.names[0]: list(results)})
         )
     if isinstance(first, dict):
         return pa.RecordBatch.from_pandas(pd.DataFrame(results))
-    return pa.RecordBatch.from_pandas(
-        pd.DataFrame({output_schema.names[0]: results})
-    )
+    return pa.RecordBatch.from_pandas(pd.DataFrame({output_schema.names[0]: results}))
 
 
 def _get_process(
@@ -131,8 +131,6 @@ def _get_process(
                 func_output = client.call(api_name, func_input)
                 yield api.output.to_arrow(func_output)
         else:
-            import pandas as pd
-
             from _bentoml_impl.client import SyncHTTPClient as NewSyncHTTPClient
 
             with NewSyncHTTPClient(server.url, timeout=300) as client:

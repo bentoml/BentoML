@@ -318,7 +318,7 @@ class Model(StoreItem):
             name:
             max_batch_size:
             max_latency_ms:
-            runnable_method_configs:
+            method_configs:
 
         Returns:
 

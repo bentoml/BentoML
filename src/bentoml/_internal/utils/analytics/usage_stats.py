@@ -292,7 +292,7 @@ def get_metrics_report(
 
     Args:
         metrics_client: Instance of bentoml._internal.server.metrics.prometheus.PrometheusClient
-        grpc: Whether the metrics are for gRPC server.
+        serve_kind: The kind of serving server the metrics are for (e.g. http or grpc).
 
     Returns:
         A tuple of a list of metrics and an optional boolean to determine whether the return metrics are legacy metrics.

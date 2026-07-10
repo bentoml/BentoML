@@ -10,7 +10,9 @@ import typing as t
 from simple_di import Provide
 from simple_di import inject
 from starlette.exceptions import HTTPException
+from starlette.middleware import Middleware
 from starlette.responses import PlainTextResponse
+from starlette.responses import Response
 
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
@@ -18,6 +20,7 @@ from ..context import trace_context
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
 from ..utils import with_app_arg
+from .http.traffic import MaxConcurrencyMiddleware, TimeoutMiddleware
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span
@@ -114,8 +117,11 @@ class HTTPAppFactory(BaseAppFactory):
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
         self.enable_metrics = enable_metrics
-        timeout = BentoMLContainer.api_server_config.traffic.timeout.get()
-        super().__init__(timeout=timeout, max_concurrency=max_concurrency)
+        # Store timeout and max_concurrency to apply after mounting apps
+        self._timeout = BentoMLContainer.api_server_config.traffic.timeout.get()
+        self._max_concurrency = max_concurrency
+        # Initialize base class with None to avoid applying middleware too early
+        super().__init__(timeout=None, max_concurrency=None)
 
     @property
     def name(self) -> str:
@@ -310,6 +316,11 @@ class HTTPAppFactory(BaseAppFactory):
         app = super().__call__()
         for mount_app, path, name in self.bento_service.mount_apps:
             app.mount(app=mount_app, path=path, name=name)
+        # Apply timeout and concurrency middleware after mounting to ensure they cover mounted apps
+        if self._max_concurrency is not None:
+            app = MaxConcurrencyMiddleware(app, max_concurrency=self._max_concurrency)
+        if self._timeout is not None:
+            app = TimeoutMiddleware(app, timeout=self._timeout)
         return app
 
     def _create_api_endpoint(

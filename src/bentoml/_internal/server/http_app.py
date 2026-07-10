@@ -20,7 +20,8 @@ from ..context import trace_context
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
 from ..utils import with_app_arg
-from .http.traffic import MaxConcurrencyMiddleware, TimeoutMiddleware
+from .http.traffic import MaxConcurrencyMiddleware
+from .http.traffic import TimeoutMiddleware
 
 if t.TYPE_CHECKING:
     from opentelemetry.sdk.trace import Span

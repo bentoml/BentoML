@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import asyncio
 
-import bentoml
 from fastapi import FastAPI
 
+import bentoml
 
 # Create a FastAPI app with a delayed endpoint
 fastapi_app = FastAPI()

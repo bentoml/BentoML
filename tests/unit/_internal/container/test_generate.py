@@ -64,3 +64,41 @@ def test_generate_containerfile_normalizes_custom_base_image(tmp_path) -> None:
 
     assert "FROM python:3.11-slim RUN touch /tmp/pwned as base-container" in dockerfile
     assert "\nRUN touch /tmp/pwned" not in dockerfile
+
+
+def test_generate_containerfile_sanitizes_env_dict_values(tmp_path) -> None:
+    dockerfile = generate_containerfile(
+        DockerOptions(
+            distro="debian",
+            python_version="3.11",
+            env={"X": "a\nRUN echo PWNED_VIA_ENV_INJECTION", "GREETING": "hello world"},
+        ),
+        str(tmp_path),
+        conda=CondaOptions(),
+        bento_fs=tmp_path,
+    )
+
+    # A newline in an env value must not break out into a new Dockerfile instruction.
+    assert "\nRUN echo PWNED_VIA_ENV_INJECTION" not in dockerfile
+    # The payload is neutralized inside a single-quoted ARG value.
+    assert "ARG X='a RUN echo PWNED_VIA_ENV_INJECTION'" in dockerfile
+    # Legitimate multi-word values are preserved and quoted.
+    assert "ARG GREETING='hello world'" in dockerfile
+
+
+def test_generate_dockerfile_sanitizes_envs_values(tmp_path) -> None:
+    from _bentoml_impl.docker import generate_dockerfile
+    from bentoml._internal.bento.bento import ImageInfo
+    from bentoml._internal.bento.build_config import BentoEnvSchema
+
+    image = ImageInfo(python_version="3.11", base_image="python:3.11-slim")
+    dockerfile = generate_dockerfile(
+        image,
+        tmp_path,
+        envs=[BentoEnvSchema(name="X", value="a\nRUN echo PWNED_V2", stage="all")],
+    )
+
+    # The newline must not break out into a new Dockerfile instruction.
+    assert "\nRUN echo PWNED_V2" not in dockerfile
+    # The payload is neutralized inside a single-quoted ARG value.
+    assert "ARG X='a RUN echo PWNED_V2'" in dockerfile

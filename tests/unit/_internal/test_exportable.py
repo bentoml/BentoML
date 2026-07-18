@@ -142,7 +142,9 @@ def test_from_fs_preserves_safe_tar_symlink(tmp_path: Path) -> None:
     assert os.readlink(link) == "marker.txt"
     assert link.read_text() == "ok"
     assert nested_link.is_symlink()
-    assert os.readlink(nested_link) == "../marker.txt"
+    # ``os.symlink`` stores the target using the platform separator, so compare
+    # through ``Path`` to stay correct on Windows (``..\\marker.txt``) as well.
+    assert Path(os.readlink(nested_link)) == Path("../marker.txt")
     assert nested_link.read_text() == "ok"
 
 

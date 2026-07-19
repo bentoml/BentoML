@@ -293,6 +293,69 @@ def test_custom_pipeline(pair_classification_pipeline: PairClassificationPipelin
     runner.destroy()
 
 
+def test_pretrained_runnable_init_without_gpu(monkeypatch: pytest.MonkeyPatch):
+    """
+    Instantiating a runnable for a torch pretrained model on a machine without an
+    assigned GPU must not set the default tensor type to CUDA.
+    See https://github.com/bentoml/BentoML/issues/4376
+    """
+    import torch
+
+    if torch.cuda.is_available():
+        pytest.skip("requires a machine without CUDA")
+
+    monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)
+
+    config = transformers.BertConfig(
+        vocab_size=99,
+        hidden_size=32,
+        num_hidden_layers=2,
+        num_attention_heads=4,
+        intermediate_size=37,
+    )
+    model = transformers.BertForSequenceClassification(config).eval()
+    bento_model = bentoml.transformers.save_model("tiny_pretrained_pt", model)
+
+    runnable = bento_model.to_runnable()()
+
+    assert next(runnable.model.parameters()).device.type == "cpu"
+    # default tensor type must remain a CPU type
+    assert torch.tensor([1.0]).device.type == "cpu"
+
+
+def test_pretrained_runnable_skips_unavailable_signature_methods(
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    Models saved with an older transformers version may have recorded signature
+    methods (e.g. 'greedy_search') that no longer exist on the loaded model.
+    The runnable should skip them with a warning instead of crashing.
+    """
+    config = transformers.BertConfig(
+        vocab_size=99,
+        hidden_size=32,
+        num_hidden_layers=2,
+        num_attention_heads=4,
+        intermediate_size=37,
+    )
+    model = transformers.BertForSequenceClassification(config).eval()
+    bento_model = bentoml.transformers.save_model(
+        "tiny_pretrained_pt_stale",
+        model,
+        signatures={
+            "__call__": {"batchable": False},
+            "greedy_search": {"batchable": False},
+        },
+    )
+
+    with caplog.at_level(logging.WARNING):
+        runnable = bento_model.to_runnable()()
+
+    assert "greedy_search" in caplog.text
+    assert "__call__" in runnable.predict_fns
+    assert "greedy_search" not in runnable.predict_fns
+
+
 def test_import_model_with_synced_version():
     revision = "3956d303d3cddf0708ff20660c1ea5f6ec30e434"
     bento_model = bentoml.transformers.import_model(

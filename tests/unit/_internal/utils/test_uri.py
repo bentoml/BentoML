@@ -48,6 +48,10 @@ def test_uri_path_conversion(
         "240.0.0.1",  # reserved
         "::1",  # IPv6 loopback
         "fc00::1",  # IPv6 unique local (private)
+        "::ffff:100.64.1.1",  # IPv4-mapped IPv6 CGNAT
+        "::ffff:100.100.0.1",  # IPv4-mapped IPv6 CGNAT
+        "::ffff:127.0.0.1",  # IPv4-mapped IPv6 loopback
+        "::ffff:192.168.1.1",  # IPv4-mapped IPv6 private
     ],
 )
 def test_is_unsafe_address_blocks_internal_ranges(host: str) -> None:
@@ -64,6 +68,7 @@ def test_is_unsafe_address_blocks_internal_ranges(host: str) -> None:
         "8.8.8.8",  # public
         "1.1.1.1",  # public
         "2001:4860:4860::8888",  # public IPv6
+        "::ffff:8.8.8.8",  # IPv4-mapped IPv6 public
     ],
 )
 def test_is_unsafe_address_allows_public_addresses(host: str) -> None:

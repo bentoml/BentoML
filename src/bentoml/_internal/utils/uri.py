@@ -71,6 +71,13 @@ def is_unsafe_address(
     (e.g. when fetching a user-supplied URL). Covers private, loopback, link-local,
     and reserved ranges, plus the IPv4 CGNAT range which `ipaddress` does not
     classify as any of the above."""
+    # Canonicalize IPv4-mapped IPv6 addresses (e.g. ::ffff:100.64.1.1) to their
+    # embedded IPv4 form before checking. `is_private`/`is_loopback`/etc already
+    # see through the mapping on CPython >= 3.10, but the CGNAT range below is a
+    # manual membership check that doesn't, so a mapped CGNAT address would
+    # otherwise slip past this guard.
+    if ip.version == 6 and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
     return bool(
         ip.is_private
         or ip.is_loopback

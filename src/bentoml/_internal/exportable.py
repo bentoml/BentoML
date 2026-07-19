@@ -195,7 +195,14 @@ def _copy_tar_fs(fs: fsspec.AbstractFileSystem, temp_dir: str) -> None:
         _validate_symlink_target(entry.linkname, destination, root)
         if os.path.lexists(destination):
             _raise_unsafe_member(entry.path, "duplicate destination path")
-        os.symlink(entry.linkname, destination)
+        # entry.linkname is a POSIX target from the archive; on Windows a
+        # forward-slash symlink is not traversable (OSError [Errno 22]), so
+        # localize the separators for the on-disk link (validation above ran
+        # on the original POSIX target).
+        link_target = entry.linkname
+        if os.sep != "/":
+            link_target = link_target.replace("/", os.sep)
+        os.symlink(link_target, destination)
         _ensure_within_directory(root, destination)
 
 

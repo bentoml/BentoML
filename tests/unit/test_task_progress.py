@@ -1,11 +1,14 @@
 """Unit tests for task progress tracking (Issue #5434)."""
+
 from __future__ import annotations
 
 import datetime
+
 import pytest
 
-from _bentoml_impl.tasks.result import ResultRow, ResultStatus, Sqlite3Store
-
+from _bentoml_impl.tasks.result import ResultRow
+from _bentoml_impl.tasks.result import ResultStatus
+from _bentoml_impl.tasks.result import Sqlite3Store
 
 # ---------------------------------------------------------------------------
 # ResultRow field tests
@@ -61,12 +64,9 @@ def tmp_db(tmp_path):
 
 @pytest.mark.asyncio
 async def test_update_progress_sets_value(tmp_db):
-    from starlette.requests import Request
-    from unittest.mock import AsyncMock, MagicMock
 
     async with Sqlite3Store(tmp_db) as store:
         # Manually insert a task entry so we can test update_progress
-        import aiosqlite
 
         task_id = "test-task-001"
         await store._conn.execute(

@@ -582,8 +582,8 @@ class ServiceAppFactory(BaseAppFactory):
     async def _run_task(self, task_id: str, name: str, request: Request) -> None:
         try:
             self.service.context.request.state.task_id = task_id
-            self.service.context.request.state.update_progress = (
-                functools.partial(self._result_store.update_progress, task_id)
+            self.service.context.request.state.update_progress = functools.partial(
+                self._result_store.update_progress, task_id
             )
             resp = await self.api_endpoint_wrapper(name, request)
             await self._result_store.set_result(

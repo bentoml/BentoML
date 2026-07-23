@@ -147,6 +147,36 @@ class Image:
         self._after_pip_install = True
         return self
 
+    def apt_sources_mirror(self, url: str) -> t.Self:
+        """Swap the Debian apt mirror URL before running apt-get. Supports chaining call.
+
+        This is useful for users in regions where the default Debian mirrors are slow.
+        The command tries both the Debian 12+ format (``debian.sources``) and the
+        legacy ``sources.list`` format so it works across Debian releases.
+
+        Example:
+
+        .. code-block:: python
+
+            image = (
+                Image("debian:latest")
+                .apt_sources_mirror("https://mirrors.tuna.tsinghua.edu.cn/debian")
+                .system_packages("curl")
+            )
+
+        Args:
+            url: The mirror URL to use, e.g. ``https://mirrors.tuna.tsinghua.edu.cn/debian``.
+
+        Returns:
+            The current :class:`Image` instance (chainable).
+        """
+        sed_cmd = (
+            f"sed -i 's|http://deb.debian.org/debian|{url}|g'"
+            " /etc/apt/sources.list.d/debian.sources 2>/dev/null ||"
+            f" sed -i 's|http://deb.debian.org/debian|{url}|g' /etc/apt/sources.list"
+        )
+        return self.run(sed_cmd)
+
     def run(self, command: str) -> t.Self:
         """Add a command to the image. Supports chaining call.
 

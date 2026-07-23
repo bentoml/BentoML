@@ -534,6 +534,18 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
         data = resp.json()
         return ResultStatus(data["status"])
 
+    def _get_task_progress(
+        self, __endpoint: ClientEndpoint, /, task_id: str
+    ) -> float | None:
+        resp = self.client.request(
+            "GET", f"{__endpoint.route}/status", params={"task_id": task_id}
+        )
+        if resp.is_error:
+            resp.read()
+            raise map_exception(resp)
+        data = resp.json()
+        return data.get("progress")
+
     def _cancel_task(self, __endpoint: ClientEndpoint, /, task_id: str) -> None:
         resp = self.request(
             "PUT", f"{__endpoint.route}/cancel", params={"task_id": task_id}
@@ -736,6 +748,18 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
             raise map_exception(resp)
         data = resp.json()
         return ResultStatus(data["status"])
+
+    async def _get_task_progress(
+        self, __endpoint: ClientEndpoint, /, task_id: str
+    ) -> float | None:
+        resp = await self.client.request(
+            "GET", f"{__endpoint.route}/status", params={"task_id": task_id}
+        )
+        if resp.is_error:
+            await resp.aread()
+            raise map_exception(resp)
+        data = resp.json()
+        return data.get("progress")
 
     async def _cancel_task(self, __endpoint: ClientEndpoint, /, task_id: str) -> None:
         resp = await self.request(

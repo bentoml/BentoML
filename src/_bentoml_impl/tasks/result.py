@@ -36,6 +36,7 @@ class ResultRow:
     status: ResultStatus
     created_at: datetime.datetime
     executed_at: datetime.datetime | None
+    progress: float | None = None
 
     def to_json(self) -> dict[str, t.Any]:
         return {
@@ -43,6 +44,7 @@ class ResultRow:
             "status": self.status.value,
             "created_at": self.created_at.isoformat(),
             "executed_at": self.executed_at.isoformat() if self.executed_at else None,
+            "progress": self.progress,
         }
 
 
@@ -86,6 +88,10 @@ class ResultStore(abc.ABC, t.Generic[Ti, To]):
 
     @abc.abstractmethod
     async def set_status(self, task_id: str, status: ResultStatus) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def update_progress(self, task_id: str, value: float) -> None:
         raise NotImplementedError
 
 
@@ -138,10 +144,15 @@ class Sqlite3Store(ResultStore[Request, Response]):
                     result BLOB,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    completed_at TIMESTAMP DEFAULT NULL
+                    completed_at TIMESTAMP DEFAULT NULL,
+                    progress REAL DEFAULT NULL
                 )
                 """)
             )
+            try:
+                conn.execute("ALTER TABLE result ADD COLUMN progress REAL DEFAULT NULL")
+            except Exception:
+                pass  # column already exists
             conn.commit()
 
     async def new_entry(self, name: str, input: Request) -> str:
@@ -182,7 +193,7 @@ class Sqlite3Store(ResultStore[Request, Response]):
 
     async def get_status(self, task_id: str) -> ResultRow:
         result = await self._conn.execute(
-            "SELECT name, status, created_at, executed_at "
+            "SELECT name, status, created_at, executed_at, progress "
             "FROM result WHERE task_id = ?",
             (task_id,),
         )
@@ -196,6 +207,7 @@ class Sqlite3Store(ResultStore[Request, Response]):
             ResultStatus(row[1]),
             row[2],
             row[3],
+            row[4],
         )
 
     async def set_status(self, task_id: str, status: ResultStatus) -> None:
@@ -207,6 +219,17 @@ class Sqlite3Store(ResultStore[Request, Response]):
                 task_id,
                 ResultStatus.IN_PROGRESS.value,
             ),
+        )
+        await self._conn.commit()
+
+    async def update_progress(self, task_id: str, value: float) -> None:
+        if not (0.0 <= value <= 1.0):
+            raise ValueError(
+                f"progress value must be between 0.0 and 1.0, got {value!r}"
+            )
+        await self._conn.execute(
+            "UPDATE result SET progress = ? WHERE task_id = ?",
+            (value, task_id),
         )
         await self._conn.commit()
 

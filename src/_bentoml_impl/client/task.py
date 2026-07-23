@@ -22,6 +22,9 @@ class Task:
     def get_status(self) -> ResultStatus:
         return self.client._get_task_status(self.endpoint, self.id)
 
+    def get_progress(self) -> float | None:
+        return self.client._get_task_progress(self.endpoint, self.id)
+
     def cancel(self) -> None:
         return self.client._cancel_task(self.endpoint, self.id)
 
@@ -40,6 +43,9 @@ class AsyncTask:
 
     async def get_status(self) -> ResultStatus:
         return await self.client._get_task_status(self.endpoint, self.id)
+
+    async def get_progress(self) -> float | None:
+        return await self.client._get_task_progress(self.endpoint, self.id)
 
     async def cancel(self) -> None:
         return await self.client._cancel_task(self.endpoint, self.id)

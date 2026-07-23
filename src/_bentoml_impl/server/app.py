@@ -661,9 +661,34 @@ class ServiceAppFactory(BaseAppFactory):
         if self._limiter is None:
             threads = self.service.config.get("threads", 1)
             self._limiter = anyio.CapacityLimiter(threads)
-        func = functools.partial(func, *args, **kwargs)
-        output = await anyio.to_thread.run_sync(func, limiter=self._limiter)
-        return output
+        limiter = self._limiter
+        borrower = object()
+        await limiter.acquire_on_behalf_of(borrower)
+
+        loop = asyncio.get_running_loop()
+        started = False
+        released = False
+
+        def _worker_wrapper() -> R:
+            nonlocal started, released
+            started = True
+            try:
+                return func(*args, **kwargs)
+            finally:
+                if not released:
+                    released = True
+                    loop.call_soon_threadsafe(limiter.release_on_behalf_of, borrower)
+
+        try:
+            output = await anyio.to_thread.run_sync(
+                _worker_wrapper, abandon_on_cancel=True
+            )
+            return output
+        except BaseException:
+            if not started and not released:
+                released = True
+                limiter.release_on_behalf_of(borrower)
+            raise
 
     async def batch_infer(
         self, name: str, input_args: tuple[t.Any, ...], input_kwargs: dict[str, t.Any]

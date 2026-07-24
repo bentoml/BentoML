@@ -143,22 +143,31 @@ def resolve_user_filepath(
 
     _path = Path(os.path.expanduser(os.path.expandvars(filepath)))
 
+    # The base directory that relative paths are resolved against and that the
+    # ``secure`` containment check is enforced against. This defaults to the
+    # current working directory, but when a ctx (e.g. the Bento build context)
+    # is provided it must be used for both, otherwise a file that is legitimately
+    # relative to ctx is wrongly rejected whenever ctx differs from the cwd.
+    base_dir = Path(os.path.expanduser(ctx) if ctx else os.getcwd()).resolve()
+
     # Try finding file in ctx if provided
     if not _path.is_absolute():
-        ctx = os.path.expanduser(ctx) if ctx else os.getcwd()
-        _path = Path(ctx).joinpath(_path)
+        _path = base_dir.joinpath(_path)
     elif secure:
         raise ValueError(f"Absolute path {filepath} is not allowed")
     _path = _path.resolve()
     if not _path.exists():
         raise FileNotFoundError(f"file {filepath} not found")
     if secure:
-        cwd = Path().resolve()
-        if not _path.is_relative_to(cwd):
+        if not _path.is_relative_to(base_dir):
             raise ValueError(
-                f"Accessing file outside of current working directory is not allowed: {_path}"
+                f"Accessing file outside of the base directory is not allowed: {_path}"
             )
-        if any(part.startswith(".") for part in _path.parts):
+        # Only inspect the path *relative to* base_dir for hidden segments, so a
+        # base_dir that itself lives under a dotted path (e.g. a temp dir or
+        # ~/.cache) does not trigger a false positive.
+        relative_parts = _path.relative_to(base_dir).parts
+        if any(part.startswith(".") for part in relative_parts):
             raise ValueError(f"Accessing hidden files is not allowed: {_path}")
         if any(_path.is_relative_to(item) for item in ("/etc", "/proc")):
             raise ValueError(f"Accessing system files is not allowed: {_path}")

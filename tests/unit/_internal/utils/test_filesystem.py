@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 from bentoml._internal.utils.filesystem import resolve_user_filepath

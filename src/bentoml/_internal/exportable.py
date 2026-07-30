@@ -21,6 +21,16 @@ from .utils.filesystem import safe_remove_dir
 T = t.TypeVar("T", bound="Exportable")
 
 
+def _s3_storage_options(protocol: str) -> dict[str, t.Any]:
+    """Append a BentoML user-agent to the S3 client for any S3-compatible
+    endpoint. Additive only: credentials and endpoint_url are left untouched."""
+    if protocol != "s3":
+        return {}
+    from .configuration import BENTOML_VERSION
+
+    return {"s3": {"config_kwargs": {"user_agent_extra": f"BentoML/{BENTOML_VERSION}"}}}
+
+
 class Exportable(ABC):
     _path: Path
 
@@ -129,14 +139,16 @@ class Exportable(ABC):
         if input_format == "folder":
             from fsspec.implementations.dirfs import DirFileSystem
 
-            fs, fspath = fsspec.url_to_fs(resource_url)
+            fs, fspath = fsspec.url_to_fs(resource_url, **_s3_storage_options(protocol))
             if protocol == "file":  # Use the local file system
                 return cls.from_path(fspath)
             fs = DirFileSystem(fspath, fs=fs)
         elif input_format == "zip":
             from fsspec.implementations.zip import ZipFileSystem
 
-            fs = ZipFileSystem(resource_url)
+            fs = ZipFileSystem(
+                resource_url, target_options=_s3_storage_options(protocol) or None
+            )
         else:
             from fsspec.implementations.tar import TarFileSystem
 
@@ -146,7 +158,9 @@ class Exportable(ABC):
                 "tar": None,
             }
             fs = TarFileSystem(
-                resource_url, compression=compressions.get(input_format, input_format)
+                resource_url,
+                compression=compressions.get(input_format, input_format),
+                target_options=_s3_storage_options(protocol) or None,
             )
 
         return cls._from_fs(fs)
@@ -229,7 +243,7 @@ class Exportable(ABC):
             subpath += f".{self._export_ext()}"
         resource_url = urllib.parse.urlunsplit((protocol, netloc, subpath, query, ""))
 
-        fs, fspath = fsspec.url_to_fs(resource_url)
+        fs, fspath = fsspec.url_to_fs(resource_url, **_s3_storage_options(protocol))
         if output_format == "folder":
             fs.put(str(self._path), fspath, recursive=True)
         else:

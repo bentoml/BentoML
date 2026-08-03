@@ -200,6 +200,8 @@ BentoCloud provides fast and scalable infrastructure for building and scaling AI
 
             For more information, see the `OpenAI API reference documentation <https://platform.openai.com/docs/api-reference/introduction>`_.
 
+        The same ``OpenAI(base_url=...)`` client pattern also works with OpenAI-compatible multi-model gateways when you are not self-hosting or using BentoCloud — for example `DaoXE <https://daoxe.com/?utm_source=github&utm_medium=organic&utm_campaign=bentoml&utm_content=openai_base_url>`_ at ``https://api.daoxe.com/v1``.
+
         If your Service is deployed with :ref:`protected endpoints on BentoCloud <scale-with-bentocloud/manage-api-tokens:access protected deployments>`, you need to set the environment variable ``OPENAI_API_KEY`` to your BentoCloud API key first.
 
         .. code-block:: bash

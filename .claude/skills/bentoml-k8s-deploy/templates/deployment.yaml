@@ -1,0 +1,83 @@
+# BentoML service Deployment.
+# Every double-curly-brace placeholder MUST be replaced before applying.
+# Blocks marked "OPTIONAL" MUST be deleted entirely when they do not apply —
+# never leave an unreplaced placeholder in the final manifest.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{SERVICE_NAME}}
+  namespace: {{NAMESPACE}}
+  labels:
+    app.kubernetes.io/name: {{SERVICE_NAME}}
+    app.kubernetes.io/managed-by: bentoml-k8s-deploy
+spec:
+  replicas: {{REPLICAS}}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{SERVICE_NAME}}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{SERVICE_NAME}}
+        app.kubernetes.io/managed-by: bentoml-k8s-deploy
+    spec:
+      # OPTIONAL block — private registry only. Delete this block (4 lines, these
+      # comments included) if the image is public. See references/private-registries.md.
+      imagePullSecrets:
+        - name: {{IMAGE_PULL_SECRET}}
+      containers:
+        - name: bentoml
+          image: {{IMAGE}}
+          # Do NOT add `command:` or `args:` — the image entrypoint produced by
+          # `bentoml containerize` already starts the HTTP server (`serve`).
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          # OPTIONAL block — plain (non-secret) environment variables. Delete this
+          # block (6 lines, these comments included) if there are none; otherwise
+          # add one name/value pair per variable (block grows accordingly).
+          env:
+            - name: {{ENV_NAME}}
+              value: "{{ENV_VALUE}}"
+          # OPTIONAL block — secret environment variables (tokens, API keys).
+          # The Secret must already exist, created via:
+          #   kubectl --context <ctx> create secret generic <name> -n <ns> --from-literal=KEY=VALUE
+          # Delete this block (7 lines, these comments included) if there are no secrets.
+          envFrom:
+            - secretRef:
+                name: {{ENV_SECRET_NAME}}
+          resources:
+            requests:
+              cpu: {{CPU_REQUEST}}
+              memory: {{MEMORY_REQUEST}}
+            limits:
+              cpu: {{CPU_LIMIT}}
+              memory: {{MEMORY_LIMIT}}
+              # OPTIONAL block — GPU. Delete this block (4 lines, these comments
+              # included) if not needed. Requires the NVIDIA device plugin on the
+              # cluster. See references/gpu-scheduling.md.
+              nvidia.com/gpu: {{GPU_COUNT}}
+          # Generous startup budget: model loading can take minutes.
+          # 120 failures x 5s = 10 minutes before the pod is considered failed.
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 120
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3

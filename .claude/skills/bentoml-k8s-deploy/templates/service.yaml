@@ -1,0 +1,20 @@
+# Service in front of the BentoML Deployment.
+# {{SERVICE_TYPE}} is one of: ClusterIP (default), NodePort, LoadBalancer.
+# See references/exposure-options.md for how to choose.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{SERVICE_NAME}}
+  namespace: {{NAMESPACE}}
+  labels:
+    app.kubernetes.io/name: {{SERVICE_NAME}}
+    app.kubernetes.io/managed-by: bentoml-k8s-deploy
+spec:
+  type: {{SERVICE_TYPE}}
+  selector:
+    app.kubernetes.io/name: {{SERVICE_NAME}}
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      protocol: TCP

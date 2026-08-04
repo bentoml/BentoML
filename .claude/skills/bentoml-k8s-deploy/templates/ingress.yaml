@@ -1,0 +1,34 @@
+# Class-agnostic Ingress. Only write/apply this file when the user chose
+# Ingress exposure. Requires an ingress controller already installed in the
+# cluster (check with: kubectl --context <ctx> get ingressclass).
+# See references/exposure-options.md.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{SERVICE_NAME}}
+  namespace: {{NAMESPACE}}
+  labels:
+    app.kubernetes.io/name: {{SERVICE_NAME}}
+    app.kubernetes.io/managed-by: bentoml-k8s-deploy
+  # OPTIONAL — some controllers need annotations (e.g. cert-manager issuer,
+  # nginx timeouts for slow inference). Add only what the user's controller needs.
+spec:
+  ingressClassName: {{INGRESS_CLASS_NAME}}
+  # OPTIONAL block — TLS. Delete this block (7 lines, these comments included) for
+  # plain HTTP. The TLS Secret must exist in this namespace beforehand (cert-manager,
+  # or: kubectl create secret tls <name> -n <ns> --cert=cert.pem --key=key.pem).
+  tls:
+    - hosts:
+        - {{INGRESS_HOST}}
+      secretName: {{TLS_SECRET_NAME}}
+  rules:
+    - host: {{INGRESS_HOST}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{SERVICE_NAME}}
+                port:
+                  name: http

@@ -1,0 +1,8 @@
+# Intentional deviation from the both-labels convention: no app.kubernetes.io/name
+# label here, because a namespace may host several services and is not tied to one.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{NAMESPACE}}
+  labels:
+    app.kubernetes.io/managed-by: bentoml-k8s-deploy

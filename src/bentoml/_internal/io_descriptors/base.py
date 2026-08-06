@@ -148,7 +148,6 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
 
         Args:
             sample: The sample to create the instance from.
-            **kwargs: Additional keyword arguments to pass to the constructor.
 
         Returns:
             An instance of the IODescriptor.

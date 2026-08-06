@@ -105,7 +105,6 @@ def import_model(
     `FS URL documentation <https://docs.pyfilesystem.org/en/latest/openers.html>`_.
 
     Args:
-        tag: the tag of the model to export
         path: can be one of two things:
               * a folder on the local filesystem
               * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_, for example :code:`'s3://my_bucket/folder/my_model.bentomodel'`

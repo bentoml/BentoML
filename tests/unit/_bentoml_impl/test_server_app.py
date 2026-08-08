@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import threading
 
+import anyio
 import pytest
 
 from _bentoml_impl.server.app import ServiceAppFactory
@@ -76,6 +77,50 @@ async def test_to_thread_limiter_holds_token_during_cancellation():
         await asyncio.sleep(0.05)
 
     assert factory._limiter.borrowed_tokens == 0
+
+
+@pytest.mark.asyncio
+async def test_to_thread_limiter_holds_token_before_worker_starts():
+    """Keep the service slot held while AnyIO waits to start the worker."""
+    factory = make_dummy_factory(threads=1)
+    default_limiter = anyio.to_thread.current_default_thread_limiter()
+    original_tokens = default_limiter.total_tokens
+    default_limiter.total_tokens = 1
+    blocker_started = threading.Event()
+    release_blocker = threading.Event()
+
+    def block_thread():
+        blocker_started.set()
+        release_blocker.wait(timeout=5)
+
+    blocker_task = asyncio.create_task(anyio.to_thread.run_sync(block_thread))
+    try:
+        while not blocker_started.is_set():
+            await asyncio.sleep(0.01)
+
+        task = asyncio.create_task(factory._to_thread(lambda: "done"))
+        for _ in range(100):
+            if factory._limiter is not None and factory._limiter.borrowed_tokens == 1:
+                break
+            await asyncio.sleep(0.01)
+        assert factory._limiter is not None
+        assert factory._limiter.borrowed_tokens == 1
+
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert factory._limiter.borrowed_tokens == 1
+
+        release_blocker.set()
+        for _ in range(100):
+            if factory._limiter.borrowed_tokens == 0:
+                break
+            await asyncio.sleep(0.01)
+        assert factory._limiter.borrowed_tokens == 0
+    finally:
+        release_blocker.set()
+        await blocker_task
+        default_limiter.total_tokens = original_tokens
 
 
 @pytest.mark.asyncio

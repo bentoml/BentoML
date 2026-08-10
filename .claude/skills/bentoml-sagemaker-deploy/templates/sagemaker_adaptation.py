@@ -13,13 +13,13 @@
 #   GET  /ping        -> 200 {}
 #   POST /invocations -> real inference JSON
 
-import bentoml
-
 # --- SageMaker adaptation (added by bentoml-sagemaker-deploy) ---
 # Starlette ships with BentoML — no new dependency.
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.routing import Route
+
+import bentoml
 
 
 async def _sagemaker_ping(request):
@@ -35,7 +35,9 @@ _sagemaker_ping_app = Starlette(
 # --- end SageMaker adaptation ---
 
 
-@bentoml.asgi_app(_sagemaker_ping_app, path="/")  # SageMaker adaptation: GET /ping -> 200
+@bentoml.asgi_app(
+    _sagemaker_ping_app, path="/"
+)  # SageMaker adaptation: GET /ping -> 200
 @bentoml.service()  # <- the user's existing decorator, with its existing arguments
 class MyService:
     @bentoml.api
@@ -48,4 +50,5 @@ class MyService:
     @bentoml.api(route="/invocations")
     def invocations(self, text: str) -> dict:
         return self.predict.local(text)
+
     # --- end SageMaker adaptation ---

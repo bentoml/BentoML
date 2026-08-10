@@ -142,7 +142,8 @@ def test_from_fs_preserves_safe_tar_symlink(tmp_path: Path) -> None:
     assert os.readlink(link) == "marker.txt"
     assert link.read_text() == "ok"
     assert nested_link.is_symlink()
-    assert os.readlink(nested_link) == "../marker.txt"
+    # extraction normalizes the POSIX linkname to the platform separator
+    assert os.readlink(nested_link).replace(os.sep, "/") == "../marker.txt"
     assert nested_link.read_text() == "ok"
 
 

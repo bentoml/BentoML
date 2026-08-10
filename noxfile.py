@@ -18,7 +18,9 @@ FRAMEWORK_DEPENDENCIES = {
     "catboost": ["catboost", "numpy<2"],
     "diffusers": ["diffusers", "transformers<4.51", "tokenizer"],
     "easyocr": ["easyocr"],
-    "fastai": ["fastai"],
+    # fsspec floor: without it pip backtracks to versioneer-era sdists that
+    # no longer build on Python >= 3.12 (configparser.SafeConfigParser removed)
+    "fastai": ["fastai", "fsspec>=2023.1.0"],
     "flax": [
         "tensorflow",
         "flax; platform_system!='Windows'",

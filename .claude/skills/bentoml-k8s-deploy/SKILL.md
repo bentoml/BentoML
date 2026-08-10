@@ -44,7 +44,7 @@ kubectl --context <ctx> auth can-i create deployment -n <ns>   # run once the na
 
 If the image was built on Apple Silicon and the `ARCH` column above shows `amd64`
 nodes, warn the user now: the image must have been containerized with
-`--platform=linux/amd64`, otherwise pods will crash with "exec format error".
+`--opt platform=linux/amd64`, otherwise pods will crash with "exec format error".
 
 ## Step 1 — Gather deployment parameters
 
@@ -53,7 +53,7 @@ Ask the user for anything you cannot detect. Present defaults and let them accep
 | Parameter | Default | Notes |
 |---|---|---|
 | Image reference | (required) | Full pushed ref incl. registry + tag. If the user only ran `bentoml containerize`, the image may exist only locally — it must be pushed (or `kind load` / `minikube image load` for local clusters; see `references/private-registries.md`). |
-| Service name | image repo basename, sanitized | Must be **DNS-1035** (see naming rule below), e.g. `summarization:v1` → `summarization`. |
+| Service name | bento name, DNS-1035-sanitized | Prefer the suggested name from the `bentoml-containerize` handoff (bento name, `_`→`-`); the image repo basename works only when it is meaningful. Must be **DNS-1035** (see naming rule below), e.g. `summarization:v1` → `summarization`. |
 | Namespace | `default` | Offer to create a dedicated one. |
 | Replicas | `1` | |
 | CPU request/limit | `500m` / `2` | |

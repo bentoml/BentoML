@@ -6,8 +6,9 @@ description: >
   GHCR, ECR, private registry, kind/minikube local load, or ttl.sh). Use when the
   user asks to "containerize a Bento", "build a Docker image for my BentoML
   service", "package my BentoML service for deployment", "push my Bento image to
-  a registry", or as the first step of deploying BentoML to Kubernetes. Does NOT
-  create Kubernetes manifests — hand off to the bentoml-k8s-deploy skill for that.
+  a registry", or as the first step of deploying BentoML to Kubernetes, EC2, or
+  SageMaker. Does NOT deploy anything itself — hand off to bentoml-k8s-deploy,
+  bentoml-ec2-deploy, or bentoml-sagemaker-deploy for that.
 ---
 
 # Containerize a BentoML project and push it to a registry
@@ -16,7 +17,8 @@ You will take the user's local BentoML project (a `service.py` plus either a
 `bentofile.yaml` or an inline `bentoml.images.Image` spec), build a Bento,
 containerize it, verify the container actually serves, and push the image to the
 registry the user chooses. The output of this skill is a **pushed image
-reference** that the `bentoml-k8s-deploy` skill consumes.
+reference** that the deploy skills (`bentoml-k8s-deploy`, `bentoml-ec2-deploy`,
+`bentoml-sagemaker-deploy`) consume.
 
 Work through the steps in order. Do not skip the smoke test.
 
@@ -58,9 +60,10 @@ Ask the user up front (one round of questions):
 1. Which registry should the image go to? Options: Docker Hub, GHCR, ECR, a
    private registry, `kind`/`minikube` local load (no registry), or `ttl.sh`
    (anonymous, ephemeral — good for throwaway tests).
-2. What CPU architecture do the target cluster nodes run (`amd64` or `arm64`)?
-   Most clouds are `linux/amd64`; a laptop building on Apple Silicon defaults to
-   `arm64` — mismatch causes `exec format error` in the cluster.
+2. What CPU architecture do the target machines run (cluster nodes / EC2
+   instance type / SageMaker instance — `amd64` or `arm64`)? Most clouds are
+   `linux/amd64`; a laptop building on Apple Silicon defaults to `arm64` —
+   mismatch causes `exec format error` on the target.
 
 ## Step 1 — Verify / complete the runtime environment spec
 
@@ -255,23 +258,45 @@ docker push "$IMAGE"
 Verify the push succeeded (the push output ends with a digest, or pull it back
 with `docker manifest inspect "$IMAGE"`).
 
-## Step 6 — Hand off to bentoml-k8s-deploy
+## Step 6 — Hand off to a deploy skill
 
-Report to the user, and pass to the `bentoml-k8s-deploy` skill:
+This skill's output feeds three sibling deploy skills — pick the one matching
+where the user wants to run:
+
+- `bentoml-k8s-deploy` — consumes the pushed image reference and generates
+  plain Kubernetes manifests (Deployment + Service).
+- `bentoml-ec2-deploy` — consumes the pushed image reference (typically ECR)
+  and runs it on an EC2 instance with docker.
+- `bentoml-sagemaker-deploy` — consumes an ECR image reference and creates a
+  SageMaker endpoint from it.
+
+Report to the user, and pass to the chosen deploy skill:
 
 1. **Image reference**: the exact pushed `$IMAGE` (or the image name loaded into
    kind/minikube).
-2. **Registry access**: whether the registry is private (deploy skill must set
-   up `imagePullSecrets`), and — for kind/minikube loaded images — that
-   `imagePullPolicy` must NOT be `Always` (use `IfNotPresent`).
+2. **Registry access**: whether the registry is private. K8s-specific: a
+   private registry needs `imagePullSecrets`, and for kind/minikube loaded
+   images `imagePullPolicy` must NOT be `Always` (use `IfNotPresent`).
 3. **Runtime env vars** the service needs (names only; secret values go into a
    Kubernetes Secret, never into manifests).
 4. **Architecture** the image was built for.
-5. **Suggested Kubernetes service name**: the snake_cased bento name with
+5. **Suggested service/deployment name**: the snake_cased bento name with
    underscores converted to hyphens (e.g. `my_service` → `my-service`). Never
    derive it from the image repository — for ttl.sh images the repo is a random
-   UUID that may start with a digit, which is an invalid DNS-1035 Service name.
-6. Useful facts for the manifests: the container serves HTTP on **port 3000**;
-   health endpoints are **`/livez`** (liveness) and **`/readyz`** (readiness);
-   the image entrypoint already runs `serve`, so no `command:` override is
-   needed in the pod spec.
+   UUID that may start with a digit, which is an invalid DNS-1035 name for a
+   Kubernetes Service.
+6. Useful facts for the deploy target: the container serves HTTP on
+   **port 3000**; health endpoints are **`/livez`** (liveness) and
+   **`/readyz`** (readiness); the image entrypoint already runs `serve`, so no
+   command override is needed (K8s-specific: do not set `command:` in the pod
+   spec).
+
+## Cleaning up (optional)
+
+When the user is done iterating: remove the local image with
+`docker rmi "$IMAGE"` (and `docker rmi "$BENTO_TAG"` if built without `-t`),
+delete the bento with `bentoml delete "$BENTO_TAG" -y`. Registry side: ECR
+repositories bill for storage — remove with
+`aws ecr delete-repository --repository-name <repo-used-in-Step-5> --region "$AWS_REGION" --force`;
+ttl.sh images expire on their own; Docker Hub/GHCR images are deleted via their
+web UIs.

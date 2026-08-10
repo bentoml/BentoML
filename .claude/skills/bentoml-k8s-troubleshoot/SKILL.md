@@ -17,7 +17,7 @@ diagnostics for that symptom, state the likely cause, then apply the fix.
 
 - `<ns>` — namespace of the deployment (ask the user; the deploy skill asked them too)
 - `<name>` — the app name, i.e. the value of the `app.kubernetes.io/name` label
-  (snake_cased BentoML service class name with underscores converted to hyphens,
+  (the service class name, snake_cased and then `_`→`-`,
   e.g. `Summarization` → `summarization`, `MyService` → `my-service`)
 - `<pod>` — a concrete pod name from `kubectl get pods` output
 - `<deploy>` — the Deployment name (usually the same as `<name>`)
@@ -95,7 +95,7 @@ Likely causes and fixes:
 - **`no match for platform in manifest`** (containerd) or **`no matching manifest for
   linux/amd64 in the manifest list entries`** (Docker) — arch mismatch: image built on
   Apple Silicon (arm64) for an amd64 cluster. Rebuild with
-  `bentoml containerize --platform=linux/amd64 <name>:<version>`, retag, push, and
+  `bentoml containerize --opt platform=linux/amd64 <name>:<version>`, retag, push, and
   `kubectl rollout restart deployment/<deploy> -n <ns>`.
 - **kind/minikube cluster can't pull at all** — local clusters can't see the host's
   Docker images. Use `kind load docker-image <image> --name <cluster>` or
@@ -133,7 +133,7 @@ Read the log tail bottom-up (see "Reading BentoML logs" below). Likely causes:
   `bentoml.images.Image(...)` spec), rebuild, re-containerize, push, rollout restart.
 - **`exec format error`** (often the only log line, or in describe events) — wrong CPU
   architecture; same fix as the arch mismatch in section 1
-  (`bentoml containerize --platform=linux/amd64 ...`).
+  (`bentoml containerize --opt platform=linux/amd64 ...`).
 - **Exit code 137 with no traceback** — see section 3 (OOMKilled).
 - Do **not** "fix" crashes by overriding `command:` in the pod spec — the image
   entrypoint already runs `serve`; overriding it is a common way to break the container.

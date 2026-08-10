@@ -17,7 +17,7 @@ Conventions used below:
 - Only if you containerized **without** `-t` (image named `$BENTO_TAG`, e.g.
   the kind/minikube path), retag before pushing:
   `docker tag "$BENTO_TAG" "$IMAGE"`.
-- After pushing, record `$IMAGE` for the handoff to `bentoml-k8s-deploy`.
+- After pushing, record `$IMAGE` for the deploy-skill handoff (Step 6).
 
 ## Docker Hub
 
@@ -54,14 +54,21 @@ docker push "$IMAGE"
 
 ## AWS ECR
 
+If a deploy skill prescribes a repository name (e.g. `bentoml-sagemaker-deploy`
+sanitizes it with `tr '_.' '--'` because SageMaker forbids `_`/`.`), use that
+name instead of the plain `$BENTO_NAME` below.
+
 ```bash
 AWS_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 AWS_REGION=<region>
 aws ecr get-login-password --region "$AWS_REGION" \
   | docker login --username AWS --password-stdin "${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
-# ECR requires the repository to exist before pushing:
-aws ecr create-repository --repository-name "$BENTO_NAME" --region "$AWS_REGION" 2>/dev/null || true
+# ECR requires the repository to exist before pushing. Create it only if
+# missing — keep stderr visible so permission/name errors surface here,
+# not as a confusing "name unknown" at push time:
+aws ecr describe-repositories --repository-names "$BENTO_NAME" --region "$AWS_REGION" >/dev/null 2>&1 \
+  || aws ecr create-repository --repository-name "$BENTO_NAME" --region "$AWS_REGION"
 
 IMAGE="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${BENTO_NAME}:${BENTO_VERSION}"
 # (containerize with -t "$IMAGE"; if you containerized WITHOUT -t, first:

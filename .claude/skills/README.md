@@ -71,16 +71,52 @@ missing — you do not need to pre-verify this table by hand.
 
 ## Installation
 
-Claude Code discovers skills in two places:
+**Working inside a BentoML checkout?** The skills in `.claude/skills/` load
+automatically — no install needed. Everything below is for using the skills in
+*other* projects.
 
-- `~/.claude/skills/` — **personal**: available in every project on your machine.
-- `<your-project>/.claude/skills/` — **per-project**: committed to the project's repo and
-  shared with everyone who works on it.
+### Option 1 — Plugin install straight from GitHub (recommended)
 
-(If you are working inside the BentoML repository itself, the skills are already active —
-they live in this repo's `.claude/skills/`.)
+The BentoML repo is a Claude Code plugin marketplace. From any Claude Code session:
 
-### Install from a clone
+```console
+> /plugin marketplace add bentoml/BentoML
+> /plugin install bentoml-deploy@bentoml
+```
+
+Or non-interactively from a shell:
+
+```console
+$ claude plugin marketplace add bentoml/BentoML
+$ claude plugin install bentoml-deploy@bentoml
+```
+
+Confirm the trust prompt and pick a scope (user = all your projects). All five skills
+install together and auto-load exactly like local skills (namespaced as
+`/bentoml-deploy:bentoml-k8s-deploy` etc.; bare names also resolve when unambiguous).
+
+Update later with `/plugin update bentoml-deploy@bentoml`, or enable auto-update for
+the `bentoml` marketplace under `/plugin` → Marketplaces. To keep the initial clone
+small: `claude plugin marketplace add bentoml/BentoML --sparse .claude-plugin .claude`.
+
+> If you previously copied the skills into `~/.claude/skills/` manually, delete those
+> copies when switching to the plugin — otherwise both sets stay active.
+
+### Option 2 — One-liner via npx (community tool)
+
+[`skills`](https://github.com/vercel-labs/skills) (by Vercel, `npx`-runnable) discovers
+skills in this repo's `.claude/skills/` automatically:
+
+```console
+$ npx skills add bentoml/BentoML -g     # -g installs to ~/.claude/skills (all projects)
+$ npx skills add bentoml/BentoML       # or into the current project's .claude/skills
+```
+
+Requires Node.js. This copies the skills; rerun with `npx skills update` to refresh.
+(BentoML itself is not published to npm and doesn't need to be — the tool reads the
+GitHub repo directly.)
+
+### Option 3 — Manual copy from a clone
 
 ```console
 $ git clone --depth 1 https://github.com/bentoml/BentoML.git /tmp/bentoml

@@ -361,7 +361,10 @@ Work symptom → command → fix. All docker commands run over SSH with `sudo`.
 
 Autoscaling groups, ALB creation, HTTPS termination, spot instances, and multi-region were
 never part of basic deployment. If the user asks, give the one-line ALB pointer above and
-stop there.
+stop there. For fleet-scale EC2 operations (launch templates, Auto Scaling groups, Spot,
+SSM Session Manager), AWS's official plugin covers exactly that ground — the user can
+install it with `/plugin install aws-core@claude-plugins-official` (its `aws-compute`
+skill picks up where this one ends).
 
 ## References (read on demand)
 

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import typing as t
+
 from _bentoml_sdk.io_models import IODescriptor
+
 
 def test_from_output_with_bare_iterator():
     def bare_iterator_fn() -> t.Iterator:

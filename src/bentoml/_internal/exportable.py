@@ -195,7 +195,11 @@ def _copy_tar_fs(fs: fsspec.AbstractFileSystem, temp_dir: str) -> None:
         _validate_symlink_target(entry.linkname, destination, root)
         if os.path.lexists(destination):
             _raise_unsafe_member(entry.path, "duplicate destination path")
-        os.symlink(entry.linkname, destination)
+        # Tar linknames are POSIX-style; Windows symlinks with "/" in the
+        # target fail to resolve (EINVAL on open through the link). Convert
+        # only at creation time — validation above rejects backslashes in
+        # the archive's own linkname by design.
+        os.symlink(entry.linkname.replace("/", os.sep), destination)
         _ensure_within_directory(root, destination)
 
 

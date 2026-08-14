@@ -20,7 +20,7 @@ FRAMEWORK_DEPENDENCIES = {
     "easyocr": ["easyocr"],
     # fsspec floor: without it pip backtracks to versioneer-era sdists that
     # no longer build on Python >= 3.12 (configparser.SafeConfigParser removed)
-    "fastai": ["fastai", "fsspec>=2023.1.0"],
+    "fastai": ["fastai>=2.7", "fastprogress>=1.0", "cloudpickle>=2.0", "fsspec>=2023.1.0"],
     "flax": [
         "tensorflow",
         "flax; platform_system!='Windows'",

@@ -579,9 +579,13 @@ def _deploy_host(
             timeout=120,
         )
         if res.returncode != 0:
+            # Do NOT embed the remote output: the command consumed the auth
+            # token on stdin, so its output must be treated as sensitive
+            # (that is what secret_output=True means).
             raise DeployError(
-                f"ECR login on {host} failed (exit {res.returncode}): "
-                f"{(res.stderr.strip() or res.stdout.strip())[-500:]}",
+                f"ECR login on {host} failed (exit {res.returncode}); "
+                "remote output suppressed — it may contain the auth token. "
+                "Re-run the login manually on the host to see the error.",
                 EXIT_DEPLOY,
                 hint="check SSH access to the host and that the local AWS "
                 "identity may call ecr:GetAuthorizationToken",

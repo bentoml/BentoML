@@ -10,6 +10,8 @@ produced by the `bentoml-containerize` skill), generate plain Kubernetes manifes
 templates in this skill's `templates/` directory, apply them with `kubectl`, and verify the
 service end to end.
 
+> For production / CI-CD deployments, generate a standalone script bundle (no agent needed at deploy time) with the `bentoml-deploy-scriptgen` skill.
+
 Facts that are always true for images built by `bentoml containerize`:
 - The HTTP server listens on **port 3000**.
 - Health endpoints: **`/livez`** (liveness), **`/readyz`** (readiness). `/metrics` serves Prometheus metrics.

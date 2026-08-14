@@ -20,6 +20,8 @@ registry the user chooses. The output of this skill is a **pushed image
 reference** that the deploy skills (`bentoml-k8s-deploy`, `bentoml-ec2-deploy`,
 `bentoml-sagemaker-deploy`) consume.
 
+> For production / CI-CD deployments, generate a standalone script bundle (no agent needed at deploy time) with the `bentoml-deploy-scriptgen` skill.
+
 Work through the steps in order. Do not skip the smoke test.
 
 ## Step 0 — Preflight checks

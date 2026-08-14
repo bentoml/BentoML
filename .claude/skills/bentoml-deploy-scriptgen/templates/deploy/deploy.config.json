@@ -1,0 +1,58 @@
+{
+  "schema": "bentoml-deploy-config/v1",
+  "project": {
+    "dir": "..",
+    "service": null,
+    "name": "{{SERVICE_NAME}}"
+  },
+  "image": {
+    "registry": "{{IMAGE_REGISTRY}}",
+    "repository": "{{IMAGE_REPOSITORY}}",
+    "registry_type": "{{REGISTRY_TYPE}}",
+    "platform": null,
+    "estimated_size_gb": 2.0,
+    "local_image_preloaded": false
+  },
+  "verify": {
+    "readyz_timeout_seconds": 600,
+    "inference": {
+      "path": "{{INFERENCE_PATH}}",
+      "body": {{INFERENCE_BODY}},
+      "expect_substring": "{{EXPECT_SUBSTRING}}",
+      "timeout_seconds": 60
+    }
+  },
+  "targets": {
+    "k8s": {
+      "context": "{{K8S_CONTEXT}}",
+      "namespace": "{{NAMESPACE}}",
+      "deployment_name": "{{SERVICE_NAME}}",
+      "service_name": "{{SERVICE_NAME}}",
+      "manifests_dir": "k8s",
+      "image_pull_secret": null,
+      "rollout_timeout_seconds": 600,
+      "local_port": 3130,
+      "node_port": null
+    },
+    "ec2": {
+      "hosts": ["{{EC2_HOST}}"],
+      "ssh_user": "{{EC2_SSH_USER}}",
+      "ssh_key_path": "{{EC2_SSH_KEY_PATH}}",
+      "container_name": "{{SERVICE_NAME}}",
+      "host_port": 3000,
+      "env_names": [],
+      "registry_auth": "{{EC2_REGISTRY_AUTH}}",
+      "verify_via": "tunnel",
+      "local_tunnel_port": 3230
+    },
+    "sagemaker": {
+      "region": "{{SAGEMAKER_REGION}}",
+      "endpoint_name": "{{SAGEMAKER_ENDPOINT_NAME}}",
+      "execution_role_arn": "{{SAGEMAKER_EXECUTION_ROLE_ARN}}",
+      "instance_type": "ml.m5.large",
+      "instance_count": 1,
+      "startup_health_timeout_seconds": 600,
+      "environment": {}
+    }
+  }
+}

@@ -14,6 +14,8 @@ description: >
 
 # Deploy a BentoML service to plain EC2 instances
 
+> For production / CI-CD deployments, generate a standalone script bundle (no agent needed at deploy time) with the `bentoml-deploy-scriptgen` skill.
+
 You will take a **pushed container image reference** (e.g.
 `123456789012.dkr.ecr.us-east-1.amazonaws.com/summarization:v1`, produced by the
 `bentoml-containerize` skill), get it running under Docker on one or more EC2

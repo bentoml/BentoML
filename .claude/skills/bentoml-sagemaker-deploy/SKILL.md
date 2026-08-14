@@ -15,6 +15,8 @@ description: >
 
 # Deploy a BentoML service to a SageMaker real-time endpoint
 
+> For production / CI-CD deployments, generate a standalone script bundle (no agent needed at deploy time) with the `bentoml-deploy-scriptgen` skill.
+
 You will adapt the user's BentoML service to SageMaker's bring-your-own-container
 (BYOC) contract, build and push the image to **ECR in the endpoint's region**, and
 create the endpoint with the AWS CLI: `create-model` → `create-endpoint-config` →

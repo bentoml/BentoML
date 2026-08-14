@@ -21,6 +21,7 @@ autoscaling), the skills point at it in one line and stop.
 | [`bentoml-k8s-troubleshoot`](bentoml-k8s-troubleshoot/SKILL.md) | Diagnostic runbook for Kubernetes deployments that went wrong: ImagePullBackOff, CrashLoopBackOff, OOM, Pending, probe failures, unreachable services, inference 4xx/5xx. |
 | [`bentoml-ec2-deploy`](bentoml-ec2-deploy/SKILL.md) | Runs a pushed image under Docker on one or more plain EC2 instances — your existing instances over SSH, or a fresh instance provisioned via the AWS CLI. Includes ECR auth, verification, and teardown. |
 | [`bentoml-sagemaker-deploy`](bentoml-sagemaker-deploy/SKILL.md) | Adapts your service to SageMaker's bring-your-own-container contract (port 8080, `GET /ping`, `POST /invocations`) with a small reviewed patch, pushes to ECR, and creates a real-time endpoint with the AWS CLI. Includes verification and teardown. |
+| [`bentoml-deploy-scriptgen`](bentoml-deploy-scriptgen/SKILL.md) | Generates a standalone, committable deploy bundle (`deploy/deploy.py` + config + manifests) that builds, pushes, deploys, and verifies without any agent — for production and CI/CD pipelines. Kubernetes, EC2, and SageMaker targets. |
 
 A typical session chains them: **containerize → one deploy target → (troubleshoot if
 needed)**. The EC2 and SageMaker skills carry their own troubleshooting sections;
@@ -54,6 +55,31 @@ Honest defaults: if you just want to see your service running today with zero cl
 spend, use `bentoml-containerize` with the kind/minikube path plus `bentoml-k8s-deploy`
 on a local cluster. If a request can exceed 60 seconds or 6 MB, SageMaker real-time
 endpoints are the wrong target regardless of other preferences.
+
+## Development vs Production
+
+Two ways to deploy, same targets:
+
+- **Interactive skills** (`bentoml-containerize` → `bentoml-k8s-deploy` /
+  `bentoml-ec2-deploy` / `bentoml-sagemaker-deploy`) put the agent in the loop: it
+  detects your project, asks the right questions, confirms every mutation, adapts
+  `service.py` where a platform demands it (SageMaker), provisions infrastructure where
+  allowed (EC2), and troubleshoots on the spot. Use them for the **first** deploy of a
+  service, for exploring a new target, and whenever something needs judgment.
+- **The script bundle** (`bentoml-deploy-scriptgen`) is for every deploy **after** that:
+  it generates a committable `deploy/` directory (plain Python ≥ 3.9, stdlib only) that
+  repeats the exact build → containerize → push → deploy → verify pipeline with no agent
+  and no questions — from your terminal or from CI/CD. Preflight checks fail fast with
+  actionable messages, exit codes are a stable contract (0 ok · 1 generic · 2 config ·
+  3 preflight · 4 build · 5 push · 6 deploy · 7 verify), and the last stdout line is always a JSON
+  summary for machines. It deliberately does **less** than the interactive skills: it
+  never provisions EC2 instances, never creates IAM roles, and never edits your service —
+  the interactive skills set those up once; the bundle then repeats the deploy forever.
+
+Rule of thumb: first deploy interactive, then generate the bundle, commit it, and wire
+CI. The generated `deploy/README.md` ships a complete CI/CD chapter — a GitHub Actions
+workflow (fork-safe `--check-only --local-only` PR gate; deploy jobs with AWS OIDC, EKS
+kubeconfig, an SSH-key secret for EC2, and SageMaker) plus a GitLab CI equivalent.
 
 ## Prerequisites
 

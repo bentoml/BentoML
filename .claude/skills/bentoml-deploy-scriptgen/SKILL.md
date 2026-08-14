@@ -72,6 +72,9 @@ scripts. Standing prerequisites the script cannot create for the user:
 - ec2 deploys to **existing instances only**; if an instance must be
   created, provision it first with the interactive `bentoml-ec2-deploy`
   skill, then generate this bundle against the resulting host(s).
+- Make sure the project's `.gitignore` covers `__pycache__/` (and any other
+  build artifacts): `bentoml build` creates it inside the project, and an
+  uncovered artifact makes every later run warn about a dirty git tree.
 - sagemaker needs an **existing execution role** (the script never creates
   IAM — find or request one via the interactive `bentoml-sagemaker-deploy`
   skill's Step 3), and the service must **already carry the SageMaker
@@ -172,7 +175,14 @@ comments that a global substitution would corrupt. JSON gotchas:
   targets the user did not select** — a leftover `{{...}}` placeholder
   anywhere makes the config fail to load (exit 2), by design. Likewise
   prune the README sections (and CI/CD jobs) for targets that were not
-  generated.
+  generated — and **retarget the generic examples** to the target(s) you
+  did generate: the Usage line, the CI one-liners, and the sample JSON
+  summary in the template are k8s-flavored (`--target k8s`,
+  `"target": "k8s"`), and the GitLab CI chapter's concrete deploy job is
+  the sagemaker one. For a single-target bundle, rewrite those to the
+  selected target (for ec2, adapt the sagemaker GitLab job per the
+  chapter's own notes: SSH key from a CI secret file-variable, no dind
+  needed when `--skip-build`).
 - `{{INFERENCE_BODY}}` is substituted with a JSON object (no quotes), e.g.
   `{"text": "A great day"}`.
 - ec2 specifics: `hosts` is a JSON array of strings (render one

@@ -188,9 +188,17 @@ def build_bento(cfg: Config, version: str) -> str:
         if line.startswith("__tag__:"):
             bento_tag = line[len("__tag__:") :].strip()
     if res.returncode != 0 or not bento_tag:
-        output_tail = (res.stderr.strip() or res.stdout.strip())[-3000:]
+        output = res.stderr.strip() or res.stdout.strip()
+        # Idempotent re-run at the same version tag: the bento is already in
+        # the local store — reuse it instead of failing (CI retries and
+        # "redeploy head" both hit this).
+        exists = re.search(r"Item '([^']+)' already exists in the store", output)
+        if exists:
+            bento_tag = exists.group(1)
+            log(f"bento {bento_tag} already built for this version — reusing it")
+            return bento_tag
         raise DeployError(
-            f"bentoml build failed (exit {res.returncode}):\n{output_tail}",
+            f"bentoml build failed (exit {res.returncode}):\n{output[-3000:]}",
             EXIT_BUILD,
             hint="common causes: project.service does not match the "
             "module:Class in service.py, a missing python package, or a "
@@ -351,7 +359,9 @@ def main(argv: list | None = None) -> int:
                 summary.skipped += [
                     "build.* (--skip-build)",
                     "containerize.* (--skip-build)",
-                    "registry.* (--skip-build)",
+                    # registry.image-exists is NOT skipped — it still probes
+                    # the registry for the image under --skip-build.
+                    "registry login/push checks (--skip-build)",
                 ]
                 if args.local_only and cfg.image.registry_type != "none":
                     summary.skipped.append("registry.image-exists (--local-only)")

@@ -381,8 +381,13 @@ def _host_checks(ctx: RunContext, ec2: Ec2Config, host: str, probes: dict) -> li
                 )
             return f"{remote} matches image.platform"
         if ctx.skip_build:
+            warn(
+                f"cannot verify image architecture for {host}: --skip-build "
+                "and image.platform is unset — a mismatch would only surface "
+                "as 'exec format error' at docker run"
+            )
             return (
-                f"remote is {remote}; image arch unknown "
+                f"UNVERIFIED — remote is {remote}; image arch unknown "
                 "(set image.platform to enforce a match)"
             )
         local = _host_arch()

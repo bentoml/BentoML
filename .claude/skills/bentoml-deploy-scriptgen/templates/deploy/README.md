@@ -22,6 +22,13 @@ python3 deploy/deploy.py --target k8s --check-only --local-only
 # The image tag defaults to the project's short git SHA:
 python3 deploy/deploy.py --target k8s
 
+# Re-running at the same git SHA is idempotent: the already-built bento is
+# reused. If you force a REBUILD at the same tag (bentoml delete + re-run),
+# the registry tag is reassigned to a new digest, the previous image stays
+# as an untagged leftover, and nodes that cached the old digest keep it
+# under imagePullPolicy IfNotPresent — prefer a new commit (new tag) over
+# rebuilding an existing one.
+
 # Deploy an already-pushed image (no build), e.g. for rollback:
 python3 deploy/deploy.py --target k8s --skip-build \
     --image {{IMAGE_REGISTRY}}/{{IMAGE_REPOSITORY}}:<tag>

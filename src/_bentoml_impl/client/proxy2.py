@@ -482,6 +482,7 @@ class AsyncClient(AbstractClient):
             fields = {t.cast(str, k): getattr(model, k) for k in model.model_fields}
         data: dict[str, t.Any] = {}
         files: list[tuple[str, tuple[str, t.IO[bytes], str | None]]] = []
+        url_parts: list[tuple[str, str]] = []
 
         for name, value in fields.items():
             if not is_file_field(name):
@@ -493,13 +494,18 @@ class AsyncClient(AbstractClient):
             for v in value:
                 file = self._file_manager.get_file(v)
                 if isinstance(file, str):
-                    data[name] = file
+                    # URL-backed values are added as text parts directly so
+                    # a list field emits one same-name part per value instead
+                    # of overwriting earlier values in the ``data`` dict.
+                    url_parts.append((name, file))
                 else:
                     files.append((name, file))
         headers.pop("content-type", None)
         payload = aiohttp.FormData()
         for key, val in data.items():
             payload.add_field(key, val)
+        for key, url in url_parts:
+            payload.add_field(key, url)
         for key, (filename, fileobj, content_type) in files:
             payload.add_field(
                 key,

@@ -136,12 +136,8 @@ def _convert_env(
         return env_dict
 
     if isinstance(env, dict):
-        # convert all dict key and values to string, collapsing whitespace
-        # (including newlines) so a value cannot inject Dockerfile
-        # instructions via the generated ARG/ENV lines (#5656).
-        return {
-            " ".join(str(k).split()): " ".join(str(v).split()) for k, v in env.items()
-        }
+        # convert all dict key and values to string
+        return {str(k): str(v) for k, v in env.items()}
 
     raise BentoMLException(
         f"`env` must be either a list, a dict, or a path to a dot environment file, got type '{type(env)}' instead."

@@ -33,9 +33,25 @@ def test_generate_containerfile_env_dict_collapses_newlines(tmp_path) -> None:
         bento_fs=tmp_path,
     )
 
-    # the value stays on the ARG line instead of injecting an instruction
-    assert "ARG X=a RUN echo PWNED" in dockerfile
+    # the value stays on the quoted ARG line instead of injecting an instruction
+    assert "ARG X='a RUN echo PWNED'" in dockerfile
     assert "\nRUN echo PWNED" not in dockerfile
+
+
+def test_docker_options_env_preserves_value_whitespace() -> None:
+    options = DockerOptions(
+        env={
+            "JAVA_OPTS": "-Xmx1g  -Xms512m",
+            "PEM": "  indented value  ",
+            "TABBED": "a\tb",
+        },
+    )
+
+    assert options.env == {
+        "JAVA_OPTS": "-Xmx1g  -Xms512m",
+        "PEM": "  indented value  ",
+        "TABBED": "a\tb",
+    }
 
 
 def test_generate_containerfile_quotes_system_packages(tmp_path) -> None:

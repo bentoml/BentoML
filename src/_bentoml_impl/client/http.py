@@ -336,11 +336,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             for v in value:
                 file = self._file_manager.get_file(v)
                 if isinstance(file, str):
-                    # URL-backed values are sent as multipart text parts
-                    # (filename=None) so a list field emits one same-name
-                    # part per value instead of overwriting earlier values
-                    # in the ``data`` dict.
-                    files.append((name, (None, file)))
+                    data[name] = file
                 else:
                     files.append((name, file))
         headers.pop("content-type", None)

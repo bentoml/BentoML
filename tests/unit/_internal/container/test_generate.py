@@ -21,6 +21,23 @@ def test_build_environment_registers_normalize_line_filter() -> None:
     )
 
 
+def test_generate_containerfile_env_dict_collapses_newlines(tmp_path) -> None:
+    dockerfile = generate_containerfile(
+        DockerOptions(
+            distro="debian",
+            python_version="3.11",
+            env={"X": "a\nRUN echo PWNED\n"},
+        ),
+        str(tmp_path),
+        conda=CondaOptions(),
+        bento_fs=tmp_path,
+    )
+
+    # the value stays on the ARG line instead of injecting an instruction
+    assert "ARG X=a RUN echo PWNED" in dockerfile
+    assert "\nRUN echo PWNED" not in dockerfile
+
+
 def test_generate_containerfile_quotes_system_packages(tmp_path) -> None:
     dockerfile = generate_containerfile(
         DockerOptions(

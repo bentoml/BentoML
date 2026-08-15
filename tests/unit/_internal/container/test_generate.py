@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from _bentoml_impl.docker import generate_dockerfile as generate_v2_dockerfile
+from bentoml._internal.bento.bento import ImageInfo
+from bentoml._internal.bento.build_config import BentoEnvSchema
 from bentoml._internal.bento.build_config import CondaOptions
 from bentoml._internal.bento.build_config import DockerOptions
 from bentoml._internal.container.generate import build_environment
@@ -34,6 +37,18 @@ def test_generate_containerfile_env_dict_collapses_newlines(tmp_path) -> None:
     )
 
     # the value stays on the quoted ARG line instead of injecting an instruction
+    assert "ARG X='a RUN echo PWNED'" in dockerfile
+    assert "\nRUN echo PWNED" not in dockerfile
+
+
+def test_generate_v2_containerfile_env_collapses_newlines(tmp_path) -> None:
+    dockerfile = generate_v2_dockerfile(
+        ImageInfo(base_image="python:3.11-slim", python_version="3.11"),
+        tmp_path,
+        envs=[BentoEnvSchema(name="X", value="a\nRUN echo PWNED\n")],
+        command="true",
+    )
+
     assert "ARG X='a RUN echo PWNED'" in dockerfile
     assert "\nRUN echo PWNED" not in dockerfile
 

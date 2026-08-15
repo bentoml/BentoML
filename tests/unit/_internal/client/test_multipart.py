@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import io
 import typing as t
 from urllib.parse import parse_qs
 
@@ -58,6 +59,21 @@ def _async_client() -> AsyncClient:
     return client
 
 
+class _MixedFileManager(ClientFileManager):
+    """Pass both URL strings and binary file tuples through unchanged."""
+
+    def get_file(self, value: t.Any) -> t.Any:
+        if isinstance(value, str):
+            return value
+        return value
+
+
+def _async_mixed_client() -> AsyncClient:
+    client = object.__new__(AsyncClient)
+    client._file_manager = _MixedFileManager()
+    return client
+
+
 def _encode_aiohttp_form(form: t.Any) -> bytes:
     payload = form()
     value = getattr(payload, "_value", None)
@@ -107,3 +123,22 @@ class TestMultipartURLListField:
         assert parsed["files"] == [self.url_a, self.url_b], (
             "each URL in a list field must produce its own same-name part"
         )
+
+    def test_aiohttp_client_preserves_mixed_url_file_order(self):
+        client = _async_mixed_client()
+        fileobj = io.BytesIO(b"BBB")
+        form = client._build_multipart(
+            _files_endpoint(),
+            {
+                "files": [
+                    self.url_a,
+                    ("b.txt", fileobj, "text/plain"),
+                ]
+            },  # type: ignore[dict-item]
+            {"content-type": "multipart/form-data"},
+        )
+
+        fields = list(form._fields)
+        assert len(fields) == 2
+        assert fields[0][2] == self.url_a
+        assert fields[1][2] is fileobj

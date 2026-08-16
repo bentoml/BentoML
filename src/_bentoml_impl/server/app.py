@@ -592,6 +592,21 @@ class ServiceAppFactory(BaseAppFactory):
             )
         except Exception:
             logger.exception("Task(%s) %s failed", name, task_id)
+            try:
+                await self._result_store.set_result(
+                    task_id,
+                    JSONResponse(
+                        {
+                            "error": "An unexpected error has occurred, please check the server log."
+                        },
+                        status_code=500,
+                    ),
+                    ResultStatus.FAILED,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to persist failure status for task %s", task_id
+                )
         else:
             logger.info("Task(%s) %s is completed", name, task_id)
 

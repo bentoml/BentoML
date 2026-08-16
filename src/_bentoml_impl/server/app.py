@@ -571,7 +571,11 @@ class ServiceAppFactory(BaseAppFactory):
             resp = JSONResponse({"error": "task_id is required"}, status_code=400)
             self._add_response_headers(resp)
             return resp
-        await self._result_store.set_status(task_id, ResultStatus.CANCELED)
+        # Cancellation is not supported in the local development server:
+        # return the not-supported error WITHOUT mutating the task row. The
+        # previous set_status(CANCELED) left the task wedged — /status reported
+        # canceled while /get and /retry kept returning 400 "not completed
+        # yet" forever (completed_at stays NULL on the set_status path).
         resp = JSONResponse(
             {"error": "task cancellation is not supported in local development server"},
             status_code=400,

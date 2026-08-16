@@ -121,6 +121,7 @@ class JSONSerde(Serde):
             status_code=response_dict["status"],
         )
         response.raw_headers = [
-            tuple(map(str.encode, h)) for h in response_dict["headers"]
+            (k.encode(self.HEADERS_ENCODING), v.encode(self.HEADERS_ENCODING))
+            for k, v in response_dict["headers"]
         ]
         return response

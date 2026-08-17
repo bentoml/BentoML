@@ -49,18 +49,6 @@ ENV_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 # Docker's own container-name rule; shell-inert for the same reason.
 CONTAINER_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]*$")
 
-# SageMaker's own rule for model/endpoint-config/endpoint names (max 63
-# chars; alphanumerics and hyphens, no leading/trailing hyphen).
-SAGEMAKER_NAME_RE = re.compile(r"^[a-zA-Z0-9](-*[a-zA-Z0-9])*$")
-
-IAM_ROLE_ARN_RE = re.compile(r"^arn:aws[a-zA-Z-]*:iam::\d{12}:role/.+$")
-
-AWS_REGION_RE = re.compile(r"^[a-z]{2}(-[a-z]+)+-\d+$")
-
-# Env var names that look like secrets — targets.sagemaker.environment is
-# visible to anyone who can call sagemaker describe-model, so warn.
-SECRETISH_NAME_RE = re.compile(r"TOKEN|SECRET|PASSWORD|API_?KEY|CREDENTIAL")
-
 # Real generator placeholders look like {{SERVICE_NAME}} or {{EC2_HOST}} —
 # digits included ({{K8S_CONTEXT}}!) — but this pattern must not fire on
 # legitimate braces in user-provided values.
@@ -211,23 +199,6 @@ class Ec2Config:
 
 
 @dataclass
-class SageMakerConfig:
-    region: str
-    endpoint_name: str
-    # REQUIRED, always pre-existing: the script never creates or modifies
-    # IAM. Its trust policy must include sagemaker.amazonaws.com.
-    execution_role_arn: str
-    instance_type: str = "ml.m5.large"
-    instance_count: int = 1
-    # ContainerStartupHealthCheckTimeoutInSeconds (60..3600): how long the
-    # container gets to start answering GET /ping.
-    startup_health_timeout_seconds: int = 600
-    # Extra container env vars (visible via describe-model — no secrets).
-    # BENTOML_PORT=8080 is always injected on top of these.
-    environment: dict[str, str] = field(default_factory=dict)
-
-
-@dataclass
 class Config:
     bundle_dir: Path  # directory containing deploy.config.json
     project: ProjectConfig = field(default_factory=lambda: ProjectConfig(Path(".")))
@@ -235,7 +206,6 @@ class Config:
     verify: VerifyConfig = field(default_factory=VerifyConfig)
     k8s: K8sConfig | None = None
     ec2: Ec2Config | None = None
-    sagemaker: SageMakerConfig | None = None
     raw_targets: dict[str, Any] = field(default_factory=dict)
 
     def require_k8s(self) -> K8sConfig:
@@ -257,16 +227,6 @@ class Config:
                 "skill and include the ec2 target",
             )
         return self.ec2
-
-    def require_sagemaker(self) -> SageMakerConfig:
-        if self.sagemaker is None:
-            raise _fail(
-                "targets.sagemaker",
-                "no sagemaker target configured",
-                hint="regenerate the bundle with the bentoml-deploy-scriptgen "
-                "skill and include the sagemaker target",
-            )
-        return self.sagemaker
 
 
 def _parse_project(data: dict[str, Any], bundle_dir: Path) -> ProjectConfig:
@@ -561,130 +521,6 @@ def _parse_ec2(
     )
 
 
-_SAGEMAKER_INSTANCE_TYPE_RE = re.compile(r"^ml\.[a-z0-9]+\.[a-z0-9]+$")
-
-_ROLE_ARN_HINT = (
-    "SageMaker needs an execution role (trust policy including "
-    "sagemaker.amazonaws.com) to pull the ECR image and write CloudWatch "
-    "logs; this script NEVER creates IAM resources. Find an existing role "
-    "with the interactive bentoml-sagemaker-deploy skill's trust-policy "
-    "scan, or have an account admin create one with the ready-to-send "
-    "snippet in that skill's references/aws-setup.md, then put the ARN here."
-)
-
-
-def _parse_sagemaker(targets: dict[str, Any]) -> SageMakerConfig | None:
-    section = _get_dict(targets, "sagemaker", "targets")
-    if section is None:
-        return None
-    _warn_unknown_keys(
-        section,
-        [
-            "region",
-            "endpoint_name",
-            "execution_role_arn",
-            "instance_type",
-            "instance_count",
-            "startup_health_timeout_seconds",
-            "environment",
-        ],
-        "targets.sagemaker",
-    )
-    region = _get_str(section, "region", "targets.sagemaker", required=True) or ""
-    if not AWS_REGION_RE.match(region):
-        raise _fail(
-            "targets.sagemaker.region",
-            f"{region!r} does not look like an AWS region",
-            hint='e.g. "us-east-1" — the ECR image must live in this region too',
-        )
-    endpoint_name = (
-        _get_str(section, "endpoint_name", "targets.sagemaker", required=True) or ""
-    )
-    if len(endpoint_name) > 63 or not SAGEMAKER_NAME_RE.match(endpoint_name):
-        raise _fail(
-            "targets.sagemaker.endpoint_name",
-            f"{endpoint_name!r} is not a valid SageMaker endpoint name",
-            hint=f"max 63 chars, pattern {SAGEMAKER_NAME_RE.pattern} "
-            "(alphanumerics and '-'; no leading/trailing hyphen, no '_' or "
-            "'.'); keep it short — '-<version-tag>' is appended to derive "
-            "the model/endpoint-config names, which share the 63-char limit",
-        )
-    role_arn = _get_str(section, "execution_role_arn", "targets.sagemaker")
-    if not role_arn or not role_arn.strip():
-        raise _fail(
-            "targets.sagemaker.execution_role_arn",
-            "required value is missing",
-            hint=_ROLE_ARN_HINT,
-        )
-    if not IAM_ROLE_ARN_RE.match(role_arn):
-        raise _fail(
-            "targets.sagemaker.execution_role_arn",
-            f"{role_arn!r} is not an IAM role ARN "
-            '(expected e.g. "arn:aws:iam::123456789012:role/my-sagemaker-role")',
-            hint=_ROLE_ARN_HINT,
-        )
-    instance_type = (
-        _get_str(section, "instance_type", "targets.sagemaker", default="ml.m5.large")
-        or "ml.m5.large"
-    )
-    if not _SAGEMAKER_INSTANCE_TYPE_RE.match(instance_type):
-        raise _fail(
-            "targets.sagemaker.instance_type",
-            f"{instance_type!r} is not a SageMaker instance type",
-            hint='e.g. "ml.m5.large" (endpoint instances always carry the '
-            '"ml." prefix)',
-        )
-    startup_timeout = _get_int(
-        section, "startup_health_timeout_seconds", "targets.sagemaker", 600
-    )
-    if startup_timeout < 60 or startup_timeout > 3600:
-        raise _fail(
-            "targets.sagemaker.startup_health_timeout_seconds",
-            "must be in 60..3600 (SageMaker's allowed range for "
-            "ContainerStartupHealthCheckTimeoutInSeconds)",
-        )
-    environment: dict[str, str] = {}
-    env_raw = _get_dict(section, "environment", "targets.sagemaker")
-    if env_raw:
-        for key, value in env_raw.items():
-            if not ENV_NAME_RE.match(key):
-                raise _fail(
-                    f"targets.sagemaker.environment.{key}",
-                    f"{key!r} is not a valid environment variable name "
-                    f"(must match {ENV_NAME_RE.pattern})",
-                )
-            if key == "BENTOML_PORT":
-                raise _fail(
-                    "targets.sagemaker.environment.BENTOML_PORT",
-                    "BENTOML_PORT is injected automatically (always 8080, "
-                    "the SageMaker BYOC contract port) — remove it",
-                )
-            if not isinstance(value, str):
-                raise _fail(
-                    f"targets.sagemaker.environment.{key}",
-                    f"expected a string value, got {value!r}",
-                    hint="SageMaker Environment values are strings — quote "
-                    "numbers and booleans",
-                )
-            if SECRETISH_NAME_RE.search(key.upper()):
-                warn(
-                    f"targets.sagemaker.environment.{key} looks like a "
-                    "secret — this map is visible to anyone who can call "
-                    "sagemaker describe-model; bake models into the image "
-                    "instead (the BentoML default)"
-                )
-            environment[key] = value
-    return SageMakerConfig(
-        region=region,
-        endpoint_name=endpoint_name,
-        execution_role_arn=role_arn,
-        instance_type=instance_type,
-        instance_count=_get_int(section, "instance_count", "targets.sagemaker", 1),
-        startup_health_timeout_seconds=startup_timeout,
-        environment=environment,
-    )
-
-
 def load_config(config_path: Path) -> Config:
     if not config_path.is_file():
         raise DeployError(
@@ -724,6 +560,5 @@ def load_config(config_path: Path) -> Config:
         verify=_parse_verify(data),
         k8s=_parse_k8s(targets, bundle_dir),
         ec2=_parse_ec2(targets, bundle_dir, project.name),
-        sagemaker=_parse_sagemaker(targets),
         raw_targets=targets,
     )

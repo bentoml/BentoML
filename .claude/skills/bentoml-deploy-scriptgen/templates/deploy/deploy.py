@@ -7,7 +7,7 @@ deploy.config.json; if the config cannot express what you need, regenerate
 the bundle with the skill.
 
 Usage:
-    python3 deploy/deploy.py --target {k8s,ec2,sagemaker}
+    python3 deploy/deploy.py --target {k8s,ec2}
                              [--check-only [--local-only]]
                              [--skip-build] [--image REF] [--version TAG]
                              [--no-verify] [--config PATH]

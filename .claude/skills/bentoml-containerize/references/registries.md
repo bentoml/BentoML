@@ -54,9 +54,8 @@ docker push "$IMAGE"
 
 ## AWS ECR
 
-If a deploy skill prescribes a repository name (e.g. `bentoml-sagemaker-deploy`
-sanitizes it with `tr '_.' '--'` because SageMaker forbids `_`/`.`), use that
-name instead of the plain `$BENTO_NAME` below.
+If a deploy skill prescribes a repository name, use that name instead of the
+plain `$BENTO_NAME` below.
 
 ```bash
 AWS_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)

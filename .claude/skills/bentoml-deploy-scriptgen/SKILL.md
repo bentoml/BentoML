@@ -9,9 +9,9 @@ description: >
   CI/CD", "set up a production deployment pipeline", "deploy without the
   agent", "give me a script I can commit to deploy this", or "automate my
   BentoML deploys". Complements the interactive skills: bentoml-containerize,
-  bentoml-k8s-deploy, bentoml-ec2-deploy, and bentoml-sagemaker-deploy do a
-  one-off deploy with you in the loop; this skill emits scripts that repeat
-  it forever. Kubernetes, EC2, and SageMaker targets.
+  bentoml-k8s-deploy, and bentoml-ec2-deploy do a one-off deploy with you in
+  the loop; this skill emits scripts that repeat it forever. Kubernetes and
+  EC2 targets.
 ---
 
 # Generate a production deploy-script bundle
@@ -42,17 +42,6 @@ What the generated bundle does at runtime (all driven by config):
   → `/readyz` + inference smoke test through a hardened SSH tunnel (or
   direct HTTP). **Existing instances only — the script never provisions
   EC2.**
-- `python3 deploy/deploy.py --target sagemaker` → same preflight/build/push
-  (the image **must** be ECR in the endpoint's region), then per-tag
-  `create-model` (BENTOML_PORT=8080 always injected) + endpoint config
-  named `<endpoint_name>-<tag>` → **create the endpoint on the first run,
-  `update-endpoint` on every later one** (Failed endpoints are
-  delete+recreated; concurrent operations abort with exit 6) →
-  `wait endpoint-in-service` with a Python-side timeout →
-  `invoke-endpoint` smoke test. **The execution role must already exist —
-  the script never creates IAM**, and the service must already carry the
-  SageMaker adaptation (`/ping` + `/invocations`) from the interactive
-  skill's Step 1.
 - Flags: `--check-only` (with `--local-only` for credential-free CI PR
   gates), `--skip-build` (which preflights that the image actually exists),
   `--image REF`, `--version TAG`, `--no-verify`, `--config`,
@@ -66,8 +55,8 @@ Find the BentoML project (directory containing `service.py` /
 bundle is generated into `<project>/deploy/`. If `deploy/` already exists,
 show what is there and get explicit confirmation before overwriting.
 
-Scope: the **k8s**, **ec2**, and **sagemaker** targets all generate working
-scripts. Standing prerequisites the script cannot create for the user:
+Scope: the **k8s** and **ec2** targets both generate working scripts.
+Standing prerequisites the script cannot create for the user:
 
 - ec2 deploys to **existing instances only**; if an instance must be
   created, provision it first with the interactive `bentoml-ec2-deploy`
@@ -75,14 +64,6 @@ scripts. Standing prerequisites the script cannot create for the user:
 - Make sure the project's `.gitignore` covers `__pycache__/` (and any other
   build artifacts): `bentoml build` creates it inside the project, and an
   uncovered artifact makes every later run warn about a dirty git tree.
-- sagemaker needs an **existing execution role** (the script never creates
-  IAM — find or request one via the interactive `bentoml-sagemaker-deploy`
-  skill's Step 3), and the service must **already carry the SageMaker
-  adaptation** (`GET /ping` + `POST /invocations`, applied and locally
-  validated by that skill's Step 1). If `service.py` lacks the adaptation,
-  run that step first — the generated script deploys the image as-is and an
-  unadapted service only fails minutes later on the endpoint's health
-  checks.
 
 ## Step 1 — Gather parameters (one round of questions)
 
@@ -132,31 +113,6 @@ Arch matching needs no extra question: preflight compares each host's
 `uname -m` against `image.platform` (or the local build arch) and fails
 before anything mutates.
 
-### SageMaker target parameters
-
-Prerequisites first (same as the interactive `bentoml-sagemaker-deploy`
-skill, which handles both interactively): the service must already carry
-the SageMaker adaptation (its Step 1 — apply and locally validate it now if
-missing), and an execution role must already exist (its Step 3 trust-policy
-scan / admin snippet — this bundle **never creates IAM**). The registry
-must be **ECR in the endpoint's region** (`registry_type: "ecr"`), and
-standard `ml.*` instances are amd64 — set `image.platform` to
-`"linux/amd64"` when building on arm64. Then:
-
-| Parameter | Placeholder / config key | Default / notes |
-|---|---|---|
-| Region | `{{SAGEMAKER_REGION}}` → `targets.sagemaker.region` | Confirm with the user — never assume. Must equal the ECR registry region (preflight cross-checks). |
-| Endpoint name | `{{SAGEMAKER_ENDPOINT_NAME}}` → `targets.sagemaker.endpoint_name` | e.g. `<service-name>-endpoint`. Max 63 chars, `^[a-zA-Z0-9](-*[a-zA-Z0-9])*$`. Keep it short: `-<version-tag>` is appended to derive the per-tag model/endpoint-config names, which share the 63-char limit. The endpoint is long-lived — created once, updated in place by every later run. |
-| Execution role ARN | `{{SAGEMAKER_EXECUTION_ROLE_ARN}}` → `targets.sagemaker.execution_role_arn` | REQUIRED, pre-existing; trust policy must include `sagemaker.amazonaws.com`. Preflight verifies existence + trust via `iam get-role` (a denied `iam:GetRole` warns instead of failing). |
-| Instance type | `targets.sagemaker.instance_type` (ships `"ml.m5.large"`) | ~$0.115/h ≈ $83/month **per instance, billed from InService until delete-endpoint** — state this cost when asking. Sizing table in the interactive skill's `references/aws-setup.md`. |
-| Instance count | `targets.sagemaker.instance_count` (ships `1`) | Fixed count; autoscaling is out of scope. |
-| Startup health timeout | `targets.sagemaker.startup_health_timeout_seconds` (ships `600`) | `ContainerStartupHealthCheckTimeoutInSeconds`, 60–3600. Raise it when model loading takes many minutes. |
-| Extra container env vars | `targets.sagemaker.environment` (ships `{}`) | String map set on the model definition; visible via `describe-model`, so **no secrets** — bake models into the image instead. `BENTOML_PORT` is rejected here because the script always injects `BENTOML_PORT=8080`. |
-
-The smoke-test rows from the main table double as the `invoke-endpoint`
-verification; `verify.inference.path` should be `/invocations` (SageMaker
-always posts there — any other value is ignored with a warning).
-
 ## Step 2 — Copy the bundle VERBATIM and render the config
 
 ```bash
@@ -170,19 +126,18 @@ blanket sed across the bundle**: the `.py` files must stay byte-identical to
 the templates, and some contain literal `{{SERVICE_NAME}}`-style text in
 comments that a global substitution would corrupt. JSON gotchas:
 
-- The template config ships **all three** target blocks (`targets.k8s`,
-  `targets.ec2`, and `targets.sagemaker`). **Delete the block(s) for
-  targets the user did not select** — a leftover `{{...}}` placeholder
-  anywhere makes the config fail to load (exit 2), by design. Likewise
-  prune the README sections (and CI/CD jobs) for targets that were not
-  generated — and **retarget the generic examples** to the target(s) you
-  did generate: the Usage line, the CI one-liners, and the sample JSON
-  summary in the template are k8s-flavored (`--target k8s`,
-  `"target": "k8s"`), and the GitLab CI chapter's concrete deploy job is
-  the sagemaker one. For a single-target bundle, rewrite those to the
-  selected target (for ec2, adapt the sagemaker GitLab job per the
-  chapter's own notes: SSH key from a CI secret file-variable, no dind
-  needed when `--skip-build`).
+- The template config ships **both** target blocks (`targets.k8s` and
+  `targets.ec2`). **Delete the block for a target the user did not
+  select** — a leftover `{{...}}` placeholder anywhere makes the config
+  fail to load (exit 2), by design. Likewise prune the README sections
+  (and CI/CD jobs) for targets that were not generated — and **retarget
+  the generic examples** to the target(s) you did generate: the Usage line,
+  the CI one-liners, the sample JSON summary, and the GitLab CI chapter's
+  concrete deploy job in the template are all k8s-flavored (`--target
+  k8s`, `"target": "k8s"`). For an ec2-only bundle, rewrite those to ec2
+  (adapt the GitLab job per the chapter's own notes: SSH key from a CI
+  secret file-variable, no kubectl/kubeconfig, no dind needed when
+  `--skip-build`).
 - `{{INFERENCE_BODY}}` is substituted with a JSON object (no quotes), e.g.
   `{"text": "A great day"}`.
 - ec2 specifics: `hosts` is a JSON array of strings (render one
@@ -191,12 +146,6 @@ comments that a global substitution would corrupt. JSON gotchas:
   come from the deploying environment); `registry_auth` and `verify_via`
   per the Step 1 table. `ssh_key_path` must point at the key where it
   already lives — never move or copy a private key into the project.
-- sagemaker specifics: `environment` stays `{}` unless the service needs
-  extra non-secret env vars (never add `BENTOML_PORT` — the script injects
-  it); `instance_type`/`instance_count`/`startup_health_timeout_seconds`
-  ship with usable defaults, change them only per the Step 1 answers. The
-  role ARN and region must be the confirmed real values — the config
-  loader rejects malformed ARNs and regions at exit 2.
 - Optional keys ship as JSON `null` (`project.service`, `image.platform`,
   `targets.k8s.image_pull_secret`, `targets.k8s.node_port`) or `false`
   (`image.local_image_preloaded`) — replace the null/false with the real
@@ -245,21 +194,14 @@ Run the preflight gate exactly as CI would, once per generated target:
 ```bash
 python3 deploy/deploy.py --target k8s --check-only
 python3 deploy/deploy.py --target ec2 --check-only        # connects to every host over SSH
-python3 deploy/deploy.py --target sagemaker --check-only  # read-only AWS calls
 ```
 
 For ec2, the full `--check-only` needs the SSH key, per-host reachability,
 any `env_names` values exported, and (with `ecr-token-over-ssh`) AWS
 credentials — it probes each host's docker daemon, architecture, and host
-port in one SSH round trip per host, without changing anything.
-
-For sagemaker, the full `--check-only` needs AWS credentials: it runs
-`sts get-caller-identity`, checks the AWS CLI is v2, that the image ref is
-ECR in `targets.sagemaker.region`, that the derived
-`<endpoint_name>-<tag>` names fit SageMaker's rules, and verifies the
-execution role's existence and trust policy via `iam get-role` (a denied
-`iam:GetRole` degrades to a warning). All read-only. Without credentials
-on this machine, fall back to `--check-only --local-only` and say so.
+port in one SSH round trip per host, without changing anything. Without
+those credentials on this machine, fall back to
+`--check-only --local-only` and say so.
 
 Show the user the check list and the summary JSON. It must exit 0 before
 you hand off. If this machine lacks some credentials, degrade explicitly
@@ -269,7 +211,7 @@ it):
 - no bentoml CLI / registry credentials, but cluster access works:
   `python3 deploy/deploy.py --target k8s --check-only --skip-build --image <known-ref>`
 - no cluster/host/AWS or registry access at all (e.g. CI PR gate):
-  `python3 deploy/deploy.py --target <k8s|ec2|sagemaker> --check-only --local-only`
+  `python3 deploy/deploy.py --target <k8s|ec2> --check-only --local-only`
 
 If a check fails, fix the *environment or config* it names — never the
 scripts.
@@ -279,13 +221,10 @@ Then tell the user:
 1. **What was generated**: `deploy/deploy.py`, `deploy/deploy.config.json`
    (the only file they edit), `deploy/_internal/` (never edit),
    `deploy/k8s/*.yaml` (k8s target only), `deploy/README.md`.
-2. **How to deploy**: `python3 deploy/deploy.py --target <k8s|ec2|sagemaker>`
+2. **How to deploy**: `python3 deploy/deploy.py --target <k8s|ec2>`
    (full build+push+deploy+verify), and the `--skip-build --image REF` form
    for redeploys/rollbacks. For ec2, secrets named in `env_names` must be
-   exported in the deploying shell/CI environment first. For sagemaker,
-   state the standing cost plainly: the endpoint bills per instance-hour
-   from InService until `delete-endpoint` (default ml.m5.large ≈ $0.115/h ≈
-   $83/month), and the README's teardown section stops it.
+   exported in the deploying shell/CI environment first.
 3. **Commit it**: the bundle contains no secrets —
    `git add deploy/ && git commit -m "Add production deploy bundle"`.
 4. **Wire CI later**: point them at the CI/CD chapter in the generated

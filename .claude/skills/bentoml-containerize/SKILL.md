@@ -6,9 +6,9 @@ description: >
   GHCR, ECR, private registry, kind/minikube local load, or ttl.sh). Use when the
   user asks to "containerize a Bento", "build a Docker image for my BentoML
   service", "package my BentoML service for deployment", "push my Bento image to
-  a registry", or as the first step of deploying BentoML to Kubernetes, EC2, or
-  SageMaker. Does NOT deploy anything itself — hand off to bentoml-k8s-deploy,
-  bentoml-ec2-deploy, or bentoml-sagemaker-deploy for that.
+  a registry", or as the first step of deploying BentoML to Kubernetes or EC2.
+  Does NOT deploy anything itself — hand off to bentoml-k8s-deploy or
+  bentoml-ec2-deploy for that.
 ---
 
 # Containerize a BentoML project and push it to a registry
@@ -17,8 +17,8 @@ You will take the user's local BentoML project (a `service.py` plus either a
 `bentofile.yaml` or an inline `bentoml.images.Image` spec), build a Bento,
 containerize it, verify the container actually serves, and push the image to the
 registry the user chooses. The output of this skill is a **pushed image
-reference** that the deploy skills (`bentoml-k8s-deploy`, `bentoml-ec2-deploy`,
-`bentoml-sagemaker-deploy`) consume.
+reference** that the deploy skills (`bentoml-k8s-deploy`,
+`bentoml-ec2-deploy`) consume.
 
 > For production / CI-CD deployments, generate a standalone script bundle (no agent needed at deploy time) with the `bentoml-deploy-scriptgen` skill.
 
@@ -63,7 +63,7 @@ Ask the user up front (one round of questions):
    private registry, `kind`/`minikube` local load (no registry), or `ttl.sh`
    (anonymous, ephemeral — good for throwaway tests).
 2. What CPU architecture do the target machines run (cluster nodes / EC2
-   instance type / SageMaker instance — `amd64` or `arm64`)? Most clouds are
+   instance type — `amd64` or `arm64`)? Most clouds are
    `linux/amd64`; a laptop building on Apple Silicon defaults to `arm64` —
    mismatch causes `exec format error` on the target.
 
@@ -269,8 +269,6 @@ where the user wants to run:
   plain Kubernetes manifests (Deployment + Service).
 - `bentoml-ec2-deploy` — consumes the pushed image reference (typically ECR)
   and runs it on an EC2 instance with docker.
-- `bentoml-sagemaker-deploy` — consumes an ECR image reference and creates a
-  SageMaker endpoint from it.
 
 Report to the user, and pass to the chosen deploy skill:
 

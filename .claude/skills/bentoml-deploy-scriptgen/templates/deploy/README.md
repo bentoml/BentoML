@@ -37,20 +37,13 @@ python3 deploy/deploy.py --target k8s --skip-build \
 # (export the values for every name in targets.ec2.env_names first):
 python3 deploy/deploy.py --target ec2 --check-only   # probes every host over SSH
 python3 deploy/deploy.py --target ec2
-
-# SageMaker: the same pipeline, ending in a real-time endpoint that is
-# created on the first run and updated in place on every later one.
-# BILLING: the endpoint costs per instance-hour from InService until you
-# delete it (ml.m5.large ≈ $0.115/h ≈ $83/month) — see Teardown below.
-python3 deploy/deploy.py --target sagemaker --check-only
-python3 deploy/deploy.py --target sagemaker
 ```
 
 ### Flags
 
 | Flag | Meaning |
 |---|---|
-| `--target {k8s,ec2,sagemaker}` | Required. Targets not generated into this bundle exit with code 2. |
+| `--target {k8s,ec2}` | Required. Targets not generated into this bundle exit with code 2. |
 | `--check-only` | Run every applicable preflight check in one aggregated pass and exit; nothing is changed. |
 | `--local-only` | With `--check-only`: only checks that need no cluster or registry connectivity (config validity, manifests/sentinel, tool presence). Skipped checks are listed in the summary's `skipped_checks`. |
 | `--skip-build` | Skip build/containerize/push (and their preflights); deploy an existing image. Preflight then verifies the image actually exists in the registry (ECR `describe-images`, or `docker manifest inspect`) so a typo cannot burn the rollout timeout. |
@@ -193,133 +186,6 @@ python3 deploy/deploy.py --target k8s --skip-build \
     --image {{IMAGE_REGISTRY}}/{{IMAGE_REPOSITORY}}:<previous-tag>
 ```
 
-## How the SageMaker deploy works
-
-`--target sagemaker` runs the same build/push pipeline (the image **must**
-land in ECR in `targets.sagemaker.region` — SageMaker cannot pull from
-Docker Hub/GHCR or from another region; preflight enforces both), then
-manages one long-lived real-time endpoint named
-`targets.sagemaker.endpoint_name`:
-
-1. **Per-tag model + endpoint config.** Each run derives one name,
-   `<endpoint_name>-<version-tag>` (tag sanitized to SageMaker's
-   alphanumerics-and-hyphens alphabet — plus a short hash of the raw tag
-   whenever sanitizing changed it, so `v1.2.3` and `v1-2-3` can never alias
-   to the same name; the 63-char limit is checked in preflight), used for
-   both the SageMaker model and the endpoint config. Both are
-   immutable, so redeploying the *same* tag deletes and recreates exactly
-   that name — the script never deletes any other resource. The model's
-   container environment is `targets.sagemaker.environment` plus an always
-   injected `BENTOML_PORT=8080` (the whole BentoML-side fix for SageMaker's
-   fixed `serve` run command and port-8080 contract).
-2. **Create or update, decided by `describe-endpoint`:**
-
-   | Endpoint state | Action |
-   |---|---|
-   | absent | `create-endpoint` |
-   | `InService` on a different config | `update-endpoint` to the new config — zero-downtime blue/green managed by SageMaker; the previous config name is recorded in the summary for rollback |
-   | `InService` on this exact config | nothing to deploy (AWS forbids deleting the in-use config, and an update requires a *new* config). A rebuilt image under the same tag needs a new `--version`. |
-   | `Failed` | delete + `wait endpoint-deleted` + recreate (AWS rejects `update-endpoint` on a Failed endpoint) |
-   | `Creating`/`Updating`/`Deleting`/… | abort with exit 6 — a concurrent operation is in progress; wait for it and re-run |
-
-3. `aws sagemaker wait endpoint-in-service`, wrapped in a Python-side
-   overall timeout of `startup_health_timeout_seconds + 1500` s. On failure
-   the script surfaces `describe-endpoint`'s `FailureReason`, the CloudWatch
-   command, and the exact rollback command.
-4. **Verify**: a real `aws sagemaker-runtime invoke-endpoint` call with
-   `verify.inference.body` (SageMaker always posts to `/invocations`; the
-   configured path is ignored for this target). The response's declared
-   `ContentType` is checked for consistency and the body must contain
-   `verify.inference.expect_substring`. Platform limits: 60 s per request,
-   6 MB bodies.
-
-The service itself must already satisfy SageMaker's BYOC contract
-(`GET /ping` → 200 and `POST /invocations`, both served by the small
-adaptation from the interactive `bentoml-sagemaker-deploy` skill's Step 1).
-This script deploys the image **as-is** — an unadapted service fails the
-endpoint's health checks after several minutes, not at preflight.
-
-### IAM prerequisites (sagemaker)
-
-- `targets.sagemaker.execution_role_arn` must be an **existing** role whose
-  trust policy includes `sagemaker.amazonaws.com`, with ECR pull +
-  CloudWatch log permissions. **This script never creates or modifies
-  IAM.** If you have no such role, the interactive
-  `bentoml-sagemaker-deploy` skill finds candidates via a trust-policy scan
-  and, when the role has to be created by an account admin, prints a
-  ready-to-send admin snippet (its `references/aws-setup.md`).
-- The *deploying* identity needs `sagemaker:*` on the endpoint's resources,
-  `iam:PassRole` on the execution role (checked by AWS at `create-model`
-  time), and ideally `iam:GetRole` — preflight verifies the role's trust
-  policy with it, but a denied `iam:GetRole` only warns (unverifiable is
-  not invalid).
-- Values in `targets.sagemaker.environment` are visible to anyone who can
-  call `describe-model` and appear in local process listings — **no secrets
-  there**; bake models into the image instead (the BentoML default).
-
-### Invoke the endpoint (sagemaker)
-
-```bash
-aws sagemaker-runtime invoke-endpoint \
-  --region {{SAGEMAKER_REGION}} \
-  --endpoint-name {{SAGEMAKER_ENDPOINT_NAME}} \
-  --content-type application/json \
-  --cli-binary-format raw-in-base64-out \
-  --body '{{INFERENCE_BODY}}' \
-  /tmp/sm-response.json
-cat /tmp/sm-response.json; echo
-```
-
-Container logs land in CloudWatch log group
-`/aws/sagemaker/Endpoints/{{SAGEMAKER_ENDPOINT_NAME}}`:
-
-```bash
-aws logs tail "/aws/sagemaker/Endpoints/{{SAGEMAKER_ENDPOINT_NAME}}" \
-  --region {{SAGEMAKER_REGION}} --since 1h
-```
-
-### Rollback (sagemaker)
-
-Every update records the previously active endpoint config in the summary
-(`stages[].detail` of `sagemaker.endpoint`), and a failed run prints the
-command. Rolling back is one update back to that config (or a `--skip-build
---image <previous-ref>` redeploy of the old tag):
-
-```bash
-aws sagemaker update-endpoint --endpoint-name {{SAGEMAKER_ENDPOINT_NAME}} \
-  --endpoint-config-name <previous-config> --region {{SAGEMAKER_REGION}}
-```
-
-A failed update keeps serving the previous config (SageMaker's blue/green);
-the endpoint must leave `Updating` before a rollback is accepted.
-
-### Teardown and housekeeping (sagemaker)
-
-**Deleting the endpoint is what stops billing** (ml.m5.large ≈ $0.115/h ≈
-$83/month until then, idle or not):
-
-```bash
-aws sagemaker delete-endpoint --endpoint-name {{SAGEMAKER_ENDPOINT_NAME}} \
-  --region {{SAGEMAKER_REGION}}
-```
-
-Superseded per-tag models and endpoint configs **accumulate by design** —
-they are free, and keeping them is what makes one-command rollbacks
-possible. The script never deletes anything it did not just recreate in the
-same run, so prune old ones yourself occasionally (keep the config the
-endpoint currently uses and any tag you may roll back to):
-
-```bash
-aws sagemaker list-endpoint-configs --name-contains {{SAGEMAKER_ENDPOINT_NAME}}- \
-  --region {{SAGEMAKER_REGION}} --query 'EndpointConfigs[].EndpointConfigName'
-aws sagemaker list-models --name-contains {{SAGEMAKER_ENDPOINT_NAME}}- \
-  --region {{SAGEMAKER_REGION}} --query 'Models[].ModelName'
-
-aws sagemaker delete-endpoint-config --endpoint-config-name <old-config> \
-  --region {{SAGEMAKER_REGION}}
-aws sagemaker delete-model --model-name <old-model> --region {{SAGEMAKER_REGION}}
-```
-
 ## CI/CD
 
 The bundle is designed to be the *entire* deploy step of a pipeline: exit
@@ -331,19 +197,18 @@ patterns cover everything:
   tool presence. Needs **no** credentials, cluster, or registry, so it is
   safe on any runner including fork PRs — but note it still checks that the
   target's CLI tools are **on PATH** (docker always; the AWS CLI v2 for
-  ECR/sagemaker; kubectl for k8s; ssh for ec2), so the job must install
-  them.
+  ECR; kubectl for k8s; ssh for ec2), so the job must install them.
 - **Deploy on main**: the full run. The runner needs Python >= 3.9, the
   `bentoml` CLI, docker (build/containerize/push), the AWS CLI v2 for
-  ECR / EC2-with-ECR / SageMaker, and target-specific access (kubeconfig,
-  SSH key, or an AWS role).
+  ECR / EC2-with-ECR, and target-specific access (kubeconfig, SSH key, or
+  an AWS role).
 
 Secrets wiring (nothing is ever read from the config or written into the
 repo):
 
 | Secret | Used by | How it reaches the script |
 |---|---|---|
-| AWS role (OIDC, preferred) or access keys | ECR push; sagemaker; ec2 with `ecr-token-over-ssh` | ambient AWS env — `aws-actions/configure-aws-credentials` on GitHub, `AWS_ROLE_ARN` + `AWS_WEB_IDENTITY_TOKEN_FILE` on GitLab |
+| AWS role (OIDC, preferred) or access keys | ECR push; ec2 with `ecr-token-over-ssh` | ambient AWS env — `aws-actions/configure-aws-credentials` on GitHub, `AWS_ROLE_ARN` + `AWS_WEB_IDENTITY_TOKEN_FILE` on GitLab |
 | SSH private key | ec2 | written by the job to the path in `targets.ec2.ssh_key_path`, mode 600 |
 | Runtime env values (names in `targets.ec2.env_names`) | ec2 | exported in the job's environment |
 
@@ -379,7 +244,6 @@ jobs:
       - run: python3 deploy/deploy.py --target k8s --check-only --local-only
       # one line per generated target:
       # - run: python3 deploy/deploy.py --target ec2 --check-only --local-only
-      # - run: python3 deploy/deploy.py --target sagemaker --check-only --local-only
 
   # k8s target: OIDC -> AWS credentials -> ECR push + EKS kubeconfig.
   deploy-k8s:
@@ -443,32 +307,6 @@ jobs:
         with:
           name: deploy-summary-ec2
           path: summary.json
-
-  # sagemaker target: the OIDC role needs ECR push, sagemaker:* on this
-  # endpoint's resources, and iam:PassRole on
-  # targets.sagemaker.execution_role_arn.
-  deploy-sagemaker:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install "bentoml>=1.4"
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: "{{SAGEMAKER_REGION}}"
-      - run: python3 deploy/deploy.py --target sagemaker --output-json summary.json
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: deploy-summary-sagemaker
-          path: summary.json
 ```
 
 Notes:
@@ -481,9 +319,6 @@ Notes:
 - Fork PRs never reach the deploy jobs (`push` to `main` only), and the PR
   gate needs no secrets — the safe default. A trusted-PR "full preflight"
   variant is the same deploy job with `--check-only` substituted in.
-- SageMaker reminder: a successful deploy job leaves a **billing** endpoint
-  running by design; teardown stays a human decision (see "Teardown and
-  housekeeping" above).
 
 ### GitLab CI
 
@@ -505,8 +340,8 @@ check:
     # --local-only skips all connectivity checks but still verifies tool
     # PRESENCE, so the bare python image needs the target CLIs installed:
     # docker (the CLI alone satisfies the presence check), the AWS CLI v2
-    # for ECR images and the sagemaker target, kubectl for the k8s target
-    # (git and ssh already ship in python:3.11).
+    # for ECR images, and kubectl for the k8s target (git and ssh already
+    # ship in python:3.11).
     - apt-get update -qq && apt-get install -y -qq curl unzip docker.io
     - curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
     - unzip -q /tmp/awscliv2.zip -d /tmp && /tmp/aws/install
@@ -517,9 +352,8 @@ check:
     - python3 deploy/deploy.py --target k8s --check-only --local-only
     # one line per generated target:
     # - python3 deploy/deploy.py --target ec2 --check-only --local-only
-    # - python3 deploy/deploy.py --target sagemaker --check-only --local-only
 
-deploy-sagemaker:
+deploy-k8s:
   stage: deploy
   image: python:3.11
   rules:
@@ -539,19 +373,24 @@ deploy-sagemaker:
     - apt-get update -qq && apt-get install -y -qq curl unzip docker.io
     - curl -sSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
     - unzip -q /tmp/awscliv2.zip -d /tmp && /tmp/aws/install
+    - curl -sSLo /usr/local/bin/kubectl "https://dl.k8s.io/release/$(curl -sSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    - chmod +x /usr/local/bin/kubectl
     - pip install "bentoml>=1.4"
+    # the --alias must equal targets.k8s.context:
+    - aws eks update-kubeconfig --name <cluster> --alias {{K8S_CONTEXT}}
   script:
-    - python3 deploy/deploy.py --target sagemaker --output-json summary.json
+    - python3 deploy/deploy.py --target k8s --output-json summary.json
   artifacts:
     when: always
     paths: [summary.json]
 ```
 
-For the other targets, swap the last `script:` line (and: for k8s install
-kubectl in `before_script` — the same curl as in the `check` job — then add
-`aws eks update-kubeconfig --name <cluster> --alias {{K8S_CONTEXT}}` before
-the deploy line; for ec2 write the SSH key from a **file-type** CI/CD
-variable to the path in `targets.ec2.ssh_key_path` with mode 600 in
+For the ec2 target, swap the last `script:` line for
+`--target ec2`, drop the kubectl install and the
+`aws eks update-kubeconfig` line, write the SSH key from a **file-type**
+CI/CD variable to the path in `targets.ec2.ssh_key_path` with mode 600 in
 `before_script`, and define any `targets.ec2.env_names` values as masked
-CI/CD variables). For non-EKS clusters pulling from ECR, the image pull
-secret expires every 12 h — delete and recreate it in CI before deploying.
+CI/CD variables (AWS credentials stay needed only for ECR images — push,
+and `registry_auth: "ecr-token-over-ssh"`). For non-EKS clusters pulling
+from ECR, the image pull secret expires every 12 h — delete and recreate it
+in CI before deploying.

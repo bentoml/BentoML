@@ -1,16 +1,16 @@
 # BentoML Deployment Agent Skills
 
 A set of [Claude Code agent skills](https://code.claude.com/docs/en/skills) for deploying
-BentoML services to infrastructure **you** own — a vanilla Kubernetes cluster, plain AWS
-EC2 instances, or an AWS SageMaker real-time endpoint — using a fully open-source stack:
-the `bentoml` CLI, Docker, `kubectl` with plain manifests, `ssh`, and the AWS CLI. No Helm
-charts, no operators or CRDs, no Yatai, no BentoCloud, no closed-source dependencies.
+BentoML services to infrastructure **you** own — a vanilla Kubernetes cluster or plain AWS
+EC2 instances — using a fully open-source stack: the `bentoml` CLI, Docker, `kubectl` with
+plain manifests, `ssh`, and the AWS CLI. No Helm charts, no operators or CRDs, no Yatai,
+no BentoCloud, no closed-source dependencies.
 
 These skills cover **basic deployment**. Features that were part of the commercial
 BentoCloud platform — scale-to-zero, inference-metric autoscaling, canary/blue-green
 rollouts, model registry sync, observability dashboards — are out of scope for every
-target. Where a standard building block exists (Kubernetes HPA, an AWS ALB, SageMaker
-autoscaling), the skills point at it in one line and stop.
+target. Where a standard building block exists (Kubernetes HPA, an AWS ALB), the skills
+point at it in one line and stop.
 
 ## The skills
 
@@ -20,11 +20,10 @@ autoscaling), the skills point at it in one line and stop.
 | [`bentoml-k8s-deploy`](bentoml-k8s-deploy/SKILL.md) | Deploys a pushed image to your Kubernetes cluster: renders plain manifests (Deployment + Service, optional Ingress) into your project's `k8s/`, applies them, and verifies with a real inference request. |
 | [`bentoml-k8s-troubleshoot`](bentoml-k8s-troubleshoot/SKILL.md) | Diagnostic runbook for Kubernetes deployments that went wrong: ImagePullBackOff, CrashLoopBackOff, OOM, Pending, probe failures, unreachable services, inference 4xx/5xx. |
 | [`bentoml-ec2-deploy`](bentoml-ec2-deploy/SKILL.md) | Runs a pushed image under Docker on one or more plain EC2 instances — your existing instances over SSH, or a fresh instance provisioned via the AWS CLI. Includes ECR auth, verification, and teardown. |
-| [`bentoml-sagemaker-deploy`](bentoml-sagemaker-deploy/SKILL.md) | Adapts your service to SageMaker's bring-your-own-container contract (port 8080, `GET /ping`, `POST /invocations`) with a small reviewed patch, pushes to ECR, and creates a real-time endpoint with the AWS CLI. Includes verification and teardown. |
-| [`bentoml-deploy-scriptgen`](bentoml-deploy-scriptgen/SKILL.md) | Generates a standalone, committable deploy bundle (`deploy/deploy.py` + config + manifests) that builds, pushes, deploys, and verifies without any agent — for production and CI/CD pipelines. Kubernetes, EC2, and SageMaker targets. |
+| [`bentoml-deploy-scriptgen`](bentoml-deploy-scriptgen/SKILL.md) | Generates a standalone, committable deploy bundle (`deploy/deploy.py` + config + manifests) that builds, pushes, deploys, and verifies without any agent — for production and CI/CD pipelines. Kubernetes and EC2 targets. |
 
 A typical session chains them: **containerize → one deploy target → (troubleshoot if
-needed)**. The EC2 and SageMaker skills carry their own troubleshooting sections;
+needed)**. The EC2 skill carries its own troubleshooting section;
 `bentoml-k8s-troubleshoot` is Kubernetes-only.
 
 ## Which target should I choose?
@@ -35,36 +34,32 @@ flowchart TD
     C --> Q{Where should it run?}
     Q -->|"I have (or want) a Kubernetes cluster<br/>— incl. local kind/minikube"| K8S["bentoml-k8s-deploy"]
     Q -->|"AWS, keep it simple:<br/>a VM I control, SSH access"| EC2["bentoml-ec2-deploy"]
-    Q -->|"AWS, managed endpoint:<br/>no servers to babysit"| SM["bentoml-sagemaker-deploy"]
     K8S --> V([verified with a real inference request])
     EC2 --> V
-    SM --> V
     K8S -.->|something broke| TS["bentoml-k8s-troubleshoot"]
 ```
 
-| | Kubernetes (`bentoml-k8s-deploy`) | EC2 (`bentoml-ec2-deploy`) | SageMaker (`bentoml-sagemaker-deploy`) |
-|---|---|---|---|
-| **What you need** | A cluster you can reach with `kubectl` (cloud, on-prem, or local kind/minikube) and a registry it can pull from | An AWS account (or just SSH access to existing instances); ECR is the natural registry | An AWS account with SageMaker/ECR/IAM permissions; the image must live in ECR in the endpoint's region |
-| **What you get** | A Deployment + Service (optional Ingress) with liveness/readiness/startup probes, self-healing restarts | Your container on a VM with `--restart unless-stopped`; Swagger UI and metrics on port 3000 | A managed HTTPS endpoint invoked via `aws sagemaker-runtime invoke-endpoint` (IAM-authenticated), CloudWatch logs |
-| **Cost model** | Whatever your cluster already costs — these skills add nothing | Per instance-hour until you terminate: default `t3.medium` ~$0.04/hr + EBS + $0.005/hr per public IPv4 | Per instance-hour from InService until you delete the endpoint: default `ml.m5.large` ~$0.115/hr (~$83/mo) |
-| **When to pick it** | You already operate Kubernetes, or want free local testing on kind/minikube | Simplest possible cloud footprint; full control of the box; no Kubernetes anywhere | You want AWS to run the servers, and IAM auth + CloudWatch out of the box |
-| **Scaling story** | `replicas` in the manifest; standard CPU-based HPA works (one-line pointer, nothing more) | Manual: loop the deploy over N hosts; load balancing (ALB) is out of scope beyond a pointer | Fixed instance count in the endpoint config; autoscaling is out of scope beyond a pointer |
-| **Trade-offs to know** | You own cluster operations; Ingress/LoadBalancer depend on what your cluster provides | Plain HTTP on a raw port, **no authentication** unless your service adds it; you patch and secure the VM | Hard platform limits: 60 s per request, 6 MB request/response; requires a small patch to `service.py` (shown as a diff first); no public unauthenticated URL |
+| | Kubernetes (`bentoml-k8s-deploy`) | EC2 (`bentoml-ec2-deploy`) |
+|---|---|---|
+| **What you need** | A cluster you can reach with `kubectl` (cloud, on-prem, or local kind/minikube) and a registry it can pull from | An AWS account (or just SSH access to existing instances); ECR is the natural registry |
+| **What you get** | A Deployment + Service (optional Ingress) with liveness/readiness/startup probes, self-healing restarts | Your container on a VM with `--restart unless-stopped`; Swagger UI and metrics on port 3000 |
+| **Cost model** | Whatever your cluster already costs — these skills add nothing | Per instance-hour until you terminate: default `t3.medium` ~$0.04/hr + EBS + $0.005/hr per public IPv4 |
+| **When to pick it** | You already operate Kubernetes, or want free local testing on kind/minikube | Simplest possible cloud footprint; full control of the box; no Kubernetes anywhere |
+| **Scaling story** | `replicas` in the manifest; standard CPU-based HPA works (one-line pointer, nothing more) | Manual: loop the deploy over N hosts; load balancing (ALB) is out of scope beyond a pointer |
+| **Trade-offs to know** | You own cluster operations; Ingress/LoadBalancer depend on what your cluster provides | Plain HTTP on a raw port, **no authentication** unless your service adds it; you patch and secure the VM |
 
 Honest defaults: if you just want to see your service running today with zero cloud
 spend, use `bentoml-containerize` with the kind/minikube path plus `bentoml-k8s-deploy`
-on a local cluster. If a request can exceed 60 seconds or 6 MB, SageMaker real-time
-endpoints are the wrong target regardless of other preferences.
+on a local cluster.
 
 ## Development vs Production
 
 Two ways to deploy, same targets:
 
 - **Interactive skills** (`bentoml-containerize` → `bentoml-k8s-deploy` /
-  `bentoml-ec2-deploy` / `bentoml-sagemaker-deploy`) put the agent in the loop: it
-  detects your project, asks the right questions, confirms every mutation, adapts
-  `service.py` where a platform demands it (SageMaker), provisions infrastructure where
-  allowed (EC2), and troubleshoots on the spot. Use them for the **first** deploy of a
+  `bentoml-ec2-deploy`) put the agent in the loop: it detects your project, asks the
+  right questions, confirms every mutation, provisions infrastructure where allowed
+  (EC2), and troubleshoots on the spot. Use them for the **first** deploy of a
   service, for exploring a new target, and whenever something needs judgment.
 - **The script bundle** (`bentoml-deploy-scriptgen`) is for every deploy **after** that:
   it generates a committable `deploy/` directory (plain Python ≥ 3.9, stdlib only) that
@@ -73,24 +68,24 @@ Two ways to deploy, same targets:
   actionable messages, exit codes are a stable contract (0 ok · 1 generic · 2 config ·
   3 preflight · 4 build · 5 push · 6 deploy · 7 verify), and the last stdout line is always a JSON
   summary for machines. It deliberately does **less** than the interactive skills: it
-  never provisions EC2 instances, never creates IAM roles, and never edits your service —
-  the interactive skills set those up once; the bundle then repeats the deploy forever.
+  never provisions EC2 instances and never edits your service — the interactive skills
+  set those up once; the bundle then repeats the deploy forever.
 
 Rule of thumb: first deploy interactive, then generate the bundle, commit it, and wire
 CI. The generated `deploy/README.md` ships a complete CI/CD chapter — a GitHub Actions
 workflow (fork-safe `--check-only --local-only` PR gate; deploy jobs with AWS OIDC, EKS
-kubeconfig, an SSH-key secret for EC2, and SageMaker) plus a GitLab CI equivalent.
+kubeconfig, and an SSH-key secret for EC2) plus a GitLab CI equivalent.
 
 ## Prerequisites
 
-| Prerequisite | containerize | k8s-deploy | k8s-troubleshoot | ec2-deploy | sagemaker-deploy |
-|---|---|---|---|---|---|
-| Python + `bentoml` ≥ 1.4 | required | — | — | — | required (build happens here too) |
-| Docker daemon running | required | — | — | on the instance only (installed by user-data on new instances; offered with confirmation on existing ones) | required (build + push) |
-| `kubectl` + cluster access | — | required | required | — | — |
-| AWS CLI v2 + valid credentials | only for ECR pushes | — | — | required for provisioning mode and for ECR images; not needed for existing instance + non-ECR image | required |
-| `ssh` client | — | — | — | required | — |
-| A container registry | chosen here | cluster must be able to pull from it | — | instance must be able to pull from it | must be ECR, same region as the endpoint |
+| Prerequisite | containerize | k8s-deploy | k8s-troubleshoot | ec2-deploy |
+|---|---|---|---|---|
+| Python + `bentoml` ≥ 1.4 | required | — | — | — |
+| Docker daemon running | required | — | — | on the instance only (installed by user-data on new instances; offered with confirmation on existing ones) |
+| `kubectl` + cluster access | — | required | required | — |
+| AWS CLI v2 + valid credentials | only for ECR pushes | — | — | required for provisioning mode and for ECR images; not needed for existing instance + non-ECR image |
+| `ssh` client | — | — | — | required |
+| A container registry | chosen here | cluster must be able to pull from it | — | instance must be able to pull from it |
 
 Every skill runs its own preflight checks and stops with a clear message if something is
 missing — you do not need to pre-verify this table by hand.
@@ -149,7 +144,7 @@ $ git clone --depth 1 https://github.com/bentoml/BentoML.git /tmp/bentoml
 $ mkdir -p ~/.claude/skills
 $ cp -r /tmp/bentoml/.claude/skills/bentoml-* ~/.claude/skills/
 $ ls ~/.claude/skills
-bentoml-containerize  bentoml-ec2-deploy  bentoml-k8s-deploy  bentoml-k8s-troubleshoot  bentoml-sagemaker-deploy
+bentoml-containerize  bentoml-deploy-scriptgen  bentoml-ec2-deploy  bentoml-k8s-deploy  bentoml-k8s-troubleshoot
 ```
 
 For a per-project install, copy into your project instead and commit:
@@ -184,7 +179,7 @@ $ claude
   /bentoml-ec2-deploy         Deploy a containerized BentoML service directly onto... EC2...
   /bentoml-k8s-deploy         Deploy a containerized BentoML service to a vanilla Kubernetes...
   /bentoml-k8s-troubleshoot   Diagnose and fix BentoML services deployed to Kubernetes...
-  /bentoml-sagemaker-deploy   Deploy a BentoML service to an AWS SageMaker real-time...
+  /bentoml-deploy-scriptgen   Generate a standalone, committable production deploy-script...
 ```
 
 You can also just ask in natural language — the skills trigger on matching requests:
@@ -212,21 +207,17 @@ $ rm -rf ~/.claude/skills/bentoml-*
 $ cp -r .claude/skills/bentoml-* ~/.claude/skills/
 ```
 
-## Cost warning (read this before the AWS targets)
+## Cost warning (read this before the EC2 target)
 
-**EC2 instances and SageMaker endpoints bill by the hour until you tear them down** —
-whether or not they serve a single request.
+**EC2 instances bill by the hour until you tear them down** — whether or not they serve
+a single request.
 
 - **EC2**: the instance bills until `terminate-instances`. A *stopped* instance still
   bills its EBS volume, and every public IPv4 address bills $0.005/hr (~$3.65/mo).
-- **SageMaker**: the endpoint bills per instance-hour from the moment it is InService
-  until `delete-endpoint`. A forgotten default `ml.m5.large` endpoint costs roughly
-  $80–90/month. Deleting the endpoint is what stops billing; the model and endpoint
-  config are free.
 
 The skills are built around this: **every mutating AWS CLI command is shown to you
-verbatim with a cost note, and nothing runs without your explicit confirmation.** Both
-AWS skills track every resource they create in a session and end with a **Teardown**
+verbatim with a cost note, and nothing runs without your explicit confirmation.** The
+EC2 skill tracks every resource it creates in a session and ends with a **Teardown**
 section that removes exactly those resources and nothing else. If you keep something
 running on purpose, the skills tell you what it costs and how to stop it later.
 
@@ -241,8 +232,8 @@ accept in one go. Below are the actual questions, sourced from each skill's work
 
 | Question | Default | Example | How to choose |
 |---|---|---|---|
-| Which registry? | — (always asked) | `GHCR` | Docker Hub / GHCR / ECR / private for real clusters; **kind/minikube local load** for a local cluster (no registry, nothing to push); **ttl.sh** for anonymous, ephemeral throwaway tests. Pick **ECR** if the target is EC2 or SageMaker (SageMaker *requires* ECR in the endpoint's region). |
-| Target CPU architecture? | build machine's arch | `amd64` | Must match the nodes that will run the image — most clouds and all standard SageMaker `ml.*` instances are `amd64`; a mismatch crashes with `exec format error`. Building on Apple Silicon for an amd64 target adds `--opt platform=linux/amd64`. |
+| Which registry? | — (always asked) | `GHCR` | Docker Hub / GHCR / ECR / private for real clusters; **kind/minikube local load** for a local cluster (no registry, nothing to push); **ttl.sh** for anonymous, ephemeral throwaway tests. Pick **ECR** if the target is EC2. |
+| Target CPU architecture? | build machine's arch | `amd64` | Must match the nodes that will run the image — most clouds are `amd64`; a mismatch crashes with `exec format error`. Building on Apple Silicon for an amd64 target adds `--opt platform=linux/amd64`. |
 
 It may additionally ask for runtime env var **values** (e.g. `HF_TOKEN` for gated
 Hugging Face models) during the build/smoke test — names get passed on to the deploy
@@ -303,18 +294,6 @@ Mode B additionally asks:
 | Port-3000 scope | your IP | Your detected public IP (confirmed — VPNs skew it), **SSH-tunnel only** (no inbound 3000 rule), or `0.0.0.0/0` — the last only after an explicit warning that it exposes an unauthenticated inference API to the internet. |
 | Instance type | `t3.medium` (~$0.04/hr) | Size RAM to the model; `t4g.medium` for arm64 images; GPU types cost 10–25x more and need a GPU AMI. |
 | Root volume | 30–50 GiB gp3 | Bento images bake models in — the 8 GiB AMI default is usually too small. At least 2x the image size. |
-
-### `bentoml-sagemaker-deploy`
-
-| Question | Default | Example | How to choose |
-|---|---|---|---|
-| AWS region | your `aws configure` default, confirmed | `us-east-1` | Never assumed. The ECR image, model, and endpoint must all be in this region. |
-| Approve the service patch | — (diff shown first) | yes | A small additive patch to `service.py` adds `GET /ping` and a `POST /invocations` alias; existing routes keep working. A wrapper-file variant exists if you don't want `service.py` touched. |
-| IAM execution role | reuse an existing SageMaker role | `arn:aws:iam::…:role/MySageMakerRole` | Any role trusting `sagemaker.amazonaws.com` with ECR pull + CloudWatch permissions (e.g. `AmazonSageMakerFullAccess`). If none exists, the skill creates a minimal one — with your confirmation. |
-| Instance type / count | `ml.m5.large` × 1 (~$0.115/hr) | `ml.g4dn.xlarge` | CPU default; the reference has a sizing/cost table. All standard `ml.*` types are amd64. |
-| Startup health-check timeout | 600 s (configurable 60–3600) | `900` | Raise it if model loading takes many minutes. |
-| Extra container env vars | none | `LOG_LEVEL=info` | Set via the model's `Environment` map — visible to anyone who can `describe-model`, so no secrets here; bake models into the image instead (the BentoML default). |
-| **Final confirmation before `create-endpoint`** | — | explicit "yes" | Billing starts here and runs until teardown; the skill states the hourly and monthly cost first. |
 
 ## End-to-end walkthrough
 
@@ -397,8 +376,7 @@ Note the last step: the skills never declare success on a 200 status alone — t
 make **one real inference request and judge the response content**.
 
 For a cloud target, the only change is the registry answer (e.g. ECR) and the deploy
-skill invoked afterwards (`/bentoml-ec2-deploy` or `/bentoml-sagemaker-deploy` instead of
-the Kubernetes deploy).
+skill invoked afterwards (`/bentoml-ec2-deploy` instead of the Kubernetes deploy).
 
 ## Conventions the skills follow
 
@@ -406,9 +384,7 @@ the Kubernetes deploy).
   those health endpoints (plus Prometheus metrics at `/metrics` and Swagger UI at `/`).
   Kubernetes manifests probe `/livez` (liveness) and `/readyz` (readiness/startup, with a
   generous ~10-minute startupProbe budget for model loading); EC2 verification polls
-  `/readyz`. The one exception is **SageMaker**, whose platform contract is port 8080 +
-  `GET /ping` + `POST /invocations` — the skill meets it with `BENTOML_PORT=8080` and a
-  small, reviewed service patch rather than a different image.
+  `/readyz`.
 - **Verification is content-based.** Every deploy skill ends with a real inference
   request derived from your `@bentoml.api` methods and judges the **response body**, not
   the status code. Port-forwards and SSH tunnels use uncommon local ports (3100/3200) and
@@ -420,9 +396,8 @@ the Kubernetes deploy).
 - **Secrets hygiene, per target**: Kubernetes secrets are created imperatively
   (`kubectl create secret ... --from-literal`) — no secret value is ever written into a
   manifest or any file. On EC2, secrets are passed as `-e` flags expanded from your local
-  shell env — never into files or instance user-data. On SageMaker, the skill warns that
-  the model `Environment` map is visible via `describe-model` and steers you to baking
-  models into the image instead. Nowhere are secret values baked into image layers.
+  shell env — never into files or instance user-data. Nowhere are secret values baked into
+  image layers.
 - **Cluster/region confirmation**: `bentoml-k8s-deploy` asks which kubectl context to use
   (never assuming the current one), pins `--context` on every command, and never switches
   your current context. `bentoml-k8s-troubleshoot` instead confirms the **current**

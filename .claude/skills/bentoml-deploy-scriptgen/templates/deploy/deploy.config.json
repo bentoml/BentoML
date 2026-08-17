@@ -44,15 +44,6 @@
       "registry_auth": "{{EC2_REGISTRY_AUTH}}",
       "verify_via": "tunnel",
       "local_tunnel_port": 3230
-    },
-    "sagemaker": {
-      "region": "{{SAGEMAKER_REGION}}",
-      "endpoint_name": "{{SAGEMAKER_ENDPOINT_NAME}}",
-      "execution_role_arn": "{{SAGEMAKER_EXECUTION_ROLE_ARN}}",
-      "instance_type": "ml.m5.large",
-      "instance_count": 1,
-      "startup_health_timeout_seconds": 600,
-      "environment": {}
     }
   }
 }

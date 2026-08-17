@@ -17,7 +17,7 @@ from __future__ import annotations
 from importlib import import_module
 from types import ModuleType
 
-TARGET_NAMES = ("k8s", "ec2", "sagemaker")
+TARGET_NAMES = ("k8s", "ec2")
 
 
 def load_target(name: str) -> ModuleType:

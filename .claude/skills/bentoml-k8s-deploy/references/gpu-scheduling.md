@@ -1,10 +1,17 @@
 # GPU scheduling for BentoML services
 
-GPUs are requested through the extended resource `nvidia.com/gpu` in the container's
-`resources.limits` (the optional GPU line in `templates/deployment.yaml`, rendered per service as
-`k8s/<slug>-deployment.yaml` — request GPUs only for the services that need them). Extended
-resources cannot be fractional and requests default to limits — setting the limit alone
-is correct.
+GPUs are requested through the extended resource `nvidia.com/gpu`, which you add to
+`services.<Name>.resources.limits` in `config.yml` (per service — request GPUs only for the
+services that need them):
+
+```yaml
+    resources:
+      requests: {cpu: "2", memory: "8Gi"}
+      limits:   {cpu: "4", memory: "16Gi", nvidia.com/gpu: "1"}
+```
+
+Extended resources cannot be fractional and requests default to limits — setting the limit
+alone is correct. Quoted, like every quantity.
 
 ## Precondition: the cluster must advertise GPUs
 
@@ -48,9 +55,9 @@ startup for the framework's device report (e.g. `torch.cuda.is_available()`).
 ## Taints, tolerations, node selection
 
 GPU nodes are commonly tainted so CPU pods don't land on them. If GPU pods stay Pending
-with `node(s) had untolerated taint`, check the taint and add matching fields at the pod
-spec level of `k8s/<slug>-deployment.yaml` (same indentation as `containers:`, next to
-the template's optional `nodeSelector:` block):
+with `node(s) had untolerated taint`, check the taint and add matching entries to that
+service's `tolerations:` in `config.yml` (verbatim Kubernetes syntax, rendered into the pod
+spec):
 
 ```bash
 kubectl --context <ctx> describe node <gpu-node> | grep -i taint
@@ -77,8 +84,11 @@ that exists on the nodes (check `kubectl --context <ctx> get nodes --show-labels
 - Keep CPU/memory realistic alongside the GPU: model loading and tokenization still use
   host RAM; an OOMKilled GPU pod wastes the whole GPU. For LLM-sized models raise memory
   (e.g. request 8Gi / limit 16Gi) rather than reusing the CPU defaults.
-- Startup is slower on GPU nodes (image is bigger, weights move to VRAM). The template's
+- Startup is slower on GPU nodes (image is bigger, weights move to VRAM). The default
   10-minute startupProbe budget usually suffices; for very large models raise
-  `failureThreshold` (e.g. 240 → 20 min) instead of letting the rollout fail.
+  `probes.startup_failure_threshold` (periodSeconds is 10, so 60 → 10 min, 120 → 20 min,
+  240 → 40 min) and raise `kubernetes.rollout_timeout_seconds` past it — it must stay
+  LONGER than the startup budget, or a pod that uses its whole budget loses the race and
+  the rollout is reported failed just as it succeeds.
 - Replicas × GPUs-per-pod must fit the cluster's free GPU count, or the extra replicas
   stay Pending.

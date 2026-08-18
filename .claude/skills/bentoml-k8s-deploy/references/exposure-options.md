@@ -1,11 +1,14 @@
 # Exposure options for a BentoML service on Kubernetes
 
-The BentoML container always listens on port **3000**; the Service template exposes
-port **3000** (named `http`) in every mode. Choose the exposure method with the user
-based on where clients live. In a multi-service bento only the **entry** service is ever
+The BentoML container always listens on port **3000**; the rendered Service exposes
+port **3000** (named `http`) in every mode. Exposure is configured once, in `config.yml`,
+under the ENTRY service's `expose:` / `ingress:` block; changing it means editing that
+block, re-rendering and re-applying. Choose the method with the user based on where
+clients live. In a multi-service bento only the **entry** service is ever
 exposed — the dependency Services stay `ClusterIP`, because inter-service traffic is
-`application/vnd.bentoml+pickle` (unauthenticated pickle deserialization). `<entry-slug>`
-below is the entry service's slug, i.e. the name of `k8s/<entry-slug>-service.yaml`.
+`application/vnd.bentoml+pickle` (unauthenticated pickle deserialization) — which is why
+`expose:`/`ingress:` on a non-entry service is a config error. `<entry-slug>` below is the
+entry service's `slug` from `config.yml`.
 
 | Method | Reachable from | Needs | Best for |
 |---|---|---|---|
@@ -17,7 +20,7 @@ below is the entry service's slug, i.e. the name of `k8s/<entry-slug>-service.ya
 
 ## port-forward (default for testing)
 
-No manifest changes; Service stays `ClusterIP`.
+`expose: {type: ClusterIP}` (the default); nothing is reachable from outside.
 
 ```bash
 kubectl --context <ctx> port-forward svc/<entry-slug> -n <ns> 3100:3000
@@ -38,8 +41,8 @@ Other pods call the service at
 
 ## NodePort
 
-Set `spec.type` to `NodePort` in `k8s/<entry-slug>-service.yaml` (rendered files hold
-real values, not placeholders). Kubernetes assigns a port in 30000–32767:
+`expose: {type: NodePort}` on the entry service. Kubernetes assigns a port in
+30000–32767; pin it with `node_port:` in the same block to keep the URL stable:
 
 ```bash
 kubectl --context <ctx> get svc <entry-slug> -n <ns> \
@@ -55,7 +58,8 @@ kind config — prefer port-forward there.
 
 ## LoadBalancer
 
-Set `spec.type` to `LoadBalancer` in `k8s/<entry-slug>-service.yaml`. Only works where something provisions LBs
+`expose: {type: LoadBalancer}` on the entry service (plus `annotations:` there for
+provider-specific tuning). Only works where something provisions LBs
 (managed clouds; MetalLB on bare metal). Wait for the address:
 
 ```bash
@@ -70,8 +74,8 @@ reachable** cloud load balancer with no auth in front of the model.
 
 ## Ingress
 
-Use `templates/ingress.yaml` (class-agnostic) with a `ClusterIP` Service. Precondition —
-a controller must already be installed:
+`ingress: {enabled: true, class_name: ..., host: ...}` on the entry service, normally with
+`expose: {type: ClusterIP}`. Precondition — a controller must already be installed:
 
 ```bash
 kubectl --context <ctx> get ingressclass
@@ -79,17 +83,16 @@ kubectl --context <ctx> get ingressclass
 
 No output → no controller; installing one (ingress-nginx, traefik, cloud-specific) is out
 of scope for this skill — offer NodePort/LoadBalancer instead. Otherwise use the listed
-name as `{{INGRESS_CLASS_NAME}}` (a class marked `(default)` still should be set
-explicitly).
+name as `ingress.class_name` (a class marked `(default)` still should be set explicitly).
 
-- `{{INGRESS_HOST}}`: a DNS name the user controls, pointed at the controller's external
+- `ingress.host`: a DNS name the user controls, pointed at the controller's external
   address (`kubectl --context <ctx> get svc -n ingress-nginx` or the controller's namespace). For quick
   tests without DNS: `curl -H 'Host: <host>' http://<controller-ip>/readyz` or an
   `/etc/hosts` entry.
-- **TLS**: keep the optional `tls:` block only if a TLS Secret exists in the same
+- **TLS**: set `ingress.tls_secret` only if that TLS Secret exists in the same
   namespace — via cert-manager (out of scope to install) or manually:
   `kubectl --context <ctx> create secret tls <name> -n <ns> --cert=cert.pem --key=key.pem`.
-  Otherwise delete the block and serve plain HTTP.
+  Leave it null to serve plain HTTP; the renderer then emits no `tls:` block.
 - **Timeouts**: inference can exceed a controller's default upstream timeout (often 60s
   for nginx). For long-running requests on ingress-nginx add annotations such as
   `nginx.ingress.kubernetes.io/proxy-read-timeout: "300"` and

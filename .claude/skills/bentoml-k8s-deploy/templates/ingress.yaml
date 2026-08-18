@@ -1,45 +1,52 @@
 # =============================================================================
-# Class-agnostic Ingress for the ENTRY service only.
+# REFERENCE SHAPE of the Ingress rendered for the ENTRY service. Class-agnostic.
 #
-# Rendered once per bento, never per service: only the entry service speaks
-# JSON HTTP. Non-entry services exchange `application/vnd.bentoml+pickle` and
-# must stay ClusterIP-only -- never add a rule for one.
+# Rendered only when services.<EntryName>.ingress.enabled is true, and rendered
+# once per bento, never per service: only the entry service speaks JSON HTTP.
+# Non-entry services exchange `application/vnd.bentoml+pickle` and stay
+# ClusterIP-only -- config.yml rejects `ingress:` on them, so a rendered manifest
+# can never route to one.
 #
-# Write/apply this file only when the user chose Ingress exposure, and only when
-# the cluster already has a controller (kubectl --context <ctx> get ingressclass).
-# See references/exposure-options.md.
+# Not the file you edit -- `config.yml` is:
+#   services.<EntryName>.ingress.{enabled,class_name,host,tls_secret}
 #
-# OPTIONAL blocks that do not apply MUST be deleted whole; delete them BOTTOM-UP,
-# since the stated counts refer to this template's line numbering.
+# Precondition: a controller must already be installed
+# (`kubectl --context <ctx> get ingressclass`), and the entry service is normally
+# left at expose.type: ClusterIP. See references/exposure-options.md.
 # =============================================================================
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  #                                        <- the entry service's slug
   name: {{ENTRY_SLUG}}
+  #                                        <- kubernetes.namespace
   namespace: {{NAMESPACE}}
   labels:
     app.kubernetes.io/name: {{ENTRY_SLUG}}
     app.kubernetes.io/component: {{ENTRY_SERVICE_NAME}}
     app.kubernetes.io/part-of: {{BENTO_NAME}}
     app.kubernetes.io/managed-by: bentoml-k8s-deploy
-  # OPTIONAL block -- controller-specific annotations. Delete this block (6 lines,
-  # these comments included) if the defaults are fine. Most inference deployments
-  # need at least a raised proxy timeout (nginx defaults to 60s) and a body-size
-  # limit that fits the payload; keep them >= the service's traffic.timeout.
+    # plus every pair from kubernetes.extra_labels (which can never override the
+    # four app.kubernetes.io/* identity labels above)
+  # Controller-specific annotations       <- ingress.annotations Most inference deployments need at least a raised proxy
+  # timeout (nginx defaults to 60s) and a body-size limit that fits the payload;
+  # keep them >= the service's traffic.timeout.
   annotations:
     {{INGRESS_ANNOTATION_KEY}}: "{{INGRESS_ANNOTATION_VALUE}}"
 spec:
   # From `kubectl --context <ctx> get ingressclass`, e.g. nginx.
+  #                                        <- ingress.class_name
   ingressClassName: {{INGRESS_CLASS_NAME}}
-  # OPTIONAL block -- TLS. Delete this block (7 lines, these comments included) for
-  # plain HTTP. The TLS Secret must exist in this namespace beforehand (cert-manager,
-  # or: kubectl create secret tls <name> -n <ns> --cert=cert.pem --key=key.pem).
+  # Rendered only when ingress.tls_secret is set. The Secret must already exist in
+  # this namespace (cert-manager, or:
+  # kubectl create secret tls <name> -n <ns> --cert=cert.pem --key=key.pem).
   tls:
     - hosts:
         - {{INGRESS_HOST}}
       secretName: {{TLS_SECRET_NAME}}
   rules:
     # DNS for this host must resolve to the ingress controller's load balancer.
+    #                                      <- ingress.host
     - host: {{INGRESS_HOST}}
       http:
         paths:

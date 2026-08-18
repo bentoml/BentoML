@@ -13,10 +13,10 @@ kubectl --context <ctx> create secret docker-registry <bento-slug>-regcred -n <n
   --docker-password="$REGISTRY_TOKEN"
 ```
 
-Then keep the optional `imagePullSecrets` block in **every**
-`k8s/<slug>-deployment.yaml` with `{{IMAGE_PULL_SECRET}}` = `<bento-slug>-regcred` — all
-services of a bento run the same image, so they all need the same pull secret. The Secret is namespaced — recreate
-it in every namespace that pulls the image.
+Then set `kubernetes.image_pull_secret: <bento-slug>-regcred` in `config.yml`; the
+renderer puts `imagePullSecrets` on **every** Deployment, since all services of a bento run
+the same image and need the same pull secret. The Secret is namespaced — recreate it in
+every namespace that pulls the image.
 
 Quick test that credentials + image ref are right (run once, then delete):
 
@@ -76,10 +76,12 @@ minikube image load <IMAGE>                                  # minikube
 k3d image import <IMAGE> -c <cluster-name>                   # k3d
 ```
 
-Then in every `k8s/<slug>-deployment.yaml` leave the `__DEPLOY_IMAGE__` sentinel alone,
-delete the `imagePullSecrets` block, and set `imagePullPolicy: Never` (or `IfNotPresent`) — with the
-default policy the kubelet may still try to pull from a registry and fail, especially for
-`:latest`-style tags.
+Then in `config.yml` set `image.registry_type: none` with
+`image.local_image_preloaded: true` (the loader requires the pair), and leave
+`kubernetes.image_pull_secret: null`. Nothing is pushed, and the rendered
+`imagePullPolicy: IfNotPresent` keeps the kubelet from trying to pull an image that only
+exists on the node — avoid mutable `:latest`-style tags here, since a stale local layer can
+then be used silently.
 
 ## Throwaway public registry: ttl.sh
 
@@ -91,6 +93,7 @@ docker tag <IMAGE> ttl.sh/<any-unique-name>:1h
 docker push ttl.sh/<any-unique-name>:1h
 ```
 
-Use `ttl.sh/<any-unique-name>:1h` as the `$IMAGE` substituted for `__DEPLOY_IMAGE__`; no pull secret needed. The image
+Render with `--image ttl.sh/<any-unique-name>:1h` (`image.registry: ttl.sh`,
+`image.repository: <any-unique-name>`, `registry_type: generic`); no pull secret needed. The image
 vanishes after the TTL and is publicly pullable meanwhile — never use it for anything
 sensitive or lasting.

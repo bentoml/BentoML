@@ -1,20 +1,23 @@
 # What can I customize, and where?
 
-Two places, and they do not overlap:
+**Everything the user edits lives in one file: `config.yml`.** The Kubernetes manifests
+under `k8s/` are rendered from it and are not edited (the exception, `manifests_dir`, is at
+the bottom of this page). Inside that one file there are still two different *kinds* of
+knob, and they do not overlap:
 
-1. **The Kubernetes manifests** (`k8s/<slug>-deployment.yaml`, `-service.yaml`, `-hpa.yaml`,
-   `ingress.yaml`) — everything about the *pod*: how many, how big, where it runs, how it
-   is reached, how it is probed. This is the file the user edits and re-applies; it is the
-   deployment config.
-2. **`BENTOML_CONFIG_OVERRIDES`** in a Deployment's `env:` — everything about the *BentoML
-   server inside* the pod: timeouts, workers, concurrency limits, access logging, CORS,
-   TLS, tracing, metrics. Nested JSON, and it **beats the `@bentoml.service(...)`
-   decorator**, so an operator retunes a prebuilt image without a rebuild or a source
-   change.
+1. **Kubernetes-shaped keys** (Table 1) — everything about the *pod*: how many, how big,
+   where it runs, how it is reached, how it is probed. Each one names the Kubernetes field
+   it renders into.
+2. **`services.<Name>.config_overrides`** (Table 2) — everything about the *BentoML server
+   inside* the pod: timeouts, workers, concurrency limits, access logging, CORS, TLS,
+   tracing, metrics. The renderer turns it into `BENTOML_CONFIG_OVERRIDES` (compact nested
+   JSON) on that service's container, nested under the service's own name. It **beats the
+   `@bentoml.service(...)` decorator**, so an operator retunes a prebuilt image without a
+   rebuild or a source change.
 
-Nothing in a BentoML decorator constrains Kubernetes, and nothing in a manifest changes
-BentoML's server behaviour. If a knob is not in Table 1, it does not belong in the YAML;
-if it is not in Table 2, do not put it in the env var.
+Nothing in a BentoML decorator constrains Kubernetes, and no Kubernetes field changes
+BentoML's server behaviour. If a knob is not in Table 1, it does not belong in the
+Kubernetes-shaped keys; if it is not in Table 2, do not put it in `config_overrides`.
 
 > This whole surface is effectively **undocumented upstream** — the values below were read
 > out of the BentoML source (`bentoml/_internal/configuration/v2/default_configuration.yaml`
@@ -27,43 +30,63 @@ if it is not in Table 2, do not put it in the env var.
 
 ---
 
-## Table 1 — belongs in the Kubernetes manifest
+## Table 1 — what you set in `config.yml`
 
-| Knob | Where | Notes / interactions |
-|---|---|---|
-| Replica count | `spec.replicas` (deployment) | Per BentoML service. **Delete this field if an HPA targets the Deployment**, or each `kubectl apply` resets the count and fights the autoscaler. |
-| CPU / memory requests | `resources.requests` (deployment) | What the scheduler reserves. `@bentoml.service(resources={"cpu","memory"})` is **inert in OSS** — nothing reads it at serve time — so the manifest is the only place these take effect. A CPU-utilization HPA is meaningless without a CPU request. |
-| CPU / memory limits | `resources.limits` (deployment) | Over-limit CPU throttles (latency spikes); over-limit memory is OOMKilled. Note `workers: "cpu_count"` counts **cgroup** CPUs, i.e. it follows the CPU *limit*. |
-| GPUs | `resources.limits["nvidia.com/gpu"]` (deployment) | Integer, limits-only, never shared. Must be present for a service whose decorator declares `resources={"gpu": N}` — that decorator key is the one resource key that *is* live in OSS (it sets `CUDA_VISIBLE_DEVICES`), but it cannot make the kubelet hand the pod a device. See `gpu-scheduling.md`. |
-| Service type / node port | `spec.type`, `spec.ports[].nodePort` (service) | `ClusterIP` for every non-entry service, always. Entry service: ClusterIP + port-forward, NodePort, or LoadBalancer. See `exposure-options.md`. |
-| Labels / selectors | `metadata.labels`, `spec.selector` | `app.kubernetes.io/name: <slug>` is per-service so pods never cross-select; `part-of: <bento-name>` groups the whole bento for `kubectl get -l`. `spec.selector` is **immutable** after apply. |
-| Annotations | `metadata.annotations` (service/ingress) | Cloud LB behaviour (internal LB, idle timeout, NLB/ALB), ingress proxy timeouts and body size. Keep proxy timeouts **≥ the service's `traffic.timeout`**, or the proxy 504s before BentoML does. |
-| Probe paths / timings | `startupProbe`, `livenessProbe`, `readinessProbe` (deployment) | Paths are `/livez` and `/readyz` — not configurable via env (Table 2b), but `@bentoml.service(path_prefix="/x")` **does** move them (and `/metrics`) under the prefix. `startupProbe.failureThreshold × periodSeconds` is the model-loading budget. **`timeoutSeconds` on any probe hitting `/readyz` must be ≥ 6**: the dependency fan-out gives each dependency a hard-coded 5 s, so `/readyz` can legitimately exceed 5 s and a 3 s kubelet timeout makes the pod permanently unready. `/livez` never cascades, so its 3 s is fine. |
-| Graceful shutdown | `terminationGracePeriodSeconds` (deployment) | Set above your longest request so in-flight inference drains instead of being killed. |
-| Image pull secret | `imagePullSecrets` (deployment) | One per namespace; every service of the bento runs the same image, so every Deployment needs it. See `private-registries.md`. |
-| Image | `containers[].image` | Kept as the `__DEPLOY_IMAGE__` sentinel and substituted at apply time, so the manifest is not invalidated by a new build. |
-| Node placement | `nodeSelector`, `tolerations`, `affinity` / `topologySpreadConstraints` (deployment) | GPU pools, arch (`kubernetes.io/arch: amd64`), zone spreading. GPU nodes are usually tainted → needs a matching toleration. |
-| Autoscaling | `k8s/<slug>-hpa.yaml` | Per service. See the HPA section below. |
-| Disruption budget | a `PodDisruptionBudget` you add | `minAvailable: 1` keeps a service up through node drains/upgrades. Pointless at `replicas: 1` (it just blocks drains) — add it once a service runs ≥2 replicas. |
-| Quantity quoting | `cpu`, `memory`, `nvidia.com/gpu` | Always quote them: `cpu: "1"`, not `cpu: 1`. An unquoted whole number is a YAML int while the API server stores the quantity as a string, so the strategic-merge patch diffs on every apply — `kubectl apply` says `configured` forever and `kubectl diff` / GitOps drift detection report phantom drift. |
-| Volumes | `volumes` + `volumeMounts` (deployment) | For model caches (PVC), a writable `emptyDir` for `/tmp` on a read-only root, or a `ConfigMap`-mounted BentoML config file (then point `BENTOML_CONFIG` at it instead of using `BENTOML_CONFIG_OVERRIDES`). An `emptyDir` sized cache shared across replicas is *not* a thing — use a PVC with `ReadOnlyMany`/`ReadWriteMany` or bake the model into the image. |
-| Plain env vars / secret env | `env`, `envFrom.secretRef` (deployment) | Application config (`HF_TOKEN`, endpoints of external systems). Never inline secret values. |
+`<Name>` is the BentoML service name, verbatim, as used for the `services:` block keys.
+
+| Knob | Config path | Renders into | Notes / interactions |
+|---|---|---|---|
+| Replica count | `services.<Name>.replicas` | `spec.replicas` (deployment) | Per BentoML service. **Omitted from the manifest when `autoscaling.enabled` is true**, so an HPA and a replica count can never fight on apply. |
+| CPU / memory requests | `services.<Name>.resources.requests.{cpu,memory}` | `resources.requests` (deployment) | What the scheduler reserves. `@bentoml.service(resources={"cpu","memory"})` is **inert in OSS** — nothing reads it at serve time — so these values are the only place they take effect. A CPU-utilization HPA is meaningless without a CPU request. |
+| CPU / memory limits | `services.<Name>.resources.limits.{cpu,memory}` | `resources.limits` (deployment) | Over-limit CPU throttles (latency spikes); over-limit memory is OOMKilled. Note `workers: "cpu_count"` counts **cgroup** CPUs, i.e. it follows the CPU *limit*. |
+| GPUs | `services.<Name>.resources.limits["nvidia.com/gpu"]` | `resources.limits` (deployment) | Integer, limits-only, never shared. Must be present for a service whose decorator declares `resources={"gpu": N}` — that decorator key is the one resource key that *is* live in OSS (it sets `CUDA_VISIBLE_DEVICES`), but it cannot make the kubelet hand the pod a device. See `gpu-scheduling.md`. |
+| Dependency wiring | `services.<Name>.depends` | `BENTOML_SERVE_DEPENDS` env (deployment) | Direct callees only, by BentoML service name. Also derives the rollout order. Every non-leaf service needs its own list; leaves get no env var. Never hand-write the URLs, and never `BENTOML_RUNNER_MAP`. |
+| Exposure | `services.<Entry>.expose.{type,node_port,annotations}` | `spec.type`, `spec.ports[].nodePort`, `metadata.annotations` (service) | **Entry service only** — rejected elsewhere, because non-entry services must stay `ClusterIP`. Entry options: ClusterIP + port-forward, NodePort, LoadBalancer. See `exposure-options.md`. |
+| Ingress | `services.<Entry>.ingress.{enabled,class_name,host,tls_secret,annotations}` | `ingress.yaml` | Entry service only, one Ingress per bento. `annotations` is where controller tuning goes — keep proxy timeouts **≥ the service's `traffic.timeout`**, or the proxy 504s before BentoML does, and raise the body-size limit to fit the payload. `host` is required when `enabled`. |
+| Extra labels | `kubernetes.extra_labels` | `metadata.labels` on every object | Merged onto every rendered object (team, cost center, env). The four `app.kubernetes.io/*` identity labels are managed by the renderer and **win over these** — an override of `app.kubernetes.io/name` would desync a Deployment's selector from its own pod template, which the API server rejects and a client-side dry-run does not catch. `spec.selector` is **immutable** after apply, so changing a slug means delete + re-apply. |
+| Object names / hostnames | `services.<Name>.slug` | object names, dependency URLs | DNS-1035 (starts with a letter), unique. Changing it rewrites every caller's dependency URL automatically. |
+| Probe timings | `services.<Name>.probes.{startup_failure_threshold,readiness_timeout_seconds}` | `startupProbe`, `readinessProbe` (deployment) | Paths are `/livez` and `/readyz` and are **not** configurable — but `@bentoml.service(path_prefix="/x")` moves them (and `/metrics`) under the prefix, which the renderer cannot express (a `manifests_dir` case). `startup_failure_threshold × 10 s` is the model-loading budget. **`readiness_timeout_seconds` must be ≥ 6**: the dependency fan-out gives each dependency a hard-coded 5 s, so `/readyz` can legitimately exceed 5 s and a 3 s kubelet timeout makes the pod permanently unready. Liveness is fixed at 3 s because `/livez` never cascades. |
+| Graceful shutdown | (not configurable; fixed at 60 s) | `terminationGracePeriodSeconds` | Above the longest expected request so in-flight inference drains. Longer than 60 s is a `manifests_dir` case. |
+| Image pull secret | `kubernetes.image_pull_secret` | `imagePullSecrets` (every deployment) | One per namespace; every service of the bento runs the same image, so every Deployment gets it. See `private-registries.md`. |
+| Image | `image.registry` + `image.repository` (+ the tag chosen at deploy time) | `containers[].image` | The renderer writes the full reference directly — there is no sentinel to substitute. A new build means re-render + apply, not a config change. Pass `--image REF` when rendering: the default tag is the project's short git SHA, which is not the image you just pushed. |
+| Registry auth | `image.registry_type`, `image.ecr_region`, `image.local_image_preloaded` | (build/push behaviour) | `ecr` logs in with `aws ecr get-login-password`; `ecr_region` is derived from a standard `*.dkr.ecr.<region>.amazonaws.com` host and only needs setting for a non-standard/VPC endpoint. `generic` assumes `docker login` was already done. `none` pushes nothing and requires `local_image_preloaded: true`. |
+| Node placement | `services.<Name>.node_selector`, `services.<Name>.tolerations` | `nodeSelector`, `tolerations` (deployment) | GPU pools, arch (`kubernetes.io/arch: amd64`). GPU nodes are usually tainted → needs a matching toleration. `affinity` / `topologySpreadConstraints` are not in the schema (a `manifests_dir` case). |
+| Autoscaling | `services.<Name>.autoscaling.{enabled,min_replicas,max_replicas,metric,target}` | `<slug>-hpa.yaml` | Per service; `metric: cpu` or `concurrency`. See the HPA section below. |
+| Rollout / verification budgets | `kubernetes.rollout_timeout_seconds`, `verify.readyz_timeout_seconds`, `verify.inference.timeout_seconds` | (client-side waits) | Keep the rollout timeout above the startup-probe budget, and the inference timeout ≥ the entry service's `traffic.timeout`. |
+| Quantity quoting | every `resources.*` value | `cpu`, `memory`, `nvidia.com/gpu` | Always quoted strings: `cpu: "1"`, not `cpu: 1`. An unquoted whole number is a YAML int while the API server stores the quantity as a string, so the strategic-merge patch diffs on every apply — `kubectl apply` says `configured` forever and `kubectl diff` / GitOps drift detection report phantom drift. The loader rejects unquoted quantities so the error names your line. |
+| Plain env vars / secret env | `services.<Name>.env`, `services.<Name>.env_from_secrets` | `env`, `envFrom.secretRef` (deployment) | Application config (`HF_TOKEN`, endpoints of external systems). `env_from_secrets` holds Secret **names** only — secret values never go in the config file. `BENTOML_RUNNER_MAP`/`BENTOML_SERVE_RUNNER_MAP` in `env` are rejected at load time; `BENTOML_SERVE_DEPENDS` / `BENTOML_CONFIG_OVERRIDES` set there replace the derived value entirely (nothing is emitted twice) and are warned about. **A Secret's contents are invisible to every static check** — a Secret carrying a runner map still reaches the pod and silently re-enables the in-process fallback, so keep runtime knobs out of Secrets. |
+| Volumes, PDBs, sidecars, affinity | not in the schema | — | Volumes for model caches (PVC), a writable `emptyDir` for `/tmp` on a read-only root, a `ConfigMap`-mounted BentoML config file (then point `BENTOML_CONFIG` at it instead of using overrides), a `PodDisruptionBudget` (`minAvailable: 1`, worth it only at ≥2 replicas). These need `kubernetes.manifests_dir` — see the bottom of this page. |
 
 ---
 
-## Table 2 — belongs in `BENTOML_CONFIG_OVERRIDES`
+## Table 2 — belongs in `BENTOML_CONFIG_OVERRIDES`, i.e. `config_overrides`
 
-Value is **compact JSON** in the container env. Always write keys under the **named
-service**, not under the global `services` block (see the precedence gotcha below):
+In `config.yml` you write the bare keys under the service that runs them:
+
+```yaml
+services:
+  Summarization:
+    config_overrides:
+      workers: 2
+      traffic: {timeout: 300, max_concurrency: 16}
+```
+
+and the renderer emits, on that container only:
 
 ```yaml
 - name: BENTOML_CONFIG_OVERRIDES
   value: '{"services":{"Summarization":{"workers":2,"traffic":{"timeout":300,"max_concurrency":16}}}}'
 ```
 
-`services.<ServiceName>` uses the **BentoML service name verbatim** (`Summarization`, not
-the slug). Set it per pod: each Deployment only needs the block for the service it runs,
-plus (see gotchas) the `traffic.timeout` of any service it *calls*.
+The nesting under the **named service** is what makes the override win; a global
+`{"services":{"traffic":...}}` loses to the decorator (see the precedence gotcha below),
+which is why the renderer does the keying and you do not. `services.<ServiceName>` uses the
+**BentoML service name verbatim** (`Summarization`, not the slug) — the same name that keys
+the `services:` blocks. One consequence: a block keyed to a *different* service (the
+`traffic.timeout` of a service this pod *calls* — see the gotchas) cannot be expressed
+through `config_overrides`. Do that with the callee's decorator, or, without a rebuild,
+with a raw `env: {BENTOML_CONFIG_OVERRIDES: '<json>'}` entry on the caller **while its own
+`config_overrides` is empty** (two sources for one env var collide).
 
 | Path under `services.<ServiceName>` | Default | What it does |
 |---|---|---|
@@ -143,13 +166,15 @@ autoscaler and instance-type picker.
   overwrites it, and any dependency it does not resolve is then instantiated **in-process**
   instead of being called over HTTP: every pod loads every model, memory blows up, and the
   pod still reports healthy. There is no error message. Wire dependencies with
-  `BENTOML_SERVE_DEPENDS` (`--depends`) only.
+  `BENTOML_SERVE_DEPENDS` (`--depends`) only — which is what `services.<Name>.depends`
+  renders into; there is no config key that can produce a runner map.
 - **`BENTOML_SERVE_DEPENDS` is whitespace-separated**, not comma-separated:
   `"A=http://a.ns.svc.cluster.local:3000 B=http://b.ns.svc.cluster.local:3000"`.
 - **Dependency URLs must contain no `=`.** Each pair is split on the first `=`, so a URL
   with a query string raises a ValueError at startup.
-- **The dependency key is the BentoML service name, exactly.** `Sentiment`, not
-  `sentiment` and not the slug. Note the service name is `name or inner.__name__`, so an
+- **The dependency key is the BentoML service name, exactly** — so every `depends` entry
+  (and every `services:` block key) is that name: `Sentiment`, not `sentiment` and not the
+  slug. Note the service name is `name or inner.__name__`, so an
   explicit `@bentoml.service(name="...")` overrides the class name. A mismatch is not an
   error — it falls back to the in-process behaviour above.
 - **Neither `/readyz` nor a correct answer detects a mis-wired dependency.** The readiness
@@ -159,25 +184,32 @@ autoscaler and instance-type picker.
   the same code ran — just in the wrong pod, with the wrong memory footprint. The only
   reliable check is on the dependency side: an access-log line, or a non-zero
   `bentoml_service_request_total`, in the dependency's own pod.
-- **Probes that hit `/readyz` need `timeoutSeconds` ≥ 6.** The fan-out gives each
+- **Probes that hit `/readyz` need `timeoutSeconds` ≥ 6**
+  (`services.<Name>.probes.readiness_timeout_seconds`; the loader enforces the floor). The fan-out gives each
   dependency a hard-coded 5 s, so `/readyz` can legitimately take just over 5 s. A 3 s
   kubelet timeout cuts it off first and the pod is **permanently unready** — with no
   explanatory log line in the pod itself. `runner_probe.timeout` will not change the 5 s.
 - **Cascading readiness.** `runner_probe.enabled` defaults to `true`, so a service's
   `/readyz` issues a `GET /readyz` (5 s timeout, hard-coded) to every one of its
   `bentoml.depends()` dependencies and returns **503** if any is not ready. Consequences:
-  roll out dependencies before their callers, and expect the entry pod to sit un-ready
+  roll out dependencies before their callers (which is exactly the order derived from
+  `depends`), and expect the entry pod to sit un-ready
   while a dependency restarts. `/livez` never cascades, which is why liveness must stay on
   `/livez` — putting liveness on `/readyz` turns one sick dependency into a cluster-wide
-  restart loop. Opt out per service to make readiness pod-local:
-  `{"services":{"<Caller>":{"runner_probe":{"enabled":false}}}}`.
+  restart loop. Opt out per service to make readiness pod-local, via that service's
+  `config_overrides: {runner_probe: {enabled: false}}`.
 - **A dependency's timeout must be raised in BOTH pods.** The client timeout for a call is
   read from the **calling** pod's own config for the callee's name
   (`services.<Callee>.traffic.timeout`, × 1.01), not from the callee. So a slow dependency
-  needs `{"services":{"<Callee>":{"traffic":{"timeout":300}}}}` on the **caller's**
-  Deployment (to stop the client giving up) *and* the same on the **callee's** Deployment
-  (to stop its own 504 middleware firing). Setting it in only one place produces a
-  confusing half-fix.
+  needs `{"services":{"<Callee>":{"traffic":{"timeout":300}}}}` in the **caller's** pod (to
+  stop the client giving up) *and* the same in the **callee's** pod (to stop its own 504
+  middleware firing). Setting it in only one place produces a confusing half-fix. **This is
+  the one thing `config_overrides` cannot express**, since the renderer keys it to the
+  service that owns the block: raise the timeout in the callee's decorator
+  (`@bentoml.service(traffic={"timeout": 300})`, whose value every pod of the bento sees, at
+  the cost of a rebuild), or put the raw JSON in the caller's `env`
+  (`env: {BENTOML_CONFIG_OVERRIDES: '...'}`) while leaving that service's
+  `config_overrides` empty — two sources for one env var collide.
 - **Per-service beats global, and the decorator lives in the per-service block.** A global
   `{"services":{"traffic":{"timeout":300}}}` is merged *under* each named service's config,
   which already contains the decorator's values — so a global override loses to any
@@ -192,18 +224,28 @@ autoscaler and instance-type picker.
 - **Kubernetes' NVIDIA device plugin already sets `CUDA_VISIBLE_DEVICES`** in the
   container, and BentoML skips its own GPU allocation when that variable is present. That
   is the desired behaviour — but it means `resources={"gpu": N}` in the decorator does not
-  control which devices a pod sees; `nvidia.com/gpu` in the manifest does.
+  control which devices a pod sees; `resources.limits["nvidia.com/gpu"]` in the config
+  does.
 - **Only the entry service may be exposed.** Dependency traffic is
   `application/vnd.bentoml+pickle`; a NodePort/LoadBalancer/Ingress in front of a
-  dependency is an unauthenticated deserialization endpoint.
+  dependency is an unauthenticated deserialization endpoint, i.e. remote code execution.
+  `expose:`/`ingress:` under a non-entry service is a load-time error, and hand-written
+  manifests under `manifests_dir` are the only way to break the invariant.
 - **Unquoted whole-number CPU makes every apply non-idempotent.** `cpu: 1` renders a YAML
   integer; the stored quantity is the string `"1"`, so the patch never converges and
   `kubectl apply` reports `configured` on every run (no pod churn, but drift detection and
   the generated deploy script both lie). `cpu: "1"` reports `configured` once, then
-  `unchanged`. Same for `memory` and `nvidia.com/gpu`.
+  `unchanged`. Same for `memory` and `nvidia.com/gpu` — and the config loader rejects
+  unquoted quantities so the error names your `config.yml` line, not the rendered file.
 - **`services[].config` in `bento.yaml` is a snapshot of the decorator kwargs** (no
   defaults merged) and is *not* re-applied at runtime. It is excellent for pre-filling
-  manifest defaults, and worthless as a statement of what the running pod is doing.
+  `config.yml` defaults, and worthless as a statement of what the running pod is doing.
+- **Rendered manifests are output.** Editing `k8s/*.yaml` works exactly until the next
+  render, which overwrites it; the change also never reaches CI, which renders from
+  `config.yml` too. Change the config and re-render. There is exactly **one** renderer and
+  one validator — the deploy bundle's — so interactive and CI runs cannot drift apart, and
+  the container env is emitted in a stable order (derived wiring first, then `env` sorted)
+  so re-rendering does not churn pods for cosmetic reasons.
 
 ---
 
@@ -248,7 +290,7 @@ rules:
           namespace: {resource: namespace}
           pod: {resource: pod}
       name: {matches: "^bentoml_service_request_in_progress$", as: "bentoml_inflight"}
-      metricsQuery: 'sum(bentoml_service_request_in_progress{<<.LabelMatchers>>,runner_name="<ServiceName>"}) by (<<.GroupBy>>)'
+      metricsQuery: 'sum(bentoml_service_request_in_progress{<<.LabelMatchers>>,runner_name="<ServiceName>",endpoint!~"/(livez|readyz|healthz|metrics)"}) by (<<.GroupBy>>)'
 ```
 
 then target it as a `Pods` metric with `averageValue: "<in-flight per pod>"`. Because the
@@ -270,7 +312,24 @@ starts returning 429s before it ever scales up — the autoscaler is effectively
 Set `max_concurrency` comfortably above the HPA target (or leave it unset and let latency
 degrade), and treat it as a last-resort overload guard rather than a scaling signal.
 
-**Also, when adding an HPA:** delete `spec.replicas` from that service's Deployment,
-keep `behavior.scaleDown.stabilizationWindowSeconds` at least as long as the worst-case
-model load, and scale each BentoML service on its own signal — the DAG's bottleneck is
-rarely the entry service.
+**Also, when adding an HPA:** `autoscaling.enabled: true` makes the renderer drop
+`spec.replicas` from that service's Deployment (a declared replica count and an HPA fight on
+every apply); `behavior.scaleDown.stabilizationWindowSeconds` is rendered at 300 s, which
+should be at least the worst-case model load; and scale each BentoML service on its own
+signal — the DAG's bottleneck is rarely the entry service.
+
+---
+
+## The escape hatch: `kubernetes.manifests_dir`
+
+Setting it makes the deployment apply those files **as-is**; `services:` no longer shapes
+the workload. That is how you get anything the schema has no key for — sidecars, volumes,
+PodDisruptionBudgets, affinity/topology spread, a longer
+`terminationGracePeriodSeconds`, `path_prefix`-adjusted probe paths.
+
+What you give up is everything Table 1 derived for you: rollout order,
+`BENTOML_SERVE_DEPENDS` wiring, per-service selectors, ClusterIP-only dependencies,
+HPA-vs-`spec.replicas` exclusivity, and the image reference (hand-owned files pin whatever
+tag they contain). Migration path: render once into a directory, commit it, point
+`manifests_dir` at it, and keep `templates/*.yaml` in this skill as the checklist of the
+invariants you now maintain yourself.

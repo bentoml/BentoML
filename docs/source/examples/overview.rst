@@ -67,7 +67,6 @@ Computer vision
 
 Serve computer vision models with BentoML:
 
-- `YOLO: Object detection <https://github.com/bentoml/BentoYolo>`_
 - `ResNet: Image classification <https://github.com/bentoml/BentoResnet>`_
 - `EasyOCR: Optical character recognition <https://github.com/bentoml/BentoOCR>`_
 

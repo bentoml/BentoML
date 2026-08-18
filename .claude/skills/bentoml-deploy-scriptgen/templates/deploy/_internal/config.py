@@ -14,6 +14,10 @@ deploy.config.json. Environment overrides recognized here:
 
 All validation failures exit with code 2 (config error) and name the exact
 JSON path that is wrong.
+
+JSON has no comment syntax, so any key whose name starts with "//" is
+treated as free-text documentation and ignored (the generated config ships
+one such note next to targets.k8s.services; keep or delete it at will).
 """
 
 # This bundle gets committed into arbitrary user repos; the directive below
@@ -33,7 +37,12 @@ from .common import EXIT_CONFIG
 from .common import DeployError
 from .common import warn
 
-CONFIG_SCHEMA = "bentoml-deploy-config/v1"
+CONFIG_SCHEMA = "bentoml-deploy-config/v2"
+# v1 named a single Deployment/Service (targets.k8s.deployment_name /
+# service_name). v2 deploys one Deployment per BentoML service and carries a
+# targets.k8s.services list instead; the manifest layout changed with it, so
+# a v1 config is rejected rather than migrated in place.
+CONFIG_SCHEMA_V1 = "bentoml-deploy-config/v1"
 
 REGISTRY_TYPES = ("generic", "ecr", "none")
 
@@ -48,6 +57,16 @@ ENV_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 # Docker's own container-name rule; shell-inert for the same reason.
 CONTAINER_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]*$")
+
+# Kubernetes object names that end up in a Service name must be DNS-1035
+# labels (stricter than DNS-1123: no leading digit). Every per-service slug
+# names both a Deployment and a Service, so all slugs follow this rule.
+DNS1035_RE = re.compile(r"^[a-z]([-a-z0-9]*[a-z0-9])?$")
+
+# BentoML service names travel into the manifests' whitespace-separated
+# BENTOML_SERVE_DEPENDS value and into `--service-name`, so a name with
+# whitespace in it could never be addressed at all.
+SERVICE_NAME_RE = re.compile(r"^\S+$")
 
 # Real generator placeholders look like {{SERVICE_NAME}} or {{EC2_HOST}} —
 # digits included ({{K8S_CONTEXT}}!) — but this pattern must not fire on
@@ -120,8 +139,22 @@ def _get_dict(d: dict[str, Any], key: str, path: str) -> dict[str, Any] | None:
     return _expect_type(d[key], (dict,), f"{path}.{key}", "an object")
 
 
+# The one "//" note the generated config ships; not a commented-out key.
+_DOC_KEYS = ("//services",)
+
+
 def _warn_unknown_keys(d: dict[str, Any], known: list[str], path: str) -> None:
     for key in d:
+        # "//..." keys are the config's stand-in for JSON comments.
+        if key.startswith("//"):
+            shadowed = key.lstrip("/").strip()
+            if key not in _DOC_KEYS and shadowed in known:
+                warn(
+                    f"deploy.config.json: {path}.{key} is commented out, so "
+                    f"{path}.{shadowed} is NOT set and its default applies — "
+                    "rename the key to activate it, or delete the note"
+                )
+            continue
         if key not in known:
             warn(f"deploy.config.json: unknown key {path}.{key} (typo?)")
 
@@ -163,22 +196,63 @@ class InferenceCheck:
 class VerifyConfig:
     readyz_timeout_seconds: int = 600
     inference: InferenceCheck | None = None
+    # k8s, multi-service bentos only: after the inference request, prove that
+    # every dependency's own request counter moved. Without it, a gateway that
+    # silently instantiated its dependencies in-process is indistinguishable
+    # from a working split (it answers correctly and reports ready). Turn it
+    # off only when a dependency is deliberately off the smoke test's path.
+    dependency_metrics: bool = True
+
+
+@dataclass
+class K8sService:
+    """One BentoML service == one Kubernetes Deployment + Service."""
+
+    # BentoML service name as the bento declares it (e.g. "Summarizer") —
+    # what the manifests pass to --service-name / BENTOML_SERVE_DEPENDS.
+    name: str
+    # DNS-1035 object-name stem: names deployment/<slug>, svc/<slug>, and the
+    # manifest files <slug>-deployment.yaml / <slug>-service.yaml.
+    slug: str
+    # The externally exposed service (the bento's entry_service): the one
+    # whose Service carries the exposure type and the one verify targets.
+    entry: bool = False
 
 
 @dataclass
 class K8sConfig:
     context: str
     namespace: str
-    deployment_name: str
-    service_name: str
+    # One entry per BentoML service, in rollout order: dependencies first,
+    # entry last (a dependency that is not ready makes the entry service's
+    # /readyz 503). Exactly one has entry=True.
+    services: list[K8sService]
     manifests_dir: Path  # absolute, resolved
     image_pull_secret: str | None = None
-    rollout_timeout_seconds: int = 600
+    # 900s, deliberately MORE than the manifests' startupProbe budget
+    # (failureThreshold 120 x periodSeconds 5 = 600s): with the two equal, a
+    # pod that legitimately uses its whole startup budget loses the race and
+    # the rollout is reported failed at the very moment it succeeds.
+    rollout_timeout_seconds: int = 900
     local_port: int = 3130
     # Optional fixed NodePort (30000..32767) for a stable URL; rendered into
-    # the Service manifest at generate time. When unset, kubectl apply
-    # preserves whatever port the cluster already allocated.
+    # the entry service's Service manifest at generate time. When unset,
+    # kubectl apply preserves whatever port the cluster already allocated.
     node_port: int | None = None
+
+    @property
+    def entry_service(self) -> K8sService:
+        """The service verify talks to (never a dependency: inter-service
+        payloads are pickle and must not leave the cluster)."""
+        for svc in self.services:
+            if svc.entry:
+                return svc
+        # Unreachable: _parse_k8s enforces exactly one entry: true.
+        raise _fail(
+            "targets.k8s.services",
+            "no service is marked entry: true",
+            hint='exactly one service must have "entry": true',
+        )
 
 
 @dataclass
@@ -302,7 +376,11 @@ def _parse_image(data: dict[str, Any]) -> ImageConfig:
 
 def _parse_verify(data: dict[str, Any]) -> VerifyConfig:
     section = _get_dict(data, "verify", "$") or {}
-    _warn_unknown_keys(section, ["readyz_timeout_seconds", "inference"], "verify")
+    _warn_unknown_keys(
+        section,
+        ["readyz_timeout_seconds", "inference", "dependency_metrics"],
+        "verify",
+    )
     inference: InferenceCheck | None = None
     inf = _get_dict(section, "inference", "verify")
     if inf is not None:
@@ -327,7 +405,109 @@ def _parse_verify(data: dict[str, Any]) -> VerifyConfig:
             section, "readyz_timeout_seconds", "verify", 600
         ),
         inference=inference,
+        dependency_metrics=_get_bool(section, "dependency_metrics", "verify", True),
     )
+
+
+_SERVICES_HINT = (
+    "targets.k8s.services lists one object per BentoML service — "
+    '[{"name": "<ServiceName>", "slug": "<dns-1035-slug>", "entry": '
+    "true|false}] — in rollout order (dependencies first, entry last) with "
+    "exactly one entry: true. A single-service bento has a one-element list "
+    "with entry: true. Regenerate the bundle with the "
+    "bentoml-deploy-scriptgen skill to get it right."
+)
+
+
+def _parse_k8s_services(section: dict[str, Any]) -> list[K8sService]:
+    """Parse targets.k8s.services: non-empty, unique names and slugs, slugs
+    DNS-1035, exactly one entry."""
+    path = "targets.k8s.services"
+    raw = section.get("services")
+    if raw is None:
+        legacy = [k for k in ("deployment_name", "service_name") if k in section]
+        if legacy:
+            raise _fail(
+                path,
+                "required value is missing — this config still carries the v1 "
+                f"key(s) {legacy}",
+                hint=_SERVICES_HINT,
+            )
+        raise _fail(path, "required value is missing", hint=_SERVICES_HINT)
+    _expect_type(raw, (list,), path, "an array")
+    if not raw:
+        raise _fail(path, "must not be empty", hint=_SERVICES_HINT)
+    services: list[K8sService] = []
+    names_seen: dict[str, int] = {}
+    slugs_seen: dict[str, int] = {}
+    entries: list[str] = []
+    for i, item in enumerate(raw):
+        item_path = f"{path}[{i}]"
+        _expect_type(item, (dict,), item_path, "an object")
+        _warn_unknown_keys(item, ["name", "slug", "entry"], item_path)
+        name = _get_str(item, "name", item_path, required=True) or ""
+        if not SERVICE_NAME_RE.match(name):
+            raise _fail(
+                f"{item_path}.name",
+                f"{name!r} must be a single whitespace-free BentoML service "
+                "name (as declared in the bento)",
+            )
+        slug = _get_str(item, "slug", item_path, required=True) or ""
+        if not DNS1035_RE.match(slug):
+            raise _fail(
+                f"{item_path}.slug",
+                f"{slug!r} is not a valid DNS-1035 label "
+                f"(must match {DNS1035_RE.pattern})",
+                hint="the slug names deployment/<slug>, svc/<slug> and the "
+                "<slug>-deployment.yaml / <slug>-service.yaml manifests: "
+                "lowercase the service name, '_' -> '-'",
+            )
+        if name in names_seen:
+            raise _fail(
+                f"{item_path}.name",
+                f"duplicate service name {name!r} (already used at "
+                f"{path}[{names_seen[name]}].name)",
+            )
+        if slug in slugs_seen:
+            raise _fail(
+                f"{item_path}.slug",
+                f"duplicate slug {slug!r} (already used at "
+                f"{path}[{slugs_seen[slug]}].slug) — two services would "
+                "share one Deployment and Service",
+            )
+        names_seen[name] = i
+        slugs_seen[slug] = i
+        entry = _get_bool(item, "entry", item_path, False)
+        if entry:
+            entries.append(item_path)
+        services.append(K8sService(name=name, slug=slug, entry=entry))
+    if not entries:
+        raise _fail(
+            path,
+            'no service has "entry": true — exactly one must (the bento\'s '
+            "entry_service, the only one exposed outside the cluster)",
+            hint=_SERVICES_HINT,
+        )
+    if len(entries) > 1:
+        raise _fail(
+            path,
+            f'{len(entries)} services have "entry": true ({", ".join(entries)})'
+            " — exactly one must",
+            hint=_SERVICES_HINT,
+        )
+    if not services[-1].entry:
+        entry_index = next(i for i, svc in enumerate(services) if svc.entry)
+        raise _fail(
+            path,
+            f"the entry service is at {path}[{entry_index}] but must be LAST "
+            f"(it is followed by {len(services) - entry_index - 1} "
+            "dependency service(s))",
+            hint="the list IS the rollout order and dependencies must be "
+            "ready first: the entry service's /readyz fans out to them, so "
+            "rolling it out first makes it 503 until the rest catch up. "
+            "Move the entry: true element to the end.",
+        )
+    return services
 
 
 def _parse_k8s(targets: dict[str, Any], bundle_dir: Path) -> K8sConfig | None:
@@ -339,8 +519,7 @@ def _parse_k8s(targets: dict[str, Any], bundle_dir: Path) -> K8sConfig | None:
         [
             "context",
             "namespace",
-            "deployment_name",
-            "service_name",
+            "services",
             "manifests_dir",
             "image_pull_secret",
             "rollout_timeout_seconds",
@@ -355,13 +534,19 @@ def _parse_k8s(targets: dict[str, Any], bundle_dir: Path) -> K8sConfig | None:
     namespace = os.environ.get("BENTOML_DEPLOY_K8S_NAMESPACE") or _get_str(
         section, "namespace", "targets.k8s", required=True
     )
-    deployment_name = _get_str(section, "deployment_name", "targets.k8s", required=True)
+    services = _parse_k8s_services(section)
     manifests_rel = (
         _get_str(section, "manifests_dir", "targets.k8s", default="k8s") or "k8s"
     )
     local_port = _get_int(section, "local_port", "targets.k8s", 3130)
-    if local_port < 1024 or local_port > 65535:
-        raise _fail("targets.k8s.local_port", "must be in 1024..65535")
+    # local_port + 1 carries the dependency /metrics scrapes during verify.
+    if local_port < 1024 or local_port > 65534:
+        raise _fail(
+            "targets.k8s.local_port",
+            "must be in 1024..65534",
+            hint="verify also uses local_port + 1 (to scrape each "
+            "dependency's /metrics), so both must be free",
+        )
     node_port = section.get("node_port")
     if node_port is not None:
         node_port = _get_int(section, "node_port", "targets.k8s", 0)
@@ -375,13 +560,11 @@ def _parse_k8s(targets: dict[str, Any], bundle_dir: Path) -> K8sConfig | None:
     return K8sConfig(
         context=str(context),
         namespace=str(namespace),
-        deployment_name=str(deployment_name),
-        service_name=_get_str(section, "service_name", "targets.k8s")
-        or str(deployment_name),
+        services=services,
         manifests_dir=(bundle_dir / manifests_rel).resolve(),
         image_pull_secret=_get_str(section, "image_pull_secret", "targets.k8s"),
         rollout_timeout_seconds=_get_int(
-            section, "rollout_timeout_seconds", "targets.k8s", 600
+            section, "rollout_timeout_seconds", "targets.k8s", 900
         ),
         local_port=local_port,
         node_port=node_port,
@@ -547,11 +730,28 @@ def load_config(config_path: Path) -> Config:
             "placeholder when generating the bundle",
         )
     schema = _get_str(data, "schema", "$", default=CONFIG_SCHEMA)
+    if schema == CONFIG_SCHEMA_V1:
+        raise _fail(
+            "schema",
+            f"this config is {CONFIG_SCHEMA_V1} but this bundle requires "
+            f"{CONFIG_SCHEMA}; the k8s target now deploys one Deployment per "
+            "BentoML service, so targets.k8s.deployment_name and "
+            "targets.k8s.service_name were replaced by a targets.k8s.services "
+            'list ([{"name": ..., "slug": ..., "entry": true|false}], '
+            "dependencies first, entry last, exactly one entry)",
+            hint="the manifest layout changed with it (one "
+            "<slug>-deployment.yaml plus one <slug>-service.yaml per "
+            "service), so regenerate the whole bundle with the "
+            "bentoml-deploy-scriptgen skill instead of hand-editing this "
+            "file",
+        )
     if schema != CONFIG_SCHEMA:
         raise _fail("schema", f"expected {CONFIG_SCHEMA!r}, got {schema!r}")
     _warn_unknown_keys(data, ["schema", "project", "image", "verify", "targets"], "$")
     bundle_dir = config_path.resolve().parent
     targets = _get_dict(data, "targets", "$") or {}
+    # Without this, a mis-cased "K8s" reads as "no k8s target configured".
+    _warn_unknown_keys(targets, ["k8s", "ec2"], "targets")
     project = _parse_project(data, bundle_dir)
     return Config(
         bundle_dir=bundle_dir,

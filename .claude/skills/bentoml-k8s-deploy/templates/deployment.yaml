@@ -1,83 +1,180 @@
-# BentoML service Deployment.
-# Every double-curly-brace placeholder MUST be replaced before applying.
-# Blocks marked "OPTIONAL" MUST be deleted entirely when they do not apply —
-# never leave an unreplaced placeholder in the final manifest.
+# =============================================================================
+# BentoML service Deployment -- ONE PER BentoML SERVICE in the bento.
+#
+# THIS FILE IS THE DEPLOYMENT CONFIG for this service. After the first render,
+# edit the values here directly and re-apply: there is no other config file and
+# no renderer. The YAML is the source of truth for the workload shape.
+#
+# Rendered for BentoML service: {{BENTOML_SERVICE_NAME}}   (bento: {{BENTO_NAME}})
+#
+# Four rules that must never be broken:
+#  1. `args:` only -- NEVER `command:`. The image entrypoint activates the venv
+#     and rewrites `start-http-server` into the real module invocation (appending
+#     $BENTO_PATH). Overriding `command:` skips that and the container dies.
+#  2. `--service-name` makes this pod serve EXACTLY this one BentoML service and
+#     spawn no sibling processes. Drop it and every pod runs the whole bento.
+#  3. NEVER set BENTOML_RUNNER_MAP / BENTOML_SERVE_RUNNER_MAP. The serving process
+#     overwrites it, and any dependency it does not resolve is then instantiated
+#     IN-PROCESS -- every pod silently loads every model and still reports healthy.
+#     Wire dependencies with BENTOML_SERVE_DEPENDS only (block below).
+#  4. `image:` stays the literal sentinel __DEPLOY_IMAGE__. It is substituted at
+#     apply time (`sed 's|__DEPLOY_IMAGE__|<image>|g' ... | kubectl apply -f -`)
+#     so this file never pins a build tag. Do not hardcode an image reference.
+#
+# Every double-curly-brace placeholder MUST be replaced before applying, and every
+# block marked OPTIONAL that does not apply MUST be deleted whole (counts are given;
+# delete them BOTTOM-UP, since the counts refer to this template's line numbering).
+# Full list of what belongs here vs. in BENTOML_CONFIG_OVERRIDES:
+# references/customization.md
+# =============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{SERVICE_NAME}}
+  # Object name. DNS-1035 (must start with a letter); same name as this service's Service.
+  name: {{SLUG}}
+  # Must be identical in every manifest of this bento -- dependency URLs embed it.
   namespace: {{NAMESPACE}}
   labels:
-    app.kubernetes.io/name: {{SERVICE_NAME}}
+    # Per-service identity. The pod selector below matches on this label.
+    app.kubernetes.io/name: {{SLUG}}
+    # The BentoML service name, verbatim from bento.yaml.
+    app.kubernetes.io/component: {{BENTOML_SERVICE_NAME}}
+    # Groups every service of this bento; handy for `kubectl get -l`.
+    app.kubernetes.io/part-of: {{BENTO_NAME}}
     app.kubernetes.io/managed-by: bentoml-k8s-deploy
 spec:
+  # Fixed pod count. DELETE this line if an HPA owns this Deployment (<slug>-hpa.yaml),
+  # or every apply resets the count and fights the autoscaler.
   replicas: {{REPLICAS}}
+  revisionHistoryLimit: 3                   # old ReplicaSets kept for `kubectl rollout undo`
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{SERVICE_NAME}}
+      # IMMUTABLE after the first apply. Must equal the pod label below.
+      app.kubernetes.io/name: {{SLUG}}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{SERVICE_NAME}}
+        # Must match spec.selector.matchLabels exactly, or this Deployment adopts no pods.
+        app.kubernetes.io/name: {{SLUG}}
+        app.kubernetes.io/component: {{BENTOML_SERVICE_NAME}}
+        app.kubernetes.io/part-of: {{BENTO_NAME}}
         app.kubernetes.io/managed-by: bentoml-k8s-deploy
     spec:
-      # OPTIONAL block — private registry only. Delete this block (4 lines, these
+      terminationGracePeriodSeconds: 60     # raise above your longest request so in-flight work drains
+      # OPTIONAL block -- private registry only. Delete this block (4 lines, these
       # comments included) if the image is public. See references/private-registries.md.
       imagePullSecrets:
         - name: {{IMAGE_PULL_SECRET}}
       containers:
         - name: bentoml
-          image: {{IMAGE}}
-          # Do NOT add `command:` or `args:` — the image entrypoint produced by
-          # `bentoml containerize` already starts the HTTP server (`serve`).
+          image: __DEPLOY_IMAGE__           # sentinel, substituted at apply time -- leave verbatim
+          imagePullPolicy: IfNotPresent      # use Always only for mutable tags like :latest
+          args: ["start-http-server", "--service-name", "{{BENTOML_SERVICE_NAME}}"]
+          # If this service is declared with @bentoml.service(path_prefix="/x"), then
+          # /livez, /readyz and /metrics ALL move under that prefix -- the probe paths
+          # below and the HPA's scrape path must be prefixed to match.
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: 3000            # BentoML's HTTP port; changing it means setting BENTOML_PORT too
               protocol: TCP
-          # OPTIONAL block — plain (non-secret) environment variables. Delete this
-          # block (6 lines, these comments included) if there are none; otherwise
-          # add one name/value pair per variable (block grows accordingly).
+          # ---- environment ---------------------------------------------------
+          # OPTIONAL section. Keep only the entries you need; if none remain,
+          # delete these 4 lines (this header and the `env:` key) as well.
           env:
+            # OPTIONAL block -- ENTRY SERVICE ONLY: dependency wiring. Delete this
+            # block (9 lines, these comments included) for every non-entry service
+            # and for a single-service bento. Value = whitespace-separated
+            # `ServiceName=URL` pairs, one per DIRECT dependency. `ServiceName` must
+            # equal the BentoML service name exactly (lookup is by that key), and the
+            # URL must contain NO `=` (each pair is `split("=", maxsplit=2)` and then fed
+            # to dict(), so a second `=` anywhere yields 3 parts and raises at startup).
+            - name: BENTOML_SERVE_DEPENDS
+              value: "{{SERVE_DEPENDS}}"
+            # OPTIONAL block -- retune the server at runtime with no image rebuild.
+            # Nested JSON; BEATS the @bentoml.service(...) decorator, but ONLY under the
+            # named service -- a global {"services":{"traffic":...}} loses to the decorator.
+            # Delete this block (7 lines) if unused. Keys: references/customization.md.
+            # e.g. {"services":{"{{BENTOML_SERVICE_NAME}}":{"workers":2,"traffic":{"timeout":120}}}}
+            - name: BENTOML_CONFIG_OVERRIDES
+              value: '{{CONFIG_OVERRIDES}}'
+            # OPTIONAL block -- plain, NON-secret env vars. Delete this block (5 lines)
+            # if there are none; duplicate the name/value pair for each extra variable.
+            # Secrets never go here -- use the envFrom block below.
             - name: {{ENV_NAME}}
               value: "{{ENV_VALUE}}"
-          # OPTIONAL block — secret environment variables (tokens, API keys).
-          # The Secret must already exist, created via:
+          # OPTIONAL block -- secret env vars (tokens, API keys). The Secret must
+          # already exist:
           #   kubectl --context <ctx> create secret generic <name> -n <ns> --from-literal=KEY=VALUE
-          # Delete this block (7 lines, these comments included) if there are no secrets.
+          # Delete this block (7 lines, these comments included) if there are none.
           envFrom:
             - secretRef:
                 name: {{ENV_SECRET_NAME}}
+          # ---- resources -----------------------------------------------------
+          # requests = what the scheduler reserves (and what CPU-percentage HPAs are
+          # measured against); limits = the hard ceiling (CPU throttles, memory OOMKills).
+          # ALWAYS set all four. @bentoml.service(resources={"cpu","memory"}) is INERT in
+          # open-source BentoML -- if these values are missing, nothing constrains the pod.
+          #
+          # KEEP THE QUOTES on every quantity, especially whole numbers: `cpu: 1`
+          # (unquoted) is a YAML int, the API server stores the quantity as "1", and the
+          # strategic-merge patch then sees a diff on EVERY apply -- `kubectl apply`
+          # reports "configured" forever and `kubectl diff` / GitOps drift detection lie.
+          # `cpu: "1"` applies once and is then "unchanged".
           resources:
             requests:
-              cpu: {{CPU_REQUEST}}
-              memory: {{MEMORY_REQUEST}}
+              # Keep >= what one worker actually uses, or CPU-utilization HPA math lies.
+              cpu: "{{CPU_REQUEST}}"
+              memory: "{{MEMORY_REQUEST}}"
             limits:
-              cpu: {{CPU_LIMIT}}
-              memory: {{MEMORY_LIMIT}}
-              # OPTIONAL block — GPU. Delete this block (4 lines, these comments
-              # included) if not needed. Requires the NVIDIA device plugin on the
-              # cluster. See references/gpu-scheduling.md.
-              nvidia.com/gpu: {{GPU_COUNT}}
-          # Generous startup budget: model loading can take minutes.
-          # 120 failures x 5s = 10 minutes before the pod is considered failed.
+              # Over-limit CPU throttles (latency); it does not kill the pod.
+              cpu: "{{CPU_LIMIT}}"
+              # Below the model's real footprint => OOMKilled.
+              memory: "{{MEMORY_LIMIT}}"
+              # OPTIONAL block -- GPU. Delete this block (5 lines, these comments
+              # included) if not needed. GPUs are limits-only (the request is implied),
+              # integer, and never shared between pods. Requires the NVIDIA device
+              # plugin. See references/gpu-scheduling.md.
+              nvidia.com/gpu: "{{GPU_COUNT}}"
+          # ---- probes --------------------------------------------------------
+          # /readyz fans out to this service's dependencies by default
+          # (runner_probe.enabled), so it 503s while any dependency is down -- roll out
+          # dependencies first. Opt out per service with BENTOML_CONFIG_OVERRIDES:
+          #   {"services":{"{{BENTOML_SERVICE_NAME}}":{"runner_probe":{"enabled":false}}}}
+          # Liveness must stay on /livez, which never cascades: liveness on /readyz turns
+          # one sick dependency into a cluster-wide restart loop.
+          #
+          # 5-SECOND FLOOR on every probe that hits /readyz. When BentoML fans /readyz out
+          # to a dependency it gives that dependency a HARD-CODED 5s budget, so /readyz can
+          # legitimately take just over 5s. `timeoutSeconds: 3` (a common default) makes the
+          # kubelet hang up first, and a dependency that answers in 4s leaves this pod
+          # permanently unready -- at startup and forever after. 6 is the minimum; raise it
+          # (and never lower it) for a deep dependency chain. The 5s is a framework
+          # constant, NOT a tunable: `runner_probe.timeout` is inert on BentoML 1.2+.
+          # Leaf services keep the same value -- it costs nothing and survives someone
+          # later adding a dependency.
           startupProbe:
             httpGet:
               path: /readyz
               port: http
-            periodSeconds: 5
-            failureThreshold: 120
-            timeoutSeconds: 3
-          livenessProbe:
+            periodSeconds: 10
+            failureThreshold: 60             # 60 x 10s = 10 min for model loading; raise for big models
+            timeoutSeconds: 6                # >= 6: see the 5-second floor above
+          livenessProbe:                     # failing => container restarted
             httpGet:
               path: /livez
               port: http
             periodSeconds: 10
-            timeoutSeconds: 3
+            timeoutSeconds: 3                # /livez is pod-local and never cascades, so 3 is fine
             failureThreshold: 3
-          readinessProbe:
+          readinessProbe:                    # failing => pod removed from the Service endpoints
             httpGet:
               path: /readyz
               port: http
             periodSeconds: 10
-            timeoutSeconds: 3
+            timeoutSeconds: 6                # >= 6: see the 5-second floor above
             failureThreshold: 3
+      # OPTIONAL block -- pin this service to particular nodes (GPU pools, arch,
+      # zones). Delete this block (5 lines, these comments included) if any node
+      # will do. Pair with `tolerations:` when the pool is tainted.
+      nodeSelector:
+        {{NODE_SELECTOR_KEY}}: "{{NODE_SELECTOR_VALUE}}"

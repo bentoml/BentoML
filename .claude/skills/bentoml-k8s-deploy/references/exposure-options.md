@@ -2,7 +2,10 @@
 
 The BentoML container always listens on port **3000**; the Service template exposes
 port **3000** (named `http`) in every mode. Choose the exposure method with the user
-based on where clients live.
+based on where clients live. In a multi-service bento only the **entry** service is ever
+exposed — the dependency Services stay `ClusterIP`, because inter-service traffic is
+`application/vnd.bentoml+pickle` (unauthenticated pickle deserialization). `<entry-slug>`
+below is the entry service's slug, i.e. the name of `k8s/<entry-slug>-service.yaml`.
 
 | Method | Reachable from | Needs | Best for |
 |---|---|---|---|
@@ -17,24 +20,29 @@ based on where clients live.
 No manifest changes; Service stays `ClusterIP`.
 
 ```bash
-kubectl --context <ctx> port-forward svc/<service-name> -n <ns> 3000:3000
-# then: curl http://127.0.0.1:3000/readyz
+kubectl --context <ctx> port-forward svc/<entry-slug> -n <ns> 3100:3000
+# then: curl http://127.0.0.1:3100/readyz
 ```
 
-The tunnel lives only while the command runs. Local port busy? Use `3001:3000` and call
-`http://127.0.0.1:3001`.
+The tunnel lives only while the command runs. Forward to an **uncommon** local port like
+3100 rather than 3000: if a dev server already holds 3000 the forward fails to bind and
+your curls silently hit that process instead, producing convincing but fake results
+(same reasoning as the verification step in SKILL.md). Always confirm the port-forward
+process is still alive before trusting a response.
 
 ## ClusterIP (in-cluster consumers)
 
 Other pods call the service at
-`http://<service-name>.<ns>.svc.cluster.local:3000`.
+`http://<slug>.<ns>.svc.cluster.local:3000` — this is also exactly the form used in
+`BENTOML_SERVE_DEPENDS` to wire one BentoML service to another.
 
 ## NodePort
 
-Set `{{SERVICE_TYPE}}` to `NodePort`. Kubernetes assigns a port in 30000–32767:
+Set `spec.type` to `NodePort` in `k8s/<entry-slug>-service.yaml` (rendered files hold
+real values, not placeholders). Kubernetes assigns a port in 30000–32767:
 
 ```bash
-kubectl --context <ctx> get svc <service-name> -n <ns> \
+kubectl --context <ctx> get svc <entry-slug> -n <ns> \
   -o jsonpath='{.spec.ports[0].nodePort}'
 kubectl --context <ctx> get nodes -o wide     # take any node's EXTERNAL-IP (or INTERNAL-IP on a LAN)
 curl http://<node-ip>:<node-port>/readyz
@@ -47,11 +55,11 @@ kind config — prefer port-forward there.
 
 ## LoadBalancer
 
-Set `{{SERVICE_TYPE}}` to `LoadBalancer`. Only works where something provisions LBs
+Set `spec.type` to `LoadBalancer` in `k8s/<entry-slug>-service.yaml`. Only works where something provisions LBs
 (managed clouds; MetalLB on bare metal). Wait for the address:
 
 ```bash
-kubectl --context <ctx> get svc <service-name> -n <ns> -w
+kubectl --context <ctx> get svc <entry-slug> -n <ns> -w
 # EXTERNAL-IP goes from <pending> to an IP/hostname; then:
 curl http://<external-ip>:3000/readyz
 ```

@@ -1,20 +1,49 @@
-# Service in front of the BentoML Deployment.
-# {{SERVICE_TYPE}} is one of: ClusterIP (default), NodePort, LoadBalancer.
-# See references/exposure-options.md for how to choose.
+# =============================================================================
+# Service for ONE BentoML service. Rendered once per service, alongside that
+# service's Deployment. This file is also the config: edit and re-apply.
+#
+# Rendered for BentoML service: {{BENTOML_SERVICE_NAME}}   (bento: {{BENTO_NAME}})
+#
+# The Service name IS the in-cluster hostname, so it is what dependency URLs
+# point at:  http://{{SLUG}}.{{NAMESPACE}}.svc.cluster.local:3000
+# Renaming it means updating BENTOML_SERVE_DEPENDS on every caller's Deployment.
+#
+# type MUST be ClusterIP for every NON-ENTRY service. Inter-service traffic is
+# `application/vnd.bentoml+pickle` -- an unauthenticated pickle deserialization
+# endpoint. Exposing it outside the cluster (NodePort/LoadBalancer/Ingress) hands
+# anyone who can reach it arbitrary code execution in that pod. Only the ENTRY
+# service, which speaks ordinary JSON HTTP, may carry another type.
+#
+# OPTIONAL blocks that do not apply MUST be deleted whole; delete them BOTTOM-UP,
+# since the stated counts refer to this template's line numbering.
+# =============================================================================
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{SERVICE_NAME}}
+  # == the in-cluster DNS name. Keep in sync with every dependency URL.
+  name: {{SLUG}}
   namespace: {{NAMESPACE}}
   labels:
-    app.kubernetes.io/name: {{SERVICE_NAME}}
+    app.kubernetes.io/name: {{SLUG}}
+    app.kubernetes.io/component: {{BENTOML_SERVICE_NAME}}
+    app.kubernetes.io/part-of: {{BENTO_NAME}}
     app.kubernetes.io/managed-by: bentoml-k8s-deploy
+  # OPTIONAL block -- cloud load-balancer tuning (internal LB, idle timeout,
+  # NLB vs ALB, ...). Delete this block (5 lines, these comments included) unless
+  # type is LoadBalancer and your provider needs it. See references/exposure-options.md.
+  annotations:
+    {{SERVICE_ANNOTATION_KEY}}: "{{SERVICE_ANNOTATION_VALUE}}"
 spec:
+  # ClusterIP (always, for non-entry services) | NodePort | LoadBalancer
   type: {{SERVICE_TYPE}}
   selector:
-    app.kubernetes.io/name: {{SERVICE_NAME}}
+    # Per-service, so this Service never picks up a sibling service's pods.
+    app.kubernetes.io/name: {{SLUG}}
   ports:
     - name: http
-      port: 3000
-      targetPort: http
+      port: 3000                 # port on the Service; dependency URLs use this
+      targetPort: http           # the container's named port, so containerPort can move
       protocol: TCP
+      # OPTIONAL line -- NodePort only: pin the node port instead of letting
+      # Kubernetes pick from 30000-32767. Delete these 3 lines otherwise.
+      nodePort: {{NODE_PORT}}

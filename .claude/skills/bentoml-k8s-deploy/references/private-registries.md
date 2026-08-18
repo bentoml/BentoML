@@ -7,21 +7,22 @@ entry in the pod spec pointing at a `kubernetes.io/dockerconfigjson` Secret.
 Never write registry credentials into YAML files. Always create the Secret imperatively:
 
 ```bash
-kubectl --context <ctx> create secret docker-registry <service-name>-regcred -n <ns> \
+kubectl --context <ctx> create secret docker-registry <bento-slug>-regcred -n <ns> \
   --docker-server=<REGISTRY> \
   --docker-username=<USERNAME> \
   --docker-password="$REGISTRY_TOKEN"
 ```
 
-Then keep the optional `imagePullSecrets` block in `deployment.yaml` with
-`{{IMAGE_PULL_SECRET}}` = `<service-name>-regcred`. The Secret is namespaced — recreate
+Then keep the optional `imagePullSecrets` block in **every**
+`k8s/<slug>-deployment.yaml` with `{{IMAGE_PULL_SECRET}}` = `<bento-slug>-regcred` — all
+services of a bento run the same image, so they all need the same pull secret. The Secret is namespaced — recreate
 it in every namespace that pulls the image.
 
 Quick test that credentials + image ref are right (run once, then delete):
 
 ```bash
 kubectl --context <ctx> run pull-test -n <ns> --image=<IMAGE> \
-  --overrides='{"spec":{"imagePullSecrets":[{"name":"<service-name>-regcred"}]}}' \
+  --overrides='{"spec":{"imagePullSecrets":[{"name":"<bento-slug>-regcred"}]}}' \
   --restart=Never --command -- sleep 300
 kubectl --context <ctx> wait --for=condition=Ready pod/pull-test -n <ns> --timeout=60s \
   && echo "pull OK"   # times out -> check: kubectl --context <ctx> describe pod pull-test -n <ns>
@@ -49,7 +50,7 @@ kubectl --context <ctx> delete pod pull-test -n <ns>
   refreshed for future pulls (node restarts, scale-ups):
 
 ```bash
-kubectl --context <ctx> create secret docker-registry <service-name>-regcred -n <ns> \
+kubectl --context <ctx> create secret docker-registry <bento-slug>-regcred -n <ns> \
   --docker-server=<ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com \
   --docker-username=AWS \
   --docker-password="$(aws ecr get-login-password --region <REGION>)"
@@ -75,8 +76,8 @@ minikube image load <IMAGE>                                  # minikube
 k3d image import <IMAGE> -c <cluster-name>                   # k3d
 ```
 
-Then in `deployment.yaml` keep the image ref as-is, delete the `imagePullSecrets` block,
-and add `imagePullPolicy: Never` (or `IfNotPresent`) under the container — with the
+Then in every `k8s/<slug>-deployment.yaml` leave the `__DEPLOY_IMAGE__` sentinel alone,
+delete the `imagePullSecrets` block, and set `imagePullPolicy: Never` (or `IfNotPresent`) — with the
 default policy the kubelet may still try to pull from a registry and fail, especially for
 `:latest`-style tags.
 
@@ -90,6 +91,6 @@ docker tag <IMAGE> ttl.sh/<any-unique-name>:1h
 docker push ttl.sh/<any-unique-name>:1h
 ```
 
-Use `ttl.sh/<any-unique-name>:1h` as `{{IMAGE}}`; no pull secret needed. The image
+Use `ttl.sh/<any-unique-name>:1h` as the `$IMAGE` substituted for `__DEPLOY_IMAGE__`; no pull secret needed. The image
 vanishes after the TTL and is publicly pullable meanwhile — never use it for anything
 sensitive or lasting.

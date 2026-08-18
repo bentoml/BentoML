@@ -75,6 +75,11 @@ goes to stderr), e.g.:
 {"schema": "bentoml-deploy-summary/v1", "ok": true, "exit_code": 0, "target": "k8s", "action": "deploy", "image": "...", "version": "...", "stages": [...], "skipped_checks": [...], "error": null, ...}
 ```
 
+`stages` carries the pipeline steps (`preflight`, `build`, `containerize`,
+`push`, `deploy`, `verify`) plus one entry per unit of work inside a step:
+`k8s.rollout[<slug>]` for each BentoML service's Deployment (k8s) and
+`ec2.deploy[<host>]` / `ec2.verify[<host>]` for each host (ec2).
+
 In CI: `python3 deploy/deploy.py --target k8s | tail -n 1 > summary.json`.
 One caveat: command-line usage errors (unknown flag, missing `--target`) are
 rejected by the argument parser itself — those exit 2 **without** a JSON
@@ -82,23 +87,115 @@ summary, because parsing happens before the summary machinery starts.
 
 ## How the k8s deploy works
 
-The manifests under `deploy/k8s/` are fully rendered **except** the
-Deployment image, which is the literal sentinel `__DEPLOY_IMAGE__`. Each run
-substitutes the sentinel in memory and pipes the manifests to
-`kubectl apply -f -` — the files on disk never change, and re-applying the
-full manifest set (rather than `kubectl set image`) reconciles drift and
-recreates deleted objects. Then it waits for
-`kubectl rollout status` (timeout `targets.k8s.rollout_timeout_seconds`) and
-verifies `/readyz` plus the configured inference request through a
-port-forward on local port `targets.k8s.local_port` (the probe is only
-trusted while the port-forward process is alive and bound).
+**One Deployment + one Service per BentoML service.** `deploy/k8s/` holds a
+`<slug>-deployment.yaml` and a `<slug>-service.yaml` for every entry in
+`targets.k8s.services`; a single-service bento has exactly one pair. Those
+manifests — not `deploy.config.json` — are the source of truth for workload
+shape (replicas, resources, probes, env, exposure): edit them to retune, and
+they are plain `kubectl` YAML you can read and diff.
+`deploy.config.json` only tells the script *which* services exist, in which
+order to roll them out, and which one is the entry service.
+
+Each run:
+
+1. **Apply everything in one pass.** Every `*.yaml` in `deploy/k8s/` is read,
+   the literal sentinel `__DEPLOY_IMAGE__` is replaced in memory with this
+   run's image ref, and the result is piped to
+   `kubectl apply -n <namespace> -f -`. The files on disk never change, and
+   re-applying the full set (rather than `kubectl set image`) reconciles
+   drift and recreates deleted objects. The explicit `-n` is belt-and-braces:
+   preflight already requires every object to declare that namespace, and
+   kubectl refuses a mismatch rather than silently scattering the deploy.
+   Because the **whole directory** is applied, any extra file present is
+   applied too — see the HPA note below.
+2. **Wait for every rollout, in `targets.k8s.services` order** —
+   dependencies first, entry service last — each with its own
+   `kubectl rollout status --timeout=targets.k8s.rollout_timeout_seconds`.
+   The order is load-bearing: the entry service's `/readyz` fans out to its
+   dependencies, so it stays unready (503) until they answer. The run
+   **fails fast** — the first failing rollout aborts it and the error names
+   the offending BentoML service and Deployment.
+3. **Verify through the entry service.** `/readyz` plus the configured
+   inference request go through a port-forward to `svc/<entry slug>` on
+   local port `targets.k8s.local_port` (the probe is only trusted while the
+   port-forward process is alive and bound). The public HTTP API is only
+   spoken by the entry service; dependency Services stay ClusterIP because
+   inter-service payloads are `application/vnd.bentoml+pickle`.
+4. **Prove the dependencies were actually called** (multi-service bentos,
+   `verify.dependency_metrics`, default `true`). A green `/readyz` and a
+   correct inference answer do **not** imply the dependency pods did
+   anything: if the entry Deployment's `BENTOML_SERVE_DEPENDS` does not name
+   a dependency exactly as the bento declares it, BentoML instantiates that
+   dependency **in-process** — with no log line — so the gateway pod loads
+   every model itself, answers correctly, and reports ready while the
+   dependency pods idle. Readiness cannot catch it either: `/readyz` only
+   fans out to dependencies that are remote proxies, so an in-process one is
+   skipped and readiness is trivially true. So each dependency's own
+   `bentoml_service_request_total` is sampled (through a short-lived
+   port-forward to its ClusterIP Service, on `local_port + 1`) before and
+   after the inference request, and verify fails (exit 7) unless it moved.
+   Samples for health endpoints are excluded, so kubelet probes and the
+   readiness fan-out cannot be mistaken for an inference call; scraping
+   `/metrics` is itself uninstrumented, so measuring does not disturb the
+   measurement.
+
+Per-service outcomes appear in the summary's `stages` as
+`k8s.rollout[<slug>]` — one per configured service, in the same order.
+After a failure, the services that were never reached are recorded with
+`"ok": false` and `"detail": "not attempted (fail-fast after an earlier
+service's rollout failed)"`, so CI can tell "broken" from "never tried".
 
 Notes on specific config keys:
 
+- `targets.k8s.services` — the list must match the manifests. Preflight
+  (all of it credential-free, so `--check-only --local-only` runs it) fails
+  when a configured slug has no `<slug>-deployment.yaml` +
+  `<slug>-service.yaml`; when a Deployment's `image:` line is anything other
+  than the sentinel (a pinned ref there would deploy a different image than
+  the run reports); when any object does not declare
+  `targets.k8s.namespace`, or declares another one; when the list does not
+  have exactly one `"entry": true`, or the entry is not last; when a
+  dependency is not wired over the network (`k8s.serve-depends`: one
+  `Name=http://<slug>.<ns>.svc.cluster.local:3000` pair per dependency in
+  some Deployment's `BENTOML_SERVE_DEPENDS`, no runner-map env var, no
+  comma-separated or `=`-carrying pairs); and when a **non-entry** Service is
+  not ClusterIP or carries a `nodePort` (`k8s.service-exposure` — publishing
+  the pickle port is remote code execution for anyone who can reach it).
+  Adding or removing a BentoML service means changing the manifests **and**
+  this list together — regenerate the bundle with the
+  `bentoml-deploy-scriptgen` skill.
+- `verify.dependency_metrics` (default `true`) — the dependency-call proof
+  described above. Set it to `false` only when a dependency is deliberately
+  **not** on the code path of `verify.inference.path` (then it legitimately
+  receives no request); the run warns loudly that it can no longer tell a
+  working split from an in-process fallback. It also needs
+  `local_port + 1` free and `/metrics` reachable on the dependencies.
+- `targets.k8s.rollout_timeout_seconds` (default `900`) — deliberately
+  **larger** than the manifests' startup budget (`startupProbe`
+  `failureThreshold: 120` x `periodSeconds: 5` = 600 s). With the two equal,
+  a pod that legitimately uses its whole startup budget loses the race and
+  the rollout is declared failed at the moment it would have succeeded. Keep
+  the slack if you raise the probe budget for slow model loads.
+- **`<slug>-hpa.yaml` files are optional — and applied.** The script applies
+  the whole `deploy/k8s/` directory, so an HPA file that exists (or that you
+  add, or uncomment, later) **is applied on the next run**. Preflight never
+  requires an HPA; it just reports how many it found. Removing the file stops
+  applying it but does **not** delete the HorizontalPodAutoscaler already in
+  the cluster — do that with `kubectl delete hpa <slug>`.
+- **An HPA and a `replicas:` line cannot coexist here.** `replicas:` does not
+  become "not authoritative" under an HPA — the opposite: every
+  `kubectl apply` of a Deployment that *declares* `replicas:` writes that
+  number back, overriding whatever the autoscaler had just chosen, and since
+  this script re-applies the whole directory on **every** run, each deploy
+  resets the scale and then fights the HPA back up. Preflight therefore
+  fails when `<slug>-hpa.yaml` exists and `<slug>-deployment.yaml` still
+  declares `spec.replicas`: delete the `replicas:` line and let the HPA own
+  the count (its `minReplicas` is the floor).
 - `targets.k8s.node_port` — set it (30000–32767) for a stable NodePort URL;
-  it must match the `nodePort:` line in `deploy/k8s/service.yaml` (preflight
-  cross-checks). When unset, `kubectl apply` preserves whatever port the
-  cluster already allocated.
+  it must match the `nodePort:` line in the **entry** service's
+  `deploy/k8s/<entry slug>-service.yaml` (preflight cross-checks exactly
+  that file — only the entry service is exposed). When unset, `kubectl
+  apply` preserves whatever port the cluster already allocated.
 - `image.registry_type: "none"` — nothing is pushed; you must load the image
   into the cluster nodes yourself (`minikube image load` /
   `kind load docker-image`) and acknowledge with
@@ -172,12 +269,23 @@ Exit codes and the summary contract are unchanged (same table above).
 
 ## Rollback (k8s)
 
-Kubernetes keeps the previous ReplicaSets:
+Kubernetes keeps the previous ReplicaSets — **per Deployment**, so roll back
+every service the run touched, dependencies first and the entry service last
+(the same order the deploy uses, for the same reason). One line per entry in
+`targets.k8s.services`:
 
 ```bash
-kubectl --context {{K8S_CONTEXT}} -n {{NAMESPACE}} rollout undo deployment/{{SERVICE_NAME}}
-kubectl --context {{K8S_CONTEXT}} -n {{NAMESPACE}} rollout status deployment/{{SERVICE_NAME}}
+# dependencies first:
+kubectl --context {{K8S_CONTEXT}} -n {{NAMESPACE}} rollout undo deployment/{{DEP_SERVICE_SLUG}}
+kubectl --context {{K8S_CONTEXT}} -n {{NAMESPACE}} rollout status deployment/{{DEP_SERVICE_SLUG}}
+# entry service last:
+kubectl --context {{K8S_CONTEXT}} -n {{NAMESPACE}} rollout undo deployment/{{ENTRY_SERVICE_SLUG}}
+kubectl --context {{K8S_CONTEXT}} -n {{NAMESPACE}} rollout status deployment/{{ENTRY_SERVICE_SLUG}}
 ```
+
+A failed deploy prints exactly this list for your services (plus the
+`get pods` / `describe` / `logs` commands for each one) in its error hint, so
+you never have to reconstruct it by hand.
 
 Or redeploy a known-good tag explicitly (deterministic tags make this easy):
 
@@ -391,6 +499,9 @@ For the ec2 target, swap the last `script:` line for
 CI/CD variable to the path in `targets.ec2.ssh_key_path` with mode 600 in
 `before_script`, and define any `targets.ec2.env_names` values as masked
 CI/CD variables (AWS credentials stay needed only for ECR images — push,
-and `registry_auth: "ecr-token-over-ssh"`). For non-EKS clusters pulling
-from ECR, the image pull secret expires every 12 h — delete and recreate it
-in CI before deploying.
+and `registry_auth: "ecr-token-over-ssh"`).
+
+For the k8s target on a non-EKS cluster pulling from ECR, the image pull
+secret expires every 12 h — delete and recreate it in CI before deploying
+(this paragraph applies regardless of which targets this bundle carries, so
+keep it when pruning).

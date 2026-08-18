@@ -1,7 +1,8 @@
 # GPU scheduling for BentoML services
 
 GPUs are requested through the extended resource `nvidia.com/gpu` in the container's
-`resources.limits` (the optional GPU line in `templates/deployment.yaml`). Extended
+`resources.limits` (the optional GPU line in `templates/deployment.yaml`, rendered per service as
+`k8s/<slug>-deployment.yaml` — request GPUs only for the services that need them). Extended
 resources cannot be fractional and requests default to limits — setting the limit alone
 is correct.
 
@@ -48,7 +49,8 @@ startup for the framework's device report (e.g. `torch.cuda.is_available()`).
 
 GPU nodes are commonly tainted so CPU pods don't land on them. If GPU pods stay Pending
 with `node(s) had untolerated taint`, check the taint and add matching fields at the pod
-spec level of `deployment.yaml` (same indentation as `containers:`):
+spec level of `k8s/<slug>-deployment.yaml` (same indentation as `containers:`, next to
+the template's optional `nodeSelector:` block):
 
 ```bash
 kubectl --context <ctx> describe node <gpu-node> | grep -i taint

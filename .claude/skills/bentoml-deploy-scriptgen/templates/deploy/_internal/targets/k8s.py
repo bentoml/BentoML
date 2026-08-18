@@ -1,6 +1,15 @@
 """Kubernetes target: apply the manifests in deploy/k8s/ with the image
-sentinel rewritten to this run's image ref, wait for the rollout, and verify
-/readyz (plus an optional inference smoke test) through a port-forward.
+sentinel rewritten to this run's image ref, wait for every service's
+rollout, and verify /readyz (plus an optional inference smoke test) against
+the entry service through a port-forward.
+
+Deployment model: one Kubernetes Deployment + Service per BentoML service
+(``targets.k8s.services``); a single-service bento degenerates to exactly
+one of each. The whole manifests directory is applied in one pass, then
+``kubectl rollout status`` runs per service in config order — dependencies
+first, entry last, because a gateway's /readyz fans out to its dependencies
+and 503s until they answer. Verification only ever targets the entry
+service: inter-service payloads are pickle and must not leave the cluster.
 
 Image mechanism: the generated manifests contain the literal sentinel
 ``__DEPLOY_IMAGE__`` where the image ref belongs. Each run substitutes the
@@ -40,6 +49,7 @@ from ..common import warn
 from ..config import PLACEHOLDER_RE
 from ..config import InferenceCheck
 from ..config import K8sConfig
+from ..config import K8sService
 from ..preflight import ECR_PULL_SECRET_MAX_AGE
 from ..preflight import CheckFailed
 from ..preflight import _which
@@ -50,6 +60,146 @@ if TYPE_CHECKING:  # pragma: no cover - import cycle guard for type checkers
     from ..context import RunContext
 
 IMAGE_SENTINEL = "__DEPLOY_IMAGE__"
+
+# Env var that wires a service to its dependencies: whitespace-separated
+# "Name=URL" pairs, keyed on the exact BentoML service name.
+SERVE_DEPENDS_ENV = "BENTOML_SERVE_DEPENDS"
+
+# Never acceptable in a pod spec: the serving parent overwrites a runner map,
+# and any dependency missing from the effective map is then instantiated
+# IN-PROCESS with no log line and no readiness signal — the pod loads every
+# model and still reports healthy.
+RUNNER_MAP_ENVS = ("BENTOML_RUNNER_MAP", "BENTOML_SERVE_RUNNER_MAP")
+
+# Prometheus counter every BentoML server exposes on :3000/metrics. Health
+# probes are instrumented too, so samples for these endpoints are excluded
+# when proving that an inter-service call really crossed the network: kubelet
+# probes each pod every few seconds, and a gateway's /readyz fans out to its
+# dependencies. Scraping /metrics itself is NOT counted (the metrics path
+# short-circuits before the counter), so a before/after diff is meaningful.
+REQUEST_TOTAL_METRIC = "bentoml_service_request_total"
+HEALTH_ENDPOINTS = ("/readyz", "/livez", "/healthz", "/health", "/metrics")
+
+_K8S_SERVICE_TYPES = ("ClusterIP", "NodePort", "LoadBalancer", "ExternalName")
+
+# YAML line matchers. Every one of them tolerates a trailing "# comment":
+# the rendered manifests annotate several of these lines, and a pattern that
+# anchors on end-of-line without allowing a comment matches nothing at all —
+# which reads exactly like "check passed".
+_DOC_SPLIT_RE = re.compile(r"^---[ \t]*$", re.M)
+_IMAGE_LINE_RE = re.compile(r"^[ \t]*image:[ \t]*(.+?)[ \t]*$", re.M)
+_NAMESPACE_LINE_RE = re.compile(r"^[ \t]*namespace:[ \t]*(.+?)[ \t]*$", re.M)
+_REPLICAS_RE = re.compile(r"^[ \t]*replicas:[ \t]*(\d+)[ \t]*(?:#.*)?$", re.M)
+_TYPE_RE = re.compile(r"^[ \t]*type:[ \t]*([A-Za-z]+)[ \t]*(?:#.*)?$", re.M)
+_NODE_PORT_RE = re.compile(r"^[ \t]*nodePort:[ \t]*(\d+)[ \t]*(?:#.*)?$", re.M)
+_VALUE_LINE_RE = re.compile(r"^[ \t]*value:[ \t]*(.*)$", re.M)
+_ENV_ITEM_RE = re.compile(r"^[ \t]*-[ \t]*name:", re.M)
+_DEPENDS_NAME_RE = re.compile(
+    r"^[ \t]*-?[ \t]*name:[ \t]*[\"\']?" + SERVE_DEPENDS_ENV + r"[\"\']?[ \t]*$",
+    re.M,
+)
+_METRIC_SAMPLE_RE = re.compile(
+    r"^" + REQUEST_TOTAL_METRIC + r"(?:\{([^}]*)\})?[ \t]+([0-9eE.+-]+)[ \t]*$",
+    re.M,
+)
+_LABEL_RE = re.compile(r'([A-Za-z_][A-Za-z0-9_]*)="((?:[^"\\]|\\.)*)"')
+
+
+def _strip_comment(raw: str) -> str:
+    """Drop a trailing YAML comment. '#' only starts one when preceded by
+    whitespace, so 'image: repo/name#tag' keeps its '#'."""
+    text = raw.strip()
+    if text.startswith("#"):
+        return ""
+    return re.split(r"[ \t]+#", text, maxsplit=1)[0].strip()
+
+
+def _unquote(raw: str) -> str:
+    text = raw.strip()
+    if text[:1] in ("'", '"'):
+        quote = text[0]
+        end = text.find(quote, 1)
+        return text[1:end] if end != -1 else text[1:]
+    return _strip_comment(text)
+
+
+def _yaml_documents(text: str) -> list[str]:
+    """Split on '---' separators, keeping only documents that declare
+    something (a comment-only preamble is not an object)."""
+    docs = []
+    for doc in _DOC_SPLIT_RE.split(text):
+        for line in doc.splitlines():
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#"):
+                docs.append(doc)
+                break
+    return docs
+
+
+def _image_values(text: str) -> list[str]:
+    """Values of real 'image:' lines. Prose in a header comment cannot match
+    (a commented line does not start with 'image:'), and 'imagePullPolicy:'
+    is a different key."""
+    return [_strip_comment(m.group(1)) for m in _IMAGE_LINE_RE.finditer(text)]
+
+
+def _namespace_values(text: str) -> list[str]:
+    return [
+        value
+        for value in (
+            _strip_comment(m.group(1)) for m in _NAMESPACE_LINE_RE.finditer(text)
+        )
+        if value
+    ]
+
+
+def _serve_depends_values(text: str) -> list[str]:
+    """Every BENTOML_SERVE_DEPENDS value in one manifest, as scalars. Handles
+    the inline form and block scalars ('|' / '>'); BentoML splits the value on
+    any whitespace, so folding block lines with a space is equivalent."""
+    values: list[str] = []
+    for match in _DEPENDS_NAME_RE.finditer(text):
+        region = text[match.end() :]
+        following = _ENV_ITEM_RE.search(region)
+        if following is not None:
+            region = region[: following.start()]
+        value_match = _VALUE_LINE_RE.search(region)
+        if value_match is None:
+            values.append("")
+            continue
+        inline = value_match.group(1).strip()
+        if inline and inline[0] not in ("|", ">"):
+            values.append(_unquote(inline))
+            continue
+        block = [
+            line.strip()
+            for line in region[value_match.end() :].splitlines()
+            if line.strip()
+        ]
+        values.append(" ".join(block))
+    return values
+
+
+def _label_value(labels: str, name: str) -> str:
+    for match in _LABEL_RE.finditer(labels or ""):
+        if match.group(1) == name:
+            return match.group(2)
+    return ""
+
+
+def _sum_request_total(body: str) -> float:
+    """Sum bentoml_service_request_total across non-health endpoints. Health
+    samples are excluded so kubelet probes and a gateway's readiness fan-out
+    cannot be mistaken for an inference call."""
+    total = 0.0
+    for match in _METRIC_SAMPLE_RE.finditer(body):
+        if _label_value(match.group(1) or "", "endpoint") in HEALTH_ENDPOINTS:
+            continue
+        try:
+            total += float(match.group(2))
+        except ValueError:
+            continue
+    return total
 
 
 def _kubectl(k8s: K8sConfig, *args: str) -> list[str]:
@@ -169,6 +319,9 @@ def preflight_checks(ctx: RunContext) -> list:
                     )
         return None
 
+    def _texts() -> dict[str, str]:
+        return {f.name: f.read_text(encoding="utf-8") for f in _manifest_files(k8s)}
+
     def manifests_present() -> str | None:
         files = _manifest_files(k8s)
         if not files:
@@ -176,43 +329,265 @@ def preflight_checks(ctx: RunContext) -> list:
                 f"no *.yaml manifests found in {k8s.manifests_dir}",
                 hint="regenerate the bundle with the bentoml-deploy-scriptgen skill",
             )
-        combined = "\n".join(f.read_text(encoding="utf-8") for f in files)
-        if IMAGE_SENTINEL not in combined:
+        texts = _texts()
+        # One Deployment + one Service file per configured service. An
+        # <slug>-hpa.yaml is OPTIONAL: accepted when present (and applied
+        # with everything else), never required.
+        missing = [
+            fname
+            for svc in k8s.services
+            for fname in (f"{svc.slug}-deployment.yaml", f"{svc.slug}-service.yaml")
+            if fname not in texts
+        ]
+        if missing:
             raise CheckFailed(
-                f"image sentinel {IMAGE_SENTINEL!r} not found in any manifest under {k8s.manifests_dir}",
-                hint="the Deployment's image: line must be exactly the "
-                "sentinel; regenerate the bundle with the skill",
+                f"missing per-service manifest(s) under {k8s.manifests_dir}: "
+                + ", ".join(missing),
+                hint="every service in targets.k8s.services needs one "
+                "<slug>-deployment.yaml and one <slug>-service.yaml "
+                "(<slug>-hpa.yaml is optional); regenerate the manifests with "
+                "the bentoml-k8s-deploy skill's templates, or fix the slugs "
+                "in deploy.config.json",
             )
+        # Defensive: load_config already enforces exactly one entry, but the
+        # rollout order and the verify target both hinge on it, so the
+        # preflight report states it rather than assuming it.
+        entries = [svc.slug for svc in k8s.services if svc.entry]
+        if len(entries) != 1:
+            raise CheckFailed(
+                f"targets.k8s.services must contain exactly one entry: true "
+                f"service, found {len(entries)} ({entries})",
+                hint="the entry service is the one exposed outside the "
+                "cluster and the only one verify targets",
+            )
+        combined = "\n".join(texts[name] for name in sorted(texts))
         if PLACEHOLDER_RE.search(combined):
             raise CheckFailed(
                 f"unreplaced {{{{PLACEHOLDER}}}} values remain in {k8s.manifests_dir}",
                 hint="regenerate the bundle with the bentoml-deploy-scriptgen skill",
             )
-        declared = set(
-            re.findall(
-                r"^\s*namespace:\s*([A-Za-z0-9._-]+)\s*$", combined, re.MULTILINE
-            )
-        )
-        wrong = sorted(declared - {k8s.namespace})
-        if wrong:
-            raise CheckFailed(
-                f"manifests under {k8s.manifests_dir} declare namespace(s) "
-                f"{wrong} but targets.k8s.namespace is {k8s.namespace!r}",
-                hint="regenerate the manifests, or fix targets.k8s.namespace "
-                "in deploy.config.json — deploying across namespaces would "
-                "roll out in one place and verify another",
-            )
-        if k8s.node_port is not None:
-            node_port_line = f"nodePort: {k8s.node_port}"
-            if node_port_line not in combined:
+        # Every Deployment must carry the sentinel on a REAL image: line, and
+        # must carry nothing else there. A substring test would be satisfied
+        # by the sentinel appearing in the template's header comment, so a
+        # hand-pinned "image: registry/repo:stale" would deploy that stale
+        # image while the run reported the freshly built ref.
+        for svc in k8s.services:
+            fname = f"{svc.slug}-deployment.yaml"
+            values = _image_values(texts[fname])
+            if not values:
                 raise CheckFailed(
-                    f"targets.k8s.node_port is {k8s.node_port} but no "
-                    f"'{node_port_line}' line exists in the Service manifest",
+                    f"{fname} has no 'image:' line (only prose mentioning "
+                    f"{IMAGE_SENTINEL!r} does not count)",
+                    hint="the container's image: line must be exactly "
+                    f"'image: {IMAGE_SENTINEL}'; regenerate the manifests "
+                    "with the bentoml-k8s-deploy skill's templates",
+                )
+            pinned = sorted({v for v in values if v != IMAGE_SENTINEL})
+            if pinned:
+                raise CheckFailed(
+                    f"{fname} pins image(s) {pinned} instead of the sentinel "
+                    f"{IMAGE_SENTINEL!r}",
+                    hint="deploy.py substitutes the sentinel with the image "
+                    "it built/was given, so a pinned image: line silently "
+                    "deploys something else than --image / the built tag "
+                    "reports. Every image: line in a Deployment must read "
+                    f"'image: {IMAGE_SENTINEL}'.",
+                )
+        # Every object must DECLARE the configured namespace. A Deployment
+        # with no namespace: line lands in the kubeconfig's default namespace
+        # while rollout status -n <ns> watches somewhere else.
+        for fname in sorted(texts):
+            for index, doc in enumerate(_yaml_documents(texts[fname]), start=1):
+                where = fname if index == 1 else f"{fname} (document {index})"
+                declared = _namespace_values(doc)
+                if not declared:
+                    raise CheckFailed(
+                        f"{where} declares no metadata.namespace",
+                        hint=f"add 'namespace: {k8s.namespace}' to the "
+                        "object's metadata — without it the object goes to "
+                        "the kubeconfig's current namespace, which is not "
+                        "necessarily targets.k8s.namespace",
+                    )
+                wrong = sorted(set(declared) - {k8s.namespace})
+                if wrong:
+                    raise CheckFailed(
+                        f"{where} declares namespace(s) {wrong} but "
+                        f"targets.k8s.namespace is {k8s.namespace!r}",
+                        hint="regenerate the manifests, or fix "
+                        "targets.k8s.namespace in deploy.config.json — "
+                        "deploying across namespaces would roll out in one "
+                        "place and verify another",
+                    )
+        if k8s.node_port is not None:
+            # Only the entry service is exposed, so the fixed NodePort must
+            # live in its Service manifest — not in a dependency's.
+            entry_service_file = f"{k8s.entry_service.slug}-service.yaml"
+            found = _NODE_PORT_RE.findall(texts[entry_service_file])
+            if str(k8s.node_port) not in found:
+                raise CheckFailed(
+                    f"targets.k8s.node_port is {k8s.node_port} but "
+                    f"{entry_service_file} declares "
+                    + (f"nodePort {found}" if found else "no nodePort"),
                     hint="regenerate the manifests with the skill, or align "
                     "node_port with the manifest (unset it to let the "
                     "cluster keep its current allocation)",
                 )
-        return f"{len(files)} manifest file(s)"
+        # An HPA owns the replica count. Because every run re-applies the
+        # whole directory, a Deployment that also declares spec.replicas
+        # resets the count on each deploy and then fights the autoscaler.
+        hpas = 0
+        for svc in k8s.services:
+            if f"{svc.slug}-hpa.yaml" not in texts:
+                continue
+            hpas += 1
+            replicas = _REPLICAS_RE.findall(texts[f"{svc.slug}-deployment.yaml"])
+            if replicas:
+                raise CheckFailed(
+                    f"{svc.slug}-hpa.yaml exists but "
+                    f"{svc.slug}-deployment.yaml still declares "
+                    f"replicas: {replicas[0]}",
+                    hint="delete the replicas: line from the Deployment (or "
+                    "delete the HPA file). This script re-applies the whole "
+                    "manifests dir on every run, so a declared replicas: "
+                    "resets the count the HPA just chose and the two fight "
+                    "each other after every deploy.",
+                )
+        note = f"{len(files)} manifest file(s), {len(k8s.services)} service(s)"
+        if hpas:
+            note += f", {hpas} HPA(s) (applied too)"
+        return note
+
+    def serve_depends() -> str | None:
+        """Prove, statically, that each dependency is wired over the network.
+
+        An unmapped dependency is NOT an error at runtime: BentoML silently
+        instantiates it IN-PROCESS (no log line), the gateway's /readyz skips
+        it entirely, and the inference smoke test returns a correct answer
+        from a gateway that loaded every model itself. Nothing observable at
+        deploy time distinguishes that from a working split — except the
+        manifests, so they are checked here.
+        """
+        texts = _texts()
+        deployments = {
+            svc.slug: texts.get(f"{svc.slug}-deployment.yaml", "")
+            for svc in k8s.services
+        }
+        for slug, text in sorted(deployments.items()):
+            for env in RUNNER_MAP_ENVS:
+                # Line-anchored and comment-aware: the rendered manifests
+                # legitimately NAME these variables in a "never set this"
+                # comment, so a substring match would fail on correct output.
+                if re.search(
+                    r"^\s*-?\s*name:\s*" + re.escape(env) + r"\s*(#.*)?$",
+                    text,
+                    re.M,
+                ):
+                    raise CheckFailed(
+                        f"{slug}-deployment.yaml sets {env}",
+                        hint="never set a runner map on a pod: the serving "
+                        "parent overwrites it, and any dependency missing "
+                        "from the effective map is instantiated in-process "
+                        "with no log — the pod loads every model and still "
+                        f"reports ready. Use {SERVE_DEPENDS_ENV} instead.",
+                    )
+        pairs: dict[str, str] = {}  # pair -> the file that declared it
+        for slug, text in sorted(deployments.items()):
+            fname = f"{slug}-deployment.yaml"
+            for value in _serve_depends_values(text):
+                for pair in value.split():
+                    if "," in pair:
+                        raise CheckFailed(
+                            f"{fname}: {SERVE_DEPENDS_ENV} pair {pair!r} "
+                            "contains a comma",
+                            hint="pairs are separated by WHITESPACE, not "
+                            "commas — a comma becomes part of the URL and "
+                            "the dependency is then silently served "
+                            "in-process",
+                        )
+                    if pair.count("=") != 1:
+                        raise CheckFailed(
+                            f"{fname}: {SERVE_DEPENDS_ENV} pair {pair!r} "
+                            f"has {pair.count('=')} '=' characters, expected "
+                            "exactly one",
+                            hint="each pair is Name=URL and BentoML splits on "
+                            "'=', so a URL containing '=' (a query string) "
+                            "raises at startup; a pair with none is ignored",
+                        )
+                    pairs.setdefault(pair, fname)
+        expected = {
+            svc.slug: f"{svc.name}=http://{svc.slug}.{k8s.namespace}"
+            ".svc.cluster.local:3000"
+            for svc in k8s.services
+            if not svc.entry
+        }
+        for slug, token in sorted(expected.items()):
+            if token not in pairs:
+                raise CheckFailed(
+                    f"no Deployment wires the dependency {slug!r} — expected "
+                    f"the pair {token!r} in a {SERVE_DEPENDS_ENV} value, "
+                    "found " + (f"{sorted(pairs)}" if pairs else "no pairs at all"),
+                    hint="the depending service's Deployment must carry "
+                    f"{SERVE_DEPENDS_ENV} with one Name=URL pair per direct "
+                    "dependency, keyed on the exact BentoML service name. "
+                    "Without it the dependency is instantiated in-process: "
+                    "the pod loads every model, /readyz still returns 200 "
+                    "and inference still answers correctly. Regenerate the "
+                    "manifests with the bentoml-k8s-deploy skill.",
+                )
+        unknown = sorted(
+            pair
+            for pair in pairs
+            if pair.split("=", 1)[0] not in {svc.name for svc in k8s.services}
+        )
+        if unknown:
+            warn(
+                f"{SERVE_DEPENDS_ENV} names service(s) that are not in "
+                f"targets.k8s.services: {unknown} — a typo here is silently "
+                "served in-process (dependency lookup keys on the exact "
+                "BentoML service name)"
+            )
+        if not expected:
+            return "single service, no dependencies to wire"
+        return f"{len(expected)} dependency pair(s) wired over the network"
+
+    def service_exposure() -> str | None:
+        """Non-entry Services must stay ClusterIP: inter-service payloads are
+        unauthenticated application/vnd.bentoml+pickle, so exposing one turns
+        deserialization of anything a caller sends into remote code
+        execution."""
+        texts = _texts()
+        for svc in k8s.services:
+            if svc.entry:
+                continue
+            fname = f"{svc.slug}-service.yaml"
+            text = texts.get(fname, "")
+            bad = sorted(
+                {
+                    value
+                    for value in _TYPE_RE.findall(text)
+                    if value in _K8S_SERVICE_TYPES and value != "ClusterIP"
+                }
+            )
+            if bad:
+                raise CheckFailed(
+                    f"{fname} is a non-entry service but declares "
+                    f"type: {', '.join(bad)}",
+                    hint="dependency Services must be ClusterIP. "
+                    "Inter-service traffic is unauthenticated pickle, so "
+                    "anything that can reach the port can execute code in "
+                    "the pod. Only the entry service carries the exposure "
+                    f"type ({k8s.entry_service.slug}-service.yaml).",
+                )
+            node_ports = _NODE_PORT_RE.findall(text)
+            if node_ports:
+                raise CheckFailed(
+                    f"{fname} is a non-entry service but declares "
+                    f"nodePort: {node_ports[0]}",
+                    hint="a nodePort publishes the pickle port on every "
+                    "cluster node. Remove it — only the entry service may "
+                    "be exposed.",
+                )
+        return f"{len(k8s.services) - 1} dependency Service(s) ClusterIP-only"
 
     checks = [("k8s.kubectl-cli", kubectl_cli)]
     if ctx.local_only:
@@ -229,7 +604,11 @@ def preflight_checks(ctx: RunContext) -> list:
             ("k8s.namespace", namespace_exists),
             ("k8s.image-pull-secret", pull_secret),
         ]
+    # Manifest checks need no cluster: they run under --local-only too.
     checks.append(("k8s.manifests", manifests_present))
+    checks.append(("k8s.serve-depends", serve_depends))
+    if len(k8s.services) > 1:
+        checks.append(("k8s.service-exposure", service_exposure))
     return checks
 
 
@@ -239,6 +618,10 @@ def preflight_checks(ctx: RunContext) -> list:
 
 
 def _manifest_files(k8s: K8sConfig) -> list[Path]:
+    """Every *.yaml in the manifests dir, in name order — the whole directory
+    is applied, so an <slug>-hpa.yaml (or an ingress) that is present WILL be
+    applied on the next run; deleting a file only stops applying it, it never
+    deletes the object from the cluster."""
     if not k8s.manifests_dir.is_dir():
         return []
     return sorted(
@@ -256,32 +639,54 @@ def _render_manifests(k8s: K8sConfig, image: str) -> str:
     return "---\n".join(docs)
 
 
+def _role(svc: K8sService) -> str:
+    return "entry" if svc.entry else "dependency"
+
+
 def _rollback_guidance(k8s: K8sConfig) -> str:
+    """Diagnosis + rollback commands naming EVERY deployment: one bad
+    dependency takes the whole bento down, so a partial list would send the
+    user looking in the wrong pod."""
     base = f"kubectl --context {k8s.context} -n {k8s.namespace}"
-    return (
-        "Diagnose:\n"
-        f"  {base} get pods -l app.kubernetes.io/name={k8s.deployment_name}\n"
-        f"  {base} describe deployment/{k8s.deployment_name}\n"
-        f"  {base} logs deployment/{k8s.deployment_name} --all-containers --tail=100\n"
-        "Roll back to the previous revision:\n"
-        f"  {base} rollout undo deployment/{k8s.deployment_name}\n"
-        f"  {base} rollout status deployment/{k8s.deployment_name}\n"
-        "(or re-run this script with --image <previous-ref>)"
-    )
+    lines = [f"Diagnose ({len(k8s.services)} deployment(s), one per service):"]
+    for svc in k8s.services:
+        lines.append(f"  # {svc.name} ({_role(svc)})")
+        lines.append(f"  {base} get pods -l app.kubernetes.io/name={svc.slug}")
+        lines.append(f"  {base} describe deployment/{svc.slug}")
+        lines.append(f"  {base} logs deployment/{svc.slug} --all-containers --tail=100")
+    lines.append("Roll back to the previous revision (dependencies first, entry last):")
+    for svc in k8s.services:
+        lines.append(f"  {base} rollout undo deployment/{svc.slug}")
+        lines.append(
+            f"  {base} rollout status deployment/{svc.slug}"
+            f" --timeout={k8s.rollout_timeout_seconds}s"
+        )
+    lines.append("(or re-run this script with --image <previous-ref>)")
+    if len(k8s.services) > 1:
+        lines.append(
+            "Note: the entry service's /readyz fans out to its dependencies, "
+            "so it stays 503 (and its pods stay unready) until every "
+            "dependency answers — diagnose dependencies first."
+        )
+    return "\n".join(lines)
 
 
 def deploy(ctx: RunContext) -> None:
     k8s = ctx.cfg.require_k8s()
     section(
-        f"deploy: kubectl apply (context={k8s.context} namespace={k8s.namespace} image={ctx.image})"
+        f"deploy: kubectl apply (context={k8s.context} namespace={k8s.namespace} "
+        f"services={len(k8s.services)} image={ctx.image})"
     )
     rendered = _render_manifests(k8s, ctx.image)
     if IMAGE_SENTINEL in rendered:
         raise DeployError(
             "internal error: image sentinel survived rendering", EXIT_DEPLOY
         )
+    # -n is belt-and-braces: preflight already requires every object to
+    # declare this namespace, and kubectl rejects a mismatch rather than
+    # silently splitting the deploy across two namespaces.
     res = run(
-        _kubectl(k8s, "apply", "-f", "-"),
+        _kubectl(k8s, "apply", "-n", k8s.namespace, "-f", "-"),
         input_text=rendered,
         capture=True,
         check=False,
@@ -296,27 +701,59 @@ def deploy(ctx: RunContext) -> None:
             hint=_rollback_guidance(k8s),
         )
 
-    log(f"waiting for rollout (timeout {k8s.rollout_timeout_seconds}s)...")
-    rollout = run(
-        _kubectl(
-            k8s,
-            "rollout",
-            "status",
-            "deployment/" + k8s.deployment_name,
-            "-n",
-            k8s.namespace,
-            f"--timeout={k8s.rollout_timeout_seconds}s",
-        ),
-        check=False,
+    _wait_for_rollouts(ctx, k8s)
+
+
+def _wait_for_rollouts(ctx: RunContext, k8s: K8sConfig) -> None:
+    """`kubectl rollout status` per service, in config order (dependencies
+    first, entry last) with the configured timeout each, fail-fast. Every
+    service gets its own k8s.rollout[<slug>] stage in the summary."""
+    log(
+        f"waiting for {len(k8s.services)} rollout(s) in config order "
+        f"(dependencies first, entry last; timeout "
+        f"{k8s.rollout_timeout_seconds}s each)..."
     )
-    if rollout.returncode != 0:
-        raise DeployError(
-            f"rollout of deployment/{k8s.deployment_name} did not "
-            f"complete within {k8s.rollout_timeout_seconds}s",
-            EXIT_DEPLOY,
-            hint=_rollback_guidance(k8s),
+    for index, svc in enumerate(k8s.services):
+        started = time.monotonic()
+        log(f"rollout {index + 1}/{len(k8s.services)}: {svc.name} ({_role(svc)})")
+        rollout = run(
+            _kubectl(
+                k8s,
+                "rollout",
+                "status",
+                "deployment/" + svc.slug,
+                "-n",
+                k8s.namespace,
+                f"--timeout={k8s.rollout_timeout_seconds}s",
+            ),
+            check=False,
         )
-    log("rollout complete")
+        if rollout.returncode != 0:
+            ctx.summary.record_stage(
+                _rollout_stage(svc), False, time.monotonic() - started
+            )
+            for later in k8s.services[index + 1 :]:
+                ctx.summary.record_stage(
+                    _rollout_stage(later),
+                    False,
+                    0.0,
+                    detail="not attempted (fail-fast after an earlier "
+                    "service's rollout failed)",
+                )
+            raise DeployError(
+                f"rollout of deployment/{svc.slug} (BentoML service "
+                f"{svc.name!r}, {_role(svc)}) did not complete within "
+                f"{k8s.rollout_timeout_seconds}s",
+                EXIT_DEPLOY,
+                hint=_rollback_guidance(k8s),
+            )
+        ctx.summary.record_stage(_rollout_stage(svc), True, time.monotonic() - started)
+        log(f"rollout of deployment/{svc.slug} complete")
+    log("all rollouts complete")
+
+
+def _rollout_stage(svc: K8sService) -> str:
+    return f"k8s.rollout[{svc.slug}]"
 
 
 # --------------------------------------------------------------------------
@@ -325,15 +762,24 @@ def deploy(ctx: RunContext) -> None:
 
 
 class _PortForward:
-    """kubectl port-forward with PID-liveness checks and guaranteed cleanup.
+    """kubectl port-forward to one Service, with PID-liveness checks and
+    guaranteed cleanup.
 
     A local health probe is only trustworthy while the port-forward process
     is alive — if it died, whatever squats on the local port would produce
     convincing but fake results. alive() must be checked before every probe.
+
+    Defaults to the ENTRY service (the only one that speaks the public HTTP
+    API); the dependency-metrics check passes a dependency's slug to scrape
+    its /metrics, which is a read-only probe of an internal Service.
     """
 
-    def __init__(self, k8s: K8sConfig) -> None:
+    def __init__(
+        self, k8s: K8sConfig, service: str | None = None, local_port: int | None = None
+    ) -> None:
         self._k8s = k8s
+        self._service = service or k8s.entry_service.slug
+        self._local_port = local_port or k8s.local_port
         # Not a context manager on purpose: the file must outlive this
         # constructor (the port-forward writes to it until close()).
         self._log = tempfile.NamedTemporaryFile(  # noqa: SIM115
@@ -343,10 +789,10 @@ class _PortForward:
             _kubectl(
                 k8s,
                 "port-forward",
-                "svc/" + k8s.service_name,
+                "svc/" + self._service,
                 "-n",
                 k8s.namespace,
-                f"{k8s.local_port}:3000",
+                f"{self._local_port}:3000",
             ),
             stdout=self._log,
             stderr=self._log,
@@ -368,9 +814,9 @@ class _PortForward:
                     "kubectl port-forward exited before binding the local "
                     "port:\n" + self.captured_output(),
                     EXIT_VERIFY,
-                    hint=f"is local port {self._k8s.local_port} free "
-                    "(targets.k8s.local_port), and does "
-                    f"service/{self._k8s.service_name} exist in namespace "
+                    hint=f"is local port {self._local_port} free "
+                    "(targets.k8s.local_port / local_port + 1), and does "
+                    f"service/{self._service} exist in namespace "
                     f"{self._k8s.namespace}?",
                 )
             if "Forwarding from" in self.captured_output():
@@ -407,8 +853,13 @@ class _PortForward:
 def verify(ctx: RunContext) -> None:
     k8s = ctx.cfg.require_k8s()
     vcfg = ctx.cfg.verify
+    entry = k8s.entry_service
+    deps = [svc for svc in k8s.services if not svc.entry]
     base_url = f"http://127.0.0.1:{k8s.local_port}"
-    section(f"verify: /readyz via port-forward on {base_url}")
+    section(
+        f"verify: entry service {entry.name} — /readyz via port-forward to "
+        f"svc/{entry.slug} on {base_url}"
+    )
 
     pf = _PortForward(k8s)
     try:
@@ -416,15 +867,131 @@ def verify(ctx: RunContext) -> None:
         _wait_ready(pf, base_url, vcfg.readyz_timeout_seconds, k8s)
         if vcfg.inference is None:
             log("no inference smoke test configured (verify.inference) — skipping")
-        else:
-            _inference_smoke(pf, base_url, vcfg.inference)
+            if deps:
+                warn(
+                    "without verify.inference there is no request to prove "
+                    "the dependencies are reached over the network — a "
+                    "gateway that silently loaded them in-process passes "
+                    "this verify unchanged"
+                )
+            return
+        # A gateway's /readyz proves NOTHING about a dependency that was
+        # instantiated in-process: readiness only fans out to dependencies
+        # that are remote proxies, so an in-process one is skipped and
+        # readiness is trivially true. The dependency's own request counter
+        # is the only positive evidence that the call crossed the network.
+        measure = bool(deps) and vcfg.dependency_metrics
+        before: dict[str, float] = {}
+        if measure:
+            log(
+                f"sampling {REQUEST_TOTAL_METRIC} on {len(deps)} "
+                "dependency service(s) before the inference request"
+            )
+            before = _sample_dependency_totals(k8s, deps)
+        elif deps:
+            warn(
+                "verify.dependency_metrics is false — not proving that the "
+                "dependencies are reached over the network. A gateway that "
+                "silently instantiated them in-process answers correctly "
+                "and reports ready, so this run cannot tell the two apart."
+            )
+        _inference_smoke(pf, base_url, vcfg.inference)
+        if measure:
+            after = _sample_dependency_totals(k8s, deps)
+            _assert_dependencies_called(k8s, deps, before, after)
     finally:
         pf.close()
+
+
+def _sample_dependency_totals(
+    k8s: K8sConfig, deps: list[K8sService]
+) -> dict[str, float]:
+    """Scrape each dependency's own /metrics through a short-lived
+    port-forward and return its non-health request total.
+
+    Read-only: /metrics is not instrumented by the metrics middleware, so
+    scraping never moves the counter it reports. The forwards are sequential
+    and share one local port (targets.k8s.local_port + 1)."""
+    port = k8s.local_port + 1
+    totals: dict[str, float] = {}
+    for dep in deps:
+        pf = _PortForward(k8s, dep.slug, port)
+        try:
+            pf.wait_until_forwarding(30)
+            try:
+                status, body = http_get(f"http://127.0.0.1:{port}/metrics", timeout=10)
+            except (urllib.error.URLError, OSError) as exc:
+                raise DeployError(
+                    f"could not scrape /metrics of dependency svc/{dep.slug}: {exc}",
+                    EXIT_VERIFY,
+                    hint="set verify.dependency_metrics to false to skip "
+                    "this proof (and lose the only signal that the "
+                    "dependency is reached over the network)",
+                ) from None
+            if not pf.alive():
+                raise DeployError(
+                    "port-forward to dependency "
+                    f"svc/{dep.slug} died during the /metrics scrape; the "
+                    "response cannot be trusted:\n" + pf.captured_output(),
+                    EXIT_VERIFY,
+                )
+            if status != 200:
+                raise DeployError(
+                    f"/metrics of dependency svc/{dep.slug} returned HTTP {status}",
+                    EXIT_VERIFY,
+                    hint="every BentoML server exposes /metrics on port "
+                    "3000; if it is disabled in this bento, set "
+                    "verify.dependency_metrics to false",
+                )
+            totals[dep.slug] = _sum_request_total(body)
+        finally:
+            pf.close()
+    return totals
+
+
+def _assert_dependencies_called(
+    k8s: K8sConfig,
+    deps: list[K8sService],
+    before: dict[str, float],
+    after: dict[str, float],
+) -> None:
+    """Fail unless every dependency's request counter moved: that is the only
+    positive proof the inference request crossed the network instead of being
+    served by an in-process copy inside the gateway pod."""
+    stale = [
+        dep for dep in deps if after.get(dep.slug, 0.0) <= before.get(dep.slug, 0.0)
+    ]
+    for dep in deps:
+        delta = after.get(dep.slug, 0.0) - before.get(dep.slug, 0.0)
+        log(f"  {dep.name} (svc/{dep.slug}): {REQUEST_TOTAL_METRIC} +{delta:g}")
+    if not stale:
+        log("every dependency served a request over the network")
+        return
+    names = ", ".join(f"{dep.name} (svc/{dep.slug})" for dep in stale)
+    raise DeployError(
+        f"dependency service(s) {names} served no request during the "
+        "inference smoke test — the entry service answered without calling "
+        "them over the network",
+        EXIT_VERIFY,
+        hint="most likely the entry Deployment's "
+        f"{SERVE_DEPENDS_ENV} does not name them exactly as the bento "
+        "declares them, so BentoML instantiated them IN-PROCESS: the "
+        "gateway pod loaded those models itself, answers correctly and "
+        "reports ready, while the dependency pods idle. Check with:\n"
+        f"  kubectl --context {k8s.context} -n {k8s.namespace} get "
+        "deployment/"
+        + k8s.entry_service.slug
+        + " -o jsonpath='{.spec.template.spec.containers[0].env}'\n"
+        "If instead this dependency is simply not on the code path of "
+        "verify.inference.path, point the smoke test at an API that uses "
+        "it, or set verify.dependency_metrics to false.",
+    )
 
 
 def _wait_ready(
     pf: _PortForward, base_url: str, timeout_seconds: int, k8s: K8sConfig
 ) -> None:
+    entry_slug = k8s.entry_service.slug
     deadline = time.monotonic() + timeout_seconds
     attempt = 0
     while True:
@@ -432,8 +999,8 @@ def _wait_ready(
             raise DeployError(
                 "kubectl port-forward exited unexpectedly:\n" + pf.captured_output(),
                 EXIT_VERIFY,
-                hint=f"is service/{k8s.service_name} in namespace {k8s.namespace} reachable? "
-                f"(kubectl --context {k8s.context} -n {k8s.namespace} get svc,endpoints {k8s.service_name})",
+                hint=f"is service/{entry_slug} in namespace {k8s.namespace} reachable? "
+                f"(kubectl --context {k8s.context} -n {k8s.namespace} get svc,endpoints {entry_slug})",
             )
         attempt += 1
         try:
@@ -455,8 +1022,10 @@ def _wait_ready(
                 log(f"waiting for /readyz ({exc})")
         if time.monotonic() >= deadline:
             raise DeployError(
-                f"service did not become ready within {timeout_seconds}s;"
-                f" port-forward output:\n{pf.captured_output()}",
+                f"entry service {k8s.entry_service.name!r} "
+                f"(svc/{entry_slug}) did not become ready within "
+                f"{timeout_seconds}s; port-forward output:"
+                f"\n{pf.captured_output()}",
                 EXIT_VERIFY,
                 hint=_rollback_guidance(k8s),
             )

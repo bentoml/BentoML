@@ -280,12 +280,22 @@ Report to the user, and pass to the chosen deploy skill:
 3. **Runtime env vars** the service needs (names only; secret values go into a
    Kubernetes Secret, never into manifests).
 4. **Architecture** the image was built for.
-5. **Suggested service/deployment name**: the snake_cased bento name with
-   underscores converted to hyphens (e.g. `my_service` → `my-service`). Never
-   derive it from the image repository — for ttl.sh images the repo is a random
-   UUID that may start with a digit, which is an invalid DNS-1035 name for a
-   Kubernetes Service.
-6. Useful facts for the deploy target: the container serves HTTP on
+5. **Suggested name(s)**: for a single-service bento, the snake_cased bento
+   name with underscores converted to hyphens (e.g. `my_service` →
+   `my-service`). Never derive it from the image repository — for ttl.sh images
+   the repo is a random UUID that may start with a digit, which is an invalid
+   DNS-1035 name for a Kubernetes Service. **For a multi-service bento the
+   Kubernetes objects are named per BentoML service, not per bento**, so pass
+   the topology instead (next item) and let the deploy skill derive one name
+   per service.
+6. **Service topology** (multi-service bentos — the first thing
+   `bentoml-k8s-deploy` needs): how many `@bentoml.service` classes the bento
+   contains, which one is the entry service, and the dependency edges. The
+   authoritative source is `bento.yaml` inside the image
+   (`docker run --rm --entrypoint cat "$IMAGE" /home/bentoml/bento/bento.yaml`
+   → `entry_service`, `services[].name`, `services[].dependencies[].service`);
+   say so rather than guessing from `service.py`.
+7. Useful facts for the deploy target: the container serves HTTP on
    **port 3000**; health endpoints are **`/livez`** (liveness) and
    **`/readyz`** (readiness); the image entrypoint already runs `serve`, so no
    command override is needed (K8s-specific: do not set `command:` in the pod

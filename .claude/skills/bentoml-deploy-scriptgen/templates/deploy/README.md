@@ -63,6 +63,14 @@ credentials come from the ambient AWS environment (`AWS_PROFILE`,
 `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`, or SSO); docker registry logins
 come from `docker login`; cluster access comes from your kubeconfig.
 
+### Known upstream noise
+
+`bentoml containerize` (1.4.x) emits a few
+`UserWarning: The parameter --quiet is used more than once` lines from click on
+every invocation — an upstream duplicate-option declaration, not a problem with
+this bundle or your project. It lands in the build stage's stderr on every run;
+ignore it.
+
 ### Exit codes
 
 `0` ok · `1` generic · `2` config error · `3` preflight failure ·

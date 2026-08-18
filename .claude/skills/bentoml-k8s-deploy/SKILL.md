@@ -150,6 +150,23 @@ bento text_pipeline: 2 services
 Rollout order: Sentiment, then TextPipeline
 ```
 
+For a wider or deeper DAG, report one line per service with its DIRECT dependencies and
+mark the tiers, e.g.:
+
+```
+bento gateway: 4 services (entry_service: Gateway)
+  Gateway   (entry) -> Enricher, Sentiment      [fan-out]
+  Enricher          -> Tokenizer                [middle tier — carries its OWN wiring]
+  Sentiment         -> (leaf)
+  Tokenizer         -> (leaf, 2 hops from the entry)
+Rollout order: Tokenizer, Sentiment, Enricher, Gateway
+```
+
+Several topological orders are usually valid (here `Sentiment, Tokenizer, …` is equally
+correct). Pick one deterministically — **deepest tier first, then alphabetically within a
+tier** — and then use that same order everywhere: the apply loop, the rollout waits, and
+`targets.k8s.services` in a generated script bundle. Consistency is what matters.
+
 ### Slug (object name) rule — DNS-1035
 
 Each service gets a `<slug>`: the BentoML service name snake_cased, then `_` → `-`.
@@ -578,6 +595,21 @@ kubectl --context <ctx> exec -n <ns> deploy/<dep-slug> -- python3 -c \
 A non-zero exit or empty output from that command is **not** proof of the fallback —
 distinguish "the dependency served nothing" from "the command itself failed" before
 concluding anything.
+
+**In a DAG deeper than two tiers, a moving counter is not enough.** It proves the
+dependency served *something*, not *who called it*. If a middle service's own
+`BENTOML_SERVE_DEPENDS` is missing and the leaf was instead wired into the entry
+service, the leaf's counter still moves and answers stay correct. The discriminating
+evidence is the **client pod IP in the dependency's access log**: it must be the pod of
+the service that declares `bentoml.depends()` on it, not the entry pod. Get the IPs with
+
+```bash
+kubectl --context <ctx> get pods -n <ns> -o custom-columns='POD:.metadata.name,IP:.status.podIP' \
+  -l app.kubernetes.io/part-of=<bento-name>
+```
+
+and check each dependency's log line against the caller you expect (e.g. a leaf reached
+only through a middle tier must show the MIDDLE service's pod IP).
 
    No access-log line and no request counter on the dependency while the entry service
    returned a correct answer **is** the in-process fallback. Fix the

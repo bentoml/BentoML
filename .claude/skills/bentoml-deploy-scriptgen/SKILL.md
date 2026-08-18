@@ -88,6 +88,27 @@ the rules here.
 | Build target | `project.service` (ships `null`) | `module:Class`, e.g. `service:TextPipeline`. Leave `null` if `bentoml build` finds it alone; required when `service.py` defines several services. |
 | Bento name | `{{SERVICE_NAME}}` | Bento name, `_`→`-`, must match DNS-1035 `^[a-z]([-a-z0-9]*[a-z0-9])?$` (same naming rule as bentoml-k8s-deploy). Names `project.name`, the ec2 container, and the README title — **not** the k8s objects (those are named per service, next row). |
 | Services | `{{ENTRY_SERVICE_NAME}}` `{{ENTRY_SERVICE_SLUG}}` `{{DEP_SERVICE_NAME}}` `{{DEP_SERVICE_SLUG}}` → `targets.k8s.services` | One `{name, slug, entry}` object per BentoML service, **in rollout order: dependencies first, entry last**, exactly one `entry: true`. `name` is the BentoML service name as the bento declares it (whitespace-free); `slug` is that name snake_cased then `_`→`-`, DNS-1035 — it names `deployment/<slug>`, `svc/<slug>`, and the `<slug>-deployment.yaml` / `<slug>-service.yaml` files. Single-service bento → a **one-element** list with `entry: true`. |
+
+**Worked example — a 4-service, 3-tier bento** (`Gateway` → {`Enricher`,
+`Sentiment`}; `Enricher` → `Tokenizer`). The `{{DEP_SERVICE_*}}` placeholders are
+**singular only because the template ships one example element** — duplicate the
+object once per non-entry service, and keep the array in the rollout order the
+`bentoml-k8s-deploy` skill derived (deepest tier first, then alphabetically):
+
+```json
+"services": [
+  {"name": "Tokenizer", "slug": "tokenizer", "entry": false},
+  {"name": "Sentiment", "slug": "sentiment", "entry": false},
+  {"name": "Enricher",  "slug": "enricher",  "entry": false},
+  {"name": "Gateway",   "slug": "gateway",   "entry": true}
+]
+```
+
+Watch the JSON commas when you duplicate or delete elements (same hazard as
+deleting a target block), and remember every non-leaf service — not just the
+entry — needs its own `BENTOML_SERVE_DEPENDS` in its manifest; preflight's
+`k8s.serve-depends` checks one pair per dependency edge, so a missing middle-tier
+pair fails the gate.
 | Registry host | `{{IMAGE_REGISTRY}}` | e.g. `123456789012.dkr.ecr.us-west-1.amazonaws.com`, `ghcr.io`, `docker.io`. `""` for local-only images. |
 | Repository | `{{IMAGE_REPOSITORY}}` | e.g. `acme/text-pipeline`. Lowercase. |
 | Registry type | `{{REGISTRY_TYPE}}` | `ecr` (auth + repo-create automated), `generic` (user must `docker login`), or `none` (kind/minikube local load — nothing pushed; the user must load the image and set `image.local_image_preloaded` to `true`, which preflight enforces). |

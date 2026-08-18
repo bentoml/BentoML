@@ -81,9 +81,14 @@ spec:
           # OPTIONAL section. Keep only the entries you need; if none remain,
           # delete these 4 lines (this header and the `env:` key) as well.
           env:
-            # OPTIONAL block -- ENTRY SERVICE ONLY: dependency wiring. Delete this
-            # block (9 lines, these comments included) for every non-entry service
-            # and for a single-service bento. Value = whitespace-separated
+            # OPTIONAL block -- dependency wiring. KEEP IT FOR EVERY SERVICE THAT
+            # HAS DEPENDENCIES: the entry service AND every middle (non-leaf) service
+            # in a deeper DAG. Delete this block (14 lines, these comments included)
+            # ONLY for leaf services (those that call nothing) and for a
+            # single-service bento. Deleting it from a middle service fails
+            # SILENTLY: its dependency is instantiated in-process, /readyz stays
+            # 200 and answers stay correct while the dependency's pod sits idle.
+            # Value = whitespace-separated
             # `ServiceName=URL` pairs, one per DIRECT dependency. `ServiceName` must
             # equal the BentoML service name exactly (lookup is by that key), and the
             # URL must contain NO `=` (each pair is `split("=", maxsplit=2)` and then fed

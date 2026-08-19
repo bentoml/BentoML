@@ -59,6 +59,7 @@ from ..arch import docker_builder_arch
 from ..common import EXIT_DEPLOY
 from ..common import EXIT_VERIFY
 from ..common import DeployError
+from ..common import RunResult
 from ..common import http_get
 from ..common import http_post_json
 from ..common import log
@@ -1000,7 +1001,7 @@ def _wait_for_rollouts(ctx: RunContext, k8s: K8sConfig) -> None:
     for index, svc in enumerate(k8s.services):
         started = time.monotonic()
         log(f"rollout {index + 1}/{len(k8s.services)}: {svc.name} ({_role(svc)})")
-        rollout, fatal = _rollout_status(ctx, k8s, svc)
+        rollout, fatal = _rollout_status(k8s, svc)
         if rollout.returncode != 0:
             ctx.summary.record_stage(
                 _rollout_stage(svc), False, time.monotonic() - started
@@ -1112,7 +1113,62 @@ def _fatal_pod_state(k8s: K8sConfig, svc: ServiceSpec) -> str | None:
     return None
 
 
-def _rollout_status(ctx: RunContext, k8s: K8sConfig, svc: ServiceSpec):
+def _pod_blocked_reason(k8s: K8sConfig, svc: ServiceSpec) -> str | None:
+    """Why this service's pods are not running yet, from the pods' own
+    conditions (`Unschedulable` and friends). Unlike _fatal_pod_state this is
+    NOT a verdict — a pod can stop being unschedulable the moment capacity
+    frees up — so it is only used to enrich a failure the Deployment itself has
+    already given up on. Read-only, None on any kubectl problem."""
+    res = run(
+        _kubectl(
+            k8s,
+            "get",
+            "pods",
+            "-n",
+            k8s.namespace,
+            "-l",
+            "app.kubernetes.io/name=" + svc.slug,
+            "-o",
+            "yaml",
+        ),
+        capture=True,
+        quiet=True,
+        check=False,
+        timeout=30,
+    )
+    if res.returncode != 0:
+        return None
+    try:
+        parsed = yaml.safe_load(res.stdout) or {}
+    except Exception:
+        return None
+    for pod in parsed.get("items") or []:
+        if not isinstance(pod, dict):
+            continue
+        status = pod.get("status") or {}
+        if status.get("phase") != "Pending":
+            continue
+        name = (pod.get("metadata") or {}).get("name", "?")
+        for condition in status.get("conditions") or []:
+            if condition.get("status") == "True":
+                continue
+            reason = condition.get("reason") or ""
+            message = (condition.get("message") or "").strip().splitlines()
+            if not reason:
+                continue
+            detail = message[0] if message else ""
+            return f"pod {name}: {reason}" + (f" — {detail}" if detail else "")
+    return None
+
+
+# The Deployment's own verdict, printed by `kubectl rollout status` once
+# spec.progressDeadlineSeconds (10 min by default) expires without progress.
+# Waiting past it is pointless: Kubernetes has stopped trying to make progress
+# and will not resume without a change.
+_PROGRESS_DEADLINE_MARKER = "exceeded its progress deadline"
+
+
+def _rollout_status(k8s: K8sConfig, svc: ServiceSpec) -> tuple[RunResult, str | None]:
     """kubectl rollout status for one service, in short slices so the pods can
     be inspected in between. Returns (last result, fatal diagnosis or None);
     a fatal diagnosis short-circuits the wait instead of burning the timeout."""
@@ -1153,7 +1209,26 @@ def _rollout_status(ctx: RunContext, k8s: K8sConfig, svc: ServiceSpec):
         fatal = _fatal_pod_state(k8s, svc)
         if fatal is not None:
             return res, fatal
+        if _PROGRESS_DEADLINE_MARKER in (res.stdout or "") + (res.stderr or ""):
+            # Kubernetes gave up before our own timeout did. Say why the pods
+            # never came up when they can tell us (Unschedulable is the usual
+            # answer), and stop rather than idling until rollout_timeout_seconds.
+            blocked = _pod_blocked_reason(k8s, svc)
+            return res, "the Deployment exceeded its own progress deadline" + (
+                f" ({blocked})" if blocked else ""
+            )
         if time.monotonic() >= deadline:
+            # Log kubectl's last word: it is captured, so it never reached the
+            # terminal, and the timeout message alone does not say what stalled.
+            last = [
+                line.strip()
+                for line in (
+                    (res.stderr or "") + "\n" + (res.stdout or "")
+                ).splitlines()
+                if line.strip()
+            ]
+            if last:
+                log("  " + last[0])
             return res, None
 
 
@@ -1175,15 +1250,25 @@ class _PortForward:
     convincing but fake results. alive() must be checked before every probe.
 
     Defaults to the ENTRY service (the only one that speaks the public HTTP
-    API); the dependency-metrics check passes a dependency's slug to scrape
-    its /metrics, which is a read-only probe of an internal Service.
+    API); the dependency-metrics check forwards to each dependency POD to
+    scrape its /metrics, which is a read-only probe inside the cluster.
+
+    Pass `pod=` to target one pod instead of a Service. That matters for
+    /metrics: a Service load-balances, so scraping svc/<dep> reads ONE
+    replica's counters at random and a request served by a sibling pod looks
+    like no request at all.
     """
 
     def __init__(
-        self, k8s: K8sConfig, service: str | None = None, local_port: int | None = None
+        self,
+        k8s: K8sConfig,
+        service: str | None = None,
+        local_port: int | None = None,
+        pod: str | None = None,
     ) -> None:
         self._k8s = k8s
         self._service = service or k8s.entry_service.slug
+        self._target = f"pod/{pod}" if pod else f"svc/{self._service}"
         self._local_port = local_port or k8s.local_port
         # Not a context manager on purpose: the file must outlive this
         # constructor (the port-forward writes to it until close()).
@@ -1194,7 +1279,7 @@ class _PortForward:
             _kubectl(
                 k8s,
                 "port-forward",
-                "svc/" + self._service,
+                self._target,
                 "-n",
                 k8s.namespace,
                 f"{self._local_port}:3000",
@@ -1221,7 +1306,7 @@ class _PortForward:
                     EXIT_VERIFY,
                     hint=f"is local port {self._local_port} free "
                     "(kubernetes.local_port / local_port + 1), and does "
-                    f"service/{self._service} exist in namespace "
+                    f"{self._target} exist in namespace "
                     f"{self._k8s.namespace}?",
                 )
             if "Forwarding from" in self.captured_output():
@@ -1318,11 +1403,43 @@ def verify(ctx: RunContext) -> None:
         pf.close()
 
 
+def _running_pods(k8s: K8sConfig, slug: str) -> list[str]:
+    """Names of this service's Running pods, or [] when they cannot be listed
+    (the caller then falls back to scraping the Service)."""
+    res = run(
+        _kubectl(
+            k8s,
+            "get",
+            "pods",
+            "-n",
+            k8s.namespace,
+            "-l",
+            "app.kubernetes.io/name=" + slug,
+            "--field-selector=status.phase=Running",
+            "-o",
+            "jsonpath={.items[*].metadata.name}",
+        ),
+        capture=True,
+        quiet=True,
+        check=False,
+        timeout=30,
+    )
+    if res.returncode != 0:
+        return []
+    return res.stdout.split()
+
+
 def _sample_dependency_totals(
     k8s: K8sConfig, deps: list[ServiceSpec]
 ) -> dict[str, float]:
-    """Scrape each dependency's own /metrics through a short-lived
-    port-forward and return its non-health request total.
+    """Scrape each dependency's own /metrics through short-lived port-forwards
+    and return its non-health request total, summed over ALL of its pods.
+
+    Per POD, not per Service: a Service load-balances, so one scrape of
+    svc/<dep> reads a random replica and a request that a sibling pod served
+    would look like no request at all — a false "served no request" failure on
+    any dependency with replicas > 1. Summing every pod is exact regardless of
+    which replica the entry service happened to call.
 
     Read-only: /metrics is not instrumented by the metrics middleware, so
     scraping never moves the counter it reports. The forwards are sequential
@@ -1330,37 +1447,55 @@ def _sample_dependency_totals(
     port = k8s.local_port + 1
     totals: dict[str, float] = {}
     for dep in deps:
-        pf = _PortForward(k8s, dep.slug, port)
-        try:
-            pf.wait_until_forwarding(30)
+        pods = _running_pods(k8s, dep.slug)
+        if not pods:
+            # No pod list (RBAC, or a race with a restart): fall back to the
+            # Service. Still correct for a single replica, and the alternative
+            # is losing the proof entirely.
+            warn(
+                f"could not list pods of dependency {dep.name} "
+                f"(svc/{dep.slug}); scraping the Service instead, which reads "
+                "one replica at random — a false 'served no request' is "
+                "possible if this dependency has more than one pod"
+            )
+        targets = pods or [None]
+        total = 0.0
+        for pod in targets:
+            label = f"pod/{pod}" if pod else f"svc/{dep.slug}"
+            pf = _PortForward(k8s, dep.slug, port, pod=pod)
             try:
-                status, body = http_get(f"http://127.0.0.1:{port}/metrics", timeout=10)
-            except (urllib.error.URLError, OSError) as exc:
-                raise DeployError(
-                    f"could not scrape /metrics of dependency svc/{dep.slug}: {exc}",
-                    EXIT_VERIFY,
-                    hint="set verify.dependency_metrics to false to skip "
-                    "this proof (and lose the only signal that the "
-                    "dependency is reached over the network)",
-                ) from None
-            if not pf.alive():
-                raise DeployError(
-                    "port-forward to dependency "
-                    f"svc/{dep.slug} died during the /metrics scrape; the "
-                    "response cannot be trusted:\n" + pf.captured_output(),
-                    EXIT_VERIFY,
-                )
-            if status != 200:
-                raise DeployError(
-                    f"/metrics of dependency svc/{dep.slug} returned HTTP {status}",
-                    EXIT_VERIFY,
-                    hint="every BentoML server exposes /metrics on port "
-                    "3000; if it is disabled in this bento, set "
-                    "verify.dependency_metrics to false",
-                )
-            totals[dep.slug] = _sum_request_total(body)
-        finally:
-            pf.close()
+                pf.wait_until_forwarding(30)
+                try:
+                    status, body = http_get(
+                        f"http://127.0.0.1:{port}/metrics", timeout=10
+                    )
+                except (urllib.error.URLError, OSError) as exc:
+                    raise DeployError(
+                        f"could not scrape /metrics of dependency {label}: {exc}",
+                        EXIT_VERIFY,
+                        hint="set verify.dependency_metrics to false to skip "
+                        "this proof (and lose the only signal that the "
+                        "dependency is reached over the network)",
+                    ) from None
+                if not pf.alive():
+                    raise DeployError(
+                        "port-forward to dependency "
+                        f"{label} died during the /metrics scrape; the "
+                        "response cannot be trusted:\n" + pf.captured_output(),
+                        EXIT_VERIFY,
+                    )
+                if status != 200:
+                    raise DeployError(
+                        f"/metrics of dependency {label} returned HTTP {status}",
+                        EXIT_VERIFY,
+                        hint="every BentoML server exposes /metrics on port "
+                        "3000; if it is disabled in this bento, set "
+                        "verify.dependency_metrics to false",
+                    )
+                total += _sum_request_total(body)
+            finally:
+                pf.close()
+        totals[dep.slug] = total
     return totals
 
 
@@ -1392,9 +1527,11 @@ def _assert_dependencies_called(
         f"{SERVE_DEPENDS_ENV} does not name them exactly as the bento "
         "declares them, so BentoML instantiated them IN-PROCESS: that pod "
         "loaded those models itself, answers correctly and "
-        "reports ready, while the dependency pods idle. The names come from "
-        "config.yml's `services:` keys and `depends:` lists — compare them "
-        "with the bento's own service names, then check what was applied:\n"
+        "reports ready, while the dependency pods idle. The names are the "
+        "bento's own (bento.yaml's services[].name and "
+        "services[].dependencies[].service), so this points at a hand-owned "
+        "manifests_dir or an overridden container command rather than at "
+        "config.yml — check what was applied:\n"
         f"  kubectl --context {k8s.context} -n {k8s.namespace} get "
         "deployment/"
         + k8s.entry_service.slug

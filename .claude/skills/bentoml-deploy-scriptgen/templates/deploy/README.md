@@ -305,10 +305,14 @@ Deployment + Service. Each run:
    reports ready while the dependency pods idle. Readiness cannot catch it
    either: `/readyz` only fans out to dependencies that are remote proxies, so
    an in-process one is skipped and readiness is trivially true. So each
-   dependency's own `bentoml_service_request_total` is sampled (through a
-   short-lived port-forward to its ClusterIP Service, on `local_port + 1`)
-   before and after the inference request, and verify fails (exit 7) unless it
-   moved. Samples for health endpoints are excluded, so kubelet probes and the
+   dependency's own `bentoml_service_request_total` is sampled before and after
+   the inference request, and verify fails (exit 7) unless it moved. The sample
+   is taken **per pod** — a short-lived port-forward to each Running pod of the
+   dependency, on `local_port + 1`, summed — not through the Service: a Service
+   load-balances, so a single scrape reads one random replica and a request its
+   sibling served would look like no request at all (a false failure on any
+   dependency with `replicas > 1`). If the pods cannot be listed, the run warns
+   and falls back to scraping the Service. Samples for health endpoints are excluded, so kubelet probes and the
    readiness fan-out cannot be mistaken for an inference call; scraping
    `/metrics` is itself uninstrumented, so measuring does not disturb the
    measurement.
@@ -321,18 +325,30 @@ after an earlier service's rollout failed)"`, so CI can tell "broken" from
 
 The wait itself does not simply block on `kubectl rollout status` for the full
 `rollout_timeout_seconds`: it runs the status watch in short slices and reads the
-pods in between, and stops early on any container state that further waiting
-cannot fix — `ImagePullBackOff`, `ErrImagePull`, `InvalidImageName`,
-`ImageInspectError`, `RegistryUnavailable`, `CreateContainerConfigError`,
-`CreateContainerError`, or `CrashLoopBackOff` past three restarts. The error then
-carries kubelet's own message (`cannot succeed: pod <name>: ImagePullBackOff —
-…`) instead of a bare timeout, which turns the two most common first-deploy
-mistakes — no pull credentials in the namespace, a wrong image reference — from a
-15-minute CI stall into a 20-second one. A pod that is merely slow (a large image,
-a model download) is never interrupted: only those terminal states cut the wait
-short, and the timeout still bounds everything else. Pod inspection is read-only
-and any kubectl failure is ignored, so it can only shorten a failure that was
-going to happen anyway.
+pods in between, and stops early on two kinds of verdict.
+
+1. **A container state further waiting cannot fix** — `ImagePullBackOff`,
+   `ErrImagePull`, `InvalidImageName`, `ImageInspectError`,
+   `RegistryUnavailable`, `CreateContainerConfigError`, `CreateContainerError`,
+   or `CrashLoopBackOff` past three restarts. The error carries kubelet's own
+   message (`cannot succeed: pod <name>: ImagePullBackOff — …`), which turns the
+   two most common first-deploy mistakes — no pull credentials in the namespace,
+   a wrong image reference — from a 15-minute CI stall into a 20-second one.
+2. **The Deployment's own `progressDeadlineSeconds` expiring** (10 minutes by
+   default), i.e. Kubernetes itself has stopped trying. Waiting past that adds
+   nothing, so the run stops and names why the pods never came up when the pods
+   can say — `the Deployment exceeded its own progress deadline (pod …:
+   Unschedulable — 0/1 nodes are available: 1 Insufficient cpu…)`. That is the
+   answer for the most common capacity mistake: the default requests are 500m
+   CPU / 1Gi **per service**, so a four-service bento needs 2 CPU and 4Gi of
+   *schedulable* room, times `replicas`.
+
+A pod that is merely slow (a large image, a model download) is never
+interrupted: only those two verdicts cut the wait short, and
+`rollout_timeout_seconds` still bounds everything else — and if it is what
+expires, kubectl's last line is logged rather than swallowed. Pod inspection is
+read-only and any kubectl failure is ignored, so it can only shorten a failure
+that was going to happen anyway.
 
 ### Review before applying: `--render-only`
 
@@ -515,7 +531,9 @@ cluster can read those values — keep those Secrets to credentials.
   **not** on the code path of `verify.inference.path` (then it legitimately
   receives no request); the run warns loudly that it can no longer tell a
   working split from an in-process fallback. It also needs `local_port + 1`
-  free and `/metrics` reachable on the dependencies.
+  free, `/metrics` reachable on the dependencies, and permission to list pods in
+  the namespace (without it the proof still runs against the Service, with a
+  warning that a multi-replica dependency can then report a false negative).
 - `kubernetes.rollout_timeout_seconds` (default `900`) — deliberately **larger**
   than the rendered startup budget (`probes.startup_failure_threshold: 60` x
   `periodSeconds: 10` = 600 s). With the two equal, a pod that legitimately uses

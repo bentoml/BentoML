@@ -216,7 +216,9 @@ kubectl describe nodes | grep -A6 "Allocated resources"
   cluster: the default request is **500m CPU / 1Gi per service**, so a four-service bento
   asks for 2 CPU and 4Gi of *schedulable* capacity, and `replicas` multiplies it. A busy
   node can be at 98% requested CPU while `kubectl top node` shows it 40% *used* —
-  scheduling is decided on requests, not usage.
+  scheduling is decided on requests, not usage. `deploy.py` reports this for you rather
+  than idling: once the Deployment's `progressDeadlineSeconds` expires it stops with
+  `the Deployment exceeded its own progress deadline (pod …: Unschedulable — …)`.
 - **`Insufficient nvidia.com/gpu`** — either no GPU nodes, or the NVIDIA device plugin
   is not installed so GPUs aren't advertised. Check:
   ```sh

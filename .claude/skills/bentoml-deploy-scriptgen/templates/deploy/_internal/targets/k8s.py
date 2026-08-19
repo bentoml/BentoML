@@ -1,16 +1,21 @@
-"""Kubernetes target: render the manifests from config.yml, apply them, wait
-for every service's rollout in dependency order, and verify /readyz (plus an
-optional inference smoke test) against the entry service through a
-port-forward.
+"""Kubernetes target: render the manifests, apply them, wait for every service's
+rollout in dependency order, and verify /readyz (plus an optional inference
+smoke test) against the entry service through a port-forward.
 
-Deployment model: one Kubernetes Deployment + Service per BentoML service
-(one ``services:`` block each); a single-service bento degenerates to exactly
-one of each. Everything is applied in one pass, then ``kubectl rollout
-status`` runs per service in the DERIVED rollout order — a topological sort of
-``depends``, deepest dependencies first — because a caller's /readyz fans out
-to its dependencies and 503s until they answer. Verification only ever targets
-the entry service: inter-service payloads are pickle and must not leave the
-cluster.
+Deployment model: one Kubernetes Deployment + Service per BentoML service THE
+BENTO DECLARES; a single-service bento degenerates to exactly one of each. The
+service list, the entry service and the dependency DAG come from the bento's own
+bento.yaml (see _internal/topology.py) — config.yml only overrides per-service
+details, so nothing here can contradict the code. Everything is applied in one
+pass, then ``kubectl rollout status`` runs per service in the DERIVED rollout
+order — a topological sort of that DAG, deepest dependencies first — because a
+caller's /readyz fans out to its dependencies and 503s until they answer.
+Verification only ever targets the entry service: inter-service payloads are
+pickle and must not leave the cluster.
+
+Cross-architecture builds are detected here too (k8s.node-arch): the cluster's
+node architecture decides whether ``bentoml containerize`` needs
+``--opt platform=linux/<arch>``, which is why v4 has no ``platform`` knob.
 
 Image mechanism: the manifests are rendered in memory on every run
 (_internal/render.py) with this run's image ref written straight into the
@@ -47,6 +52,10 @@ from datetime import timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from ..arch import buildx_available
+from ..arch import cluster_node_arches
+from ..arch import decide_platform
+from ..arch import docker_builder_arch
 from ..common import EXIT_DEPLOY
 from ..common import EXIT_VERIFY
 from ..common import DeployError
@@ -57,10 +66,12 @@ from ..common import run
 from ..common import section
 from ..common import warn
 from ..config import PLACEHOLDER_RE
+from ..config import REGISTRY_KIND_ECR
 from ..config import InferenceCheck
 from ..config import K8sConfig
 from ..config import ServiceSpec
 from ..config import yaml
+from ..topology import unavailable_error
 from ..preflight import ECR_PULL_SECRET_MAX_AGE
 from ..preflight import CheckFailed
 from ..preflight import _which
@@ -212,6 +223,65 @@ def preflight_checks(ctx: RunContext) -> list:
 
     def pull_secret() -> str | None:
         if not k8s.image_pull_secret:
+            # Nothing named in config.yml. The pods will run under the
+            # namespace's `default` serviceaccount, so credentials can still
+            # come from that account's imagePullSecrets, or from the nodes
+            # themselves (an EKS instance role with the ECR credential
+            # provider, a kubelet docker config, or a public registry). None of
+            # those can be proven from here, but the serviceaccount can be
+            # read, and its absence is the single most common cause of a
+            # rollout that dies of ImagePullBackOff after burning the whole
+            # rollout timeout.
+            sa = run(
+                _kubectl(
+                    k8s,
+                    "get",
+                    "serviceaccount",
+                    "default",
+                    "-n",
+                    k8s.namespace,
+                    "-o",
+                    "jsonpath={.imagePullSecrets[*].name}",
+                ),
+                capture=True,
+                quiet=True,
+                check=False,
+                timeout=30,
+            )
+            names = sa.stdout.split() if sa.returncode == 0 else []
+            if names:
+                return (
+                    "none in config.yml; the namespace's default "
+                    "serviceaccount supplies " + ", ".join(sorted(names))
+                )
+            host = ctx.cfg.image.registry or "docker.io"
+            if ctx.cfg.image.kind == REGISTRY_KIND_ECR:
+                warn(
+                    f"no image pull secret: {host} is a private ECR registry, "
+                    "which always requires authentication, and neither "
+                    "kubernetes.image_pull_secret nor the namespace's default "
+                    "serviceaccount names one. Unless the NODES carry ECR "
+                    "credentials (an instance role plus the ECR credential "
+                    "provider), every pod will fail with ImagePullBackOff. "
+                    "Fix it either way:\n"
+                    f"  kubectl --context {k8s.context} -n {k8s.namespace} "
+                    "create secret docker-registry ecr-creds "
+                    f"--docker-server={host} --docker-username=AWS "
+                    '--docker-password="$(aws ecr get-login-password '
+                    f'--region {ctx.cfg.image.ecr_region or "<region>"})"\n'
+                    "then set kubernetes.image_pull_secret: ecr-creds (an ECR "
+                    "token expires after 12 h — recreate the secret or give "
+                    "the nodes a credential provider for anything long-lived)"
+                )
+            elif ctx.cfg.image.pushes:
+                warn(
+                    "no image pull secret: neither kubernetes.image_pull_secret "
+                    "nor the namespace's default serviceaccount names one, so "
+                    f"the cluster must be able to pull {host} anonymously or "
+                    "with node-level credentials. If it cannot, the pods fail "
+                    "with ImagePullBackOff (create a docker-registry secret "
+                    "and set kubernetes.image_pull_secret)"
+                )
             return "no image pull secret configured"
         res = run(
             _kubectl(
@@ -236,7 +306,7 @@ def preflight_checks(ctx: RunContext) -> list:
                 f"-n {k8s.namespace} --docker-server=... --docker-username=... "
                 "--docker-password=...",
             )
-        if ctx.cfg.image.registry_type == "ecr":
+        if ctx.cfg.image.kind == REGISTRY_KIND_ECR:
             created = parse_k8s_timestamp(res.stdout)
             if created is not None:
                 age = datetime.now(timezone.utc) - created
@@ -253,6 +323,56 @@ def preflight_checks(ctx: RunContext) -> list:
                         "already-expired token."
                     )
         return None
+
+    def topology_source() -> str | None:
+        """Report where the bento's service topology came from — or why there
+        is none yet. config.yml carries no service list, no entry service and
+        no `depends`: they are read from the bento's own bento.yaml (see
+        _internal/topology.py) out of the local bento store, the image, or the
+        cache next to config.yml."""
+        topo = ctx.cfg.topology
+        if topo is not None:
+            return f"{topo.describe()} — from the {topo.source}"
+        if ctx.skip_build:
+            # Nothing later in this run will produce it: --skip-build means no
+            # bento is built, so the store cannot answer either.
+            err = unavailable_error(ctx.cfg.bundle_dir, ctx.image)
+            raise CheckFailed(str(err), hint=err.hint)
+        warn(
+            "the service topology is not available yet — it will be read from "
+            "the bento this run builds. Until then there is nothing to render, "
+            "so k8s.render and k8s.rollout-plan are skipped this time. Commit "
+            "the .bento-topology.json cache (or run once with --skip-build "
+            "against the built image) to get those checks in a build-free run."
+        )
+        return "UNRESOLVED — will come from the bento built by this run"
+
+    def node_arch() -> str | None:
+        """Cross-architecture detection, the replacement for v3's
+        `image.platform`: compare the builder's architecture with the cluster
+        nodes' `kubernetes.io/arch` and, when they differ, build for the nodes'
+        (an image of the wrong architecture starts and then dies with 'exec
+        format error', burning the whole rollout timeout in CrashLoopBackOff).
+        """
+        builder = docker_builder_arch()
+        arches = cluster_node_arches(k8s.context)
+        decision = decide_platform(builder, arches, "cluster nodes")
+        if decision.cross and not buildx_available():
+            raise CheckFailed(
+                f"a cross-architecture build is needed ({decision.message}) "
+                "but docker buildx is not available",
+                hint="install the docker buildx plugin (it ships with Docker "
+                "Desktop; on Debian/Ubuntu: the docker-buildx-plugin package). "
+                "BuildKit is what honours the platform flag — without it the "
+                "image would be built for the wrong architecture and every pod "
+                "would die with 'exec format error'.",
+            )
+        if decision.mixed:
+            warn(decision.message)
+        if decision.cross:
+            ctx.build_platform = decision.platform
+            log(f"  cross-arch build enabled: --opt platform={decision.platform}")
+        return decision.message
 
     # ---- rendering path ---------------------------------------------------
 
@@ -702,13 +822,14 @@ def preflight_checks(ctx: RunContext) -> list:
             f"({checked} selecting object(s) inspected)"
         )
 
-    checks = [("k8s.kubectl-cli", kubectl_cli)]
+    checks = [("k8s.kubectl-cli", kubectl_cli), ("k8s.topology", topology_source)]
     if ctx.local_only:
         ctx.summary.skipped += [
             "k8s.context-reachable (--local-only)",
             "k8s.rbac-create-deployment (--local-only)",
             "k8s.namespace (--local-only)",
             "k8s.image-pull-secret (--local-only)",
+            "k8s.node-arch (--local-only: needs the cluster's node labels)",
         ]
     else:
         checks += [
@@ -717,6 +838,27 @@ def preflight_checks(ctx: RunContext) -> list:
             ("k8s.namespace", namespace_exists),
             ("k8s.image-pull-secret", pull_secret),
         ]
+        if ctx.skip_build:
+            ctx.summary.skipped.append(
+                "k8s.node-arch (--skip-build: nothing is built, so no "
+                "platform to choose)"
+            )
+        else:
+            checks.append(("k8s.node-arch", node_arch))
+    if not k8s.bound:
+        # No topology yet (a build-first run with no cache): everything below
+        # needs the service list. k8s.topology above already said so.
+        ctx.summary.skipped += [
+            "k8s.render (topology not yet discovered)",
+            "k8s.rollout-plan (topology not yet discovered)",
+        ]
+        if k8s.manifests_dir is not None:
+            ctx.summary.skipped += [
+                "k8s.manifests (topology not yet discovered)",
+                "k8s.serve-depends (topology not yet discovered)",
+                "k8s.service-exposure (topology not yet discovered)",
+            ]
+        return checks
     # The manifest checks need no cluster: they run under --local-only too.
     if k8s.manifests_dir is None:
         # Rendering path. The checks that used to police hand-written YAML
@@ -858,18 +1000,7 @@ def _wait_for_rollouts(ctx: RunContext, k8s: K8sConfig) -> None:
     for index, svc in enumerate(k8s.services):
         started = time.monotonic()
         log(f"rollout {index + 1}/{len(k8s.services)}: {svc.name} ({_role(svc)})")
-        rollout = run(
-            _kubectl(
-                k8s,
-                "rollout",
-                "status",
-                "deployment/" + svc.slug,
-                "-n",
-                k8s.namespace,
-                f"--timeout={k8s.rollout_timeout_seconds}s",
-            ),
-            check=False,
-        )
+        rollout, fatal = _rollout_status(ctx, k8s, svc)
         if rollout.returncode != 0:
             ctx.summary.record_stage(
                 _rollout_stage(svc), False, time.monotonic() - started
@@ -882,6 +1013,13 @@ def _wait_for_rollouts(ctx: RunContext, k8s: K8sConfig) -> None:
                     detail="not attempted (fail-fast after an earlier "
                     "service's rollout failed)",
                 )
+            if fatal:
+                raise DeployError(
+                    f"rollout of deployment/{svc.slug} (BentoML service "
+                    f"{svc.name!r}, {_role(svc)}) cannot succeed: {fatal}",
+                    EXIT_DEPLOY,
+                    hint=_rollback_guidance(k8s),
+                )
             raise DeployError(
                 f"rollout of deployment/{svc.slug} (BentoML service "
                 f"{svc.name!r}, {_role(svc)}) did not complete within "
@@ -892,6 +1030,131 @@ def _wait_for_rollouts(ctx: RunContext, k8s: K8sConfig) -> None:
         ctx.summary.record_stage(_rollout_stage(svc), True, time.monotonic() - started)
         log(f"rollout of deployment/{svc.slug} complete")
     log("all rollouts complete")
+
+
+# A pod state that no amount of further waiting can fix. Without this, a
+# mistyped image or a missing pull secret burns the whole rollout timeout
+# (kubectl rollout status keeps waiting, and the Deployment's own progress
+# deadline is 10 min) before saying anything useful. Reasons are matched on
+# the container's waiting.reason, which kubelet sets long before either
+# deadline expires.
+_FATAL_WAITING_REASONS = (
+    "ImagePullBackOff",
+    "ErrImagePull",
+    "InvalidImageName",
+    "ImageInspectError",
+    "RegistryUnavailable",
+    "CreateContainerConfigError",
+    "CreateContainerError",
+)
+
+# CrashLoopBackOff is only fatal once the container has proven it keeps dying:
+# one early restart can be a slow dependency or a transient OOM on a busy node.
+_CRASHLOOP_RESTART_THRESHOLD = 3
+
+# How long to let kubectl rollout status run before pausing to inspect the
+# pods. Short enough that a pull failure is reported in well under a minute,
+# long enough that a healthy rollout is not interrupted more than a few times.
+_ROLLOUT_POLL_SECONDS = 15
+
+
+def _fatal_pod_state(k8s: K8sConfig, svc: ServiceSpec) -> str | None:
+    """A one-line diagnosis when a pod of this service is in a state that
+    waiting cannot fix, else None. Read-only; any kubectl failure (RBAC, a
+    flaky apiserver) yields None so this can only ever speed up a failure
+    that was going to happen anyway, never invent one."""
+    res = run(
+        _kubectl(
+            k8s,
+            "get",
+            "pods",
+            "-n",
+            k8s.namespace,
+            "-l",
+            "app.kubernetes.io/name=" + svc.slug,
+            "-o",
+            "yaml",
+        ),
+        capture=True,
+        quiet=True,
+        check=False,
+        timeout=30,
+    )
+    if res.returncode != 0:
+        return None
+    try:
+        parsed = yaml.safe_load(res.stdout) or {}
+    except Exception:
+        return None
+    for pod in parsed.get("items") or []:
+        if not isinstance(pod, dict):
+            continue
+        name = (pod.get("metadata") or {}).get("name", "?")
+        status = pod.get("status") or {}
+        for container in status.get("containerStatuses") or []:
+            waiting = (container.get("state") or {}).get("waiting") or {}
+            reason = waiting.get("reason") or ""
+            message = (waiting.get("message") or "").strip().splitlines()
+            detail = message[0] if message else ""
+            if reason in _FATAL_WAITING_REASONS:
+                return f"pod {name}: {reason}" + (f" — {detail}" if detail else "")
+            if (
+                reason == "CrashLoopBackOff"
+                and int(container.get("restartCount") or 0)
+                >= _CRASHLOOP_RESTART_THRESHOLD
+            ):
+                return (
+                    f"pod {name}: CrashLoopBackOff after "
+                    f"{container.get('restartCount')} restarts — see "
+                    f"`kubectl --context {k8s.context} -n {k8s.namespace} "
+                    f"logs {name} --previous`"
+                )
+    return None
+
+
+def _rollout_status(ctx: RunContext, k8s: K8sConfig, svc: ServiceSpec):
+    """kubectl rollout status for one service, in short slices so the pods can
+    be inspected in between. Returns (last result, fatal diagnosis or None);
+    a fatal diagnosis short-circuits the wait instead of burning the timeout."""
+    deadline = time.monotonic() + k8s.rollout_timeout_seconds
+    reported = ""
+    while True:
+        slice_seconds = min(
+            _ROLLOUT_POLL_SECONDS, max(1, int(deadline - time.monotonic()))
+        )
+        res = run(
+            _kubectl(
+                k8s,
+                "rollout",
+                "status",
+                "deployment/" + svc.slug,
+                "-n",
+                k8s.namespace,
+                f"--timeout={slice_seconds}s",
+            ),
+            capture=True,
+            quiet=True,
+            check=False,
+        )
+        # kubectl repeats the same progress line every slice; echo it only when
+        # it changes, so a slow image pull does not scroll the log. The
+        # per-slice "timed out waiting" is this function's own pacing, not a
+        # failure, so it is never echoed.
+        progress = [
+            line.strip()
+            for line in (res.stdout or "").splitlines()
+            if line.strip() and not line.strip().startswith("error:")
+        ]
+        if progress and progress[-1] != reported:
+            reported = progress[-1]
+            log("  " + reported)
+        if res.returncode == 0:
+            return res, None
+        fatal = _fatal_pod_state(k8s, svc)
+        if fatal is not None:
+            return res, fatal
+        if time.monotonic() >= deadline:
+            return res, None
 
 
 def _rollout_stage(svc: ServiceSpec) -> str:
@@ -1008,13 +1271,23 @@ def verify(ctx: RunContext) -> None:
         pf.wait_until_forwarding(30)
         _wait_ready(pf, base_url, vcfg.readyz_timeout_seconds, k8s)
         if vcfg.inference is None:
-            log("no inference smoke test configured (verify.inference) — skipping")
+            # verify.inference is OPTIONAL: with no block, /readyz above IS the
+            # verification. That is enough to prove every pod started, served
+            # HTTP and (for a caller) reached its dependencies' /readyz — but
+            # not that an inference request travels the dependency path.
+            log(
+                "verify.inference is not configured — verification is /readyz "
+                "only (add a verify.inference block to POST a real request)"
+            )
             if deps:
-                warn(
-                    "without verify.inference there is no request to prove "
-                    "the dependencies are reached over the network — a "
-                    "gateway that silently loaded them in-process passes "
-                    "this verify unchanged"
+                log(
+                    "dependency-metrics proof SKIPPED: this bento has "
+                    f"{len(deps)} dependency service(s), and only a real "
+                    "inference request exercises the dependency path. Without "
+                    "one, a gateway that silently instantiated its "
+                    "dependencies IN-PROCESS answers /readyz exactly like a "
+                    "correctly wired split — set verify.inference to close "
+                    "that gap."
                 )
             return
         # A gateway's /readyz proves NOTHING about a dependency that was

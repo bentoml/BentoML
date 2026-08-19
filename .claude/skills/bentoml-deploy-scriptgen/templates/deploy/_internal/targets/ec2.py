@@ -46,6 +46,11 @@ import urllib.error
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from ..arch import buildx_available
+from ..arch import decide_platform
+from ..arch import docker_builder_arch
+from ..arch import host_arch
+from ..arch import normalize_arch
 from ..common import EXIT_DEPLOY
 from ..common import EXIT_GENERIC
 from ..common import EXIT_VERIFY
@@ -62,14 +67,11 @@ from ..config import Ec2Config
 from ..config import InferenceCheck
 from ..config import VerifyConfig
 from ..preflight import CheckFailed
-from ..preflight import _host_arch
 from ..preflight import _which
 from ..preflight import run_checks
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle guard for type checkers
     from ..context import RunContext
-
-_ARCH_MAP = {"x86_64": "amd64", "aarch64": "arm64", "arm64": "arm64"}
 
 # Remote reader for the env payload (one "NAME <base64>" line per variable
 # on stdin). The `&& printf x` / ${...%x} pair preserves trailing newlines
@@ -192,8 +194,11 @@ def preflight_checks(ctx: RunContext) -> list:
     if ecr_auth:
         checks.append(("ec2.ecr-token", _ecr_token_check(ctx)))
     probes: dict[str, object] = {}
+    # Shared across hosts: one image is built for every host, so two hosts of
+    # different architectures cannot both be served (see _host_checks).
+    host_arches: dict[str, str] = {}
     for host in ec2.hosts:
-        checks += _host_checks(ctx, ec2, host, probes)
+        checks += _host_checks(ctx, ec2, host, probes, host_arches)
     return checks
 
 
@@ -334,7 +339,13 @@ def _probe_host(ec2: Ec2Config, host: str, probes: dict) -> dict:
     return parsed
 
 
-def _host_checks(ctx: RunContext, ec2: Ec2Config, host: str, probes: dict) -> list:
+def _host_checks(
+    ctx: RunContext,
+    ec2: Ec2Config,
+    host: str,
+    probes: dict,
+    host_arches: dict,
+) -> list:
     def reachable() -> str | None:
         probe = _probe_host(ec2, host, probes)
         return "connected (arch {})".format(probe.get("arch", "?"))
@@ -367,39 +378,53 @@ def _host_checks(ctx: RunContext, ec2: Ec2Config, host: str, probes: dict) -> li
         return f"server {state}"
 
     def remote_arch() -> str | None:
-        raw = _probe_host(ec2, host, probes).get("arch", "")
-        remote = _ARCH_MAP.get(raw, raw)
-        if ctx.cfg.image.platform:
-            want = ctx.cfg.image.platform.split("/", 1)[1]
-            if want != remote:
-                raise CheckFailed(
-                    f"{host} is {remote} but image.platform is "
-                    f"{ctx.cfg.image.platform} — the container would die "
-                    "with 'exec format error'",
-                    hint=f"set image.platform to linux/{remote}, or use a "
-                    "host whose architecture matches",
-                )
-            return f"{remote} matches image.platform"
-        if ctx.skip_build:
-            warn(
-                f"cannot verify image architecture for {host}: --skip-build "
-                "and image.platform is unset — a mismatch would only surface "
-                "as 'exec format error' at docker run"
-            )
-            return (
-                f"UNVERIFIED — remote is {remote}; image arch unknown "
-                "(set image.platform to enforce a match)"
-            )
-        local = _host_arch()
-        if local != remote:
+        """Cross-architecture detection for this host — the replacement for
+        v3's `image.platform` knob. The image this run builds must match the
+        host's architecture, or the container dies with 'exec format error'
+        the moment it starts."""
+        remote = normalize_arch(_probe_host(ec2, host, probes).get("arch", ""))
+        if remote:
+            host_arches[host] = remote
+        distinct = sorted(set(host_arches.values()))
+        if len(distinct) > 1:
+            # One image is built and pushed for every host, so it cannot match
+            # two architectures at once.
             raise CheckFailed(
-                f"{host} is {remote} but this machine builds {local} images "
-                "by default — the container would die with 'exec format error'",
-                hint=f"set image.platform to linux/{remote} in "
-                "config.yml (cross-arch builds need docker buildx — "
-                "preflight checks that too)",
+                "ec2.hosts have different architectures "
+                + ", ".join(f"{h}={a}" for h, a in sorted(host_arches.items()))
+                + " — one image cannot run on all of them",
+                hint="deploy each architecture from its own bundle/config "
+                "(one ec2.hosts list per architecture), or use hosts of a "
+                "single architecture",
             )
-        return f"{remote} matches the local build arch"
+        builder = docker_builder_arch() or host_arch()
+        decision = decide_platform(builder, [remote], f"host {host}")
+        if ctx.skip_build:
+            # Nothing is built, so a mismatch cannot be fixed here — but it is
+            # worth saying out loud before the container crash-loops.
+            if decision.cross:
+                warn(
+                    f"{host} is {remote} while this machine's builder is "
+                    f"{builder}; --skip-build means the existing image is "
+                    "deployed as-is, so if it was built for the builder's "
+                    "architecture the container will die with 'exec format "
+                    "error'"
+                )
+                return f"UNVERIFIED — host is {remote}, image arch unknown"
+            return f"{remote} (image arch unverified under --skip-build)"
+        if decision.cross:
+            if not buildx_available():
+                raise CheckFailed(
+                    f"{host} is {remote} but the builder is {builder}, so the "
+                    "image must be cross-built — and docker buildx is not "
+                    "available",
+                    hint="install the docker buildx plugin (ships with Docker "
+                    "Desktop; on Debian/Ubuntu: docker-buildx-plugin). "
+                    "BuildKit is what honours the platform flag.",
+                )
+            ctx.build_platform = decision.platform
+            log(f"  cross-arch build enabled: --opt platform={decision.platform}")
+        return decision.message
 
     def host_port() -> str | None:
         probe = _probe_host(ec2, host, probes)
@@ -835,7 +860,10 @@ def _verify_host(ec2: Ec2Config, vcfg: VerifyConfig, host: str) -> None:
             )
         _wait_ready(ec2, host, base_url, vcfg.readyz_timeout_seconds, None)
         if vcfg.inference is None:
-            log("no inference smoke test configured (verify.inference) — skipping")
+            log(
+                "verify.inference is not configured — verification is /readyz "
+                "only (add a verify.inference block to POST a real request)"
+            )
         else:
             _inference_smoke(host, base_url, vcfg.inference, None)
         return
@@ -846,7 +874,10 @@ def _verify_host(ec2: Ec2Config, vcfg: VerifyConfig, host: str) -> None:
         tunnel.wait_until_forwarding(30)
         _wait_ready(ec2, host, base_url, vcfg.readyz_timeout_seconds, tunnel)
         if vcfg.inference is None:
-            log("no inference smoke test configured (verify.inference) — skipping")
+            log(
+                "verify.inference is not configured — verification is /readyz "
+                "only (add a verify.inference block to POST a real request)"
+            )
         else:
             _inference_smoke(host, base_url, vcfg.inference, tunnel)
     finally:

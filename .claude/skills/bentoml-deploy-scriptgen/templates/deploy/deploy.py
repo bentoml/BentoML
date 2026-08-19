@@ -19,9 +19,15 @@ depends on PyYAML, and a deploy-only environment needs `pip install pyyaml`).
 Everything else is standard library. External tools (bentoml, docker, kubectl,
 aws, ssh) are invoked via subprocess and validated by preflight.
 
-The k8s manifests are RENDERED from config.yml on every run and piped to
-`kubectl apply -f -`; `--render-only [DIR]` writes them out instead, for review
-or GitOps, and touches nothing.
+The k8s manifests are RENDERED on every run and piped to `kubectl apply -f -`;
+`--render-only [DIR]` writes them out instead, for review or GitOps, and touches
+nothing.
+
+Two things come from the BENTO, not from config.yml: the service topology (the
+service list, the entry service and the dependency DAG, read from the bento's
+own bento.yaml — see _internal/topology.py) and the image tag (always the bento
+version). The build platform is auto-detected by comparing the local builder's
+architecture with the deploy target's.
 
 Exit codes: 0 ok, 1 generic, 2 config, 3 preflight, 4 build, 5 push,
 6 deploy, 7 verify. The last stdout line is always a JSON summary (except
@@ -50,6 +56,7 @@ if sys.version_info < (3, 9):  # noqa: UP036 - the guard IS the feature
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _internal import preflight
+from _internal import topology as topology_mod
 from _internal.common import EXIT_BUILD
 from _internal.common import EXIT_CONFIG
 from _internal.common import EXIT_GENERIC
@@ -62,7 +69,9 @@ from _internal.common import run
 from _internal.common import section
 from _internal.common import warn
 from _internal.config import CONFIG_FILE_NAME
+from _internal.config import REGISTRY_KIND_ECR
 from _internal.config import Config
+from _internal.config import bind_topology
 from _internal.config import load_config
 from _internal.context import RunContext
 from _internal.render import unmanaged_files
@@ -156,45 +165,67 @@ def _version_from_ref(image_ref: str) -> str:
     return tail.rsplit(":", 1)[1] if ":" in tail else "latest"
 
 
-def resolve_image(
-    cfg: Config, args: argparse.Namespace
-) -> tuple[str | None, str | None]:
-    """Return (image_ref, version_tag). Precedence: CLI > env > config+git.
+def resolve_version(cfg: Config, args: argparse.Namespace) -> str | None:
+    """The image tag == the BENTO VERSION. Precedence: --image's own tag > CLI
+    --version > BENTOML_DEPLOY_VERSION > the project's short git SHA.
 
-    Returns (None, None) when the default git-SHA tag cannot be derived —
-    the aggregated preflight report then fails on common.git-repo (exit 3)
-    instead of aborting here, so all other checks still run and report.
+    Returns None when the default git-SHA tag cannot be derived — the aggregated
+    preflight report then fails on common.git-repo (exit 3) instead of aborting
+    here, so all other checks still run and report.
     """
     image_ref = args.image or os.environ.get("BENTOML_DEPLOY_IMAGE")
     if image_ref:
-        return image_ref, _version_from_ref(image_ref)
+        return _version_from_ref(image_ref)
     version = args.version or os.environ.get("BENTOML_DEPLOY_VERSION")
     if not version:
         try:
             res = run(
-                ["git", "-C", str(cfg.project.dir), "rev-parse", "--short", "HEAD"],
+                ["git", "-C", str(cfg.project), "rev-parse", "--short", "HEAD"],
                 capture=True,
                 quiet=True,
                 check=False,
             )
         except DeployError:  # git binary missing — preflight reports it
-            return None, None
+            return None
         if res.returncode != 0:
-            return None, None
+            return None
         version = res.stdout.strip()
     if not _TAG_RE.match(version):
         raise DeployError(
             f"invalid image tag {version!r}",
             EXIT_CONFIG,
-            hint=f"tags must match {_TAG_RE.pattern}",
+            hint=f"tags must match {_TAG_RE.pattern}. The tag is the bento "
+            "version: `bentoml build --version <tag>`, so it must be a legal "
+            "bento version AND a legal image tag.",
         )
-    if not cfg.image.repository:
-        raise DeployError(
-            f"image.repository is not set in {CONFIG_FILE_NAME}",
-            EXIT_CONFIG,
-            hint="set image.registry/image.repository, or pass --image REF",
-        )
-    return cfg.image.ref(version), version
+    return version
+
+
+def resolve_image_ref(
+    cfg: Config,
+    args: argparse.Namespace,
+    version: str | None,
+    topology: topology_mod.Topology | None,
+) -> str | None:
+    """The full image reference to deploy, or None while it is not knowable yet.
+
+    `--image REF` wins outright (and bypasses build/push). Otherwise the ref is
+    `<image>:<version>` — config.yml's `image:` never carries a tag. With an
+    empty `image:` nothing is pushed and the image NAME is the bento tag
+    (`<bento name>:<version>`), which needs the bento name: known once the
+    topology has been discovered, and in any case after the build.
+    """
+    image_ref = args.image or os.environ.get("BENTOML_DEPLOY_IMAGE")
+    if image_ref:
+        return image_ref
+    if version is None:
+        return None
+    if cfg.image.url:
+        return cfg.image.ref(version)
+    if topology is not None:
+        # kind/minikube: the image is named after the bento itself.
+        return f"{topology.bento_name}:{version}"
+    return None
 
 
 # --------------------------------------------------------------------------
@@ -206,11 +237,11 @@ def build_bento(cfg: Config, version: str) -> str:
     """`bentoml build --version <tag> -o tag` from the project root; returns
     the bento tag parsed from the `__tag__:` line."""
     cmd = ["bentoml", "build"]
-    if cfg.project.service:
-        cmd.append(cfg.project.service)
+    if cfg.build_target:
+        cmd.append(cfg.build_target)
     cmd += ["--version", version, "-o", "tag"]
     res = run(
-        cmd, cwd=str(cfg.project.dir), capture=True, check=False, exit_code=EXIT_BUILD
+        cmd, cwd=str(cfg.project), capture=True, check=False, exit_code=EXIT_BUILD
     )
     bento_tag = ""
     for line in res.stdout.splitlines():
@@ -229,32 +260,44 @@ def build_bento(cfg: Config, version: str) -> str:
         raise DeployError(
             f"bentoml build failed (exit {res.returncode}):\n{output[-3000:]}",
             EXIT_BUILD,
-            hint="common causes: project.service does not match the "
-            "module:Class in service.py, a missing python package, or a "
-            "model download failure (gated HF models need HF_TOKEN "
-            "exported)",
+            hint="common causes: `bentoml build` cannot tell which service to "
+            "build (set the optional top-level build_target: module:Class in "
+            "config.yml, e.g. service:Gateway), a missing python package, or a "
+            "model download failure (gated HF models need HF_TOKEN exported)",
         )
     log(f"built bento: {bento_tag}")
     return bento_tag
 
 
-def containerize(cfg: Config, bento_tag: str, image: str) -> None:
+def containerize(cfg: Config, bento_tag: str, image: str, platform: str | None) -> None:
+    """`bentoml containerize`, cross-building when the deploy target's
+    architecture differs from the builder's.
+
+    `platform` is DETECTED (see _internal/arch.py and each target's
+    architecture check), never configured: v4 has no `platform` knob, because a
+    knob whose right value is "whatever the cluster runs" is wrong by default on
+    every machine that differs from it — and the symptom is a pod that starts
+    and dies with 'exec format error' for the whole rollout timeout."""
     cmd = ["bentoml", "containerize", bento_tag, "-t", image]
-    if cfg.image.platform:
-        cmd += ["--opt", f"platform={cfg.image.platform}"]
-    run(cmd, cwd=str(cfg.project.dir), exit_code=EXIT_BUILD)
+    if platform:
+        log(
+            f"cross-architecture build: --opt platform={platform} "
+            "(detected by comparing the local builder with the deploy target)"
+        )
+        cmd += ["--opt", f"platform={platform}"]
+    run(cmd, cwd=str(cfg.project), exit_code=EXIT_BUILD)
     log(f"containerized: {image}")
 
 
 def push_image(cfg: Config, image: str) -> None:
-    if cfg.image.registry_type == "none":
+    if not cfg.image.pushes:
         warn(
-            "image.registry_type is 'none' — nothing is pushed. Load the "
-            "image into your local cluster yourself (e.g. "
-            f"`minikube image load {image}` or `kind load docker-image {image}`)."
+            "`image:` is empty — nothing is pushed. Load the image into your "
+            f"local cluster yourself (e.g. `minikube image load {image}` or "
+            f"`kind load docker-image {image}`)."
         )
         return
-    if cfg.image.registry_type == "ecr":
+    if cfg.image.kind == REGISTRY_KIND_ECR:
         _ecr_login_and_ensure_repo(cfg)
     run(["docker", "push", image], exit_code=EXIT_PUSH)
     log(f"pushed: {image}")
@@ -353,9 +396,11 @@ def render_manifests_to_dir(
         raise DeployError(
             "cannot render: the image reference is unresolved",
             EXIT_CONFIG,
-            hint="the rendered Deployments carry a real image ref, and the "
-            "default tag is the project's short git SHA — run from a git "
-            "checkout, or pass --version TAG / --image REF",
+            hint="the rendered Deployments carry a real image ref. The tag is "
+            "the bento version, which defaults to the project's short git SHA "
+            "— run from a git checkout, or pass --version TAG / --image REF. "
+            "With an empty `image:` the ref is the bento tag itself, which "
+            "needs the discovered topology (or an explicit --image REF).",
         )
     section(f"render-only: config.yml -> {out_dir} (image {image})")
     written, removed = write_manifests(cfg, image, out_dir)
@@ -422,7 +467,33 @@ def main(argv: list | None = None) -> int:
             else Path(__file__).resolve().parent / CONFIG_FILE_NAME
         )
         cfg = load_config(config_path)
-        image, version = resolve_image(cfg, args)
+        version = resolve_version(cfg, args)
+        topology = None
+        if args.target == "k8s":
+            # The topology (service list, entry service, dependency DAG) comes
+            # from the bento, never from config.yml. Before a build there are
+            # two sources: the image, and the cache next to config.yml. A run
+            # that builds gets the authoritative one from the fresh bento
+            # afterwards, so this pre-build attempt is best-effort — EXCEPT
+            # under --skip-build/--render-only, where nothing else will produce
+            # it (the k8s.topology preflight check and the render path say so).
+            failed_stage = "topology"
+            probe_image = (
+                args.image
+                or os.environ.get("BENTOML_DEPLOY_IMAGE")
+                or (cfg.image.ref(version) if (cfg.image.url and version) else None)
+            )
+            topology = topology_mod.resolve(
+                cfg.bundle_dir,
+                image=probe_image,
+                # --local-only must not touch a registry, so the image is read
+                # only when it is already on this machine.
+                allow_pull=not args.local_only,
+                cwd=str(cfg.project),
+            )
+            if topology is not None:
+                bind_topology(cfg, topology)
+        image = resolve_image_ref(cfg, args, version, topology)
         summary.image, summary.version = image, version
         ctx = RunContext(
             cfg=cfg,
@@ -439,6 +510,8 @@ def main(argv: list | None = None) -> int:
 
         if args.render_only is not None:
             failed_stage = "render"
+            if args.target == "k8s" and topology is None:
+                raise topology_mod.unavailable_error(cfg.bundle_dir, image)
             out_dir = (
                 Path(args.render_only).resolve()
                 if args.render_only
@@ -481,11 +554,12 @@ def main(argv: list | None = None) -> int:
                     # the registry for the image under --skip-build.
                     "registry login/push checks (--skip-build)",
                 ]
-                if args.local_only and cfg.image.registry_type != "none":
+                if args.local_only and cfg.image.pushes:
                     summary.skipped.append("registry.image-exists (--local-only)")
-                elif cfg.image.registry_type == "none" or image:
-                    # registry_type "none": the preload-ack check is pure
-                    # config and must run even under --local-only.
+                elif not cfg.image.pushes or image:
+                    # An empty `image:` pushes nothing, so its "must already be
+                    # on the nodes" notice is not a connectivity check and runs
+                    # under --local-only too.
                     checks += preflight.image_exists_checks(cfg, image or "")
             else:
                 checks += preflight.build_checks(cfg)
@@ -507,27 +581,57 @@ def main(argv: list | None = None) -> int:
             summary.ok, summary.exit_code = True, EXIT_OK
             return EXIT_OK
 
-        if image is None or version is None:
+        if version is None:
             # Unreachable: common.git-repo fails in preflight first. Guard
-            # anyway so a future refactor cannot deploy an unresolved ref.
+            # anyway so a future refactor cannot deploy an unresolved tag.
+            raise DeployError(
+                "image tag (bento version) was never resolved",
+                EXIT_CONFIG,
+                hint="the tag is the bento version and defaults to the "
+                "project's short git SHA — run from a git checkout, or pass "
+                "--version TAG / --image REF",
+            )
+        if image is None and (args.skip_build or cfg.image.url):
             raise DeployError(
                 "image reference was never resolved",
                 EXIT_CONFIG,
-                hint="pass --version TAG or --image REF",
+                hint="with an empty `image:` the reference is the bento tag "
+                "(<bento name>:<version>), so it is known only once the bento "
+                "has been built or the topology discovered — run without "
+                "--skip-build, or pass --image REF explicitly",
             )
 
         if args.skip_build:
             log(f"--skip-build: deploying existing image {image}")
         else:
             failed_stage = "build"
-            section(f"build (tag {version})")
+            section(f"build (bento version / image tag {version})")
             bento_tag = _stage(summary, "build", lambda: build_bento(cfg, version))
+            # The bento that was just built is the authoritative topology, so
+            # re-read it (and refresh the cache) even when a cache or an image
+            # already answered before preflight.
+            failed_stage = "topology"
+            fresh = topology_mod.resolve(
+                cfg.bundle_dir, bento_tag=str(bento_tag), allow_docker=False
+            )
+            if fresh is not None:
+                bind_topology(cfg, fresh)
+            elif args.target == "k8s" and cfg.topology is None:
+                raise topology_mod.unavailable_error(cfg.bundle_dir, image)
+            if not cfg.image.url:
+                # Nothing is pushed: the image is named after the bento itself.
+                if image and image != str(bento_tag):
+                    log(f"image name follows the bento tag: {bento_tag}")
+                image = str(bento_tag)
+                ctx.image = summary.image = image
             failed_stage = "containerize"
             section("containerize")
             _stage(
                 summary,
                 "containerize",
-                lambda: containerize(cfg, str(bento_tag), image),
+                lambda: containerize(
+                    cfg, str(bento_tag), str(image), ctx.build_platform
+                ),
             )
             failed_stage = "push"
             section("push")

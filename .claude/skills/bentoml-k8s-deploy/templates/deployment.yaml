@@ -85,10 +85,11 @@ spec:
         {{NODE_SELECTOR_KEY}}: "{{NODE_SELECTOR_VALUE}}"
       containers:
         - name: bentoml
-          # The full pushed reference, resolved at render time from image.registry /
-          # image.repository plus the tag being deployed. No sentinel: the renderer
-          # knows the image. (Hand-owned manifests under kubernetes.manifests_dir
-          # must therefore be re-rendered or edited for each new tag.)
+          # The full pushed reference, resolved at render time from the `image`
+          # URL in config.yml plus the tag being deployed -- which is the bento
+          # version, not a config key. No sentinel: the renderer knows the image.
+          # (Hand-owned manifests under kubernetes.manifests_dir must therefore
+          # be re-rendered or edited for each new tag.)
           image: {{IMAGE}}
           imagePullPolicy: IfNotPresent      # fixed by the renderer; no config key (manifests_dir case)
           args: ["start-http-server", "--service-name", "{{BENTOML_SERVICE_NAME}}"]
@@ -108,9 +109,9 @@ spec:
           # the raw value wins, nothing is emitted twice, and the loader warns.
           # BENTOML_RUNNER_MAP / BENTOML_SERVE_RUNNER_MAP are rejected outright.
           env:
-            # Rendered for EVERY service with a non-empty services.<Name>.depends --
-            # the entry service AND every middle (non-leaf) service of a deeper DAG.
-            # Leaves get no such variable. Value = whitespace-separated
+            # Rendered for EVERY non-leaf service of the DAG that bento.yaml
+            # declares (the entry service AND every middle tier) -- there is no
+            # config key for it. Leaves get no such variable. Value = whitespace-separated
             # `ServiceName=URL` pairs, one per DIRECT dependency, built from each
             # dependency's slug + kubernetes.namespace. `ServiceName` is the BentoML
             # service name exactly (the lookup key), and the URL contains no `=`

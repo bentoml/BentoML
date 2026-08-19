@@ -27,3 +27,9 @@ class RunContext:
     no_verify: bool
     summary: Summary
     local_only: bool = False
+    # Set by the target's architecture check during preflight (never by
+    # config.yml — v4 has no `platform` knob): "linux/amd64" etc. when the
+    # deploy target's architecture differs from the local builder's, so
+    # `bentoml containerize` gets --opt platform=... and the pods do not die
+    # with "exec format error". None means "build natively".
+    build_platform: str | None = None

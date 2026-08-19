@@ -2,8 +2,8 @@
 name: bentoml-deploy-scriptgen
 description: >
   Generate a standalone, committable production deploy-script bundle
-  (deploy/deploy.py + a single annotated config.yml from which the Kubernetes
-  manifests are rendered) that builds, containerizes, pushes, deploys, and
+  (deploy/deploy.py + one config.yml — overrides only — from which the
+  Kubernetes manifests are rendered) that builds, containerizes, pushes, deploys, and
   verifies a BentoML service without any agent involved — runnable from a
   terminal or CI/CD. Use when the user says things like "generate a deployment
   script", "deploy from CI/CD", "set up a production deployment pipeline",
@@ -23,15 +23,25 @@ below and calls `deploy.py --target k8s --render-only`, so
 both flows — there is no second renderer to keep in sync. Two config layouts are
 supported and both are exercised:
 
-- **bundle layout** (this skill): `deploy/config.yml` with `project.dir: ..`;
+- **bundle layout** (this skill): `deploy/config.yml` with `project: ..`;
   `python3 deploy/deploy.py --target k8s [--render-only]` finds it next to
   `deploy.py`.
 - **root-level layout**: `config.yml` at the project root with
-  `project.dir: .`; pass it explicitly —
+  `project: .`; pass it explicitly —
   `python3 deploy/deploy.py --target k8s --render-only k8s --config config.yml`.
-  Every relative path in the config (`project.dir`, `kubernetes.manifests_dir`)
+  Every relative path in the config (`project`, `kubernetes.manifests_dir`)
   resolves against **the config file's own directory**, so both layouts behave
   identically.
+
+**config.yml v4 is overrides-only.** The service list, the entry service and the
+dependency DAG are read from the bento's own `bento.yaml` at RUN time (local
+bento store after the build, `docker run --rm --entrypoint cat <image>
+$BENTO_PATH/bento.yaml` under `--skip-build`, or the `deploy/.bento-topology.json`
+cache) — so you never write a service list, an `entry:` flag or a `depends:` list
+into the config, and there is nothing to keep in sync with the code. The image
+tag is the bento version, ECR is recognized from the image URL's host, and a
+cross-architecture build is auto-detected. **Four values are enough to deploy**:
+`project`, `image`, `kubernetes.context`, `kubernetes.namespace`.
 
 You are a **script generator, not a script author**. The Python files under
 this skill's `templates/deploy/` are static, reviewed, e2e-tested artifacts.
@@ -45,19 +55,24 @@ need cannot be expressed in `config.yml`, say so, point at
 `kubernetes.manifests_dir` (the documented escape hatch), and report it as a
 limitation — do not fork the templates.
 
-What the generated bundle does at runtime (all driven by `config.yml`):
+What the generated bundle does at runtime (driven by `config.yml` + the bento):
 
-- `python3 deploy/deploy.py --target k8s` → preflight → `bentoml build
-  --version <tag>` (tag defaults to the project's short git SHA) →
-  `bentoml containerize -t <registry>/<repo>:<tag>` → push (ECR login +
-  describe-or-create handled automatically) → **render** one Deployment +
-  Service per BentoML service (plus an HPA per autoscaled service and an
-  optional Ingress) from `config.yml`, in memory, and pipe them to `kubectl
-  apply -f -` → `rollout status` for **every** Deployment in the **derived**
-  rollout order (topological sort of `depends`, deepest dependencies first) →
-  `/readyz` + inference smoke test against the **entry** service through a
-  port-forward, then proof that every dependency really served a request. A
-  single-service bento degenerates to exactly one Deployment + Service.
+- `python3 deploy/deploy.py --target k8s` → preflight (incl. cross-arch
+  detection: builder `docker info` arch vs. `kubectl get nodes -L
+  kubernetes.io/arch`) → `bentoml build --version <tag>` (tag defaults to the
+  project's short git SHA, so bento version == git SHA == image tag) → read the
+  fresh bento's `bento.yaml` for the topology (and refresh
+  `deploy/.bento-topology.json`) → `bentoml containerize -t <image>:<tag>`
+  (`--opt platform=linux/<node arch>` when the archs differ) → push (ECR login +
+  describe-or-create handled automatically when the URL host is ECR) →
+  **render** one Deployment + Service per BentoML service (plus an HPA per
+  autoscaled service and an optional Ingress) in memory and pipe them to
+  `kubectl apply -f -` → `rollout status` for **every** Deployment in the
+  **derived** rollout order (topological sort of the bento's DAG, deepest
+  dependencies first) → `/readyz` + the optional inference smoke test against
+  the **entry** service through a port-forward, then proof that every dependency
+  really served a request. A single-service bento degenerates to exactly one
+  Deployment + Service.
 - `python3 deploy/deploy.py --target k8s --render-only [DIR]` → writes the
   rendered manifests (default `deploy/rendered/`) and exits 0 **without
   touching the cluster**: the review-before-apply, diff-a-config-change and
@@ -95,102 +110,113 @@ Standing prerequisites the script cannot create for the user:
 - The k8s namespace must already exist (the bundle never creates namespaces
   and never renders a Namespace object; preflight fails with the exact
   `kubectl create namespace` line).
-- Make sure the project's `.gitignore` covers `__pycache__/` and
-  `deploy/rendered/` (generated output): `bentoml build` creates the former
-  inside the project, and an uncovered artifact makes every later run warn
-  about a dirty git tree.
+- A **writable image registry the cluster can pull from** (or, for the
+  kind/minikube case, a cluster whose nodes you can `image load` onto).
+- Make sure the project's `.gitignore` covers `__pycache__/`,
+  `deploy/rendered/` and `deploy/.bento-topology.json` (all generated output):
+  `bentoml build` creates the first inside the project, and an uncovered
+  artifact makes every later run warn about a dirty git tree. The topology cache
+  is the one file a user may want to commit deliberately — see Step 2.
 
-If the project already has a v1/v2 bundle (`deploy/deploy.config.json`, and
-hand-owned manifests under `deploy/k8s/`), this is a **regeneration**, not a
-migration: carry the old settings into the new `config.yml` yourself, delete
-`deploy.config.json`, and tell the user the old `deploy/k8s/` directory is now
-unused (the bundle refuses a pre-v3 config with exit 2 and says the same).
-Their old manifests are still usable as-is via `kubernetes.manifests_dir` if
-they had hand-edited them — but the default and the recommendation is rendering.
+If the project already has an older bundle (`deploy/deploy.config.json` with
+hand-owned manifests under `deploy/k8s/`, or a `config.yml` stamped
+`bentoml-deploy-config/v3`), this is a **regeneration**, not a migration: carry
+the old settings into the new `config.yml` yourself and drop everything v4
+derives. The bundle refuses a pre-v4 config with exit 2 and a message naming
+what moved:
+
+- `project.dir` → `project` (a scalar); `project.service` → the optional
+  top-level `build_target`; `project.name` → gone (the bento's own name is used
+  for the `app.kubernetes.io/part-of` label);
+- `image.registry` + `image.repository` → one `image:` URL with **no tag**;
+  `image.registry_type`, `image.ecr_region` → derived from the URL host;
+  `image.platform` → auto-detected; `image.estimated_size_gb`,
+  `image.local_image_preloaded` → gone;
+- `services.<Name>.entry` and `.depends` → **deleted**; the topology comes from
+  `bento.yaml`. `services:` is now optional, overrides-only.
+
+Their old manifests are still usable as-is via `kubernetes.manifests_dir` if they
+had hand-edited them — but the default and the recommendation is rendering.
+
+Also make sure `.gitignore` covers `deploy/.bento-topology.json` (the topology
+cache the bundle writes) unless the user's CI needs it committed — see Step 2.
 
 ## Step 1 — Gather parameters (one round of questions)
 
 Same conventions as the interactive deploy skills. Detect what you can
-(read `service.py` for the service class and `@bentoml.api` methods; run
-`kubectl config get-contexts` for the context list — **never assume the
+(read `service.py` for the entry service class and its `@bentoml.api` methods;
+run `kubectl config get-contexts` for the context list — **never assume the
 current context**), then ask for the rest in one go.
 
-For the k8s target you also need the bento's **service topology** — the
-service list, which one is the entry service, and each service's direct
-dependencies. Get it the same way the `bentoml-k8s-deploy` skill does (its
-topology discovery step: `bento.yaml`'s `entry_service` + `services[].
-dependencies`), and reuse the slugs it derives. **You do not need to work out a
-rollout order or any dependency URL** — the bundle derives both from
-`depends`.
+**You do NOT need the bento's service topology.** No service list, no entry
+flag, no `depends`, no rollout order, no dependency URL, and no slug goes into
+the config: the bundle reads all of it from `bento.yaml` at run time. Read
+`service.py` only to find the entry service's API routes for the smoke test, and
+(optionally) the `@bentoml.service(resources=...)` values worth mirroring.
 
-| Parameter | Config key / placeholder | Default / notes |
+Only four values are REQUIRED:
+
+| Parameter | Config key | Default / notes |
 |---|---|---|
-| Build target | `project.service` (ships `null`) | `module:Class`, e.g. `service:TextPipeline`. Leave `null` if `bentoml build` finds it alone; required when `service.py` defines several services. |
-| Bento name | `{{SERVICE_NAME}}` → `project.name` | Bento name, `_`→`-`, DNS-1035-ish (it becomes the `app.kubernetes.io/part-of` label value). Also names the ec2 container and the README title. |
-| Services | `services:` block, keyed `{{ENTRY_SERVICE_NAME}}` / `{{DEP_SERVICE_NAME}}` | **One block per BentoML service**, keyed on the service name **exactly** as the bento declares it. Exactly one `entry: true`. Fill each service's `depends` with its DIRECT callees. Order in the file is irrelevant — the rollout order is derived. |
-| Slugs | `services.<Name>.slug` (commented out) | Derived from the name (snake_case, `_`→`-`); set it explicitly only when the derived value is not a valid DNS-1035 label (e.g. a name starting with a digit) or collides. |
-| Replicas / CPU / memory / GPU | `services.<Name>.replicas`, `.resources` | Same defaults and per-service rules as bentoml-k8s-deploy — ask once per service. **Every quantity is a quoted string** (`cpu: "1"`); the loader rejects unquoted numbers. Mirror the values declared in `@bentoml.service(resources=...)` (which is inert in OSS BentoML) so nothing regresses. |
-| Exposure | `services.<entry>.expose` | ClusterIP (port-forward) / NodePort / LoadBalancer, entry service only — the loader rejects `expose`/`ingress` on any other service. `node_port` (30000–32767) only with `type: NodePort`. |
+| Project root | `project` | `..` for this bundle (`deploy/config.yml`), `.` for a root-level config. Resolved against the config file's own directory; must exist. |
+| Image repository | `image` | `<registry>/<repository>` with **NO tag**, e.g. `123456789012.dkr.ecr.us-west-1.amazonaws.com/text-suite`, `ghcr.io/acme/text-suite`. ECR is recognized from the host (login + describe-or-create automated); any other host means the user must keep `docker login` valid. `""` for the kind/minikube local-load case — then nothing is pushed and the image is named after the bento. A writable registry the cluster can pull from is a prerequisite. |
+| kubectl context | `kubernetes.context` | From `kubectl config get-contexts`; the user must confirm it explicitly. |
+| Namespace | `kubernetes.namespace` | Must already exist (preflight checks it). It is embedded in every derived dependency URL. |
+
+Everything else is an override with a working default — ask only about what the
+user actually wants to change:
+
+| Parameter | Config key | Default / notes |
+|---|---|---|
+| Build target | `build_target` | `module:Class`, e.g. `service:TextPipeline`. Omit entirely unless plain `bentoml build` cannot resolve which service to build. |
+| Replicas / CPU / memory / GPU | `services.<Name>.replicas`, `.resources` | Defaults: 1 replica, requests `cpu 500m`/`memory 1Gi`, limits `cpu "2"`/`memory "4Gi"`. **Every quantity is a quoted string** (`cpu: "2"`); the loader rejects unquoted numbers. Mirror the values declared in `@bentoml.service(resources=...)` (inert in OSS BentoML) when the user wants them to bind. A block you write REPLACES the default wholesale. |
+| Exposure | `services.<entry>.expose` | Default ClusterIP, verified through a port-forward. `NodePort`/`LoadBalancer` and `node_port` (30000–32767, NodePort only) live here — **entry service only**; the loader rejects `expose`/`ingress` on any other service, and the entry service is `bento.yaml`'s `entry_service`, so use that name as the key. |
 | Ingress | `services.<entry>.ingress` | Optional, entry service only; needs a controller in the cluster. `host` is required when enabled. |
-| Autoscaling | `services.<Name>.autoscaling` | Per bentoml-k8s-deploy. `enabled: true` renders an HPA **and** drops that Deployment's `replicas` automatically — no manual coordination. `metric: cpu` requires `resources.requests.cpu` (enforced); `metric: concurrency` needs prometheus-adapter/KEDA publishing the `bentoml_inflight` Pods metric. |
-| Runtime retuning | `services.<Name>.config_overrides` | **Bare** per-service keys (`{workers: 2, traffic: {timeout: 120}}`); the renderer nests them under `{"services": {"<Name>": …}}` for `BENTOML_CONFIG_OVERRIDES`. See bentoml-k8s-deploy's references/customization.md for what belongs here vs. in the config. |
+| Autoscaling | `services.<Name>.autoscaling` | `enabled: true` renders an HPA **and** drops that Deployment's `replicas` automatically. `metric: cpu` requires `resources.requests.cpu` (enforced); `metric: concurrency` needs prometheus-adapter/KEDA publishing the `bentoml_inflight` Pods metric. |
+| Runtime retuning | `services.<Name>.config_overrides` | **Bare** per-service keys (`{workers: 2, traffic: {timeout: 120}}`); the renderer nests them under `{"services": {"<Name>": …}}` for `BENTOML_CONFIG_OVERRIDES`. See bentoml-k8s-deploy's references/customization.md. |
 | Env / secrets (k8s) | `services.<Name>.env`, `.env_from_secrets` | Plain values only in `env` (quoted strings); secrets by Secret name in `env_from_secrets` (the Secret must already exist). |
-| Placement | `services.<Name>.node_selector`, `.tolerations` | GPU pools, arch, zones. |
-| Probes | `services.<Name>.probes` | `startup_failure_threshold` (x 10 s = model-load budget) and `readiness_timeout_seconds` (**floor of 6**, enforced — BentoML gives a dependency a hard-coded 5 s budget when `/readyz` fans out). |
-| Registry host | `{{IMAGE_REGISTRY}}` | e.g. `123456789012.dkr.ecr.us-west-1.amazonaws.com`, `ghcr.io`, `docker.io`. `""` for local-only images. |
-| Repository | `{{IMAGE_REPOSITORY}}` | e.g. `acme/text-pipeline`. Lowercase. |
-| Registry type | `{{REGISTRY_TYPE}}` | `ecr` (auth + repo-create automated), `generic` (user must `docker login`), or `none` (kind/minikube local load — nothing pushed; then `image.local_image_preloaded` MUST be `true`, which the loader enforces). |
-| Platform | `image.platform` (ships `null`) | Set `"linux/amd64"` when cluster nodes are amd64 and builds may run on arm64; leave `null` when archs match. |
-| kubectl context | `{{K8S_CONTEXT}}` → `kubernetes.context` | From `kubectl config get-contexts`; user must confirm explicitly. |
-| Namespace | `{{NAMESPACE}}` → `kubernetes.namespace` | Must exist (preflight checks it). It is embedded in every derived dependency URL. |
-| Extra labels | `kubernetes.extra_labels` (ships `{}`) | Team/cost-center labels merged onto every rendered object. |
-| Pull secret | `kubernetes.image_pull_secret` (ships `null`) | Secret name if the registry is private and the cluster cannot pull natively (EKS→ECR usually can). The script checks existence and warns when an ECR-token secret is older than 11 h (heuristic — see the bundle README); creating/refreshing it stays a manual/CI step. |
-| Dependency-call proof | `verify.dependency_metrics` (ships `true`) | Multi-service bentos only. Verify samples each dependency's `bentoml_service_request_total` around the inference request and fails if it did not move — the only way to catch a dependency that BentoML silently instantiated **in-process** (green `/readyz`, correct answer, idle dependency pods). Leave it `true`. Set `false` only if the smoke-tested API genuinely does not call some dependency; then say so to the user. |
-| Inference smoke test | `{{INFERENCE_PATH}}` `{{INFERENCE_BODY_TEXT}}` `{{EXPECT_SUBSTRING}}` | Derive from an `@bentoml.api` method **on the entry service** (the only one verify talks to): path `/<method>`, a native-YAML body for its params, and a substring the response must contain. Replace the whole `body:` mapping when the API takes something other than `text`. Set `inference: null` only if the user declines. |
+| Placement | `services.<Name>.node_selector`, `.tolerations` | GPU pools, arch, zones. Also the answer for a mixed-architecture cluster. |
+| Probes | `services.<Name>.probes` | `startup_failure_threshold` (x 10 s = model-load budget, default 60) and `readiness_timeout_seconds` (**floor of 6**, enforced — BentoML gives a dependency a hard-coded 5 s budget when `/readyz` fans out). |
+| Slug | `services.<Name>.slug` | Derived from the service name (snake_case, `_`→`-`); set it only when the derived value is not a valid DNS-1035 label (a name starting with a digit) or collides. |
+| Extra labels | `kubernetes.extra_labels` | Team/cost-center labels merged onto every rendered object. |
+| Pull secret | `kubernetes.image_pull_secret` | Secret name if the registry is private and the cluster cannot pull natively (EKS→ECR usually can). The script checks existence and warns when an ECR-token secret is older than 11 h (heuristic); creating/refreshing it stays a manual/CI step. |
+| Dependency-call proof | `verify.dependency_metrics` (default `true`) | Multi-service bentos only, and only with an inference block: verify samples each dependency's `bentoml_service_request_total` around the request and fails if it did not move — the only way to catch a dependency BentoML silently instantiated **in-process** (green `/readyz`, correct answer, idle dependency pods). Leave it `true`. Without `verify.inference` the proof is logged as skipped, not disabled. |
+| Inference smoke test | `verify.inference.path` / `.body` / `.expect_substring` | **Optional.** Derive from an `@bentoml.api` method **on the entry service** (the only one verify talks to): path `/<method>`, a native-YAML body for its params, and a substring only a correct answer can contain (never one the service echoes back from the request). Omit the block for `/readyz`-only verification, and say what that gives up. |
 
-**Worked example — a 4-service, 3-tier bento** (`Gateway` → {`Enricher`,
-`Sentiment`}; `Enricher` → `Tokenizer`). The template ships a two-service
-example (one dependency + the entry service) purely to show the shape; add one
-block per extra service:
+There is no platform question and no registry-type question: both are derived.
+Arch mismatches (the `exec format error` class) are detected by comparing the
+builder's architecture with the cluster's nodes (or each EC2 host's `uname -m`)
+and cross-built automatically; buildx presence is preflighted.
 
-```yaml
-services:
-  Tokenizer:
-    entry: false
-    depends: []
-    # ... resources/probes/autoscaling ...
-  Sentiment:
-    entry: false
-    depends: []
-  Enricher:
-    entry: false
-    depends: [Tokenizer]        # middle tier: its OWN depends
-  Gateway:
-    entry: true
-    depends: [Enricher, Sentiment]
-    expose: {type: NodePort, node_port: 31530}
-```
+### Which config file to write
 
-That is the whole topology input. The bundle derives from it: the rollout order
-`Sentiment → Tokenizer → Enricher → Gateway` (deepest tier first, alphabetical
-within a tier), `BENTOML_SERVE_DEPENDS` on **Gateway and Enricher** (leaves get
-none), ClusterIP for the three dependencies, and the labels/selectors. A missing
-middle-tier `depends` is the classic deep-DAG bug and it fails **silently** at
-runtime — so double-check every service's own `depends`, and remember that
-`--check-only` prints the derived wiring for review.
+Ship exactly one of the two templates as `deploy/config.yml`, and tell the user
+which and why:
+
+- **`config.minimal.yml`** — when the user accepted every default, i.e. they
+  supplied nothing beyond `project`, `image`, `kubernetes.context` and
+  `kubernetes.namespace`. Four lines, no comments.
+- **`config.yml`** (annotated) — as soon as ANYTHING else is customized, which
+  includes mirroring decorator resources and asking for a NodePort or a smoke
+  test. Most multi-service bentos land here; that is intended. Prune the blocks
+  and the `ec2:`/`kubernetes:` sections that do not apply, and keep the comments.
+
+Note plainly that the minimal file **cannot** express a NodePort, an Ingress,
+autoscaling, per-service resources or an inference smoke test — an all-defaults
+deployment is ClusterIP verified through a port-forward.
 
 ### EC2 target parameters
 
 Same question round as the interactive `bentoml-ec2-deploy` skill's Step 0,
 minus provisioning (the script only ever deploys to existing instances). All
-keys live in the **top-level `ec2:`** section (v3 has no `targets` wrapper):
+keys live in the **top-level `ec2:`** section:
 
 | Parameter | Config key / placeholder | Default / notes |
 |---|---|---|
-| Hosts | `{{EC2_HOST}}` → `ec2.hosts` | YAML list of public IPs/DNS names of **existing** instances (1..N; bare hosts, no `user@`). Ask for all of them now — the script loops per host, fail-fast. |
+| Hosts | `{{EC2_HOST}}` → `ec2.hosts` | YAML list of public IPs/DNS names of **existing** instances (1..N; bare hosts, no `user@`). Ask for all of them now — the script loops per host, fail-fast — and note they must all share ONE architecture (one image is built for all of them). |
 | SSH user | `{{EC2_SSH_USER}}` → `ec2.ssh_user` | `ec2-user` (Amazon Linux) or `ubuntu` (Ubuntu). |
 | SSH key path | `{{EC2_SSH_KEY_PATH}}` → `ec2.ssh_key_path` | Path to the private key (`~` expands; relative paths resolve against the config file's directory). Point at the key's usual home (e.g. `~/.ssh/...`) — never copy a private key into the repo. Preflight enforces mode 600. |
-| Container name | `ec2.container_name` (ships `{{SERVICE_NAME}}`) | Bento name with `_`→`-`. Names the container that `docker rm -f` + `run` replaces on every deploy. |
+| Container name | `{{CONTAINER_NAME}}` → `ec2.container_name` | Names the container that `docker rm -f` + `run` replaces on every deploy. Defaults to the project directory's name; set it to the bento name with `_`→`-`. |
 | Host port | `ec2.host_port` (ships `3000`) | Published as `-p <host_port>:3000`. Preflight fails if anything other than our container holds it. |
 | Runtime env var names | `ec2.env_names` (ships `[]`) | NAMES only, e.g. `["HF_TOKEN"]` — values come from the deploying shell/CI environment at run time and are never written anywhere. |
 | Registry auth | `{{EC2_REGISTRY_AUTH}}` → `ec2.registry_auth` | `"ecr-token-over-ssh"` for ECR images when the deploying machine/CI holds AWS credentials (a fresh token is piped to each host per run — the only method that never touches instance IAM). `"preauthed"` when the instances pull on their own: instance profile, a docker login the user maintains, or a public image. |
@@ -198,8 +224,8 @@ keys live in the **top-level `ec2:`** section (v3 has no `targets` wrapper):
 | Local tunnel port | `ec2.local_tunnel_port` (ships `3230`) | Only for tunnel verify; change it if 3230 is taken locally. |
 
 Arch matching needs no extra question: preflight compares each host's
-`uname -m` against `image.platform` (or the local build arch) and fails
-before anything mutates.
+`uname -m` against the builder's architecture, cross-builds when they differ,
+and fails before anything mutates if two hosts disagree.
 
 ## Step 2 — Copy the bundle VERBATIM and render the config
 
@@ -222,8 +248,19 @@ diff -r --exclude=__pycache__ <this-skill>/templates/deploy <project>/deploy
 ```
 
 That must report **no differences at all** at this point. After rendering, the
-only differences may be `config.yml` and `README.md` — every `.py` file stays
-byte-identical forever, and there is no `k8s/` directory to add.
+only differences may be `config.yml`, the removal of the unused config template,
+and `README.md` — every `.py` file stays byte-identical forever, and there is no
+`k8s/` directory to add.
+
+The bundle ships TWO config templates. **Pick one** (see "Which config file to
+write" above), rename it to `config.yml`, and delete the other:
+
+```bash
+# all defaults accepted -> the 4-line file:
+mv <project>/deploy/config.minimal.yml <project>/deploy/config.yml   # overwrites the annotated one
+# anything customized -> keep the annotated one:
+rm <project>/deploy/config.minimal.yml
+```
 
 Then render placeholders in **exactly two files**: `deploy/config.yml` and
 `deploy/README.md`. Substitute only there, file by file — **never run a blanket
@@ -231,43 +268,55 @@ sed across the bundle**: the `.py` files must stay byte-identical to the
 templates, and some contain literal `{{SERVICE_NAME}}`-style text in comments
 that a global substitution would corrupt.
 
+Placeholders in the two config templates: `{{IMAGE_URL}}`, `{{K8S_CONTEXT}}`,
+`{{NAMESPACE}}` (both files), plus `{{ENTRY_SERVICE_NAME}}`,
+`{{DEP_SERVICE_NAME}}`, `{{INFERENCE_PATH}}`, `{{INFERENCE_BODY_TEXT}}`,
+`{{EXPECT_SUBSTRING}}` and the `{{EC2_*}}` / `{{CONTAINER_NAME}}` set in the
+annotated one. `README.md` additionally has `{{SERVICE_NAME}}` (its title — use
+the bento name), `{{ENTRY_SERVICE_SLUG}}` / `{{DEP_SERVICE_SLUG}}` (the rollback
+recipe — the derived slugs, i.e. the service names snake_cased with `_`→`-`) and
+the same `{{IMAGE_URL}}` / `{{K8S_CONTEXT}}` / `{{NAMESPACE}}` values. The
+literal `{{PLACEHOLDER}}` in its preflight prose is prose, not a placeholder —
+leave it.
+
 YAML notes (much less booby-trapped than the old JSON config — no commas, and
 `#` comments are real):
 
-- **Keep the shipped comments.** `config.yml` is now the file that documents
-  itself: it is the only file the user edits, and its comments carry the
-  BentoML-specific reasoning (the readiness floor, the pickle/RCE boundary, the
-  in-process-dependency trap, the HPA-vs-replicas rule). Prune only blocks you
-  delete outright; never strip comments to "tidy up".
+- **Keep the shipped comments** in the annotated file. It is the only file the
+  user edits, and its comments carry the BentoML-specific reasoning (the
+  readiness floor, the pickle/RCE boundary, the in-process-dependency trap, the
+  HPA-vs-replicas rule, the config_overrides nesting). Prune only blocks you
+  delete outright; never strip comments to "tidy up". Conversely, the minimal
+  file must stay **comment-free** — that is its whole point.
 - **Every placeholder is inside quotes on purpose** (`context: "{{K8S_CONTEXT}}"`).
   Substitute the value *inside* the quotes. An unquoted `{{...}}` is not valid
   YAML at all (`{` starts a flow mapping), so if you rewrite a line, keep the
   quotes — or drop them only for a value you know is a safe plain scalar.
-- **`services:` is a mapping keyed by BentoML service name.** Rename the two
-  example keys (`"{{DEP_SERVICE_NAME}}"` / `"{{ENTRY_SERVICE_NAME}}"`) to the
-  real service names, duplicate the dependency block once per extra service, and
-  for a **single-service** bento delete the dependency block entirely and set the
-  entry service's `depends: []`. Exactly one block may have `entry: true`. The
-  keys must match the bento's service names **exactly** — that string is what
-  `--service-name` and the dependency lookup use.
-- **Fill each service's `depends`** with its direct callees only. Never write a
-  rollout order, a dependency URL, or a `BENTOML_SERVE_DEPENDS` value: they are
-  derived. Never add a runner-map env var (the loader rejects it).
+- **`image:` carries NO tag** (the loader rejects one): `<registry>/<repository>`
+  only. The tag is the bento version. Use `""` only for the kind/minikube case.
+- **`services:` is optional and overrides-only**, keyed by BentoML service name
+  exactly as the bento spells it. Rename `"{{ENTRY_SERVICE_NAME}}"` to the
+  bento's entry service (that is the only block that may carry `expose:` /
+  `ingress:`), keep or delete the commented `"{{DEP_SERVICE_NAME}}"` example, and
+  **delete the whole `services:` section** when nothing needs an override. Never
+  write `entry:` or `depends:` — the loader rejects both (they moved to
+  `bento.yaml`) — and never write a rollout order, a dependency URL, a
+  `BENTOML_SERVE_DEPENDS` value, or a runner-map env var.
 - **Delete the whole `ec2:` section** for a k8s-only bundle, or the
   `kubernetes:` **and** `services:` sections for an ec2-only bundle. In YAML that
   is a clean block deletion — no comma surgery.
-- `verify.inference.body` is native YAML. Replace the whole mapping with the real
-  request body (any JSON-able shape); `expect_substring: null` if the user has
-  no substring in mind.
-- Optional keys ship as `null` (`project.service`, `image.platform`,
-  `image.ecr_region`, `kubernetes.image_pull_secret`,
-  `kubernetes.manifests_dir`, `expose.node_port`, `ingress.tls_secret`) or
-  `false` (`image.local_image_preloaded`) — replace them only when the parameter
-  applies. With `registry_type: none`, set `registry: ""` and
-  `local_image_preloaded: true` once the user has loaded the image.
-- `schema` must stay `bentoml-deploy-config/v3`. A v1/v2 config (the old
-  `deploy.config.json`) is rejected with exit 2 and a message telling the user to
-  regenerate; there is no in-place migration.
+- `verify.inference` is optional: replace `body:` with the real request body (any
+  JSON-able shape, native YAML) and pick an `expect_substring` only a correct
+  answer can contain, or delete the whole `inference:` block for a `/readyz`-only
+  verification (and say what that gives up: on a multi-service bento the
+  dependency-call proof is then logged as skipped).
+- Optional keys ship as `null` (`build_target`, `kubernetes.image_pull_secret`,
+  `kubernetes.manifests_dir`, `expose.node_port`, `ingress.tls_secret`) —
+  replace them only when the parameter applies.
+- `schema` is OPTIONAL: absent means the current version, which is why the
+  minimal file has no such key. Keep `schema: bentoml-deploy-config/v4` in the
+  annotated file. A v1/v2 (`deploy.config.json`) or v3 config is rejected with
+  exit 2 and a message naming what moved; there is no in-place migration.
 - **Leave `kubernetes.manifests_dir: null`** unless the user explicitly needs
   Kubernetes fields the schema does not have (sidecars, volumes, PDBs, affinity,
   `terminationGracePeriodSeconds`, `imagePullPolicy`, HPA `behavior`, probe paths
@@ -276,6 +325,12 @@ YAML notes (much less booby-trapped than the old JSON config — no commas, and
   and tell them those files are applied **verbatim, image ref included**, so
   every build means re-rendering or editing the tag, and they now own the
   wiring.
+- **`.gitignore`**: `__pycache__/`, `deploy/rendered/` and
+  `deploy/.bento-topology.json` (the topology cache the bundle writes next to the
+  config). Tell the user to **commit that cache instead** if their CI has to
+  render or `--check-only --local-only` without docker and without installing
+  `bentoml` — that file is the third topology source, and re-commit it whenever
+  the bento's service set changes.
 - Prune the README the same way: drop the chapters, CI/CD jobs, and rollback
   sections for targets that were not generated, and **retarget the generic
   examples** to the target(s) you did generate: the Usage lines, the CI
@@ -312,17 +367,24 @@ renderer (`deploy/_internal/render.py`) produces exactly those shapes from
 `config.yml`. Your job is to prove it and to show the result:
 
 ```bash
-# --render-only needs an image ref for the Deployments: --version (with
-# image.registry/repository), --image REF, or a git checkout (the default tag is
-# the short git SHA). Nothing is built; the ref is only written into the YAML.
+# --render-only needs two things:
+#   * an image ref for the Deployments: --version (with `image:`), --image REF,
+#     or a git checkout (the default tag is the short git SHA). Nothing is
+#     built; the ref is only written into the YAML.
+#   * the bento's topology. Nothing is built here either, so it comes from the
+#     image (docker pulls/reads it) or from deploy/.bento-topology.json. If the
+#     image does not exist yet, build the bento once (`bentoml build`) or run
+#     the full deploy first — the failure message names all three sources.
 python3 deploy/deploy.py --target k8s --render-only --version review
 kubectl --context <ctx> apply --dry-run=client -f deploy/rendered   # optional but cheap
 ```
 
 Then read the output with the user and confirm the things only they know:
-resources per service, exposure, and — most importantly — that
-`BENTOML_SERVE_DEPENDS` appears on **every** non-leaf service with the right
-pairs. `--render-only` prints the derived rollout order too.
+resources per service and exposure. The topology itself is NOT theirs to
+confirm — it came from the bento — but do show it: `--render-only` prints the
+derived rollout order, and the log line names which source answered.
+`BENTOML_SERVE_DEPENDS` on every non-leaf service is now a property of the
+renderer, not of anything the user wrote.
 
 The ec2 target needs no manifests — skip this step entirely for an ec2-only
 bundle.
@@ -333,6 +395,9 @@ Notes:
   add it to `.gitignore`; the deploy path renders in memory and never reads it.
   Re-rendering prunes stale files it owns (renamed slug, deleted service, HPA
   switched off) and warns about files it does not own.
+- The render also (re)writes `deploy/.bento-topology.json` whenever it discovers
+  the topology freshly. That is deliberate: it seeds the third source for later
+  build-free runs.
 - There is exactly ONE renderer and ONE validator: `_internal/render.py` and
   `_internal/config.py` in this bundle. The interactive `bentoml-k8s-deploy`
   skill does not implement either — it writes `config.yml` and then calls this
@@ -396,8 +461,10 @@ Then tell the user:
    healthy.
 3. **How to change the deployment**: edit `config.yml`, optionally
    `--render-only` to review the diff, re-run. Adding or removing a BentoML
-   service is now a one-file change (a new `services:` block plus the caller's
-   `depends`) — no manifests and no rollout list to maintain.
+   service needs **no config change at all** — declare it in `service.py` with
+   its `bentoml.depends(...)`, re-run, and it gets a Deployment, a Service, its
+   place in the rollout order and its dependency URLs. Only non-default
+   resources or exposure need a `services:` block.
 4. **How to deploy**: `python3 deploy/deploy.py --target <k8s|ec2>`
    (full build+push+deploy+verify), and the `--skip-build --image REF` form
    for redeploys/rollbacks. For ec2, secrets named in `env_names` must be

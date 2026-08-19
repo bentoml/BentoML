@@ -18,6 +18,13 @@ renderer puts `imagePullSecrets` on **every** Deployment, since all services of 
 the same image and need the same pull secret. The Secret is namespaced — recreate it in
 every namespace that pulls the image.
 
+Note the two halves are independent. `kubernetes.image_pull_secret` is how the **cluster**
+pulls. How the **build machine** pushes is derived from the `image` URL and has no config
+key: an `*.dkr.ecr.<region>.amazonaws.com` host triggers `aws ecr get-login-password` and a
+describe-or-create of the repository; any other host assumes you have already run
+`docker login`. There is no `image.registry_type` / `image.ecr_region` in the v4 schema, and
+`image` never carries a tag (the tag is the bento version).
+
 Quick test that credentials + image ref are right (run once, then delete):
 
 ```bash
@@ -76,12 +83,11 @@ minikube image load <IMAGE>                                  # minikube
 k3d image import <IMAGE> -c <cluster-name>                   # k3d
 ```
 
-Then in `config.yml` set `image.registry_type: none` with
-`image.local_image_preloaded: true` (the loader requires the pair), and leave
-`kubernetes.image_pull_secret: null`. Nothing is pushed, and the rendered
-`imagePullPolicy: IfNotPresent` keeps the kubelet from trying to pull an image that only
-exists on the node — avoid mutable `:latest`-style tags here, since a stale local layer can
-then be used silently.
+Then in `config.yml` set `image: ""` (an empty image URL is what says "the image is
+already on the nodes") and leave `kubernetes.image_pull_secret: null`. Nothing is pushed,
+the bento tag is used as the image name, and the rendered `imagePullPolicy: IfNotPresent`
+keeps the kubelet from trying to pull an image that only exists on the node — avoid mutable
+`:latest`-style tags here, since a stale local layer can then be used silently.
 
 ## Throwaway public registry: ttl.sh
 
@@ -93,7 +99,9 @@ docker tag <IMAGE> ttl.sh/<any-unique-name>:1h
 docker push ttl.sh/<any-unique-name>:1h
 ```
 
-Render with `--image ttl.sh/<any-unique-name>:1h` (`image.registry: ttl.sh`,
-`image.repository: <any-unique-name>`, `registry_type: generic`); no pull secret needed. The image
-vanishes after the TTL and is publicly pullable meanwhile — never use it for anything
-sensitive or lasting.
+Render with `--image ttl.sh/<any-unique-name>:1h` (in `config.yml`:
+`image: ttl.sh/<any-unique-name>`, no tag — the tag ttl.sh reads as its TTL is the bento
+version, so pass `--version 1h` if you want the bundle to build and push it itself); no
+pull secret needed. The registry host is not an ECR host, so no login is attempted, which
+is right for ttl.sh. The image vanishes after the TTL and is publicly pullable meanwhile —
+never use it for anything sensitive or lasting.

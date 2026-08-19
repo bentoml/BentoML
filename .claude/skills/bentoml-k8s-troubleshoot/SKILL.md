@@ -1,14 +1,31 @@
 ---
 name: bentoml-k8s-troubleshoot
-description: Diagnose and fix BentoML services deployed to Kubernetes with the bentoml-k8s-deploy skill (plain Deployment + Service, port 3000, /livez + /readyz probes). Use when the user says things like "my BentoML deployment is failing", "pods are crashing / CrashLoopBackOff / ImagePullBackOff", "pod stuck Pending", "readiness probe failing", "rollout stuck", "can't reach my service on Kubernetes", or "inference requests return 4xx/5xx errors".
+description: Diagnose and fix BentoML services deployed to Kubernetes with the bentoml-k8s-deploy or bentoml-deploy-scriptgen skills (one plain Deployment + Service per BentoML service, rendered from deploy/config.yml, port 3000, /livez + /readyz probes). Use when the user says things like "my BentoML deployment is failing", "pods are crashing / CrashLoopBackOff / ImagePullBackOff", "pod stuck Pending", "readiness probe failing", "rollout stuck", "can't reach my service on Kubernetes", or "inference requests return 4xx/5xx errors".
 ---
 
 # Troubleshoot a BentoML service on Kubernetes
 
-You are diagnosing a BentoML service deployed as a plain `Deployment` + `Service`
-(created by the sibling skill `bentoml-k8s-deploy`): container port **3000**, liveness
-probe **`GET /livez`**, readiness probe **`GET /readyz`**, and a generous `startupProbe`
-on `/readyz` because model loading can take minutes.
+You are diagnosing a bento deployed as **one plain `Deployment` + `Service` per BentoML
+service the bento declares** (created by `bentoml-k8s-deploy` or
+`bentoml-deploy-scriptgen`, which render them from `<project>/deploy/config.yml`):
+container port **3000**, liveness probe **`GET /livez`**, readiness probe
+**`GET /readyz`**, and a generous `startupProbe` on `/readyz` because model loading can
+take minutes. A single-service bento has exactly one of each; a multi-service bento has
+one per service, wired by `BENTOML_SERVE_DEPENDS`, with only the **entry** service ever
+exposed outside the cluster.
+
+**Diagnose the deepest dependency first.** A caller's `/readyz` fans out to its
+dependencies, so an entry service stays 503 and unready purely because something two
+tiers down is broken. `kubectl get pods -n <ns>` across all of them, then start with the
+service that depends on nothing:
+
+```sh
+kubectl get deploy,pods -n <ns> -L app.kubernetes.io/component
+```
+
+`app.kubernetes.io/component` carries the BentoML service name, `app.kubernetes.io/name`
+the slug (the object name), and `app.kubernetes.io/part-of` the bento — so one namespace
+can hold several bentos and you can still tell which pods belong together.
 
 Work the decision tree below: run the triage block, match the symptom, run the
 diagnostics for that symptom, state the likely cause, then apply the fix.
@@ -16,9 +33,12 @@ diagnostics for that symptom, state the likely cause, then apply the fix.
 ## Placeholders used throughout
 
 - `<ns>` — namespace of the deployment (ask the user; the deploy skill asked them too)
-- `<name>` — the app name, i.e. the value of the `app.kubernetes.io/name` label
-  (the service class name, snake_cased and then `_`→`-`,
-  e.g. `Summarization` → `summarization`, `MyService` → `my-service`)
+- `<name>` — the slug of ONE BentoML service, i.e. the value of its
+  `app.kubernetes.io/name` label and the name of its Deployment/Service (the service
+  class name snake_cased with `_`→`-`, e.g. `Summarization` → `summarization`,
+  `MyService` → `my-service`, unless `services.<Name>.slug` overrode it). With a
+  multi-service bento, every command below is per service — run it for the one you are
+  diagnosing.
 - `<pod>` — a concrete pod name from `kubectl get pods` output
 - `<deploy>` — the Deployment name (usually the same as `<name>`)
 - Other `<...>` tokens are literal values from the user's setup (registry, credentials,
@@ -27,9 +47,24 @@ diagnostics for that symptom, state the likely cause, then apply the fix.
 ## Safety rules (binding)
 
 - **Never delete** resources these skills did not create. Never `kubectl delete`
-  Deployments, Services, Secrets, or namespaces as a "fix". Prefer `kubectl apply` of a
-  corrected manifest (the deploy skill writes manifests to the project's `k8s/` dir) or
-  `kubectl rollout restart deployment/<deploy> -n <ns>`.
+  Deployments, Services, Secrets, or namespaces as a "fix". Prefer re-applying a
+  corrected configuration or `kubectl rollout restart deployment/<deploy> -n <ns>`.
+- **The manifests are not files — they are rendered.** `bentoml-k8s-deploy` and
+  `bentoml-deploy-scriptgen` both produce `<project>/deploy/config.yml` plus
+  `deploy/deploy.py`, which renders one Deployment + Service per BentoML service from
+  that config on every run and pipes them to `kubectl apply`. So a fix is a **config.yml
+  edit followed by a re-run**, not a `kubectl edit` and not a patched YAML file:
+  ```sh
+  python3 deploy/deploy.py --target k8s --render-only /tmp/fix   # inspect the change
+  python3 deploy/deploy.py --target k8s --skip-build --image <current-ref>   # apply it
+  ```
+  Rendering shows the whole diff before anything is applied, and `--skip-build` reuses
+  the image already running, so a config fix never silently ships a new build.
+  `kubectl edit`/`patch` still has one legitimate use: proving a hypothesis on one
+  Deployment. Say out loud that the next `deploy.py` run reverts it, and move the change
+  into `config.yml` once it is confirmed.
+  The exception is a project that set `kubernetes.manifests_dir` — then the YAML in that
+  directory IS the source of truth, is applied verbatim, and you edit it directly.
 - **Always show the user the target context and namespace before any mutating command**
   and get their confirmation:
   ```sh
@@ -54,6 +89,7 @@ Route on the pod STATUS / describe output:
 
 | Observation | Go to |
 |---|---|
+| Everything Ready, answers correct, but the dependency pods look idle | 11 |
 | `ImagePullBackOff` / `ErrImagePull` | 1 |
 | `CrashLoopBackOff` / `Error` | 2 |
 | `OOMKilled` (in `Last State` of describe) | 3 |
@@ -80,8 +116,11 @@ Likely causes and fixes:
 - **`not found` / `manifest unknown`** — wrong image ref or tag never pushed. Compare
   the pod's image against what was actually pushed (`docker images | grep <name>`).
   Remember BentoML tags images as `name:version` (e.g. `summarization:abc123`), which
-  must be retagged to `<registry>/<repo>:<tag>` and pushed. Fix the `image:` field in
-  `k8s/deployment.yaml` and `kubectl apply -n <ns> -f k8s/deployment.yaml`.
+  must be retagged to `<registry>/<repo>:<tag>` and pushed. The pods' image ref is
+  `<image URL from config.yml>:<bento version>`, so the fix is either to push the
+  missing tag or to deploy an existing one:
+  `python3 deploy/deploy.py --target k8s --skip-build --image <registry>/<repo>:<tag>`
+  (preflight verifies that ref exists in the registry before touching the cluster).
 - **`unauthorized` / `authentication required`** — private registry without
   `imagePullSecrets`. Create the secret and reference it (never write credentials into
   a manifest file):
@@ -90,8 +129,13 @@ Likely causes and fixes:
     --docker-server=<registry> --docker-username=<user> \
     --docker-password=<password-or-token>
   ```
-  Add to the Deployment pod spec: `spec.template.spec.imagePullSecrets: [{name: regcred}]`,
-  then `kubectl apply`.
+  Then set `kubernetes.image_pull_secret: regcred` in `config.yml` and re-run
+  (`--skip-build --image <current-ref>`); the renderer puts it on every pod. Two things
+  worth checking first: the namespace's `default` serviceaccount may already carry
+  credentials (`kubectl -n <ns> get sa default -o jsonpath='{.imagePullSecrets[*].name}'`),
+  in which case nothing belongs in `config.yml`; and an **ECR** token expires after 12 h,
+  so an old secret fails exactly like a missing one — delete and recreate it (`kubectl
+  apply` over a secret keeps its original creationTimestamp, so it still looks stale).
 - **`no match for platform in manifest`** (containerd) or **`no matching manifest for
   linux/amd64 in the manifest list entries`** (Docker) — arch mismatch: image built on
   Apple Silicon (arm64) for an amd64 cluster. Rebuild with
@@ -99,7 +143,9 @@ Likely causes and fixes:
   `kubectl rollout restart deployment/<deploy> -n <ns>`.
 - **kind/minikube cluster can't pull at all** — local clusters can't see the host's
   Docker images. Use `kind load docker-image <image> --name <cluster>` or
-  `minikube image load <image>`, and set `imagePullPolicy: IfNotPresent`.
+  `minikube image load <image>`. The renderer already sets
+  `imagePullPolicy: IfNotPresent`, and an empty `image:` in `config.yml` is exactly this
+  case: nothing is pushed and the image is named after the bento.
 
 ## 2. CrashLoopBackOff
 
@@ -149,8 +195,9 @@ kubectl get pod -n <ns> <pod> -o jsonpath='{.spec.containers[0].resources}{"\n"}
 
 Likely cause: memory limit smaller than model weights + inference working set. Rule of
 thumb: limit >= ~1.5-2x the model files' size on disk (weights expand in RAM). Fix by
-raising `resources.limits.memory` (and `requests.memory`) in `k8s/deployment.yaml` and
-`kubectl apply -n <ns> -f k8s/deployment.yaml`. If the node itself is too small, that
+raising `services.<Name>.resources.limits.memory` (and `requests.memory`) in
+`config.yml`, then re-running with `--skip-build --image <current-ref>`. Quantities are
+**quoted strings** (`memory: "8Gi"`). If the node itself is too small, that
 becomes a Pending problem (section 4). OOM during startup (kill within the first
 minutes, logs stop mid model-load) is the same fix — it is not a probe problem.
 
@@ -164,8 +211,12 @@ kubectl describe nodes | grep -A6 "Allocated resources"
 ```
 
 - **`Insufficient cpu` / `Insufficient memory`** — requests exceed free node capacity.
-  Lower `resources.requests` in `k8s/deployment.yaml` (keep limits >= requests) and
-  apply, or the user must add/resize nodes.
+  Lower `services.<Name>.resources.requests` in `config.yml` (keep limits >= requests)
+  and re-run, or the user must add/resize nodes. Do the arithmetic before blaming the
+  cluster: the default request is **500m CPU / 1Gi per service**, so a four-service bento
+  asks for 2 CPU and 4Gi of *schedulable* capacity, and `replicas` multiplies it. A busy
+  node can be at 98% requested CPU while `kubectl top node` shows it 40% *used* —
+  scheduling is decided on requests, not usage.
 - **`Insufficient nvidia.com/gpu`** — either no GPU nodes, or the NVIDIA device plugin
   is not installed so GPUs aren't advertised. Check:
   ```sh
@@ -190,10 +241,12 @@ kubectl logs -n <ns> <pod> --tail=50
 ```
 
 - If logs show active model loading (download progress bars, checkpoint shards) and the
-  pod is only a few minutes old: **wait**. The deploy skill's startupProbe budget is
-  about 10 minutes (`periodSeconds: 5`, `failureThreshold: 120`). If loading genuinely
-  needs longer, raise `failureThreshold` in `k8s/deployment.yaml` and apply — do not
-  shrink or remove the probe.
+  pod is only a few minutes old: **wait**. The rendered startupProbe budget is
+  `periodSeconds: 10` x `failureThreshold: 60` = about 10 minutes. If loading genuinely
+  needs longer, raise `services.<Name>.probes.startup_failure_threshold` in `config.yml`
+  and re-run — do not shrink or remove the probe. Keep
+  `kubernetes.rollout_timeout_seconds` above the new budget, or a pod that just makes it
+  loses the race and the run reports a failure at the moment it succeeded.
 - If the startup log line already appeared (see log hints below) but readiness still
   fails, ask `/readyz` yourself and **read the response body** — BentoML puts the reason
   there:
@@ -229,8 +282,10 @@ kubectl get pods -n <ns> -l app.kubernetes.io/name=<name>
 
 A stuck rollout means new-ReplicaSet pods never became Ready — diagnose those pods with
 sections 1-5. If the newly pushed image is broken and the user wants the previous
-version back while they fix it, prefer fixing the image ref in `k8s/deployment.yaml`
-and re-applying; `kubectl rollout undo deployment/<deploy> -n <ns>` is acceptable
+version back while they fix it, prefer redeploying the last good ref
+(`python3 deploy/deploy.py --target k8s --skip-build --image <previous-ref>`), which
+puts every service back in dependency order in one command; `kubectl rollout undo
+deployment/<deploy> -n <ns>` is acceptable
 (it only rolls the Deployment back, deletes nothing) — confirm with the user first.
 If the same tag was re-pushed with new content, nodes may run a stale cached image:
 set a fresh unique tag instead of reusing tags.
@@ -246,9 +301,14 @@ kubectl get svc -n <ns> <name> -o yaml | grep -A5 "selector:\|ports:"
 kubectl get pods -n <ns> -l app.kubernetes.io/name=<name> --show-labels
 ```
 
-- **`ENDPOINTS <none>`** — Service selector doesn't match pod labels (deploy skill uses
-  `app.kubernetes.io/name: <name>`), or matching pods aren't Ready (sections 2-5). Fix
-  the selector/labels in `k8s/` and apply.
+- **`ENDPOINTS <none>`** — Service selector doesn't match pod labels (the renderer uses
+  `app.kubernetes.io/name: <slug>` on both sides), or matching pods aren't Ready
+  (sections 2-5). In the rendering path a mismatch cannot come from `config.yml`
+  (`extra_labels` cannot overwrite the identity labels — the renderer wins), so suspect a
+  hand-edited object, a stale Deployment from an earlier naming scheme, or a
+  `kubernetes.manifests_dir` project whose selector and template drifted apart. Re-run
+  `deploy.py` to reconcile the rendered objects; for a manifests_dir project, fix the
+  YAML so `spec.selector.matchLabels` and `spec.template.metadata.labels` agree.
 - **Endpoints exist but curl fails** — wrong port wiring. Service `targetPort` must be
   `3000` (or the port name `http`). Bypass the Service to isolate:
   ```sh
@@ -308,11 +368,13 @@ kill %1
 
 ## 9. `kubectl apply` rejected a manifest (validation error)
 
-`kubectl apply -f k8s/` applies file-by-file, so a rejection leaves a half-applied
+`kubectl apply` processes objects one by one, so a rejection can leave a half-applied
 state — run the Step 0 triage to see which objects exist. Common cause: invalid name —
 K8s **Service** names are DNS-1035 (must start with a *letter*) while most other names
-are DNS-1123, so e.g. `1st-model` fails as a Service name. Fix the name in the `k8s/`
-manifests and re-apply. Renames create *new* objects: it is OK to `kubectl delete` the
+are DNS-1123, so e.g. a BentoML service whose slug would be `1st_model` fails. The
+rendering path validates slugs against DNS-1035 at config load time (exit 2 before
+anything is applied), so this is either a `services.<Name>.slug` you can fix in
+`config.yml` or a hand-owned `manifests_dir` file; re-render/re-apply after fixing. Renames create *new* objects: it is OK to `kubectl delete` the
 misnamed objects **this deploy-skill run just created** and re-apply — that is the one
 sanctioned delete; the never-delete rule still protects everything pre-existing.
 
@@ -325,6 +387,57 @@ is alive (`kill -0 <port-forward-pid>`) and prefer an uncommon local port, e.g.
 `kubectl port-forward -n <ns> svc/<name> 3100:3000` then curl `localhost:3100`.
 Always verify response CONTENT (e.g. `/docs.json` mentions your endpoints), not just
 the status code — then follow the tunnel-wait guidance in section 5.
+
+## 11. Everything is healthy and the dependency pods are idle
+
+Multi-service bentos only. Symptom: every pod is Ready, the entry service returns 200 with
+**correct** answers, and yet the dependency pods show no traffic — no access-log lines, no
+CPU, `bentoml_service_request_total` flat. Nothing is broken from Kubernetes' point of
+view, which is what makes this one dangerous.
+
+Cause: the entry pod could not see a URL for a dependency and instantiated it
+**IN-PROCESS** instead — same code, same answers, one pod doing all the work. BentoML's
+dependency resolution falls back silently: no warning is logged, and readiness only fans
+out to dependencies it holds a remote proxy for, so `/readyz` returns 200 either way. The
+deployment is functionally a single-pod bento with a multi-pod bill: the dependency's
+replicas, resources and HPA are all inert, and one pod loads every model (a frequent OOM
+cause, section 3).
+
+Prove it with the dependency's own counter — scrape it, send ONE inference request to the
+entry service, scrape again:
+
+```sh
+kubectl port-forward -n <ns> svc/<dependency-slug> 3101:3000 &
+curl -s localhost:3101/metrics | grep '^bentoml_service_request_total'   # before
+# in another shell: one real request to the ENTRY service, then re-scrape
+curl -s localhost:3101/metrics | grep '^bentoml_service_request_total'   # after
+kill %1
+```
+
+Unchanged (excluding `/livez`, `/readyz`, `/metrics` samples — probes move the counter
+too) means the call never crossed the network. `deploy.py` runs exactly this check after
+every deploy when `verify.inference` is configured and fails with **exit 7** — which is
+why `verify.inference` is worth configuring for any bento with dependencies.
+
+Then find the wiring fault in the entry pod's environment:
+
+```sh
+kubectl get deploy -n <ns> <entry-slug> -o jsonpath='{.spec.template.spec.containers[0].env}' | tr ',' '\n'
+```
+
+- **`BENTOML_SERVE_DEPENDS` missing a dependency, or missing entirely** — every service
+  that has dependencies needs it, middle tiers included. The renderer derives it from
+  `bento.yaml`, so in the rendering path re-running `deploy.py` fixes it; in a
+  `kubernetes.manifests_dir` project you own that env var and must list every dependency
+  as `Name=http://<slug>.<ns>.svc.cluster.local:3000`, whitespace-separated, keyed on the
+  BentoML service name exactly as `bento.yaml` spells it.
+- **`BENTOML_RUNNER_MAP` or `BENTOML_SERVE_RUNNER_MAP` present** — remove it. The serving
+  parent overwrites it, and any dependency missing from the effective map is exactly what
+  triggers the in-process fallback. `config.yml` rejects it in any `env` block; a
+  hand-owned manifest does not.
+- **The container command was overridden** — the image entrypoint must stay in charge
+  (`start-http-server --service-name <Name>`). A `command:` of your own that runs plain
+  `bentoml serve` starts the whole DAG in one pod by design.
 
 ## Reading BentoML logs (hints)
 

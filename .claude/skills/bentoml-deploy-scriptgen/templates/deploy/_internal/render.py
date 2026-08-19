@@ -9,7 +9,9 @@ them in memory on every run and pipes the result to `kubectl apply -f -`, and
 GitOps. Nothing is hand-owned, so a whole class of wiring mistakes cannot
 happen (see the README's "what preflight no longer has to check").
 
-What is emitted, per BentoML service in `services:`:
+What is emitted, per BentoML service the bento declares (its service list, its
+entry service and its dependency DAG all come from `bento.yaml` — see
+topology.py — so no config key can contradict them):
 
   * one Deployment — `args: ["start-http-server", "--service-name", "<Name>"]`
     (NEVER `command:`, which would skip the image entrypoint's venv
@@ -203,7 +205,7 @@ def labels_for(cfg: Config, svc: ServiceSpec) -> dict[str, str]:
         labels[key] = value
     labels["app.kubernetes.io/name"] = svc.slug
     labels["app.kubernetes.io/component"] = svc.name
-    labels["app.kubernetes.io/part-of"] = cfg.project.name
+    labels["app.kubernetes.io/part-of"] = cfg.bento_name
     labels["app.kubernetes.io/managed-by"] = MANAGED_BY
     return labels
 
@@ -270,7 +272,7 @@ def _deployment(
     role = "entry service" if svc.entry else "dependency"
     header = (
         f"# Deployment for the BentoML service {svc.name} ({role})\n"
-        f"# bento: {cfg.project.name}\n" + _HEADER
+        f"# bento: {cfg.bento_name}\n" + _HEADER
     )
     container: dict[str, Any] = {
         "name": "bentoml",
@@ -547,7 +549,7 @@ def render_documents(cfg: Config, image: str) -> list[RenderedDoc]:
     service's optional Ingress. Deterministic."""
     k8s = cfg.require_k8s()
     docs: list[RenderedDoc] = []
-    for svc in k8s.services:
+    for svc in k8s.require_bound():
         docs.append(_deployment(cfg, k8s, svc, image))
         docs.append(_service(cfg, k8s, svc))
         if svc.autoscaling.enabled:

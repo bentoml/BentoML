@@ -7,8 +7,10 @@ block, re-rendering and re-applying. Choose the method with the user based on wh
 clients live. In a multi-service bento only the **entry** service is ever
 exposed — the dependency Services stay `ClusterIP`, because inter-service traffic is
 `application/vnd.bentoml+pickle` (unauthenticated pickle deserialization) — which is why
-`expose:`/`ingress:` on a non-entry service is a config error. `<entry-slug>` below is the
-entry service's `slug` from `config.yml`.
+`expose:`/`ingress:` on a non-entry service is a config error. Which service is the entry
+one is not declared in `config.yml` either — it is `bento.yaml`'s `entry_service`. Its
+`expose:`/`ingress:` block lives under `services.<EntryServiceName>:`, and `<entry-slug>`
+below is its slug (derived from the service name: snake_cased, `_` -> `-`).
 
 | Method | Reachable from | Needs | Best for |
 |---|---|---|---|

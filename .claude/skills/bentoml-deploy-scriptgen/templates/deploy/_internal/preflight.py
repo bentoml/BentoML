@@ -12,7 +12,6 @@ tunables live in config.yml.
 from __future__ import annotations
 
 import json
-import platform
 import re
 import shutil
 import sys
@@ -22,6 +21,7 @@ from datetime import timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from .arch import docker_builder_arch
 from .common import EXIT_PREFLIGHT
 from .common import DeployError
 from .common import log
@@ -29,6 +29,8 @@ from .common import run
 from .common import warn
 from .config import CONFIG_FILE_NAME
 from .config import ECR_HOST_RE
+from .config import REGISTRY_KIND_ECR
+from .config import REGISTRY_KIND_NONE
 from .config import Config
 from .config import yaml
 
@@ -96,20 +98,20 @@ def common_checks(cfg: Config, need_git: bool) -> list[Check]:
     def git_repo() -> str | None:
         _which("git", "install git, or pass an explicit --version/--image")
         res = run(
-            ["git", "-C", str(cfg.project.dir), "rev-parse", "--short", "HEAD"],
+            ["git", "-C", str(cfg.project), "rev-parse", "--short", "HEAD"],
             capture=True,
             check=False,
             quiet=True,
         )
         if res.returncode != 0:
             raise CheckFailed(
-                f"{cfg.project.dir} is not a git repository (the default image tag is the "
+                f"{cfg.project} is not a git repository (the default image tag is the "
                 "short git SHA)",
                 hint="run from a git checkout, or pass --version TAG or "
                 "--image REF explicitly",
             )
         dirty = run(
-            ["git", "-C", str(cfg.project.dir), "status", "--porcelain"],
+            ["git", "-C", str(cfg.project), "status", "--porcelain"],
             capture=True,
             check=False,
             quiet=True,
@@ -182,15 +184,15 @@ def build_checks(cfg: Config) -> list[Check]:
 
     def service_files() -> str | None:
         # The build context must look like a BentoML project.
-        has_service = (cfg.project.dir / "service.py").is_file()
-        has_bentofile = (cfg.project.dir / "bentofile.yaml").is_file()
+        has_service = (cfg.project / "service.py").is_file()
+        has_bentofile = (cfg.project / "bentofile.yaml").is_file()
         if not has_service and not has_bentofile:
             raise CheckFailed(
-                f"neither service.py nor bentofile.yaml found in {cfg.project.dir}",
-                hint="fix project.dir in config.yml (resolved relative to "
-                "the deploy/ directory)",
+                f"neither service.py nor bentofile.yaml found in {cfg.project}",
+                hint="fix `project:` in config.yml (a path resolved relative "
+                "to the directory that holds config.yml)",
             )
-        return str(cfg.project.dir)
+        return str(cfg.project)
 
     return [
         ("build.bentoml-cli", bentoml_cli),
@@ -209,22 +211,21 @@ IMAGE_SIZE_ESTIMATE_GB = 2.0
 DISK_HEADROOM_GB = IMAGE_SIZE_ESTIMATE_GB * 2.5
 
 
-def _host_arch() -> str:
-    machine = platform.machine().lower()
-    return {"x86_64": "amd64", "aarch64": "arm64", "arm64": "arm64"}.get(
-        machine, machine
-    )
-
-
 def containerize_checks(
     cfg: Config, local_only: bool = False, skipped: list | None = None
 ) -> list[Check]:
+    """docker presence, daemon reachability and disk headroom.
+
+    The build PLATFORM is not decided here: v4 has no `platform` knob, and the
+    architecture to build for depends on the deploy target (the cluster's nodes,
+    or the EC2 hosts). Each target's own checks compare it against the builder
+    architecture reported here and set ctx.build_platform — see arch.py.
+    """
     if local_only:
         if skipped is not None:
             skipped += [
                 "containerize.docker-daemon (--local-only)",
                 "containerize.disk-space (--local-only)",
-                "containerize.buildx (--local-only)",
             ]
 
         def docker_cli() -> str | None:
@@ -237,7 +238,7 @@ def containerize_checks(
 
         return [("containerize.docker-cli", docker_cli)]
 
-    daemon_info = {"root": "", "arch": ""}
+    daemon_info = {"root": ""}
 
     def docker_daemon() -> str | None:
         _which("docker", "install docker and start the daemon")
@@ -258,10 +259,12 @@ def containerize_checks(
                 f"docker daemon not reachable: {(res.stderr.strip() or res.stdout.strip())[:300]}",
                 hint="start Docker (or Docker Desktop / colima) and retry",
             )
-        version, arch, root = (res.stdout.strip().split("|") + ["", ""])[:3]
+        version, _, root = (res.stdout.strip().split("|") + ["", ""])[:3]
         daemon_info["root"] = root
-        daemon_info["arch"] = {"x86_64": "amd64", "aarch64": "arm64"}.get(arch, arch)
-        return "server {}, arch {}".format(version, daemon_info["arch"])
+        # docker_builder_arch() asks the same daemon (and caches), so the
+        # architecture reported here is exactly the one the target's
+        # cross-arch check compares against.
+        return "server {}, arch {}".format(version, docker_builder_arch() or "unknown")
 
     def disk_space() -> str | None:
         # Rough guard with a FIXED estimate: containerize needs roughly 2.5x
@@ -285,32 +288,9 @@ def containerize_checks(
             )
         return f"{free_gb:.1f} GiB free"
 
-    def buildx_for_cross_arch() -> str | None:
-        if not cfg.image.platform:
-            return "no explicit platform requested"
-        target_arch = cfg.image.platform.split("/", 1)[1]
-        host = daemon_info["arch"] or _host_arch()
-        if target_arch == host:
-            return f"platform {cfg.image.platform} matches host"
-        res = run(
-            ["docker", "buildx", "version"],
-            capture=True,
-            quiet=True,
-            check=False,
-            timeout=30,
-        )
-        if res.returncode != 0:
-            raise CheckFailed(
-                f"cross-arch build ({cfg.image.platform} on {host} host) requires docker buildx",
-                hint="install the docker buildx plugin (ships with Docker "
-                "Desktop; on Linux: docker-buildx-plugin package)",
-            )
-        return f"buildx available for {cfg.image.platform}"
-
     return [
         ("containerize.docker-daemon", docker_daemon),
         ("containerize.disk-space", disk_space),
-        ("containerize.buildx", buildx_for_cross_arch),
     ]
 
 
@@ -322,11 +302,11 @@ def containerize_checks(
 def registry_checks(
     cfg: Config, local_only: bool = False, skipped: list | None = None
 ) -> list[Check]:
-    if cfg.image.registry_type == "none":
+    if cfg.image.kind == REGISTRY_KIND_NONE:
         # Nothing is ever pushed; the image must already be on the cluster
         # nodes. This is a pure config check, so it runs in local-only too.
         return [local_preload_check(cfg)]
-    if cfg.image.registry_type == "ecr":
+    if cfg.image.kind == REGISTRY_KIND_ECR:
         if local_only:
             if skipped is not None:
                 skipped += [
@@ -349,22 +329,26 @@ def registry_checks(
 
 
 def local_preload_check(cfg: Config) -> Check:
-    """registry_type "none": require an explicit acknowledgement that the
-    image was loaded into the cluster nodes, instead of failing later with
-    an ImagePullBackOff after burning the rollout timeout."""
+    """Empty `image:` — the kind/minikube case: nothing is pushed anywhere, so
+    the image must already be on the cluster nodes under its bento tag. Nothing
+    outside the cluster can prove that, so this check states it loudly instead
+    of pretending to verify it (the failure mode it warns about is an
+    ImagePullBackOff, which the rollout wait reports within a few seconds of the
+    pods reaching that state)."""
 
     def preloaded() -> str | None:
-        if cfg.image.local_image_preloaded:
-            return "image.local_image_preloaded acknowledged"
-        raise CheckFailed(
-            "registry_type is 'none': nothing is pushed, so the image must "
-            "already be loaded into the cluster nodes",
-            hint="load it (minikube image load <image> / kind load "
-            "docker-image <image> --name <cluster>) and set "
-            "image.local_image_preloaded: true in config.yml to acknowledge",
+        warn(
+            "`image:` is empty, so NOTHING IS PUSHED: the image name is the "
+            "bento tag and every node must already have it. Load it first — "
+            "minikube image load <bento>:<tag>, or kind load docker-image "
+            "<bento>:<tag> --name <cluster> — or set `image: "
+            "<registry>/<repository>` in config.yml to push it instead. An "
+            "image that is missing on the nodes fails as ImagePullBackOff, "
+            "which the rollout wait reports as soon as kubelet gives up."
         )
+        return "no registry configured; image must be preloaded on the nodes"
 
-    return ("registry.local-image-preloaded", preloaded)
+    return ("registry.local-image", preloaded)
 
 
 def image_exists_checks(cfg: Config, image_ref: str) -> list[Check]:
@@ -372,7 +356,7 @@ def image_exists_checks(cfg: Config, image_ref: str) -> list[Check]:
     deploy burns the rollout timeout discovering it does not. Absence is a
     hard failure; an inconclusive probe (bad credentials, no docker) only
     warns."""
-    if cfg.image.registry_type == "none":
+    if cfg.image.kind == REGISTRY_KIND_NONE:
         return [local_preload_check(cfg)]
 
     def image_exists() -> str | None:

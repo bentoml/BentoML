@@ -169,8 +169,16 @@ bentoml containerize "$BENTO_TAG"
 IMAGE="$BENTO_TAG"
 ```
 
-Docker image names must be lowercase. Reuse the bento version as the image tag
-so images stay traceable to bentos.
+Docker image names must be lowercase. **Use the bento version as the image tag,
+never anything else** — that is a contract, not a convention: the deploy skills'
+`config.yml` carries `image:` as a bare URL with NO tag and appends the bento
+version itself, so `$IMAGE` must be exactly
+
+    <the image URL that will go into config.yml>:<the bento version>
+
+Any other tag means the deployment looks for an image that was never pushed. The
+registry URL is a user-provided dependency (they must give you one their cluster
+can pull from); the tag is not a choice.
 
 **Cross-architecture:** if the build machine's arch differs from the cluster
 (e.g. Apple Silicon → amd64 cluster), pass the target platform:
@@ -265,8 +273,9 @@ with `docker manifest inspect "$IMAGE"`).
 This skill's output feeds three sibling deploy skills — pick the one matching
 where the user wants to run:
 
-- `bentoml-k8s-deploy` — consumes the pushed image reference and generates
-  plain Kubernetes manifests (Deployment + Service).
+- `bentoml-k8s-deploy` — consumes the pushed image reference, writes one
+  `deploy/config.yml` and renders the Kubernetes objects from it: one Deployment
+  + Service per BentoML service the bento declares.
 - `bentoml-ec2-deploy` — consumes the pushed image reference (typically ECR)
   and runs it on an EC2 instance with docker.
 
@@ -280,21 +289,29 @@ Report to the user, and pass to the chosen deploy skill:
 3. **Runtime env vars** the service needs (names only; secret values go into a
    Kubernetes Secret, never into manifests).
 4. **Architecture** the image was built for.
-5. **Suggested name(s)**: for a single-service bento, the snake_cased bento
-   name with underscores converted to hyphens (e.g. `my_service` →
-   `my-service`). Never derive it from the image repository — for ttl.sh images
-   the repo is a random UUID that may start with a digit, which is an invalid
-   DNS-1035 name for a Kubernetes Service. **For a multi-service bento the
-   Kubernetes objects are named per BentoML service, not per bento**, so pass
-   the topology instead (next item) and let the deploy skill derive one name
-   per service.
-6. **Service topology** (multi-service bentos — the first thing
-   `bentoml-k8s-deploy` needs): how many `@bentoml.service` classes the bento
+5. **The image URL and the bento version, separately.** The deploy skills need
+   the URL without the tag (that is what `image:` in `config.yml` holds) and the
+   bento version (which is the tag). Do **not** suggest object names: the
+   Kubernetes objects are named per BentoML service, derived from the bento's own
+   service names, so a name you invent here would either be ignored or wrongly
+   written into the config. In particular never derive a name from the image
+   repository — for ttl.sh images the repo is a random UUID that may start with a
+   digit, which is an invalid DNS-1035 name for a Kubernetes Service.
+6. **Service topology** — informational, not an input the deploy skill depends on:
+   it reads `bento.yaml` itself at deploy time (from the local bento store, or out
+   of the image under `--skip-build`). Still worth reporting so the user knows what
+   is about to be deployed: how many `@bentoml.service` classes the bento
    contains, which one is the entry service, and the dependency edges. The
-   authoritative source is `bento.yaml` inside the image
-   (`docker run --rm --entrypoint cat "$IMAGE" /home/bentoml/bento/bento.yaml`
-   → `entry_service`, `services[].name`, `services[].dependencies[].service`);
-   say so rather than guessing from `service.py`.
+   authoritative source is `bento.yaml` inside the image → `entry_service`,
+   `services[].name`, `services[].dependencies[].service`; say so rather than
+   guessing from `service.py`. Take `BENTO_PATH` from the image rather than
+   hard-coding it — a custom base image can put the bento elsewhere:
+
+   ```bash
+   BENTO_PATH=$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$IMAGE" \
+       | sed -n 's/^BENTO_PATH=//p' | head -n1)
+   docker run --rm --entrypoint cat "$IMAGE" "${BENTO_PATH:-/home/bentoml/bento}/bento.yaml"
+   ```
 7. Useful facts for the deploy target: the container serves HTTP on
    **port 3000**; health endpoints are **`/livez`** (liveness) and
    **`/readyz`** (readiness); the image entrypoint already runs `serve`, so no

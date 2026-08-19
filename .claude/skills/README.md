@@ -17,10 +17,10 @@ point at it in one line and stop.
 | Skill | What it does |
 |---|---|
 | [`bentoml-containerize`](bentoml-containerize/SKILL.md) | Builds your local BentoML project into a Bento, containerizes it, smoke-tests the container locally, and pushes it to your registry (Docker Hub, GHCR, ECR, private, `kind`/`minikube` local load, or ttl.sh). The entry point for every deploy target. |
-| [`bentoml-k8s-deploy`](bentoml-k8s-deploy/SKILL.md) | Deploys a pushed image to your Kubernetes cluster: renders plain manifests (Deployment + Service, optional Ingress) into your project's `k8s/`, applies them, and verifies with a real inference request. |
+| [`bentoml-k8s-deploy`](bentoml-k8s-deploy/SKILL.md) | Deploys a pushed image to your Kubernetes cluster: writes one `deploy/config.yml`, renders plain manifests from it — **one Deployment + Service per BentoML service the bento declares**, plus optional HPA/Ingress — applies them in dependency order, and verifies with a real inference request. |
 | [`bentoml-k8s-troubleshoot`](bentoml-k8s-troubleshoot/SKILL.md) | Diagnostic runbook for Kubernetes deployments that went wrong: ImagePullBackOff, CrashLoopBackOff, OOM, Pending, probe failures, unreachable services, inference 4xx/5xx. |
 | [`bentoml-ec2-deploy`](bentoml-ec2-deploy/SKILL.md) | Runs a pushed image under Docker on one or more plain EC2 instances — your existing instances over SSH, or a fresh instance provisioned via the AWS CLI. Includes ECR auth, verification, and teardown. |
-| [`bentoml-deploy-scriptgen`](bentoml-deploy-scriptgen/SKILL.md) | Generates a standalone, committable deploy bundle (`deploy/deploy.py` + config + manifests) that builds, pushes, deploys, and verifies without any agent — for production and CI/CD pipelines. Kubernetes and EC2 targets. |
+| [`bentoml-deploy-scriptgen`](bentoml-deploy-scriptgen/SKILL.md) | Generates a standalone, committable deploy bundle (`deploy/deploy.py` + one `config.yml`) that builds, pushes, deploys, and verifies without any agent — the manifests are rendered from the config on every run, so there is no YAML to keep in sync. For production and CI/CD pipelines. Kubernetes and EC2 targets. |
 
 A typical session chains them: **containerize → one deploy target → (troubleshoot if
 needed)**. The EC2 skill carries its own troubleshooting section;
@@ -42,10 +42,10 @@ flowchart TD
 | | Kubernetes (`bentoml-k8s-deploy`) | EC2 (`bentoml-ec2-deploy`) |
 |---|---|---|
 | **What you need** | A cluster you can reach with `kubectl` (cloud, on-prem, or local kind/minikube) and a registry it can pull from | An AWS account (or just SSH access to existing instances); ECR is the natural registry |
-| **What you get** | A Deployment + Service (optional Ingress) with liveness/readiness/startup probes, self-healing restarts | Your container on a VM with `--restart unless-stopped`; Swagger UI and metrics on port 3000 |
+| **What you get** | One Deployment + Service per BentoML service (optional HPA/Ingress) with liveness/readiness/startup probes, self-healing restarts, and the inter-service wiring derived from the bento | Your container on a VM with `--restart unless-stopped`; Swagger UI and metrics on port 3000 |
 | **Cost model** | Whatever your cluster already costs — these skills add nothing | Per instance-hour until you terminate: default `t3.medium` ~$0.04/hr + EBS + $0.005/hr per public IPv4 |
 | **When to pick it** | You already operate Kubernetes, or want free local testing on kind/minikube | Simplest possible cloud footprint; full control of the box; no Kubernetes anywhere |
-| **Scaling story** | `replicas` in the manifest; standard CPU-based HPA works (one-line pointer, nothing more) | Manual: loop the deploy over N hosts; load balancing (ALB) is out of scope beyond a pointer |
+| **Scaling story** | `replicas` per service in `config.yml`, or `autoscaling` for a stock CPU-based HPA; each service scales independently | Manual: loop the deploy over N hosts; load balancing (ALB) is out of scope beyond a pointer |
 | **Trade-offs to know** | You own cluster operations; Ingress/LoadBalancer depend on what your cluster provides | Plain HTTP on a raw port, **no authentication** unless your service adds it; you patch and secure the VM |
 
 Honest defaults: if you just want to see your service running today with zero cloud
@@ -243,21 +243,45 @@ skill; values are never baked into the image.
 
 First question, always: **which kubectl context?** There is no default — the skill never
 assumes your current context is the intended cluster, even if it is the only one, and
-then pins `--context` on every command. Then, in one round:
+then pins `--context` on every command.
+
+The answers become one file you own afterwards: `deploy/config.yml`. **Four values are
+required**, and for a bento that needs nothing else that is the entire config:
+
+```yaml
+project: ..
+image: 123456789012.dkr.ecr.us-west-1.amazonaws.com/my-bento     # no tag
+kubernetes:
+  context: my-cluster
+  namespace: ml-services
+```
+
+The tag is the bento version, and the service list, the entry service and the dependency
+DAG are read from the bento's own `bento.yaml` — so you never write a service name, an
+`entry` flag or a dependency list, and nothing can drift from the code. One prerequisite
+the file cannot supply: **the cluster must already be able to pull the image**. For a
+private registry (every ECR is one) that means a pull secret in the namespace, on the
+namespace's `default` serviceaccount, or node-level credentials; preflight reports which
+it found and gives you the exact `kubectl create secret` line when it finds none.
+
+Everything below is optional, per BentoML service, and defaulted:
 
 | Parameter | Default | Example | How to choose |
 |---|---|---|---|
-| Image reference | — (required) | `ghcr.io/acme/summarization:v1` | Full pushed ref from `bentoml-containerize`, or the locally loaded name for kind/minikube. |
-| Service name | derived (bento name, DNS-1035-sanitized) | `text-stats` | Lowercase letters/digits/`-`, must start with a letter, ≤ 63 chars. Accept the derived name unless you have a naming scheme. |
-| Namespace | `default` | `ml-services` | The skill offers to create a dedicated one. |
-| Replicas | `1` | `2` | Start at 1; scale after it works. |
-| CPU request / limit | `500m` / `2` | `1` / `4` | Starting point for CPU inference. |
+| Namespace | — (required) | `ml-services` | Must already exist; the skill never creates one (a skill that could would happily create a typo'd one). |
+| `replicas` | `1` | `2` | Start at 1; scale after it works. Ignored when `autoscaling` is on. |
+| CPU request / limit | `500m` / `"2"` | `"1"` / `"4"` | Quantities are **quoted strings**. These are load-bearing: the `@bentoml.service(resources=…)` decorator is inert in OSS. Budget per service — four services at the default need 2 CPU of schedulable room. |
 | Memory request / limit | `1Gi` / `4Gi` | `8Gi` / `16Gi` | Size to the model — OOMKilled pods almost always mean the limit is below model memory (~1.5–2x weights on disk). |
 | GPU per pod | none | `1` | Only if the cluster advertises `nvidia.com/gpu` (the skill checks). |
-| Plain env vars | none | `LOG_LEVEL=debug` | Non-sensitive config only. |
-| Secrets | none | `HF_TOKEN` | Tokens/keys — created imperatively as a Kubernetes Secret, never written into manifests. |
-| Private registry? | detected/asked | yes → pull secret | Needed if the cluster must authenticate to pull. |
-| Exposure | `port-forward` | `Ingress` | port-forward for testing; NodePort / LoadBalancer / Ingress depending on what the cluster supports (the skill checks before recommending). |
+| `autoscaling` | off | `{enabled: true, max_replicas: 5}` | Stock CPU HPA via metrics-server; `concurrency` needs a custom-metrics adapter. |
+| `env` | none | `LOG_LEVEL=debug` | Non-sensitive config only. |
+| `env_from_secrets` | none | `HF_TOKEN` | Names an existing Kubernetes Secret key — no secret value is ever written into the config or a manifest. |
+| `config_overrides` | none | `{workers: 2}` | Retunes BentoML server settings **without rebuilding the image**. |
+| `image_pull_secret` | none | `ecr-creds` | See the prerequisite above. |
+| `expose` / `ingress` | ClusterIP + port-forward | `{type: NodePort}` | **Entry service only** — a dependency reachable from outside is an unauthenticated pickle endpoint, so the config rejects it. NodePort / LoadBalancer / Ingress depending on what the cluster supports (the skill checks before recommending). |
+
+The same file drives the non-interactive bundle from `bentoml-deploy-scriptgen` — it is
+literally the same loader and renderer, so a config that works in one works in the other.
 
 ### `bentoml-k8s-troubleshoot`
 
@@ -348,20 +372,27 @@ $ claude
 
 > kind-kind
 
-⏺ Parameters (accept or change):
-    service name: text-stats   namespace: default   replicas: 1
-    cpu: 500m/2   memory: 1Gi/4Gi   exposure: port-forward
-    imagePullPolicy: IfNotPresent  (kind-loaded image — must not be Always)
+⏺ Read bento.yaml: 1 service (TextStats), entry service TextStats, no dependencies
+  Parameters (accept or change):
+    namespace: default   replicas: 1   cpu: 500m/"2"   memory: 1Gi/4Gi
+    exposure: ClusterIP + port-forward
+    (image loaded into kind, so nothing is pushed and imagePullPolicy stays IfNotPresent)
 
 > accept
 
-⏺ Wrote k8s/deployment.yaml, k8s/service.yaml
+⏺ Wrote deploy/config.yml — you customized nothing, so it is the whole config:
+    project: ..
+    image: ""                  # kind-loaded, nothing to push
+    kubernetes: {context: kind-kind, namespace: default}
+  Rendered from it: 1 Deployment + 1 Service (a multi-service bento gets one of each
+  per service). Review them without touching the cluster:
+    python3 deploy/deploy.py --target k8s --render-only /tmp/look
   About to apply: context=kind-kind  namespace=default  image=text_stats:lyt7deofjkmparqe
   Proceed?
 
 > yes
 
-⏺ kubectl --context kind-kind apply -n default -f k8s/
+⏺ kubectl --context kind-kind apply -n default -f -      (rendered, not from disk)
   rollout status: deployment "text-stats" successfully rolled out
   port-forward svc/text-stats 3100:3000 → GET /readyz → READY
   POST /analyze {"text": "deployed to kubernetes"}
@@ -390,9 +421,15 @@ skill invoked afterwards (`/bentoml-ec2-deploy` instead of the Kubernetes deploy
   the status code. Port-forwards and SSH tunnels use uncommon local ports (3100/3200) and
   liveness-check the tunnel process, so a dev server squatting on local port 3000 can
   never produce a fake success.
-- **Kubernetes manifests** are written to your project's `k8s/` directory and labeled
-  `app.kubernetes.io/name: <service>` + `app.kubernetes.io/managed-by: bentoml-k8s-deploy`.
-  EC2 resources the skill provisions are tagged `managed-by=bentoml-ec2-deploy`.
+- **Kubernetes manifests are rendered, not stored.** `deploy/config.yml` plus the bento's
+  own `bento.yaml` are the inputs; the objects are rendered on every run and piped to
+  `kubectl apply`, so there is no YAML file to drift. `--render-only DIR` writes them out
+  when you want to review, diff or commit them (that is also the GitOps path). Every
+  object is labeled `app.kubernetes.io/name: <slug>` (the object name),
+  `app.kubernetes.io/component: <BentoML service name>`,
+  `app.kubernetes.io/part-of: <bento>` and `app.kubernetes.io/managed-by`. If the config
+  cannot express something you need, `kubernetes.manifests_dir` hands the YAML back to
+  you. EC2 resources the skill provisions are tagged `managed-by=bentoml-ec2-deploy`.
 - **Secrets hygiene, per target**: Kubernetes secrets are created imperatively
   (`kubectl create secret ... --from-literal`) — no secret value is ever written into a
   manifest or any file. On EC2, secrets are passed as `-e` flags expanded from your local

@@ -12,6 +12,9 @@ description: >
   bentoml-containerize, bentoml-k8s-deploy, and bentoml-ec2-deploy do a one-off
   deploy with you in the loop; this skill emits scripts that repeat it forever.
   Kubernetes and EC2 targets.
+license: Apache-2.0
+compatibility: >-
+  Emits Python >= 3.9 scripts whose only third-party dependency is PyYAML; at deploy time they call the bentoml, docker and kubectl CLIs, plus the AWS CLI for ECR or EC2.
 ---
 
 # Generate a production deploy-script bundle

@@ -1,6 +1,9 @@
 ---
 name: bentoml-k8s-troubleshoot
 description: Diagnose and fix BentoML services deployed to Kubernetes with the bentoml-k8s-deploy or bentoml-deploy-scriptgen skills (one plain Deployment + Service per BentoML service, rendered from deploy/config.yml, port 3000, /livez + /readyz probes). Use when the user says things like "my BentoML deployment is failing", "pods are crashing / CrashLoopBackOff / ImagePullBackOff", "pod stuck Pending", "readiness probe failing", "rollout stuck", "can't reach my service on Kubernetes", or "inference requests return 4xx/5xx errors".
+license: Apache-2.0
+compatibility: >-
+  Requires kubectl with access to the cluster where the deployment lives. Diagnostics are read-only; any fix is shown and confirmed before it runs.
 ---
 
 # Troubleshoot a BentoML service on Kubernetes

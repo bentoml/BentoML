@@ -1,6 +1,9 @@
 ---
 name: bentoml-k8s-deploy
 description: Deploy a containerized BentoML service to a vanilla Kubernetes cluster using plain kubectl manifests (no Helm, no operators, no BentoCloud/Yatai). Takes a pushed container image (built by the bentoml-containerize skill or `bentoml containerize`), discovers the bento's service topology, writes one `config.yml` for the deployment, renders one Deployment + Service per BentoML service (plus optional HPA/Ingress) from it, applies them in dependency order, and verifies the rollout with a real inference request. Use when the user says things like "deploy my BentoML service to Kubernetes", "deploy this bento image to my cluster", "run my bento on k8s", "create k8s manifests for my bento", "split my bento services into separate pods", or "expose my BentoML service in Kubernetes".
+license: Apache-2.0
+compatibility: >-
+  Requires kubectl with access to a Kubernetes cluster, Python >= 3.9 with PyYAML (the bundled renderer runs locally), and an image registry the cluster can pull from; AWS CLI v2 for ECR.
 ---
 
 # Deploy a BentoML service to vanilla Kubernetes
@@ -372,8 +375,11 @@ The manifests are rendered and the config is validated by **one implementation**
 deploy bundle shipped with the sibling `bentoml-deploy-scriptgen` skill. This skill does
 not carry a second renderer, and you must not write one: the interactive path and the CI
 path share one renderer and one validator *by construction*, so what you review here is
-exactly what CI applies later. Both skills ship together in the `bentoml-deploy` plugin, so
-the sibling is normally present at `<skills-dir>/bentoml-deploy-scriptgen`.
+exactly what CI applies later. The five skills install together, whichever host you run
+(`~/.claude/skills/`, `~/.codex/skills/`, a project `.codex/skills/`, the `bentoml-deploy`
+plugin, …), so the sibling is normally the directory next to this one:
+`<skills-dir>/bentoml-deploy-scriptgen`. If it is genuinely missing, say so and stop —
+do not hand-write a renderer.
 
 Copy it in verbatim (the `__pycache__` cleanup is mandatory — running the templates in
 place leaves caches inside the skill and `cp -R` drags them into the user's repo):
@@ -390,9 +396,10 @@ find <project>/deploy -name '*.pyc' -delete
 — the same requirement Step 0 checked.
 
 If `bentoml-deploy-scriptgen` is **not installed**, stop and get it rather than improvising
-manifests: install the `bentoml-deploy` plugin (both skills come together), or fetch that
-skill's `templates/deploy/` directory. A hand-rolled renderer is exactly the divergence
-this design removes.
+manifests — reinstall the set (`npx skills add bentoml/BentoML`, the `bentoml-deploy`
+plugin, or a copy of the repo's `skills/` directory), or fetch just that skill's
+`templates/deploy/` directory. A hand-rolled renderer is exactly the divergence this
+design removes.
 
 Then write `<project>/deploy/config.yml`, overwriting the placeholder the copy brought. It
 must sit next to `deploy.py`, which is where `deploy.py` looks for it by default

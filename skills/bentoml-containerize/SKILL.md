@@ -9,6 +9,9 @@ description: >
   a registry", or as the first step of deploying BentoML to Kubernetes or EC2.
   Does NOT deploy anything itself — hand off to bentoml-k8s-deploy or
   bentoml-ec2-deploy for that.
+license: Apache-2.0
+compatibility: >-
+  Requires the bentoml CLI (>= 1.4), a running Docker daemon, and network access to the target image registry; AWS CLI v2 for ECR pushes.
 ---
 
 # Containerize a BentoML project and push it to a registry

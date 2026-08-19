@@ -1,6 +1,8 @@
 # BentoML Deployment Agent Skills
 
-A set of [Claude Code agent skills](https://code.claude.com/docs/en/skills) for deploying
+A set of [Agent Skills](https://agentskills.io/specification) — the open, agent-neutral
+`SKILL.md` format, so they run in Claude Code, OpenAI Codex, Cursor and any other host
+that implements the standard ([installation](#installation)) — for deploying
 BentoML services to infrastructure **you** own — a vanilla Kubernetes cluster or plain AWS
 EC2 instances — using a fully open-source stack: the `bentoml` CLI, Docker, `kubectl` with
 plain manifests, `ssh`, and the AWS CLI. No Helm charts, no operators or CRDs, no Yatai,
@@ -92,11 +94,47 @@ missing — you do not need to pre-verify this table by hand.
 
 ## Installation
 
-**Working inside a BentoML checkout?** The skills in `.claude/skills/` load
-automatically — no install needed. Everything below is for using the skills in
-*other* projects.
+These are **[Agent Skills](https://agentskills.io/specification)** — the open,
+agent-neutral format Anthropic published in December 2025: a directory containing a
+`SKILL.md` with `name` + `description` frontmatter, plus optional `references/` and
+bundled files. Nothing here is Claude-specific, and all five validate against the
+reference implementation:
 
-### Option 1 — Plugin install straight from GitHub (recommended)
+```console
+$ skills-ref validate skills/bentoml-k8s-deploy
+Valid skill: skills/bentoml-k8s-deploy
+```
+
+So any host that implements the standard can run them — Claude Code, OpenAI Codex,
+Cursor, OpenCode, Copilot and others. What differs per host is only the **directory it
+scans**, which is why the skills live in this repo's tool-neutral top-level `skills/`
+rather than under any one agent's dotfolder:
+
+| Host | Project scope | User scope (every project) |
+|---|---|---|
+| Claude Code | `.claude/skills/` | `~/.claude/skills/` |
+| OpenAI Codex | `.codex/skills/` (cwd, then repo root) | `~/.codex/skills/` |
+| Other hosts | check your agent's docs — the layout you copy is identical | |
+
+Pick any option below; they all end with the same five directories in place.
+
+### Option 1 — One command, any agent (recommended, and the only one-liner for Codex)
+
+[`skills`](https://github.com/vercel-labs/skills) (by Vercel, `npx`-runnable, 70+ agents
+supported) reads this repo's `skills/` directory straight from GitHub and copies it into
+whichever agent you name:
+
+```console
+$ npx skills add bentoml/BentoML -a codex -g          # -> ~/.codex/skills/
+$ npx skills add bentoml/BentoML -a claude-code -g    # -> ~/.claude/skills/
+$ npx skills add bentoml/BentoML                      # project scope; prompts for the agent
+```
+
+`-g` is user scope (all projects), no flag is project scope. Add `-s <skill>` for a subset
+and `-y` to skip prompts. Requires Node.js. Refresh later with `npx skills update`.
+(BentoML is not published to npm and does not need to be — the tool reads the repo.)
+
+### Option 2 — Claude Code plugin install straight from GitHub
 
 The BentoML repo is a Claude Code plugin marketplace. From any Claude Code session:
 
@@ -118,42 +156,32 @@ install together and auto-load exactly like local skills (namespaced as
 
 Update later with `/plugin update bentoml-deploy@bentoml`, or enable auto-update for
 the `bentoml` marketplace under `/plugin` → Marketplaces. To keep the initial clone
-small: `claude plugin marketplace add bentoml/BentoML --sparse .claude-plugin .claude`.
+small: `claude plugin marketplace add bentoml/BentoML --sparse .claude-plugin skills`.
 
 > If you previously copied the skills into `~/.claude/skills/` manually, delete those
 > copies when switching to the plugin — otherwise both sets stay active.
 
-### Option 2 — One-liner via npx (community tool)
-
-[`skills`](https://github.com/vercel-labs/skills) (by Vercel, `npx`-runnable) discovers
-skills in this repo's `.claude/skills/` automatically:
-
-```console
-$ npx skills add bentoml/BentoML -g     # -g installs to ~/.claude/skills (all projects)
-$ npx skills add bentoml/BentoML       # or into the current project's .claude/skills
-```
-
-Requires Node.js. This copies the skills; rerun with `npx skills update` to refresh.
-(BentoML itself is not published to npm and doesn't need to be — the tool reads the
-GitHub repo directly.)
-
-### Option 3 — Manual copy from a clone
+### Option 3 — Manual copy from a clone (works for every host)
 
 ```console
 $ git clone --depth 1 https://github.com/bentoml/BentoML.git /tmp/bentoml
-$ mkdir -p ~/.claude/skills
-$ cp -r /tmp/bentoml/.claude/skills/bentoml-* ~/.claude/skills/
-$ ls ~/.claude/skills
+$ mkdir -p ~/.codex/skills                                    # or ~/.claude/skills
+$ cp -r /tmp/bentoml/skills/bentoml-* ~/.codex/skills/
+$ ls ~/.codex/skills
 bentoml-containerize  bentoml-deploy-scriptgen  bentoml-ec2-deploy  bentoml-k8s-deploy  bentoml-k8s-troubleshoot
 ```
 
-For a per-project install, copy into your project instead and commit:
+For a per-project install, copy into your project's agent directory and commit it, so
+everyone on the team gets the same skills:
 
 ```console
-$ mkdir -p ~/my-ml-project/.claude/skills
-$ cp -r /tmp/bentoml/.claude/skills/bentoml-* ~/my-ml-project/.claude/skills/
-$ cd ~/my-ml-project && git add .claude/skills && git commit -m "Add BentoML deployment skills"
+$ mkdir -p ~/my-ml-project/.codex/skills                      # or .claude/skills
+$ cp -r /tmp/bentoml/skills/bentoml-* ~/my-ml-project/.codex/skills/
+$ cd ~/my-ml-project && git add .codex/skills && git commit -m "Add BentoML deployment skills"
 ```
+
+Committing into two agent directories in the same repo is fine — they are independent
+copies of the same standard layout.
 
 ### Or: fetch only the skills (sparse checkout)
 
@@ -163,14 +191,27 @@ to update later:
 ```console
 $ git clone --depth 1 --filter=blob:none --sparse https://github.com/bentoml/BentoML.git bentoml-skills
 $ cd bentoml-skills
-$ git sparse-checkout set .claude/skills
-$ cp -r .claude/skills/bentoml-* ~/.claude/skills/
+$ git sparse-checkout set skills
+$ cp -r skills/bentoml-* ~/.codex/skills/      # or ~/.claude/skills/
 ```
 
-### Verify Claude Code picked them up
+### Verify the host picked them up
 
-Start `claude` and type `/` — the skills appear as slash commands (transcript below is
-illustrative; your listing will include other skills too):
+**Codex** — start a new session and run `/skills` (or type `$` to mention one); the five
+appear by name. Straight from a shell:
+
+```console
+$ ls ~/.codex/skills
+bentoml-containerize  bentoml-deploy-scriptgen  bentoml-ec2-deploy  bentoml-k8s-deploy  bentoml-k8s-troubleshoot
+$ head -4 ~/.codex/skills/bentoml-k8s-deploy/SKILL.md
+```
+
+Codex resolves skills by precedence: `.codex/skills/` in the current directory, then at
+the repo root, then `~/.codex/skills/`, then `/etc/codex/skills/`. Restart the session if
+a newly installed skill does not show up.
+
+**Claude Code** — start `claude` and type `/`; the skills appear as slash commands
+(transcript below is illustrative; your listing will include other skills too):
 
 ```console
 $ claude
@@ -192,9 +233,30 @@ You can also just ask in natural language — the skills trigger on matching req
   ...
 ```
 
-If nothing appears, check the directory layout: each skill must be a directory containing
-a `SKILL.md` (e.g. `~/.claude/skills/bentoml-k8s-deploy/SKILL.md`), and Claude Code must
-be restarted after installing.
+If nothing appears, check the directory layout: each skill must be a **directory**
+containing a `SKILL.md` (e.g. `~/.codex/skills/bentoml-k8s-deploy/SKILL.md`) — copying the
+`SKILL.md` files alone, or nesting them one level deeper, is the usual mistake — and the
+agent must be restarted after installing.
+
+### Working inside a BentoML checkout
+
+The skills live in this repo's top-level `skills/` directory, which is agent-neutral and
+therefore not a directory any agent scans automatically. To use them while hacking on
+BentoML itself, either install them from the local checkout as a plugin —
+
+```console
+$ claude plugin marketplace add .        # from the repo root
+$ claude plugin install bentoml-deploy@bentoml
+```
+
+— or copy them into your agent's directory as in Option 3. When you change a skill, run
+the reference validator before committing:
+
+```console
+$ uvx --from git+https://github.com/agentskills/agentskills#subdirectory=skills-ref \
+      skills-ref validate skills/bentoml-k8s-deploy
+Valid skill: skills/bentoml-k8s-deploy
+```
 
 ### Update later
 
@@ -203,9 +265,12 @@ linger:
 
 ```console
 $ cd bentoml-skills && git pull
-$ rm -rf ~/.claude/skills/bentoml-*
-$ cp -r .claude/skills/bentoml-* ~/.claude/skills/
+$ rm -rf ~/.codex/skills/bentoml-*             # or ~/.claude/skills/bentoml-*
+$ cp -r skills/bentoml-* ~/.codex/skills/
 ```
+
+(With Option 1 this is just `npx skills update`; with the plugin it is
+`/plugin update bentoml-deploy@bentoml`.)
 
 ## Cost warning (read this before the EC2 target)
 

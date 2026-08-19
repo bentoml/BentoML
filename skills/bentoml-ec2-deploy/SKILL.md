@@ -10,6 +10,9 @@ description: >
   service to EC2", "run my bento on an AWS VM", "deploy this bento image to an
   EC2 instance", "run my BentoML container on AWS without Kubernetes", or "put my
   bento on a cloud VM". For Kubernetes targets use bentoml-k8s-deploy instead.
+license: Apache-2.0
+compatibility: >-
+  Requires an ssh client and AWS CLI v2 with valid credentials. Docker runs on the EC2 instance, not on your machine.
 ---
 
 # Deploy a BentoML service to plain EC2 instances

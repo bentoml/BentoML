@@ -1,32 +1,27 @@
 # BentoML Deployment Agent Skills
 
-A set of [Agent Skills](https://agentskills.io/specification) — the open, agent-neutral
-`SKILL.md` format, so they run in Claude Code, OpenAI Codex, Cursor and any other host
-that implements the standard ([installation](#installation)) — for deploying
-BentoML services to infrastructure **you** own — a vanilla Kubernetes cluster or plain AWS
-EC2 instances — using a fully open-source stack: the `bentoml` CLI, Docker, `kubectl` with
-plain manifests, `ssh`, and the AWS CLI. No Helm charts, no operators or CRDs, no Yatai,
-no BentoCloud, no closed-source dependencies.
+[Agent Skills](https://agentskills.io/specification) — the open, agent-neutral `SKILL.md`
+format — for deploying BentoML services to infrastructure **you** own: a vanilla Kubernetes
+cluster or plain AWS EC2 instances. They run in Claude Code, OpenAI Codex, Cursor and any other host
+implementing the standard ([installation](#installation)). The stack is fully open source: the
+`bentoml` CLI, Docker, `kubectl` with plain manifests, `ssh`, the AWS CLI. No Helm charts, no
+operators or CRDs, no Yatai, no BentoCloud.
 
-These skills cover **basic deployment**. Features that were part of the commercial
-BentoCloud platform — scale-to-zero, inference-metric autoscaling, canary/blue-green
-rollouts, model registry sync, observability dashboards — are out of scope for every
-target. Where a standard building block exists (Kubernetes HPA, an AWS ALB), the skills
-point at it in one line and stop.
+Scope is **basic deployment**. Commercial BentoCloud features — scale-to-zero, inference-metric
+autoscaling, canary/blue-green rollouts, model registry sync, observability dashboards — are out
+of scope for every target. Where a standard building block exists (Kubernetes HPA, an AWS ALB),
+the skills point at it in one line and stop.
 
 ## The skills
 
 | Skill | What it does |
 |---|---|
 | [`bentoml-containerize`](bentoml-containerize/SKILL.md) | Builds your local BentoML project into a Bento, containerizes it, smoke-tests the container locally, and pushes it to your registry (Docker Hub, GHCR, ECR, private, `kind`/`minikube` local load, or ttl.sh). The entry point for every deploy target. |
-| [`bentoml-k8s-deploy`](bentoml-k8s-deploy/SKILL.md) | Deploys a pushed image to your Kubernetes cluster: writes one `deploy/config.yml`, renders plain manifests from it — **one Deployment + Service per BentoML service the bento declares**, plus optional HPA/Ingress — applies them in dependency order, and verifies with a real inference request. |
-| [`bentoml-k8s-troubleshoot`](bentoml-k8s-troubleshoot/SKILL.md) | Diagnostic runbook for Kubernetes deployments that went wrong: ImagePullBackOff, CrashLoopBackOff, OOM, Pending, probe failures, unreachable services, inference 4xx/5xx. |
-| [`bentoml-ec2-deploy`](bentoml-ec2-deploy/SKILL.md) | Runs a pushed image under Docker on one or more plain EC2 instances — your existing instances over SSH, or a fresh instance provisioned via the AWS CLI. Includes ECR auth, verification, and teardown. |
-| [`bentoml-deploy-scriptgen`](bentoml-deploy-scriptgen/SKILL.md) | Generates a standalone, committable deploy bundle (`deploy/deploy.py` + one `config.yml`) that builds, pushes, deploys, and verifies without any agent — the manifests are rendered from the config on every run, so there is no YAML to keep in sync. For production and CI/CD pipelines. Kubernetes and EC2 targets. |
+| [`bentoml-k8s-deploy`](bentoml-k8s-deploy/SKILL.md) | Deploys a pushed image to your Kubernetes cluster: writes one `deploy/config.yml`, renders plain manifests from it — **one Deployment + Service per BentoML service the bento declares**, plus optional HPA/Ingress — applies them in dependency order, and verifies with a real inference request. Its [`references/troubleshooting.md`](bentoml-k8s-deploy/references/troubleshooting.md) is the diagnostic runbook: ImagePullBackOff, CrashLoopBackOff, OOM, Pending, probe failures, unreachable services, inference 4xx/5xx. |
+| [`bentoml-ec2-deploy`](bentoml-ec2-deploy/SKILL.md) | Runs a pushed image under Docker on one or more plain EC2 instances — your existing instances over SSH, or a fresh instance provisioned via the AWS CLI. Includes ECR auth, verification, teardown, and its own troubleshooting section. |
+| [`bentoml-deploy-scriptgen`](bentoml-deploy-scriptgen/SKILL.md) | Generates a standalone, committable deploy bundle (`deploy/deploy.py` + one `config.yml`) that builds, pushes, deploys and verifies without any agent. Manifests are rendered from the config on every run, so there is no YAML to keep in sync. For production and CI/CD. Kubernetes and EC2 targets. |
 
-A typical session chains them: **containerize → one deploy target → (troubleshoot if
-needed)**. The EC2 skill carries its own troubleshooting section;
-`bentoml-k8s-troubleshoot` is Kubernetes-only.
+A typical session chains **containerize → one deploy target**.
 
 ## Which target should I choose?
 
@@ -38,91 +33,61 @@ flowchart TD
     Q -->|"AWS, keep it simple:<br/>a VM I control, SSH access"| EC2["bentoml-ec2-deploy"]
     K8S --> V([verified with a real inference request])
     EC2 --> V
-    K8S -.->|something broke| TS["bentoml-k8s-troubleshoot"]
+    V -.->|something broke| TS["bentoml-k8s-deploy<br/>references/troubleshooting.md"]
 ```
 
 | | Kubernetes (`bentoml-k8s-deploy`) | EC2 (`bentoml-ec2-deploy`) |
 |---|---|---|
-| **What you need** | A cluster you can reach with `kubectl` (cloud, on-prem, or local kind/minikube) and a registry it can pull from | An AWS account (or just SSH access to existing instances); ECR is the natural registry |
+| **What you need** | A cluster you can reach with `kubectl` (cloud, on-prem, or local kind/minikube) and a registry it can pull from | An AWS account, or just SSH access to existing instances; ECR is the natural registry |
 | **What you get** | One Deployment + Service per BentoML service (optional HPA/Ingress) with liveness/readiness/startup probes, self-healing restarts, and the inter-service wiring derived from the bento | Your container on a VM with `--restart unless-stopped`; Swagger UI and metrics on port 3000 |
 | **Cost model** | Whatever your cluster already costs — these skills add nothing | Per instance-hour until you terminate: default `t3.medium` ~$0.04/hr + EBS + $0.005/hr per public IPv4 |
 | **When to pick it** | You already operate Kubernetes, or want free local testing on kind/minikube | Simplest possible cloud footprint; full control of the box; no Kubernetes anywhere |
-| **Scaling story** | `replicas` per service in `config.yml`, or `autoscaling` for a stock CPU-based HPA; each service scales independently | Manual: loop the deploy over N hosts; load balancing (ALB) is out of scope beyond a pointer |
-| **Trade-offs to know** | You own cluster operations; Ingress/LoadBalancer depend on what your cluster provides | Plain HTTP on a raw port, **no authentication** unless your service adds it; you patch and secure the VM |
+| **Scaling** | `replicas` per service in `config.yml`, or `autoscaling` for a stock CPU-based HPA; each service scales independently | Manual: loop the deploy over N hosts; load balancing (ALB) is out of scope beyond a pointer |
+| **Trade-offs** | You own cluster operations; Ingress/LoadBalancer depend on what your cluster provides | Plain HTTP on a raw port, **no authentication** unless your service adds it; you patch and secure the VM |
 
-Honest defaults: if you just want to see your service running today with zero cloud
-spend, use `bentoml-containerize` with the kind/minikube path plus `bentoml-k8s-deploy`
-on a local cluster.
+Zero cloud spend: `bentoml-containerize` with the kind/minikube path, then
+`bentoml-k8s-deploy` on a local cluster.
 
 ## Development vs Production
 
-Two ways to deploy, same targets:
+| Path | What it is |
+|---|---|
+| **Interactive skills** (`bentoml-containerize` → `bentoml-k8s-deploy` / `bentoml-ec2-deploy`) | The agent is in the loop: it detects your project, asks the right questions, confirms every mutation, provisions infrastructure where allowed (EC2), and troubleshoots on the spot. Use for a service's **first** deploy, a new target, and anything needing judgment. |
+| **The script bundle** (`bentoml-deploy-scriptgen`) | Every deploy after that: a committable `deploy/` directory (plain Python ≥ 3.9, stdlib only) repeating the exact build → containerize → push → deploy → verify pipeline with no agent and no questions, from your terminal or CI/CD. Preflight checks fail fast, exit codes are a stable contract (0 ok · 1 generic · 2 config · 3 preflight · 4 build · 5 push · 6 deploy · 7 verify), and the last stdout line is always a JSON summary. It does **less**: it never provisions EC2 instances and never edits your service. Its generated `deploy/README.md` ships a CI/CD chapter — a GitHub Actions workflow (fork-safe `--check-only --local-only` PR gate; deploy jobs with AWS OIDC, EKS kubeconfig, an SSH-key secret for EC2) plus a GitLab CI equivalent. |
 
-- **Interactive skills** (`bentoml-containerize` → `bentoml-k8s-deploy` /
-  `bentoml-ec2-deploy`) put the agent in the loop: it detects your project, asks the
-  right questions, confirms every mutation, provisions infrastructure where allowed
-  (EC2), and troubleshoots on the spot. Use them for the **first** deploy of a
-  service, for exploring a new target, and whenever something needs judgment.
-- **The script bundle** (`bentoml-deploy-scriptgen`) is for every deploy **after** that:
-  it generates a committable `deploy/` directory (plain Python ≥ 3.9, stdlib only) that
-  repeats the exact build → containerize → push → deploy → verify pipeline with no agent
-  and no questions — from your terminal or from CI/CD. Preflight checks fail fast with
-  actionable messages, exit codes are a stable contract (0 ok · 1 generic · 2 config ·
-  3 preflight · 4 build · 5 push · 6 deploy · 7 verify), and the last stdout line is always a JSON
-  summary for machines. It deliberately does **less** than the interactive skills: it
-  never provisions EC2 instances and never edits your service — the interactive skills
-  set those up once; the bundle then repeats the deploy forever.
-
-Rule of thumb: first deploy interactive, then generate the bundle, commit it, and wire
-CI. The generated `deploy/README.md` ships a complete CI/CD chapter — a GitHub Actions
-workflow (fork-safe `--check-only --local-only` PR gate; deploy jobs with AWS OIDC, EKS
-kubeconfig, and an SSH-key secret for EC2) plus a GitLab CI equivalent.
+First deploy interactive, then generate the bundle, commit it, wire CI.
 
 ## Prerequisites
 
-| Prerequisite | containerize | k8s-deploy | k8s-troubleshoot | ec2-deploy |
-|---|---|---|---|---|
-| Python + `bentoml` ≥ 1.4 | required | — | — | — |
-| Docker daemon running | required | — | — | on the instance only (installed by user-data on new instances; offered with confirmation on existing ones) |
-| `kubectl` + cluster access | — | required | required | — |
-| AWS CLI v2 + valid credentials | only for ECR pushes | — | — | required for provisioning mode and for ECR images; not needed for existing instance + non-ECR image |
-| `ssh` client | — | — | — | required |
-| A container registry | chosen here | cluster must be able to pull from it | — | instance must be able to pull from it |
+| Prerequisite | containerize | k8s-deploy | ec2-deploy |
+|---|---|---|---|
+| Python + `bentoml` ≥ 1.4 | required | — | — |
+| Docker daemon running | required | — | on the instance only (installed by user-data on new instances; offered with confirmation on existing ones) |
+| `kubectl` + cluster access | — | required | — |
+| AWS CLI v2 + valid credentials | only for ECR pushes | — | required for provisioning mode and for ECR images; not needed for existing instance + non-ECR image |
+| `ssh` client | — | — | required |
+| A container registry | chosen here | cluster must be able to pull from it | instance must be able to pull from it |
 
-Every skill runs its own preflight checks and stops with a clear message if something is
-missing — you do not need to pre-verify this table by hand.
+Each skill runs its own preflight checks and stops with a clear message if something is missing.
 
 ## Installation
 
-These are **[Agent Skills](https://agentskills.io/specification)** — the open,
-agent-neutral format Anthropic published in December 2025: a directory containing a
-`SKILL.md` with `name` + `description` frontmatter, plus optional `references/` and
-bundled files. Nothing here is Claude-specific, and all five validate against the
-reference implementation:
-
-```console
-$ skills-ref validate skills/bentoml-k8s-deploy
-Valid skill: skills/bentoml-k8s-deploy
-```
-
-So any host that implements the standard can run them — Claude Code, OpenAI Codex,
-Cursor, OpenCode, Copilot and others. What differs per host is only the **directory it
-scans**, which is why the skills live in this repo's tool-neutral top-level `skills/`
-rather than under any one agent's dotfolder:
+Each skill is a directory holding a `SKILL.md` with `name` + `description` frontmatter, plus
+optional `references/` and bundled files. Nothing is Claude-specific and all four validate
+against the [reference implementation](#working-inside-a-bentoml-checkout). Only the scanned
+**directory** differs per host, so the skills live in this repo's tool-neutral top-level
+`skills/` rather than one agent's dotfolder. Every option below lands the same four directories.
 
 | Host | Project scope | User scope (every project) |
 |---|---|---|
 | Claude Code | `.claude/skills/` | `~/.claude/skills/` |
-| OpenAI Codex | `.codex/skills/` (cwd, then repo root) | `~/.codex/skills/` |
+| OpenAI Codex | `.codex/skills/` (cwd, then repo root) | `~/.codex/skills/`, then `/etc/codex/skills/` |
 | Other hosts | check your agent's docs — the layout you copy is identical | |
-
-Pick any option below; they all end with the same five directories in place.
 
 ### Option 1 — One command, any agent (recommended, and the only one-liner for Codex)
 
-[`skills`](https://github.com/vercel-labs/skills) (by Vercel, `npx`-runnable, 70+ agents
-supported) reads this repo's `skills/` directory straight from GitHub and copies it into
-whichever agent you name:
+[`skills`](https://github.com/vercel-labs/skills) (Vercel, `npx`-runnable, 70+ agents) copies
+this repo's `skills/` directory straight from GitHub into the agent you name:
 
 ```console
 $ npx skills add bentoml/BentoML -a codex -g          # -> ~/.codex/skills/
@@ -130,88 +95,66 @@ $ npx skills add bentoml/BentoML -a claude-code -g    # -> ~/.claude/skills/
 $ npx skills add bentoml/BentoML                      # project scope; prompts for the agent
 ```
 
-`-g` is user scope (all projects), no flag is project scope. Add `-s <skill>` for a subset
-and `-y` to skip prompts. Requires Node.js. Refresh later with `npx skills update`.
-(BentoML is not published to npm and does not need to be — the tool reads the repo.)
+`-g` is user scope, no flag is project scope; `-s <skill>` installs a subset, `-y` skips prompts.
+Needs Node.js. Refresh with `npx skills update`. (BentoML is not on npm — the tool reads the repo.)
 
 ### Option 2 — Claude Code plugin install straight from GitHub
 
-The BentoML repo is a Claude Code plugin marketplace. From any Claude Code session:
+The BentoML repo is a Claude Code plugin marketplace.
 
 ```console
-> /plugin marketplace add bentoml/BentoML
+> /plugin marketplace add bentoml/BentoML          # in a Claude Code session
 > /plugin install bentoml-deploy@bentoml
-```
-
-Or non-interactively from a shell:
-
-```console
-$ claude plugin marketplace add bentoml/BentoML
+$ claude plugin marketplace add bentoml/BentoML    # or from a shell
 $ claude plugin install bentoml-deploy@bentoml
 ```
 
-Confirm the trust prompt and pick a scope (user = all your projects). All five skills
-install together and auto-load exactly like local skills (namespaced as
-`/bentoml-deploy:bentoml-k8s-deploy` etc.; bare names also resolve when unambiguous).
+Confirm the trust prompt and pick a scope (user = all projects). All four skills install
+together and auto-load like local skills, namespaced as `/bentoml-deploy:bentoml-k8s-deploy`
+(bare names resolve when unambiguous). Update with `/plugin update bentoml-deploy@bentoml`, or
+auto-update the `bentoml` marketplace under `/plugin` → Marketplaces. Smaller clone:
+`claude plugin marketplace add bentoml/BentoML --sparse .claude-plugin skills`.
 
-Update later with `/plugin update bentoml-deploy@bentoml`, or enable auto-update for
-the `bentoml` marketplace under `/plugin` → Marketplaces. To keep the initial clone
-small: `claude plugin marketplace add bentoml/BentoML --sparse .claude-plugin skills`.
-
-> If you previously copied the skills into `~/.claude/skills/` manually, delete those
-> copies when switching to the plugin — otherwise both sets stay active.
+> If you previously copied the skills into `~/.claude/skills/` manually, delete those copies
+> when switching to the plugin — otherwise both sets stay active.
 
 ### Option 3 — Manual copy from a clone (works for every host)
 
 ```console
 $ git clone --depth 1 https://github.com/bentoml/BentoML.git /tmp/bentoml
-$ mkdir -p ~/.codex/skills                                    # or ~/.claude/skills
-$ cp -r /tmp/bentoml/skills/bentoml-* ~/.codex/skills/
-$ ls ~/.codex/skills
-bentoml-containerize  bentoml-deploy-scriptgen  bentoml-ec2-deploy  bentoml-k8s-deploy  bentoml-k8s-troubleshoot
-```
-
-For a per-project install, copy into your project's agent directory and commit it, so
-everyone on the team gets the same skills:
-
-```console
-$ mkdir -p ~/my-ml-project/.codex/skills                      # or .claude/skills
-$ cp -r /tmp/bentoml/skills/bentoml-* ~/my-ml-project/.codex/skills/
+$ mkdir -p ~/.codex/skills && cp -r /tmp/bentoml/skills/bentoml-* ~/.codex/skills/   # or ~/.claude/skills
+# or per-project, committed so the whole team shares one set (two agent dirs in one repo is fine):
+$ mkdir -p ~/my-ml-project/.codex/skills && cp -r /tmp/bentoml/skills/bentoml-* ~/my-ml-project/.codex/skills/
 $ cd ~/my-ml-project && git add .codex/skills && git commit -m "Add BentoML deployment skills"
 ```
 
-Committing into two agent directories in the same repo is fine — they are independent
-copies of the same standard layout.
+### Option 4 — Sparse checkout (skills only)
 
-### Or: fetch only the skills (sparse checkout)
-
-Avoids downloading the whole BentoML repo, and gives you a checkout you can `git pull`
-to update later:
+Skips the rest of the BentoML repo and leaves a checkout you can update with `git pull`. Removing
+the old copies before re-copying keeps files deleted upstream from lingering. (Option 1 updates
+with `npx skills update`; the plugin with `/plugin update bentoml-deploy@bentoml`.)
 
 ```console
 $ git clone --depth 1 --filter=blob:none --sparse https://github.com/bentoml/BentoML.git bentoml-skills
-$ cd bentoml-skills
-$ git sparse-checkout set skills
+$ cd bentoml-skills && git sparse-checkout set skills
 $ cp -r skills/bentoml-* ~/.codex/skills/      # or ~/.claude/skills/
+# update later:
+$ git pull && rm -rf ~/.codex/skills/bentoml-* && cp -r skills/bentoml-* ~/.codex/skills/
 ```
 
 ### Verify the host picked them up
 
-**Codex** — start a new session and run `/skills` (or type `$` to mention one); the five
-appear by name. Straight from a shell:
+**Codex** — in a new session run `/skills` (or type `$` to mention one); the four appear by
+name. From a shell:
 
 ```console
 $ ls ~/.codex/skills
-bentoml-containerize  bentoml-deploy-scriptgen  bentoml-ec2-deploy  bentoml-k8s-deploy  bentoml-k8s-troubleshoot
+bentoml-containerize  bentoml-deploy-scriptgen  bentoml-ec2-deploy  bentoml-k8s-deploy
 $ head -4 ~/.codex/skills/bentoml-k8s-deploy/SKILL.md
 ```
 
-Codex resolves skills by precedence: `.codex/skills/` in the current directory, then at
-the repo root, then `~/.codex/skills/`, then `/etc/codex/skills/`. Restart the session if
-a newly installed skill does not show up.
-
-**Claude Code** — start `claude` and type `/`; the skills appear as slash commands
-(transcript below is illustrative; your listing will include other skills too):
+**Claude Code** — start `claude` and type `/`; the skills appear as slash commands (your
+listing will include others too):
 
 ```console
 $ claude
@@ -219,38 +162,26 @@ $ claude
   /bentoml-containerize       Build a local BentoML project into a Bento, containerize it...
   /bentoml-ec2-deploy         Deploy a containerized BentoML service directly onto... EC2...
   /bentoml-k8s-deploy         Deploy a containerized BentoML service to a vanilla Kubernetes...
-  /bentoml-k8s-troubleshoot   Diagnose and fix BentoML services deployed to Kubernetes...
   /bentoml-deploy-scriptgen   Generate a standalone, committable production deploy-script...
 ```
 
-You can also just ask in natural language — the skills trigger on matching requests:
-
-```console
-> deploy my BentoML service to my Kubernetes cluster
-
-⏺ Loading skill: bentoml-containerize
-  Checking prerequisites: bentoml CLI... docker daemon... found ./service.py
-  ...
-```
-
-If nothing appears, check the directory layout: each skill must be a **directory**
+Plain requests work too — "deploy my BentoML service to my Kubernetes cluster" loads
+`bentoml-containerize` and continues. If nothing appears: each skill must be a **directory**
 containing a `SKILL.md` (e.g. `~/.codex/skills/bentoml-k8s-deploy/SKILL.md`) — copying the
-`SKILL.md` files alone, or nesting them one level deeper, is the usual mistake — and the
-agent must be restarted after installing.
+`SKILL.md` files alone or nesting them one level deeper is the usual mistake — and the agent must
+be restarted after installing.
 
 ### Working inside a BentoML checkout
 
-The skills live in this repo's top-level `skills/` directory, which is agent-neutral and
-therefore not a directory any agent scans automatically. To use them while hacking on
-BentoML itself, either install them from the local checkout as a plugin —
+The top-level `skills/` directory is agent-neutral, so no agent scans it automatically. Use
+Option 3, or install from the local checkout as a plugin:
 
 ```console
 $ claude plugin marketplace add .        # from the repo root
 $ claude plugin install bentoml-deploy@bentoml
 ```
 
-— or copy them into your agent's directory as in Option 3. When you change a skill, run
-the reference validator before committing:
+Run the reference validator on any skill you change, before committing:
 
 ```console
 $ uvx --from git+https://github.com/agentskills/agentskills#subdirectory=skills-ref \
@@ -258,40 +189,20 @@ $ uvx --from git+https://github.com/agentskills/agentskills#subdirectory=skills-
 Valid skill: skills/bentoml-k8s-deploy
 ```
 
-### Update later
-
-Pull the latest and re-copy. Remove the old copies first so files deleted upstream do not
-linger:
-
-```console
-$ cd bentoml-skills && git pull
-$ rm -rf ~/.codex/skills/bentoml-*             # or ~/.claude/skills/bentoml-*
-$ cp -r skills/bentoml-* ~/.codex/skills/
-```
-
-(With Option 1 this is just `npx skills update`; with the plugin it is
-`/plugin update bentoml-deploy@bentoml`.)
-
 ## Cost warning (read this before the EC2 target)
 
-**EC2 instances bill by the hour until you tear them down** — whether or not they serve
-a single request.
+**EC2 instances bill by the hour until you tear them down**, served requests or not. An instance
+bills until `terminate-instances`; a *stopped* instance still bills its EBS volume; every public
+IPv4 address bills $0.005/hr (~$3.65/mo). Kubernetes adds no spend beyond your existing cluster.
 
-- **EC2**: the instance bills until `terminate-instances`. A *stopped* instance still
-  bills its EBS volume, and every public IPv4 address bills $0.005/hr (~$3.65/mo).
-
-The skills are built around this: **every mutating AWS CLI command is shown to you
-verbatim with a cost note, and nothing runs without your explicit confirmation.** The
-EC2 skill tracks every resource it creates in a session and ends with a **Teardown**
-section that removes exactly those resources and nothing else. If you keep something
-running on purpose, the skills tell you what it costs and how to stop it later.
-
-Kubernetes deployments add no spend beyond your existing cluster.
+Every mutating AWS CLI command is shown verbatim with a cost note and nothing runs without your
+explicit confirmation. The EC2 skill tracks every resource it creates in a session and ends with a
+**Teardown** section that removes exactly those and nothing else; if you keep something running on
+purpose, it tells you what that costs and how to stop it later.
 
 ## What each skill will ask you
 
-The skills ask up front (in as few rounds as possible), always showing defaults you can
-accept in one go. Below are the actual questions, sourced from each skill's workflow.
+Questions come up front, in as few rounds as possible, with defaults you can accept in one go.
 
 ### `bentoml-containerize`
 
@@ -300,18 +211,16 @@ accept in one go. Below are the actual questions, sourced from each skill's work
 | Which registry? | — (always asked) | `GHCR` | Docker Hub / GHCR / ECR / private for real clusters; **kind/minikube local load** for a local cluster (no registry, nothing to push); **ttl.sh** for anonymous, ephemeral throwaway tests. Pick **ECR** if the target is EC2. |
 | Target CPU architecture? | build machine's arch | `amd64` | Must match the nodes that will run the image — most clouds are `amd64`; a mismatch crashes with `exec format error`. Building on Apple Silicon for an amd64 target adds `--opt platform=linux/amd64`. |
 
-It may additionally ask for runtime env var **values** (e.g. `HF_TOKEN` for gated
-Hugging Face models) during the build/smoke test — names get passed on to the deploy
-skill; values are never baked into the image.
+It may also ask for runtime env var **values** (e.g. `HF_TOKEN` for gated Hugging Face models)
+during the build/smoke test. Names pass on to the deploy skill; values are never baked into
+the image.
 
 ### `bentoml-k8s-deploy`
 
-First question, always: **which kubectl context?** There is no default — the skill never
-assumes your current context is the intended cluster, even if it is the only one, and
-then pins `--context` on every command.
-
-The answers become one file you own afterwards: `deploy/config.yml`. **Four values are
-required**, and for a bento that needs nothing else that is the entire config:
+First question, always: **which kubectl context?** No default — the skill never assumes your
+current context is the intended cluster, even if it is the only one — then pins `--context` on
+every command. The answers become one file you own: `deploy/config.yml`, of which **four values
+are required**; for a bento that needs nothing else that is the whole config:
 
 ```yaml
 project: ..
@@ -321,13 +230,13 @@ kubernetes:
   namespace: ml-services
 ```
 
-The tag is the bento version, and the service list, the entry service and the dependency
-DAG are read from the bento's own `bento.yaml` — so you never write a service name, an
-`entry` flag or a dependency list, and nothing can drift from the code. One prerequisite
-the file cannot supply: **the cluster must already be able to pull the image**. For a
-private registry (every ECR is one) that means a pull secret in the namespace, on the
-namespace's `default` serviceaccount, or node-level credentials; preflight reports which
-it found and gives you the exact `kubectl create secret` line when it finds none.
+The tag is the bento version; the service list, entry service and dependency DAG come from the
+bento's own `bento.yaml`, so you never write a service name, an `entry` flag or a dependency list,
+and nothing can drift from the code. The config cannot supply one prerequisite: **the cluster must
+already be able to pull the image.** For a private registry (every ECR is one) that means a pull
+secret in the namespace, on the namespace's `default` serviceaccount, or node-level credentials;
+preflight reports which it found and prints the exact `kubectl create secret` line when it finds
+none.
 
 Everything below is optional, per BentoML service, and defaulted:
 
@@ -345,20 +254,8 @@ Everything below is optional, per BentoML service, and defaulted:
 | `image_pull_secret` | none | `ecr-creds` | See the prerequisite above. |
 | `expose` / `ingress` | ClusterIP + port-forward | `{type: NodePort}` | **Entry service only** — a dependency reachable from outside is an unauthenticated pickle endpoint, so the config rejects it. NodePort / LoadBalancer / Ingress depending on what the cluster supports (the skill checks before recommending). |
 
-The same file drives the non-interactive bundle from `bentoml-deploy-scriptgen` — it is
-literally the same loader and renderer, so a config that works in one works in the other.
-
-### `bentoml-k8s-troubleshoot`
-
-Not a deployment, so almost nothing to configure:
-
-| Question | Why |
-|---|---|
-| Namespace | Where the deployment lives (same answer you gave the deploy skill). |
-| App name | The `app.kubernetes.io/name` label value, e.g. `text-stats`. |
-
-It shows you the **current** kubectl context and namespace and gets your confirmation
-before any mutating command; read-only diagnostics run freely after that.
+The same file drives the non-interactive bundle from `bentoml-deploy-scriptgen` — same loader,
+same renderer, so a config that works in one works in the other.
 
 ### `bentoml-ec2-deploy`
 
@@ -386,127 +283,55 @@ Mode B additionally asks:
 
 ## End-to-end walkthrough
 
-A minimal CPU-only service, containerized and deployed to a local kind cluster (zero
-cloud cost — the same flow works for any target). `service.py`:
-
-```python
-import bentoml
-
-my_image = bentoml.images.Image(python_version="3.11")
-
-
-@bentoml.service(image=my_image)
-class TextStats:
-    @bentoml.api
-    def analyze(self, text: str) -> dict:
-        words = text.split()
-        return {
-            "words": len(words),
-            "chars": len(text),
-            "unique_words": len({w.lower() for w in words}),
-        }
-```
-
-The session (illustrative transcript — output abridged, tags and timings will differ):
+A CPU-only service on a local kind cluster, zero cloud cost; the same flow fits any target.
+`service.py` defines one `TextStats` service whose `analyze` API returns word, character and
+unique-word counts. Illustrative transcript, abridged:
 
 ```console
-$ cd ~/projects/text-stats && ls
-service.py
-
-$ claude
+$ cd ~/projects/text-stats && claude
 > containerize my BentoML service and deploy it to my kind cluster
 
 ⏺ Loading skill: bentoml-containerize
   Preflight: bentoml 1.4.x OK · docker daemon OK (x86_64) · found ./service.py
-  Two questions:
-  1. Which registry? (Docker Hub / GHCR / ECR / private / kind-minikube load / ttl.sh)
-  2. Target CPU architecture? (amd64 / arm64)
-
+  1. Which registry?  2. Target CPU architecture?
 > kind load, amd64
-
-⏺ bentoml build            → text_stats:lyt7deofjkmparqe
-  bentoml containerize     → image text_stats:lyt7deofjkmparqe
-  Smoke test (docker run -p 3007:3000):
-    GET  /readyz  → 200
-    POST /analyze {"text": "the quick brown fox"}
-                  → {"words": 4, "chars": 19, "unique_words": 4}      ✓ plausible
+⏺ bentoml build → text_stats:lyt7deofjkmparqe → bentoml containerize
+  Smoke test (docker run -p 3007:3000): GET /readyz → 200 · POST /analyze
+    {"text": "the quick brown fox"} → {"words": 4, "chars": 19, "unique_words": 4}  ✓ plausible
   kind load docker-image text_stats:lyt7deofjkmparqe --name kind
-
 ⏺ Loading skill: bentoml-k8s-deploy
   Contexts: kind-kind (current), prod-eks — which one should I deploy to?
-
 > kind-kind
-
-⏺ Read bento.yaml: 1 service (TextStats), entry service TextStats, no dependencies
-  Parameters (accept or change):
-    namespace: default   replicas: 1   cpu: 500m/"2"   memory: 1Gi/4Gi
-    exposure: ClusterIP + port-forward
-    (image loaded into kind, so nothing is pushed and imagePullPolicy stays IfNotPresent)
-
+⏺ bento.yaml: 1 service (TextStats), entry TextStats, no dependencies
+  Parameters: namespace default · replicas 1 · cpu 500m/"2" · memory 1Gi/4Gi · exposure
+    ClusterIP + port-forward (kind-loaded image: nothing pushed, imagePullPolicy IfNotPresent)
 > accept
-
 ⏺ Wrote deploy/config.yml — you customized nothing, so it is the whole config:
-    project: ..
-    image: ""                  # kind-loaded, nothing to push
-    kubernetes: {context: kind-kind, namespace: default}
-  Rendered from it: 1 Deployment + 1 Service (a multi-service bento gets one of each
-  per service). Review them without touching the cluster:
+    project: .. · image: "" (kind-loaded) · kubernetes: {context: kind-kind, namespace: default}
+  Rendered from it: 1 Deployment + 1 Service (a multi-service bento gets one of each per
+  service). Review without touching the cluster:
     python3 deploy/deploy.py --target k8s --render-only /tmp/look
-  About to apply: context=kind-kind  namespace=default  image=text_stats:lyt7deofjkmparqe
-  Proceed?
-
+  About to apply: context=kind-kind namespace=default image=text_stats:lyt7deofjkmparqe
 > yes
-
 ⏺ kubectl --context kind-kind apply -n default -f -      (rendered, not from disk)
   rollout status: deployment "text-stats" successfully rolled out
-  port-forward svc/text-stats 3100:3000 → GET /readyz → READY
-  POST /analyze {"text": "deployed to kubernetes"}
-                → {"words": 3, "chars": 22, "unique_words": 3}        ✓ correct
-
-  Reach the service with:
+  port-forward svc/text-stats 3100:3000 → GET /readyz → READY · POST /analyze
+    {"text": "deployed to kubernetes"} → {"words": 3, "chars": 22, "unique_words": 3} ✓ correct
+  Reach it with:
     kubectl --context kind-kind port-forward svc/text-stats -n default 3000:3000
     → http://127.0.0.1:3000   (Swagger UI at /, Prometheus metrics at /metrics)
 ```
 
-Note the last step: the skills never declare success on a 200 status alone — they always
-make **one real inference request and judge the response content**.
-
-For a cloud target, the only change is the registry answer (e.g. ECR) and the deploy
-skill invoked afterwards (`/bentoml-ec2-deploy` instead of the Kubernetes deploy).
+For a cloud target, two things change: the registry answer (e.g. ECR) and the deploy skill
+invoked afterwards (`/bentoml-ec2-deploy` instead of the Kubernetes one).
 
 ## Conventions the skills follow
 
-- **Port 3000, `/livez`, `/readyz`** — BentoML containers serve HTTP on port 3000 with
-  those health endpoints (plus Prometheus metrics at `/metrics` and Swagger UI at `/`).
-  Kubernetes manifests probe `/livez` (liveness) and `/readyz` (readiness/startup, with a
-  generous ~10-minute startupProbe budget for model loading); EC2 verification polls
-  `/readyz`.
-- **Verification is content-based.** Every deploy skill ends with a real inference
-  request derived from your `@bentoml.api` methods and judges the **response body**, not
-  the status code. Port-forwards and SSH tunnels use uncommon local ports (3100/3200) and
-  liveness-check the tunnel process, so a dev server squatting on local port 3000 can
-  never produce a fake success.
-- **Kubernetes manifests are rendered, not stored.** `deploy/config.yml` plus the bento's
-  own `bento.yaml` are the inputs; the objects are rendered on every run and piped to
-  `kubectl apply`, so there is no YAML file to drift. `--render-only DIR` writes them out
-  when you want to review, diff or commit them (that is also the GitOps path). Every
-  object is labeled `app.kubernetes.io/name: <slug>` (the object name),
-  `app.kubernetes.io/component: <BentoML service name>`,
-  `app.kubernetes.io/part-of: <bento>` and `app.kubernetes.io/managed-by`. If the config
-  cannot express something you need, `kubernetes.manifests_dir` hands the YAML back to
-  you. EC2 resources the skill provisions are tagged `managed-by=bentoml-ec2-deploy`.
-- **Secrets hygiene, per target**: Kubernetes secrets are created imperatively
-  (`kubectl create secret ... --from-literal`) — no secret value is ever written into a
-  manifest or any file. On EC2, secrets are passed as `-e` flags expanded from your local
-  shell env — never into files or instance user-data. Nowhere are secret values baked into
-  image layers.
-- **Cluster/region confirmation**: `bentoml-k8s-deploy` asks which kubectl context to use
-  (never assuming the current one), pins `--context` on every command, and never switches
-  your current context. `bentoml-k8s-troubleshoot` instead confirms the **current**
-  context and namespace with you before any mutating command. The AWS skills confirm the
-  region explicitly and pass `--region` on every command.
-- **Mutations are confirmed, and destructive scope is bounded.** Every mutating AWS CLI
-  command is shown verbatim with a cost note before running; every mutating SSH command
-  echoes the target host first. No skill deletes or modifies resources it did not create
-  in the current session — teardown sections operate on exactly the tracked list of
-  created resources, nothing else.
+| Convention | Detail |
+|---|---|
+| **Port 3000, `/livez`, `/readyz`** | BentoML containers serve HTTP on port 3000 with those health endpoints, plus Prometheus metrics at `/metrics` and Swagger UI at `/`. Kubernetes manifests probe `/livez` (liveness) and `/readyz` (readiness/startup, with a generous ~10-minute startupProbe budget for model loading); EC2 verification polls `/readyz`. |
+| **Verification is content-based** | Every deploy skill ends with a real inference request derived from your `@bentoml.api` methods and judges the **response body**, not the status code. Port-forwards and SSH tunnels use uncommon local ports (3100/3200) and liveness-check the tunnel process, so a dev server squatting on local port 3000 cannot fake a success. |
+| **Manifests are rendered, not stored** | `deploy/config.yml` plus the bento's own `bento.yaml` are the inputs; objects are rendered on every run and piped to `kubectl apply`, so no YAML file can drift. `--render-only DIR` writes them out to review, diff or commit (also the GitOps path). Every object is labeled `app.kubernetes.io/name: <slug>` (the object name), `app.kubernetes.io/component: <BentoML service name>`, `app.kubernetes.io/part-of: <bento>` and `app.kubernetes.io/managed-by`. If the config cannot express what you need, `kubernetes.manifests_dir` hands the YAML back to you. EC2 resources the skill provisions are tagged `managed-by=bentoml-ec2-deploy`. |
+| **Secrets hygiene** | Kubernetes secrets are created imperatively (`kubectl create secret ... --from-literal`); no secret value is ever written into a manifest or any file. On EC2, secrets are `-e` flags expanded from your local shell env, never into files or instance user-data. Secret values are never baked into image layers. |
+| **Cluster/region confirmation** | `bentoml-k8s-deploy` asks which kubectl context to use, pins `--context` on every command, and never switches your current context. The AWS skills confirm the region explicitly and pass `--region` on every command. |
+| **Mutations confirmed, destructive scope bounded** | Every mutating AWS CLI command is shown verbatim with a cost note before running; every mutating SSH command echoes the target host first. No skill deletes or modifies resources it did not create in the current session — teardown operates on exactly the tracked list of created resources. |

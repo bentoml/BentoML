@@ -1,16 +1,12 @@
 # Exposure options for a BentoML service on Kubernetes
 
-The BentoML container always listens on port **3000**; the rendered Service exposes
-port **3000** (named `http`) in every mode. Exposure is configured once, in `config.yml`,
-under the ENTRY service's `expose:` / `ingress:` block; changing it means editing that
-block, re-rendering and re-applying. Choose the method with the user based on where
-clients live. In a multi-service bento only the **entry** service is ever
-exposed — the dependency Services stay `ClusterIP`, because inter-service traffic is
-`application/vnd.bentoml+pickle` (unauthenticated pickle deserialization) — which is why
-`expose:`/`ingress:` on a non-entry service is a config error. Which service is the entry
-one is not declared in `config.yml` either — it is `bento.yaml`'s `entry_service`. Its
-`expose:`/`ingress:` block lives under `services.<EntryServiceName>:`, and `<entry-slug>`
-below is its slug (derived from the service name: snake_cased, `_` -> `-`).
+The container always listens on **3000**, and the rendered Service exposes 3000 (named
+`http`) in every mode. Exposure lives in `config.yml` under the **entry** service's
+`expose:`/`ingress:` block — change it, re-render, re-apply. Only the entry service is ever
+exposed: dependency Services stay `ClusterIP` because inter-service traffic is
+`application/vnd.bentoml+pickle` (unauthenticated pickle deserialization), so
+`expose:`/`ingress:` elsewhere is a config error. The entry service is `bento.yaml`'s
+`entry_service`, not a config key; `<entry-slug>` below is its slug.
 
 | Method | Reachable from | Needs | Best for |
 |---|---|---|---|
@@ -88,7 +84,8 @@ of scope for this skill — offer NodePort/LoadBalancer instead. Otherwise use t
 name as `ingress.class_name` (a class marked `(default)` still should be set explicitly).
 
 - `ingress.host`: a DNS name the user controls, pointed at the controller's external
-  address (`kubectl --context <ctx> get svc -n ingress-nginx` or the controller's namespace). For quick
+  address (`kubectl --context <ctx> get svc -n ingress-nginx`, or the controller's
+  namespace). For quick
   tests without DNS: `curl -H 'Host: <host>' http://<controller-ip>/readyz` or an
   `/etc/hosts` entry.
 - **TLS**: set `ingress.tls_secret` only if that TLS Secret exists in the same

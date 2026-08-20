@@ -112,8 +112,7 @@ async def test_serve_with_lifecycle_hooks(
         # assertions below race the slower workers on a loaded machine.
         deadline = time.monotonic() + 60
         while (
-            len(list(tmp_path.glob("data-*.txt"))) < 4
-            and time.monotonic() < deadline
+            len(list(tmp_path.glob("data-*.txt"))) < 4 and time.monotonic() < deadline
         ):
             await asyncio.sleep(0.1)
 

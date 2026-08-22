@@ -336,7 +336,10 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             for v in value:
                 file = self._file_manager.get_file(v)
                 if isinstance(file, str):
-                    data[name] = file
+                    # Collect URL-backed values as a list so every entry is
+                    # emitted as a repeated multipart field (``data`` maps a
+                    # name to one scalar; assigning would keep only the last).
+                    data.setdefault(name, []).append(file)
                 else:
                     files.append((name, file))
         headers.pop("content-type", None)

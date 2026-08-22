@@ -58,6 +58,12 @@ def is_http_url(url: str) -> bool:
 
 original_create_connection = None
 
+# Networks that are never valid targets for user-supplied URLs on top of what
+# ipaddress already classifies as private/loopback/link-local/reserved:
+# - 100.64.0.0/10 (RFC 6598 shared address space / CGNAT) is not globally
+#   routable, but ipaddress does not flag it via any built-in property (#5644).
+BLOCKED_IP_NETWORKS = (ipaddress.ip_network("100.64.0.0/10"),)
+
 
 @contextlib.contextmanager
 def make_safe_connect():
@@ -91,7 +97,17 @@ def make_safe_connect():
             except ValueError:
                 raise socket.gaierror(f"Blocked invalid IP address {host}")
             else:
-                if ip.is_private or ip.is_loopback or ip.is_link_local:
+                # Unwrap IPv4-mapped IPv6 literals (e.g. ::ffff:100.64.1.1) so
+                # every check below sees the embedded IPv4 address.
+                if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+                    ip = ip.ipv4_mapped
+                if (
+                    ip.is_private
+                    or ip.is_loopback
+                    or ip.is_link_local
+                    or ip.is_reserved
+                    or any(ip in net for net in BLOCKED_IP_NETWORKS)
+                ):
                     raise socket.gaierror(f"Blocked private IP address {host}")
         return await original_create_connection(
             self, protocol_factory, host=host, port=port, **kwargs

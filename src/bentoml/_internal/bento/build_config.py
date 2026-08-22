@@ -98,6 +98,41 @@ def _convert_cuda_version(
     )
 
 
+# Control characters (including newline/carriage return) must never appear in
+# env keys or values: Dockerfile instructions are newline-delimited and quotes
+# do not span lines, so a raw control character would terminate the ARG/ENV
+# instruction and any following lines are executed as instructions.
+_CONTROL_CHARS_RE = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def _validate_env_entry(key: str, value: str) -> None:
+    if _CONTROL_CHARS_RE.search(key) or _CONTROL_CHARS_RE.search(value):
+        raise BentoMLException(
+            f"Invalid environment entry '{key}': environment names and values must not contain "
+            "newline or control characters, as they would break out of the generated Dockerfile's "
+            "ARG/ENV instruction. Use the `env` list form or an `.env` file for complex values."
+        )
+
+
+def _validate_bento_env_name(
+    instance: t.Any, attribute: attr.Attribute[str], value: str
+) -> None:
+    if not value or _CONTROL_CHARS_RE.search(value):
+        raise BentoMLException(
+            f"Environment name must be a non-empty string without control characters, got {value!r}"
+        )
+
+
+def _validate_bento_env_value(
+    instance: t.Any, attribute: attr.Attribute[str], value: str
+) -> None:
+    if _CONTROL_CHARS_RE.search(value):
+        raise BentoMLException(
+            f"Environment values must not contain newline or control characters (they would break out of the "
+            f"generated Dockerfile's ARG/ENV instruction), got {value!r}"
+        )
+
+
 def _convert_env(
     env: str | list[str] | dict[str, str] | None,
 ) -> dict[str, str] | dict[str, str | None] | None:
@@ -136,8 +171,15 @@ def _convert_env(
         return env_dict
 
     if isinstance(env, dict):
-        # convert all dict key and values to string
-        return {str(k): str(v) for k, v in env.items()}
+        # convert all dict key and values to string, rejecting control
+        # characters that could inject Dockerfile instructions (GHSA-class
+        # issue: bentofile `docker.env` values are interpolated into ARG/ENV)
+        converted: dict[str, str] = {}
+        for k, v in env.items():
+            key, value = str(k), str(v)
+            _validate_env_entry(key, value)
+            converted[key] = value
+        return converted
 
     raise BentoMLException(
         f"`env` must be either a list, a dict, or a path to a dot environment file, got type '{type(env)}' instead."
@@ -780,8 +822,9 @@ EnvStage = t.Literal["all", "build", "runtime"]
 @attr.define(eq=True)
 class BentoEnvSchema:
     __forbid_extra_keys__ = False
-    name: str
-    value: str = ""
+
+    name: str = attr.field(validator=_validate_bento_env_name)
+    value: str = attr.field(default="", validator=_validate_bento_env_value)
     stage: EnvStage = attr.field(
         default="all",
         validator=attr.validators.in_(("all", "build", "runtime")),

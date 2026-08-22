@@ -64,3 +64,49 @@ def test_generate_containerfile_normalizes_custom_base_image(tmp_path) -> None:
 
     assert "FROM python:3.11-slim RUN touch /tmp/pwned as base-container" in dockerfile
     assert "\nRUN touch /tmp/pwned" not in dockerfile
+
+
+def test_generate_containerfile_rejects_newline_in_env_dict(tmp_path) -> None:
+    import pytest
+
+    from bentoml.exceptions import BentoMLException
+
+    with pytest.raises(BentoMLException, match="control characters"):
+        DockerOptions(
+            distro="debian",
+            python_version="3.11",
+            env={"X": "a\nRUN echo PWNED_VIA_ENV_INJECTION\n"},
+        )
+
+
+def test_generate_containerfile_allows_plain_env_dict_values(tmp_path) -> None:
+    dockerfile = generate_containerfile(
+        DockerOptions(
+            distro="debian",
+            python_version="3.11",
+            env={"GREETING": "hello world", "API_URL": "http://host:8080/v1"},
+        ),
+        str(tmp_path),
+        conda=CondaOptions(),
+        bento_fs=tmp_path,
+    )
+
+    assert "ARG GREETING=hello world" in dockerfile
+    assert "ARG API_URL=http://host:8080/v1" in dockerfile
+    # no instruction injection from env values
+    assert "PWNED" not in dockerfile
+
+
+def test_bento_env_schema_rejects_control_chars() -> None:
+    import pytest
+
+    from bentoml._internal.bento.build_config import BentoEnvSchema
+    from bentoml.exceptions import BentoMLException
+
+    with pytest.raises(BentoMLException, match="control characters"):
+        BentoEnvSchema(name="X", value="a\nRUN echo PWNED")
+    with pytest.raises(BentoMLException, match="Environment name"):
+        BentoEnvSchema(name="WEIRD\nNAME", value="ok")
+    # legit entries still construct
+    env = BentoEnvSchema(name="GREETING", value="hello world", stage="runtime")
+    assert env.name == "GREETING"

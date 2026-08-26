@@ -109,6 +109,11 @@ class _OpenTelemetryServicerContext(aio.ServicerContext["Request", "Response"]):
             code, details=details, trailing_metadata=trailing_metadata
         )
 
+    async def abort_with_status(self, status: grpc.Status) -> None:
+        # grpcio>=1.66 requires this abstract method on aio.ServicerContext.
+        trailing = getattr(status, "trailing_metadata", None) or tuple()
+        await self.abort(status.code, details=status.details or "", trailing_metadata=trailing)
+
     def set_code(self, code: grpc.StatusCode) -> None:
         self._code = code
         details = self._details or code.value[1]

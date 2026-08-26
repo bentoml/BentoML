@@ -45,8 +45,8 @@ Under the hood, BentoML automatically generates several endpoints for creating t
 - ``POST /submit``: Submit a task to the queue. A unique task identifier is returned immediately.
 - ``GET /status``: Get the status of a task given the task identifier.
 - ``GET /get``: Get the result of a task given the task identifier.
-- ``POST /cancel``: Attempt to cancel a task given the task identifier, if the task hasn't started execution.
-- ``PUT /retry``: Retry a task given the task identifier.
+- ``PUT /cancel``: Attempt to cancel a task given the task identifier, if the task hasn't started execution. Not supported by the local development server.
+- ``POST /retry``: Retry a task given the task identifier.
 
 Call a task endpoint
 --------------------
@@ -70,13 +70,15 @@ Async tasks can be submitted through the ``SyncHTTPClient`` or ``AsyncHTTPClient
 
 Once a task is submitted, the request is enqueued in the request queue and a unique task identifier is returned immediately, which can be used to get the status and retrieve the result.
 
+The status is one of ``pending``, ``in_progress``, ``completed``, ``failed`` and ``canceled``.
+
 .. code-block:: python
 
     # Use the following code at a later time
     status = task.get_status()
-    if status.value == 'success':
+    if status.value == 'completed':
         print("The task runs successfully. The result is", task.get())
-    elif status.value == 'failure':
+    elif status.value == 'failed':
         print("The task run failed.")
     else:
         print("The task is still running.")
@@ -86,7 +88,7 @@ Use ``retry()`` if a task fails or you need to rerun the task with the same para
 .. code-block:: python
 
     status = task.get_status()
-    if status.value == 'failure':
+    if status.value == 'failed':
         print("Task failed, retrying...")
         new_task = task.retry()
         new_status = new_task.get_status()

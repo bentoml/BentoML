@@ -541,6 +541,7 @@ def test_update_deployment_distributed(deployment_api: DeploymentAPI):
 
 def test_build_requirements_txt_path_traversal(tmp_path: t.Any):
     from pathlib import Path
+
     from bentoml._internal.cloud.deployment import _build_requirements_txt
     from bentoml.exceptions import BentoMLException
 
@@ -556,6 +557,7 @@ def test_build_requirements_txt_path_traversal(tmp_path: t.Any):
 
 def test_build_post_setup_script_path_traversal(tmp_path: t.Any):
     from pathlib import Path
+
     from bentoml._internal.cloud.deployment import _build_post_setup_script
     from bentoml.exceptions import BentoMLException
 
@@ -567,4 +569,3 @@ def test_build_post_setup_script_path_traversal(tmp_path: t.Any):
 
     with pytest.raises(BentoMLException, match="Path traversal detected"):
         _build_post_setup_script(str(bento_dir), None)
-

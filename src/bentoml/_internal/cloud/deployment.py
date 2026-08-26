@@ -1629,7 +1629,9 @@ def _build_requirements_txt(bento_dir: str, image: Image | None) -> bytes:
     content = b""
     if filename:
         fullpath = os.path.join(bento_dir, filename)
-        if os.path.commonpath([os.path.realpath(fullpath), os.path.realpath(bento_dir)]) != os.path.realpath(bento_dir):
+        if os.path.commonpath(
+            [os.path.realpath(fullpath), os.path.realpath(bento_dir)]
+        ) != os.path.realpath(bento_dir):
             raise BentoMLException(
                 f"Path traversal detected: requirements.txt path '{filename}' is outside of bento directory '{bento_dir}'"
             )
@@ -1666,7 +1668,9 @@ def _build_post_setup_script(bento_dir: str, image: Image | None) -> bytes:
         content += "\n".join(image.post_commands).encode() + b"\n"
     if config.docker.setup_script:
         fullpath = os.path.join(bento_dir, config.docker.setup_script)
-        if os.path.commonpath([os.path.realpath(fullpath), os.path.realpath(bento_dir)]) != os.path.realpath(bento_dir):
+        if os.path.commonpath(
+            [os.path.realpath(fullpath), os.path.realpath(bento_dir)]
+        ) != os.path.realpath(bento_dir):
             raise BentoMLException(
                 f"Path traversal detected: setup_script path '{config.docker.setup_script}' is outside of bento directory '{bento_dir}'"
             )

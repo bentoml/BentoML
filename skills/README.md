@@ -1,13 +1,13 @@
-# BentoML Deployment Agent Skills
+# BentoML Agent Skills
 
 [Agent Skills](https://agentskills.io/specification) — the open, agent-neutral `SKILL.md`
-format — for deploying BentoML services to infrastructure **you** own: a vanilla Kubernetes
-cluster or plain AWS EC2 instances. They run in Claude Code, OpenAI Codex, Cursor and any other host
+format — for creating BentoML projects and deploying them to infrastructure **you** own: a
+vanilla Kubernetes cluster or plain AWS EC2 instances. They run in Claude Code, OpenAI Codex, Cursor and any other host
 implementing the standard ([installation](#installation)). The stack is fully open source: the
 `bentoml` CLI, Docker, `kubectl` with plain manifests, `ssh`, the AWS CLI. No Helm charts, no
 operators or CRDs, no Yatai, no BentoCloud.
 
-Scope is **basic deployment**. Commercial BentoCloud features — scale-to-zero, inference-metric
+Scope is **authoring plus basic deployment**. Commercial BentoCloud features — scale-to-zero, inference-metric
 autoscaling, canary/blue-green rollouts, model registry sync, observability dashboards — are out
 of scope for every target. Where a standard building block exists (Kubernetes HPA, an AWS ALB),
 the skills point at it in one line and stop.
@@ -16,18 +16,21 @@ the skills point at it in one line and stop.
 
 | Skill | What it does |
 |---|---|
+| [`bentoml-create-bento`](bentoml-create-bento/SKILL.md) | Creates the project itself — the `service.py`, its runtime image and a built Bento — from scratch (gathers requirements, scaffolds the files) or by converting existing code (a script, a notebook, a FastAPI/Flask app, an MLflow model, a BentoML 1.1 Runner project). Ends at a served, content-verified `bentoml build`. Start here if there is no bento yet. |
 | [`bentoml-containerize`](bentoml-containerize/SKILL.md) | Builds your local BentoML project into a Bento, containerizes it, smoke-tests the container locally, and pushes it to your registry (Docker Hub, GHCR, ECR, private, `kind`/`minikube` local load, or ttl.sh). The entry point for every deploy target. |
 | [`bentoml-k8s-deploy`](bentoml-k8s-deploy/SKILL.md) | Deploys a pushed image to your Kubernetes cluster: writes one `deploy/config.yml`, renders plain manifests from it — **one Deployment + Service per BentoML service the bento declares**, plus optional HPA/Ingress — applies them in dependency order, and verifies with a real inference request. Its [`references/troubleshooting.md`](bentoml-k8s-deploy/references/troubleshooting.md) is the diagnostic runbook: ImagePullBackOff, CrashLoopBackOff, OOM, Pending, probe failures, unreachable services, inference 4xx/5xx. |
 | [`bentoml-ec2-deploy`](bentoml-ec2-deploy/SKILL.md) | Runs a pushed image under Docker on one or more plain EC2 instances — your existing instances over SSH, or a fresh instance provisioned via the AWS CLI. Includes ECR auth, verification, teardown, and its own troubleshooting section. |
 | [`bentoml-deploy-scriptgen`](bentoml-deploy-scriptgen/SKILL.md) | Generates a standalone, committable deploy bundle (`deploy/deploy.py` + one `config.yml`) that builds, pushes, deploys and verifies without any agent. Manifests are rendered from the config on every run, so there is no YAML to keep in sync. For production and CI/CD. Kubernetes and EC2 targets. |
 
-A typical session chains **containerize → one deploy target**.
+A typical session chains **create-bento (if needed) → containerize → one deploy target**.
 
 ## Which target should I choose?
 
 ```mermaid
 flowchart TD
-    S([service.py]) --> C["bentoml-containerize<br/>(always the first step)"]
+    M([model or existing code]) -->|no bento yet| W["bentoml-create-bento"]
+    W --> S
+    S([service.py]) --> C["bentoml-containerize<br/>(first step of every deploy)"]
     C --> Q{Where should it run?}
     Q -->|"I have (or want) a Kubernetes cluster<br/>— incl. local kind/minikube"| K8S["bentoml-k8s-deploy"]
     Q -->|"AWS, keep it simple:<br/>a VM I control, SSH access"| EC2["bentoml-ec2-deploy"]
@@ -52,31 +55,32 @@ Zero cloud spend: `bentoml-containerize` with the kind/minikube path, then
 
 | Path | What it is |
 |---|---|
-| **Interactive skills** (`bentoml-containerize` → `bentoml-k8s-deploy` / `bentoml-ec2-deploy`) | The agent is in the loop: it detects your project, asks the right questions, confirms every mutation, provisions infrastructure where allowed (EC2), and troubleshoots on the spot. Use for a service's **first** deploy, a new target, and anything needing judgment. |
+| **Interactive skills** (`bentoml-create-bento` → `bentoml-containerize` → `bentoml-k8s-deploy` / `bentoml-ec2-deploy`) | The agent is in the loop: it detects your project, asks the right questions, confirms every mutation, provisions infrastructure where allowed (EC2), and troubleshoots on the spot. Use for a service's **first** deploy, a new target, and anything needing judgment. |
 | **The script bundle** (`bentoml-deploy-scriptgen`) | Every deploy after that: a committable `deploy/` directory (plain Python ≥ 3.9, stdlib only) repeating the exact build → containerize → push → deploy → verify pipeline with no agent and no questions, from your terminal or CI/CD. Preflight checks fail fast, exit codes are a stable contract (0 ok · 1 generic · 2 config · 3 preflight · 4 build · 5 push · 6 deploy · 7 verify), and the last stdout line is always a JSON summary. It does **less**: it never provisions EC2 instances and never edits your service. Its generated `deploy/README.md` ships a CI/CD chapter — a GitHub Actions workflow (fork-safe `--check-only --local-only` PR gate; deploy jobs with AWS OIDC, EKS kubeconfig, an SSH-key secret for EC2) plus a GitLab CI equivalent. |
 
 First deploy interactive, then generate the bundle, commit it, wire CI.
 
 ## Prerequisites
 
-| Prerequisite | containerize | k8s-deploy | ec2-deploy |
-|---|---|---|---|
-| Python + `bentoml` ≥ 1.4 | required | — | — |
-| Docker daemon running | required | — | on the instance only (installed by user-data on new instances; offered with confirmation on existing ones) |
-| `kubectl` + cluster access | — | required | — |
-| AWS CLI v2 + valid credentials | only for ECR pushes | — | required for provisioning mode and for ECR images; not needed for existing instance + non-ECR image |
-| `ssh` client | — | — | required |
-| A container registry | chosen here | cluster must be able to pull from it | instance must be able to pull from it |
+| Prerequisite | create-bento | containerize | k8s-deploy | ec2-deploy |
+|---|---|---|---|---|
+| Python + `bentoml` ≥ 1.4 | required | required | — | — |
+| Docker daemon running | — | required | — | on the instance only (installed by user-data on new instances; offered with confirmation on existing ones) |
+| `kubectl` + cluster access | — | — | required | — |
+| AWS CLI v2 + valid credentials | — | only for ECR pushes | — | required for provisioning mode and for ECR images; not needed for existing instance + non-ECR image |
+| `ssh` client | — | — | — | required |
+| A container registry | — | chosen here | cluster must be able to pull from it | instance must be able to pull from it |
 
 Each skill runs its own preflight checks and stops with a clear message if something is missing.
+`bentoml-create-bento` needs nothing but Python and whatever the model itself imports.
 
 ## Installation
 
 Each skill is a directory holding a `SKILL.md` with `name` + `description` frontmatter, plus
-optional `references/` and bundled files. Nothing is Claude-specific and all four validate
+optional `references/` and bundled files. Nothing is Claude-specific and all five validate
 against the [reference implementation](#working-inside-a-bentoml-checkout). Only the scanned
 **directory** differs per host, so the skills live in this repo's tool-neutral top-level
-`skills/` rather than one agent's dotfolder. Every option below lands the same four directories.
+`skills/` rather than one agent's dotfolder. Every option below lands the same five directories.
 
 | Host | Project scope | User scope (every project) |
 |---|---|---|
@@ -109,7 +113,7 @@ $ claude plugin marketplace add bentoml/BentoML    # or from a shell
 $ claude plugin install bentoml-deploy@bentoml
 ```
 
-Confirm the trust prompt and pick a scope (user = all projects). All four skills install
+Confirm the trust prompt and pick a scope (user = all projects). All five skills install
 together and auto-load like local skills, namespaced as `/bentoml-deploy:bentoml-k8s-deploy`
 (bare names resolve when unambiguous). Update with `/plugin update bentoml-deploy@bentoml`, or
 auto-update the `bentoml` marketplace under `/plugin` → Marketplaces. Smaller clone:
@@ -144,12 +148,13 @@ $ git pull && rm -rf ~/.codex/skills/bentoml-* && cp -r skills/bentoml-* ~/.code
 
 ### Verify the host picked them up
 
-**Codex** — in a new session run `/skills` (or type `$` to mention one); the four appear by
+**Codex** — in a new session run `/skills` (or type `$` to mention one); the five appear by
 name. From a shell:
 
 ```console
 $ ls ~/.codex/skills
-bentoml-containerize  bentoml-deploy-scriptgen  bentoml-ec2-deploy  bentoml-k8s-deploy
+bentoml-containerize   bentoml-deploy-scriptgen  bentoml-k8s-deploy
+bentoml-create-bento   bentoml-ec2-deploy
 $ head -4 ~/.codex/skills/bentoml-k8s-deploy/SKILL.md
 ```
 
@@ -163,6 +168,7 @@ $ claude
   /bentoml-ec2-deploy         Deploy a containerized BentoML service directly onto... EC2...
   /bentoml-k8s-deploy         Deploy a containerized BentoML service to a vanilla Kubernetes...
   /bentoml-deploy-scriptgen   Generate a standalone, committable production deploy-script...
+  /bentoml-create-bento       Create a BentoML project: the service.py whose typed...
 ```
 
 Plain requests work too — "deploy my BentoML service to my Kubernetes cluster" loads
@@ -203,6 +209,25 @@ purpose, it tells you what that costs and how to stop it later.
 ## What each skill will ask you
 
 Questions come up front, in as few rounds as possible, with defaults you can accept in one go.
+
+### `bentoml-create-bento`
+
+Only for a project it has to create from scratch, and all in one round — a conversion asks
+nothing it can read from the existing code. Every answer accepts "you decide".
+
+| Question | Default | How to choose |
+|---|---|---|
+| What does it do, one endpoint or several? | one, named after the verb | Start with one even if the target is bigger |
+| Where do the weights come from? | the HF ID you named, else no model | HF ID · local files (moved into the model store) · an existing model-store tag |
+| Input and output types per endpoint | the model's natural pair | Annotations are the API schema, so this is the one answer worth thinking about |
+| GPU? | no | Only if the model needs it |
+| Python version and pinned packages | your current Python, unpinned | Pin when reproducibility matters |
+| Response profile | interactive | interactive · long-running · token-streaming · fire-and-forget (a task queue) |
+
+It also asks for **one concrete input and its expected output** and refuses to declare success
+without it: verification judges the response body against that anchor, not the status code.
+Never asked: workers, threads, replicas, ports, batching, timeouts — defaults hold until
+something is measured.
 
 ### `bentoml-containerize`
 

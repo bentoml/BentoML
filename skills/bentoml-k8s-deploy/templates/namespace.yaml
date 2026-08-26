@@ -1,0 +1,17 @@
+# The optional Namespace object (<- kubernetes.namespace).
+#
+# NOT rendered by anything: the deploy bundle never creates and never renders a
+# Namespace -- `kubernetes.namespace` must already exist, and its preflight fails
+# with the exact `kubectl create namespace` line when it does not. This skill
+# creates it imperatively (SKILL.md Step 3); apply this file yourself only if the
+# user wants the namespace tracked in git.
+#
+# Intentional deviation from the per-service label convention: no
+# app.kubernetes.io/name or /component here, because one namespace hosts every
+# service of the bento (and possibly other bentos) and is not tied to one.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{NAMESPACE}}
+  labels:
+    app.kubernetes.io/managed-by: bentoml-k8s-deploy

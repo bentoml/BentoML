@@ -5,7 +5,10 @@ ci:
   skip:  # exceeds tier max size
     - buf-format
     - buf-lint
-exclude: '(.*\.(css|js|svg))|(.*/(snippets|grpc|proto)/.*)$'
+# skills/*/templates/ holds reviewed, e2e-tested script bundles that
+# generator skills copy verbatim — formatting churn would break the
+# byte-identical guarantee, so they are exempt from auto-fixing hooks.
+exclude: '(.*\.(css|js|svg))|(.*/(snippets|grpc|proto)/.*)$|^skills/[^/]+/templates/'
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: 'v0.15.12'

@@ -1,0 +1,60 @@
+# =============================================================================
+# REFERENCE SHAPE of the Ingress rendered for the ENTRY service. Class-agnostic.
+#
+# Rendered only when services.<EntryName>.ingress.enabled is true, and rendered
+# once per bento, never per service: only the entry service speaks JSON HTTP.
+# Non-entry services exchange `application/vnd.bentoml+pickle` and stay
+# ClusterIP-only -- config.yml rejects `ingress:` on them, so a rendered manifest
+# can never route to one.
+#
+# Not the file you edit -- `config.yml` is:
+#   services.<EntryName>.ingress.{enabled,class_name,host,tls_secret}
+#
+# Precondition: a controller must already be installed
+# (`kubectl --context <ctx> get ingressclass`), and the entry service is normally
+# left at expose.type: ClusterIP. See references/exposure-options.md.
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  #                                        <- the entry service's slug
+  name: {{ENTRY_SLUG}}
+  #                                        <- kubernetes.namespace
+  namespace: {{NAMESPACE}}
+  labels:
+    app.kubernetes.io/name: {{ENTRY_SLUG}}
+    app.kubernetes.io/component: {{ENTRY_SERVICE_NAME}}
+    app.kubernetes.io/part-of: {{BENTO_NAME}}
+    app.kubernetes.io/managed-by: bentoml-k8s-deploy
+    # plus every pair from kubernetes.extra_labels (which can never override the
+    # four app.kubernetes.io/* identity labels above)
+  # Controller-specific annotations       <- ingress.annotations Most inference deployments need at least a raised proxy
+  # timeout (nginx defaults to 60s) and a body-size limit that fits the payload;
+  # keep them >= the service's traffic.timeout.
+  annotations:
+    {{INGRESS_ANNOTATION_KEY}}: "{{INGRESS_ANNOTATION_VALUE}}"
+spec:
+  # From `kubectl --context <ctx> get ingressclass`, e.g. nginx.
+  #                                        <- ingress.class_name
+  ingressClassName: {{INGRESS_CLASS_NAME}}
+  # Rendered only when ingress.tls_secret is set. The Secret must already exist in
+  # this namespace (cert-manager, or:
+  # kubectl create secret tls <name> -n <ns> --cert=cert.pem --key=key.pem).
+  tls:
+    - hosts:
+        - {{INGRESS_HOST}}
+      secretName: {{TLS_SECRET_NAME}}
+  rules:
+    # DNS for this host must resolve to the ingress controller's load balancer.
+    #                                      <- ingress.host
+    - host: {{INGRESS_HOST}}
+      http:
+        paths:
+          - path: /              # BentoML serves its API routes at the root
+            pathType: Prefix
+            backend:
+              service:
+                # The ENTRY service's Service; never a dependency.
+                name: {{ENTRY_SLUG}}
+                port:
+                  name: http

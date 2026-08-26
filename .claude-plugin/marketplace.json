@@ -1,0 +1,28 @@
+{
+  "name": "bentoml",
+  "description": "Official BentoML agent skills: containerize BentoML services and deploy them to Kubernetes or EC2",
+  "owner": {
+    "name": "BentoML Team",
+    "url": "https://github.com/bentoml"
+  },
+  "plugins": [
+    {
+      "name": "bentoml-deploy",
+      "source": ".",
+      "strict": false,
+      "description": "Agent skills for containerizing BentoML services and deploying them to Kubernetes or EC2 with a fully open-source stack",
+      "author": {
+        "name": "BentoML Team"
+      },
+      "homepage": "https://github.com/bentoml/BentoML",
+      "license": "Apache-2.0",
+      "keywords": [
+        "bentoml",
+        "deployment",
+        "kubernetes",
+        "ec2",
+        "docker"
+      ]
+    }
+  ]
+}

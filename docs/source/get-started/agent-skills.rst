@@ -8,7 +8,7 @@ Agent skills
 
 An **agent skill** is a set of instructions that a coding agent loads on demand when your request matches what the skill covers. The format is defined by the open `Agent Skills specification <https://agentskills.io/specification>`_ and works across hosts such as Claude Code, OpenAI Codex, and Cursor.
 
-BentoML provides several skills in the `skills/ <https://github.com/bentoml/BentoML/tree/main/skills>`_ directory of the repository. They teach your agent to take a BentoML project from source code to a verified, running deployment on infrastructure you own, such as a Kubernetes cluster or plain AWS EC2 instances. They use only open-source tools, including the ``bentoml`` CLI, Docker, ``kubectl`` with plain manifests, ``ssh``, and the AWS CLI.
+BentoML provides several skills in the `skills/ <https://github.com/bentoml/BentoML/tree/main/skills>`_ directory of the repository. They teach your agent to create a BentoML project, build a Bento, and then take it all the way to a verified, running deployment on infrastructure you own, such as a Kubernetes cluster or plain AWS EC2 instances. They use only open-source tools, including the ``bentoml`` CLI, Docker, ``kubectl`` with plain manifests, ``ssh``, and the AWS CLI.
 
 .. note::
 
@@ -19,8 +19,11 @@ How BentoML works
 
 Learn about the general workflow before diving into the skills. This is the same pipeline you follow by hand, but with the skills, your agent does it for you.
 
-.. code-block:: text
+.. code-block:: bash
 
+    model or existing code                ->  a script, a notebook, a FastAPI app, etc.
+              |
+              v
     service.py + runtime environment      ->  your Python project
               |  bentoml build
               v
@@ -156,7 +159,7 @@ Once the image is in a registry your target can pull from, the deployment is ord
 - **Kubernetes**: one Deployment + Service per BentoML Service, plus optional HPA and Ingress.
 - **EC2**: Docker on a VM, with ``--restart unless-stopped``.
 
-The skills automate steps 3 through 5 and verify the result with a real inference request.
+The skills automate these steps and verify the result with a real inference request.
 
 Install the skills
 ------------------
@@ -179,7 +182,7 @@ Each skill is a directory containing a ``SKILL.md`` file plus optional ``referen
 
     .. tab-item:: Claude Code plugin
 
-        The BentoML repository is a Claude Code plugin marketplace, so all four skills install and update together.
+        The BentoML repository is a Claude Code plugin marketplace, so all the skills are installed and updated together.
 
         .. code-block:: bash
 
@@ -213,6 +216,8 @@ The skills
 
    * - Skill
      - What it does
+   * - ``bentoml-create-bento``
+     - Creates the project itself: the ``service.py``, its runtime environment, and a built Bento. It works from scratch or converts existing code, such as a script, a notebook, a FastAPI or Flask app, an MLflow model, or a BentoML 1.1 Runner project. Start here if you don't have a Bento yet.
    * - ``bentoml-containerize``
      - Builds your project into a Bento, containerizes it, smoke-tests the container locally, and pushes it to your registry (Docker Hub, GHCR, ECR, a private registry, a ``kind``/``minikube`` local load, or ``ttl.sh``). The entry point for every target.
    * - ``bentoml-k8s-deploy``
@@ -225,9 +230,29 @@ The skills
 An example session
 ------------------
 
-Here is an example session. Nothing is applied to a cluster or an AWS account before you confirm it.
+Here is an example session that converts an existing script into a Bento:
 
-.. code-block:: text
+.. code-block:: bash
+
+    $ cd ~/projects/summarization && claude
+    > turn predict.py into a BentoML service
+
+    Loading skill: bentoml-create-bento
+      Read predict.py: model loaded at module level, summarize(text) -> str,
+      weights from sshleifer/distilbart-cnn-12-6
+      Before I write anything: one input and the output you expect for it?
+    > "the quick brown fox..." -> a one-sentence summary containing "fox"
+      Wrote service.py, requirements.txt, .bentoignore, test_service.py
+      bentoml serve -> /readyz OK, /docs.json shows summarize(text: str) -> str
+      Anchor request -> "A fox jumped over the dog." Matches, and identical to
+      predict.py on the same input
+      pytest -> 1 passed
+      bentoml build -> summarization:lyt7deofjkmparqe
+      Next step: /bentoml-containerize
+
+And here is one that deploys the result. Nothing is applied to a cluster or an AWS account before you confirm it.
+
+.. code-block:: bash
 
     $ cd ~/projects/summarization && claude
     > containerize my BentoML service and deploy it to my kind cluster
@@ -257,12 +282,19 @@ Onboarding best practices
 
 To prepare the project for your agent:
 
-- Keep ``service.py`` at the project root, or somewhere obvious, with one clear entry Service.
+- Keep ``service.py`` at the project root, or somewhere obvious, with one clear entry Service. If you don't have one yet, ``bentoml-create-bento`` writes it for you.
 - Declare the runtime environment in code, and keep it next to the Service it describes.
 - Add a ``.bentoignore`` file so builds do not sweep in datasets, checkpoints, and ``.venv``.
-- Write down what the Service expects. A sample request and its expected response in the README is enough for the agent to build a meaningful verification call.
+- Write down what the Service expects. One concrete input and the output you expect for it - an anchor case - is the single most useful thing you can hand the agent, because every skill verifies against a response body rather than a status code.
 - Note any required environment variables (such as ``HF_TOKEN`` for gated models) and where their values come from. Names go into the deployment; values never do.
 - Add a ``CLAUDE.md`` or ``AGENTS.md`` file recording project-specific facts the code does not show: which cluster is which, which registry to use, who owns the namespace.
+
+When creating or converting a Service:
+
+- **Settle the anchor case before any code is written.** ``bentoml-create-bento`` asks for it up front and refuses to declare success without it. For a conversion, it also runs your original code on the same input and diffs the two outputs.
+- **Convert one real Service first.** Pick something small that already works, run ``bentoml-create-bento`` on it, and compare the Bento's output against the original code before going further.
+- **Keep model references at class scope**, not inside ``__init__``. Class scope is what declares a model a dependency of the Bento. Declared inside ``__init__``, it isn't packaged, and the deployment fails with a model ``NotFound`` error even though it worked locally.
+- **Annotate every parameter and return value.** The annotations are the schema, the OpenAPI spec, and the client. An unannotated parameter becomes ``Any``, with no validation and no docs.
 
 To adopt the skills across a team:
 
@@ -276,7 +308,7 @@ When working alongside the agent:
 
 - Say where you want to deploy in your first message ("deploy this to my EKS cluster in ``us-west-2``"). The skills ask fewer questions when the target is unambiguous.
 - Answer the batched questions in one go. They are asked up front and have defaults you can accept.
-- When something breaks, say what you see. The Kubernetes skill's troubleshooting reference is indexed by symptom: ``ImagePullBackOff``, ``CrashLoopBackOff``, ``OOMKilled``, ``Pending``, probe failures, unreachable Services, and inference errors.
+- When something breaks, say what you see. The skills carry troubleshooting references indexed by symptom: ``ImagePullBackOff``, ``CrashLoopBackOff``, ``OOMKilled``, ``Pending``, probe failures, unreachable Services, and inference errors for Kubernetes.
 
 Deployment best practices
 -------------------------

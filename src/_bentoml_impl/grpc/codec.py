@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-import tempfile
 import typing as t
 from dataclasses import dataclass
 from pathlib import Path
@@ -132,15 +130,6 @@ def _file_from_proto(field: t.Any) -> bytes:
     return bytes(content)
 
 
-def _bytes_to_path(body: bytes) -> Path:
-    # FileSchema.decode() looks up the HTTP request temp dir; gRPC has none,
-    # so persist bytes to a local tempfile the validator can treat as a Path.
-    fd, name = tempfile.mkstemp(prefix="bentoml-grpc-")
-    with os.fdopen(fd, "wb") as handle:
-        handle.write(body)
-    return Path(name)
-
-
 def _file_to_proto(obj: t.Any) -> pb.File:
     if isinstance(obj, bytes):
         body = obj
@@ -209,7 +198,10 @@ async def decode_proto(
     elif binding.field == "ndarray":
         decoded = await _ndarray_from_proto(value)
     else:
-        decoded = _bytes_to_path(_file_from_proto(value))
+        # FileSchema stores byte inputs in the active request temp directory.
+        # The gRPC servicer owns that request lifecycle and cleans it after the
+        # response has been encoded.
+        decoded = _file_from_proto(value)
     return _wrap_value(spec, binding, decoded)
 
 

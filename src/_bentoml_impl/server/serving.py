@@ -553,6 +553,7 @@ def serve_grpc(
         )
         scheme = "https" if BentoMLContainer.ssl.enabled.get() else "http"
         close_child_stdin = not development_mode
+        bento_args = BentoMLContainer.bento_arguments.get()
 
         with contextlib.ExitStack() as port_stack:
             api_port = port_stack.enter_context(
@@ -570,6 +571,8 @@ def serve_grpc(
                 str(bento_path.absolute()),
                 "--worker-id",
                 "$(CIRCUS.WID)",
+                "--args",
+                json.dumps(bento_args),
                 "--protocol-version",
                 protocol_version,
                 *ssl_args,

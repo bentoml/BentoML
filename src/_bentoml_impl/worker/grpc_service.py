@@ -21,6 +21,7 @@ import click
     type=click.Path(exists=True),
     help="Working directory for the API server",
 )
+@click.option("--args", type=click.STRING, help="Bento arguments dict for the service")
 @click.option(
     "--worker-id",
     required=False,
@@ -86,6 +87,7 @@ def main(
     port: int,
     runner_map: str | None,
     working_dir: str | None,
+    args: str | None,
     worker_id: int | None,
     enable_reflection: bool,
     enable_channelz: bool,
@@ -106,6 +108,7 @@ def main(
     from bentoml._internal.configuration.containers import BentoMLContainer
     from bentoml._internal.context import server_context
     from bentoml._internal.log import configure_server_logging
+    from bentoml._internal.utils.args import set_arguments
 
     server_context.service_type = "grpc_api_server"
     server_context.worker_index = worker_id
@@ -117,6 +120,8 @@ def main(
     BentoMLContainer.development_mode.set(development_mode)
     if runner_map is not None:
         BentoMLContainer.remote_runner_mapping.set(json.loads(runner_map))
+    if args:
+        set_arguments(json.loads(args))
 
     svc = load(bento_identifier, working_dir=working_dir)
     svc.inject_config()

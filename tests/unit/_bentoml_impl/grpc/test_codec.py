@@ -16,6 +16,7 @@ from _bentoml_sdk.io_models import IODescriptor
 from _bentoml_sdk.validators import TensorSchema
 from bentoml.exceptions import InvalidArgument
 from bentoml.grpc.utils import import_generated_stubs
+from starlette.requests import Request
 
 pb, _ = import_generated_stubs("v1")
 
@@ -114,6 +115,8 @@ async def test_ndarray_round_trip():
 
 @pytest.mark.asyncio
 async def test_file_round_trip(tmp_path: Path):
+    from bentoml._internal.context import ServiceContext
+
     spec = _input_of(echo_file)
     payload = b"grpc-file-bytes"
     source = tmp_path / "input.bin"
@@ -123,8 +126,14 @@ async def test_file_round_trip(tmp_path: Path):
     assert encoded_field == "file"
     assert encoded.content == payload
 
-    decoded = await decode_proto(spec, "file", encoded)
-    assert Path(decoded.data).read_bytes() == payload
+    context = ServiceContext()
+    request = Request({"type": "http", "headers": [], "state": {}})
+    with context.in_request(request):
+        decoded = await decode_proto(spec, "file", encoded)
+        decoded_path = Path(decoded.data)
+        assert decoded_path.read_bytes() == payload
+
+    assert not decoded_path.exists()
 
 
 @pytest.mark.asyncio

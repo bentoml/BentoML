@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     import grpc
     from google.protobuf import struct_pb2
     from grpc import aio
+    from starlette.requests import Request
 
     from _bentoml_sdk import Service
     from bentoml.grpc.types import BentoServicerContext
@@ -44,6 +45,66 @@ else:
 
 def log_exception(request: pb.Request, exc_info: ExcInfoType) -> None:
     logger.error("Exception on /%s [POST]", request.api_name, exc_info=exc_info)
+
+
+def _metadata_item(item: t.Any) -> tuple[t.Any, t.Any]:
+    if hasattr(item, "key") and hasattr(item, "value"):
+        return item.key, item.value
+    return item
+
+
+def _metadata_bytes(value: t.Any) -> bytes:
+    if isinstance(value, bytes):
+        return value
+    return str(value).encode("latin-1")
+
+
+def _request_from_grpc(request: pb.Request, context: BentoServicerContext) -> Request:
+    from starlette.requests import Request
+
+    invocation_metadata = getattr(context, "invocation_metadata", None)
+    metadata = invocation_metadata() if invocation_metadata is not None else None
+    headers = [
+        (_metadata_bytes(key), _metadata_bytes(value))
+        for key, value in map(_metadata_item, metadata or ())
+    ]
+
+    async def receive() -> dict[str, t.Any]:
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    return Request(
+        {
+            "type": "http",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+            "http_version": "2",
+            "method": "POST",
+            "scheme": "http",
+            "path": f"/{request.api_name}",
+            "raw_path": f"/{request.api_name}".encode(),
+            "query_string": b"",
+            "headers": headers,
+            "client": None,
+            "server": None,
+            "root_path": "",
+            "state": {},
+        },
+        receive,
+    )
+
+
+def _propagate_response_metadata(ctx: t.Any, context: BentoServicerContext) -> None:
+    raw_metadata = getattr(ctx.response.metadata, "raw", ())
+    if not raw_metadata:
+        return
+
+    outgoing = tuple(
+        (key.decode("latin-1"), value.decode("latin-1"))
+        for key, value in raw_metadata
+    )
+    trailing_metadata = getattr(context, "trailing_metadata", None)
+    existing = trailing_metadata() if trailing_metadata is not None else None
+    existing_items = tuple(map(_metadata_item, existing or ()))
+    context.set_trailing_metadata((*existing_items, *outgoing))
 
 
 def _call_args_from_input(method: t.Any, input_data: t.Any, ctx: t.Any) -> tuple[
@@ -88,60 +149,65 @@ def create_bento_servicer(service: Service[t.Any]) -> services.BentoServiceServi
         ) -> pb.Response | None:
             response = pb.Response()
             try:
-                if request.api_name not in service.apis:
-                    raise InvalidArgument(
-                        f"given 'api_name' is not defined in {service.name}",
-                    ) from None
+                grpc_request = _request_from_grpc(request, context)
+                with service.context.in_request(grpc_request) as ctx:
+                    if request.api_name not in service.apis:
+                        raise InvalidArgument(
+                            f"given 'api_name' is not defined in {service.name}",
+                        ) from None
 
-                method = service.apis[request.api_name]
-                if method.is_stream:
-                    await context.abort(
-                        code=grpc.StatusCode.UNIMPLEMENTED,
-                        details=(
-                            f"API {method.name!r} is a streaming endpoint; "
-                            "gRPC streaming is not supported for @bentoml.service() yet"
-                        ),
-                    )
-                    return None
-                if method.batchable:
-                    await context.abort(
-                        code=grpc.StatusCode.UNIMPLEMENTED,
-                        details=(
-                            f"API {method.name!r} is batchable; "
-                            "adaptive batching is not supported over gRPC for @bentoml.service() yet"
-                        ),
-                    )
-                    return None
-                if method.is_task:
-                    await context.abort(
-                        code=grpc.StatusCode.UNIMPLEMENTED,
-                        details=(
-                            f"API {method.name!r} is a task endpoint; "
-                            "tasks are not supported over gRPC for @bentoml.service() yet"
-                        ),
-                    )
-                    return None
+                    method = service.apis[request.api_name]
+                    if method.is_stream:
+                        await context.abort(
+                            code=grpc.StatusCode.UNIMPLEMENTED,
+                            details=(
+                                f"API {method.name!r} is a streaming endpoint; "
+                                "gRPC streaming is not supported for @bentoml.service() yet"
+                            ),
+                        )
+                        return None
+                    if method.batchable:
+                        await context.abort(
+                            code=grpc.StatusCode.UNIMPLEMENTED,
+                            details=(
+                                f"API {method.name!r} is batchable; "
+                                "adaptive batching is not supported over gRPC for @bentoml.service() yet"
+                            ),
+                        )
+                        return None
+                    if method.is_task:
+                        await context.abort(
+                            code=grpc.StatusCode.UNIMPLEMENTED,
+                            details=(
+                                f"API {method.name!r} is a task endpoint; "
+                                "tasks are not supported over gRPC for @bentoml.service() yet"
+                            ),
+                        )
+                        return None
 
-                field = request.WhichOneof("content")
-                input_data = await decode_proto(
-                    method.input_spec, field, getattr(request, field) if field else None
-                )
-                call_args, call_kwargs = _call_args_from_input(
-                    method, input_data, service.context
-                )
-                func = getattr(self._get_instance(), method.name).local
-                original_func = get_original_func(func)
-                if is_async_callable(original_func) or inspect.iscoroutinefunction(
-                    original_func
-                ):
-                    output = await func(*call_args, **call_kwargs)
-                else:
-                    output = await anyio.to_thread.run_sync(
-                        functools.partial(func, *call_args, **call_kwargs)
+                    field = request.WhichOneof("content")
+                    input_data = await decode_proto(
+                        method.input_spec,
+                        field,
+                        getattr(request, field) if field else None,
                     )
+                    call_args, call_kwargs = _call_args_from_input(
+                        method, input_data, ctx
+                    )
+                    func = getattr(self._get_instance(), method.name).local
+                    original_func = get_original_func(func)
+                    if is_async_callable(original_func) or inspect.iscoroutinefunction(
+                        original_func
+                    ):
+                        output = await func(*call_args, **call_kwargs)
+                    else:
+                        output = await anyio.to_thread.run_sync(
+                            functools.partial(func, *call_args, **call_kwargs)
+                        )
 
-                field_name, encoded = await encode_proto(method.output_spec, output)
-                response = pb.Response(**{field_name: encoded})
+                    field_name, encoded = await encode_proto(method.output_spec, output)
+                    response = pb.Response(**{field_name: encoded})
+                    _propagate_response_metadata(ctx, context)
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
                 await context.abort(code=grpc_status_code(e), details=e.message)

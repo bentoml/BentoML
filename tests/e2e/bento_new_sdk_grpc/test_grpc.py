@@ -11,6 +11,7 @@ import pytest
 from google.protobuf import wrappers_pb2
 
 import bentoml
+from bentoml.grpc.utils import import_generated_stubs
 from bentoml.grpc.utils import import_grpc
 from bentoml.testing.grpc import async_client_call
 from bentoml.testing.grpc import create_channel
@@ -19,6 +20,7 @@ from bentoml.testing.grpc import make_pb_ndarray
 pytest.importorskip("grpc")
 
 grpc, aio = import_grpc()
+pb, _ = import_generated_stubs("v1")
 
 PROJECT_DIR = Path(__file__).parent
 PORT = 38765
@@ -57,6 +59,7 @@ async def test_unary_greet_and_predict(monkeypatch: pytest.MonkeyPatch) -> None:
         port=PORT,
         server_type="grpc",
         production=False,
+        args={"greeting": "hello"},
     ) as server:
         host_url = _host_url(server.url)
         await _wait_until_ready(host_url, timeout=100)
@@ -78,6 +81,23 @@ async def test_unary_greet_and_predict(monkeypatch: pytest.MonkeyPatch) -> None:
                     resp.ndarray.float_values, [2.0, 4.0, 6.0]
                 ),
             )
+            call_rpc = channel.unary_unary(
+                "/bentoml.grpc.v1.BentoService/Call",
+                request_serializer=pb.Request.SerializeToString,
+                response_deserializer=pb.Response.FromString,
+            )
+            context_call = call_rpc(
+                pb.Request(
+                    api_name="context_greet",
+                    text=wrappers_pb2.StringValue(value="world"),
+                ),
+                metadata=(("x-request-source", "grpc-client"),),
+            )
+            context_response = await context_call
+            assert context_response.text.value == "grpc-client world"
+            assert dict(await context_call.trailing_metadata())[
+                "x-response-source"
+            ] == "bentoml-context"
             await async_client_call(
                 "missing",
                 channel=channel,

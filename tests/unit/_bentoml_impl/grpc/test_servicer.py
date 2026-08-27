@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+from pathlib import Path
 
 import pytest
 from google.protobuf import wrappers_pb2
@@ -13,6 +14,8 @@ from bentoml.grpc.utils import import_grpc
 
 pb, _ = import_generated_stubs("v1")
 grpc, aio = import_grpc()
+
+seen_request_files: list[Path] = []
 
 
 @bentoml.service
@@ -37,11 +40,44 @@ class Greeter:
     def long_job(self, name: str) -> str:
         return name
 
+    @bentoml.api
+    def context_greet(self, name: str, ctx: bentoml.Context) -> str:
+        temp_file = Path(ctx.temp_dir) / "context.txt"
+        temp_file.write_text(name)
+        seen_request_files.append(temp_file)
+        ctx.response.headers["x-response-source"] = "bentoml-context"
+        return f"{ctx.request.headers['x-request-source']} {name}"
+
+    @bentoml.api
+    def echo_file(self, data: Path) -> Path:
+        seen_request_files.append(data)
+        return data
+
+    @bentoml.api
+    def fail_file(self, data: Path) -> Path:
+        seen_request_files.append(data)
+        raise RuntimeError("file handler failed")
+
 
 class FakeContext:
-    def __init__(self) -> None:
+    def __init__(
+        self, invocation_metadata: tuple[tuple[str, str], ...] = ()
+    ) -> None:
         self.code: grpc.StatusCode | None = None
         self.details: str | None = None
+        self._invocation_metadata = invocation_metadata
+        self._trailing_metadata: tuple[tuple[str, str], ...] = ()
+
+    def invocation_metadata(self) -> tuple[tuple[str, str], ...]:
+        return self._invocation_metadata
+
+    def trailing_metadata(self) -> tuple[tuple[str, str], ...]:
+        return self._trailing_metadata
+
+    def set_trailing_metadata(
+        self, metadata: tuple[tuple[str, str], ...]
+    ) -> None:
+        self._trailing_metadata = metadata
 
     async def abort(self, code: grpc.StatusCode, details: str = "") -> t.NoReturn:
         self.code = code
@@ -74,6 +110,58 @@ async def test_call_async_greet(servicer):
     response = await servicer.Call(request, ctx)
     assert response is not None
     assert response.text.value == "hello world"
+
+
+@pytest.mark.asyncio
+async def test_call_establishes_request_context_and_propagates_metadata(servicer):
+    seen_request_files.clear()
+    ctx = FakeContext((("x-request-source", "grpc-client"),))
+    request = pb.Request(
+        api_name="context_greet",
+        text=wrappers_pb2.StringValue(value="world"),
+    )
+
+    response = await servicer.Call(request, ctx)
+
+    assert response is not None
+    assert response.text.value == "grpc-client world"
+    assert ("x-response-source", "bentoml-context") in ctx.trailing_metadata()
+    assert len(seen_request_files) == 1
+    assert not seen_request_files[0].exists()
+
+
+@pytest.mark.asyncio
+async def test_call_removes_decoded_file_after_response_encoding(servicer):
+    seen_request_files.clear()
+    ctx = FakeContext()
+    request = pb.Request(
+        api_name="echo_file",
+        file=pb.File(kind="application/octet-stream", content=b"grpc-file-bytes"),
+    )
+
+    response = await servicer.Call(request, ctx)
+
+    assert response is not None
+    assert response.file.content == b"grpc-file-bytes"
+    assert len(seen_request_files) == 1
+    assert not seen_request_files[0].exists()
+
+
+@pytest.mark.asyncio
+async def test_call_removes_decoded_file_after_handler_error(servicer):
+    seen_request_files.clear()
+    ctx = FakeContext()
+    request = pb.Request(
+        api_name="fail_file",
+        file=pb.File(kind="application/octet-stream", content=b"grpc-file-bytes"),
+    )
+
+    with pytest.raises(aio.AbortError):
+        await servicer.Call(request, ctx)
+
+    assert ctx.code == grpc.StatusCode.INTERNAL
+    assert len(seen_request_files) == 1
+    assert not seen_request_files[0].exists()
 
 
 @pytest.mark.asyncio

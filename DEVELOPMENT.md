@@ -307,7 +307,7 @@ Add a new job for your new framework under [framework.yml](./.github/workflows/f
 
 ## Python tools ecosystem
 
-Currently, BentoML is [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible. We define package configuration via [`pyproject.toml`][https://github.com/bentoml/bentoml/blob/main/pyproject.toml].
+Currently, BentoML is [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible. We define package configuration via [`pyproject.toml`](https://github.com/bentoml/bentoml/blob/main/pyproject.toml).
 
 ## Benchmark
 

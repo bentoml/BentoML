@@ -23,6 +23,10 @@ push it. Output: a **pushed image reference** for `bentoml-k8s-deploy` or
 > For production / CI-CD, generate a standalone script bundle (no agent at deploy
 > time) with `bentoml-deploy-scriptgen`.
 
+[references/bentoml-workflow.md](references/bentoml-workflow.md) is the map of the whole
+pipeline: project -> runtime environment -> Bento -> image -> deploy target, with the
+local store paths and the container conventions every later step relies on.
+
 ## Step 0 — Preflight checks
 
 ```bash
@@ -83,6 +87,7 @@ bento with a fresh version.
 BENTO_TAG=$(bentoml build -o tag | grep '^__tag__:' | sed 's/^__tag__://')
 echo "$BENTO_TAG"    # e.g. summarization:6oxk5qvott3lsnry
 # bentoml list shows Bentos newest first (-o json for scripting); bentoml get "$BENTO_TAG" -o json inspects one
+# Bentos live in ~/bentoml/bentos/<name>/<version>/, models in ~/bentoml/models/ (BENTOML_HOME to relocate)
 ```
 
 Empty `BENTO_TAG`: rerun plain `bentoml build` (no `-o tag`) for the full error.

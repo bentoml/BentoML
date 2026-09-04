@@ -10,7 +10,7 @@ from tempfile import NamedTemporaryFile
 from tempfile import mkstemp
 
 import attrs
-import httpx
+import httpx2
 from simple_di import Provide
 from simple_di import inject
 
@@ -263,7 +263,7 @@ class BentoAPI:
             )
             try:
                 if presigned_upload_url is not None:
-                    resp = httpx.put(
+                    resp = httpx2.put(
                         presigned_upload_url, content=io_with_cb, timeout=36000
                     )
                     if resp.status_code != 200:
@@ -319,7 +319,7 @@ class BentoAPI:
                                 )
 
                                 for i in range(UPLOAD_RETRY_COUNT):
-                                    resp = httpx.put(
+                                    resp = httpx2.put(
                                         remote_bento.presigned_upload_url,
                                         content=chunk_io,
                                         timeout=36000,
@@ -508,7 +508,7 @@ class BentoAPI:
                     )
                     presigned_download_url = remote_bento.presigned_download_url
 
-            response_ctx = httpx.stream("GET", presigned_download_url)
+            response_ctx = httpx2.stream("GET", presigned_download_url)
 
         with NamedTemporaryFile() as tar_file:
             with response_ctx as response:

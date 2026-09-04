@@ -216,7 +216,7 @@ class Service(t.Generic[T_co]):
 
     async def get_hosts(self) -> list[str]:
         """Return a list of IPs of the service"""
-        import httpx
+        import httpx2
 
         from _bentoml_impl.server.allocator import ResourceAllocator
 
@@ -235,7 +235,7 @@ class Service(t.Generic[T_co]):
         if "BENTOCLOUD_DEPLOYMENT_URL" in os.environ:
             # BentoCloud environment, the url is to runner-lb
             headers = {"Runner-Name": self.name, "Resolve-Runner": "1"}
-            async with httpx.AsyncClient() as client:
+            async with httpx2.AsyncClient() as client:
                 response = await client.get(url, headers=headers)
                 if response.is_error:
                     raise BentoMLException(

@@ -7,7 +7,7 @@ import time
 import typing as t
 from functools import cached_property
 
-import httpx
+import httpx2
 import starlette.datastructures
 import starlette.requests
 
@@ -32,8 +32,8 @@ class HTTPClient(Client):
 
 class AsyncHTTPClient(AsyncClient):
     @cached_property
-    def client(self) -> httpx.AsyncClient:
-        return httpx.AsyncClient(base_url=self.server_url, timeout=300)
+    def client(self) -> httpx2.AsyncClient:
+        return httpx2.AsyncClient(base_url=self.server_url, timeout=300)
 
     @staticmethod
     async def wait_until_server_ready(
@@ -50,45 +50,45 @@ class AsyncHTTPClient(AsyncClient):
         logger.debug("Waiting for host %s to be ready.", f"{host}:{port}")
         while time.time() - start_time < timeout:
             try:
-                async with httpx.AsyncClient(base_url=f"{host}:{port}") as session:
+                async with httpx2.AsyncClient(base_url=f"{host}:{port}") as session:
                     resp = await session.get("/readyz")
                     if resp.status_code == 200:
                         break
                     else:
                         await asyncio.sleep(check_interval)
             except (
-                httpx.TimeoutException,
-                httpx.NetworkError,
-                httpx.HTTPStatusError,
+                httpx2.TimeoutException,
+                httpx2.NetworkError,
+                httpx2.HTTPStatusError,
             ):
                 logger.debug("Server is not ready. Retrying...")
                 await asyncio.sleep(check_interval)
 
         # try to connect one more time and raise exception.
         try:
-            async with httpx.AsyncClient(base_url=f"{host}:{port}") as session:
+            async with httpx2.AsyncClient(base_url=f"{host}:{port}") as session:
                 resp = await session.get("/readyz")
                 if resp.status_code != 200:
                     raise TimeoutError(
                         f"Timed out waiting {timeout} seconds for server at '{host}:{port}' to be ready."
                     )
         except (
-            httpx.TimeoutException,
-            httpx.NetworkError,
-            httpx.HTTPStatusError,
+            httpx2.TimeoutException,
+            httpx2.NetworkError,
+            httpx2.HTTPStatusError,
         ) as err:
             logger.error("Timed out while connecting to %s:%s:", host, port)
             logger.error(err)
             raise
 
-    async def health(self) -> httpx.Response:
+    async def health(self) -> httpx2.Response:
         return await self.client.get("/readyz")
 
     @classmethod
     async def from_url(cls, server_url: str, **kwargs: t.Any) -> AsyncHTTPClient:
         server_url = server_url if "://" in server_url else "http://" + server_url
 
-        async with httpx.AsyncClient(base_url=server_url) as session:
+        async with httpx2.AsyncClient(base_url=server_url) as session:
             resp = await session.get("/docs.json")
             if resp.status_code != 200:
                 raise RemoteException(
@@ -185,8 +185,8 @@ class AsyncHTTPClient(AsyncClient):
 
 class SyncHTTPClient(SyncClient):
     @cached_property
-    def client(self) -> httpx.Client:
-        return httpx.Client(base_url=self.server_url, timeout=300)
+    def client(self) -> httpx2.Client:
+        return httpx2.Client(base_url=self.server_url, timeout=300)
 
     @staticmethod
     def wait_until_server_ready(
@@ -203,42 +203,42 @@ class SyncHTTPClient(SyncClient):
         logger.debug("Waiting for host %s to be ready.", f"{host}:{port}")
         while time.time() - start_time < timeout:
             try:
-                status = httpx.get(f"{host}:{port}/readyz").status_code
+                status = httpx2.get(f"{host}:{port}/readyz").status_code
                 if status == 200:
                     break
                 else:
                     time.sleep(check_interval)
             except (
-                httpx.TimeoutException,
-                httpx.NetworkError,
-                httpx.HTTPStatusError,
+                httpx2.TimeoutException,
+                httpx2.NetworkError,
+                httpx2.HTTPStatusError,
             ):
                 logger.debug("Server is not ready. Retrying...")
 
         # try to connect one more time and raise exception.
         try:
-            status = httpx.get(f"{host}:{port}/readyz").status_code
+            status = httpx2.get(f"{host}:{port}/readyz").status_code
             if status != 200:
                 raise TimeoutError(
                     f"Timed out waiting {timeout} seconds for server at '{host}:{port}' to be ready."
                 )
         except (
-            httpx.TimeoutException,
-            httpx.NetworkError,
-            httpx.HTTPStatusError,
+            httpx2.TimeoutException,
+            httpx2.NetworkError,
+            httpx2.HTTPStatusError,
         ) as err:
             logger.error("Timed out while connecting to %s:%s:", host, port)
             logger.error(err)
             raise
 
-    def health(self) -> httpx.Response:
+    def health(self) -> httpx2.Response:
         return self.client.get("/readyz")
 
     @classmethod
     def from_url(cls, server_url: str, **kwargs: t.Any) -> SyncHTTPClient:
         server_url = server_url if "://" in server_url else "http://" + server_url
 
-        with httpx.Client(base_url=server_url) as session:
+        with httpx2.Client(base_url=server_url) as session:
             resp = session.get("docs.json")
             if resp.status_code != 200:
                 raise RemoteException(

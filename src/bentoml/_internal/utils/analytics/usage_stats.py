@@ -14,7 +14,7 @@ from reprlib import recursive_repr as _recursive_repr
 from typing import TYPE_CHECKING
 
 import attr
-import httpx
+import httpx2
 from simple_di import Provide
 from simple_di import inject
 
@@ -125,7 +125,7 @@ def track(event_properties: EventMeta):
         logger.info("Tracking Payload: %s", payload)
         return
 
-    httpx.post(USAGE_TRACKING_URL, json=payload, timeout=USAGE_REQUEST_TIMEOUT_SECONDS)
+    httpx2.post(USAGE_TRACKING_URL, json=payload, timeout=USAGE_REQUEST_TIMEOUT_SECONDS)
 
 
 @inject

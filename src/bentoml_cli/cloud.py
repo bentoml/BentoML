@@ -7,7 +7,7 @@ import urllib.parse
 import webbrowser
 
 import click
-import httpx
+import httpx2
 import rich
 
 from bentoml._internal.cloud.client import RestApiClient
@@ -70,8 +70,8 @@ def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
             code_url = f"{endpoint}/api/v1/auth/code"
             token_url = f"{endpoint}/api/v1/auth/token"
             try:
-                code = httpx.get(code_url).json()["code"]
-            except httpx.HTTPError as e:
+                code = httpx2.get(code_url).json()["code"]
+            except httpx2.HTTPError as e:
                 rich.print(
                     f":police_car_light: Error fetching auth code: {e}", file=sys.stderr
                 )
@@ -96,7 +96,7 @@ def login(endpoint: str, api_token: str) -> None:  # type: ignore (not accessed)
                 )
             rich.print(":hourglass: Waiting for authentication...")
             while True:
-                resp = httpx.get(token_url, params={"code": code})
+                resp = httpx2.get(token_url, params={"code": code})
                 if resp.is_success:
                     api_token = resp.json()["token"]
                     break

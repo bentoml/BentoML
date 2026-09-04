@@ -16,7 +16,7 @@ from urllib.parse import urljoin
 from urllib.parse import urlparse
 
 import attr
-import httpx
+import httpx2
 
 from _bentoml_sdk import IODescriptor
 from bentoml import __version__
@@ -35,7 +35,7 @@ from .task import AsyncTask
 from .task import Task
 
 if t.TYPE_CHECKING:
-    from httpx._types import RequestFiles
+    from httpx2._types import RequestFiles
     from PIL import Image
 
     from _bentoml_sdk import Service
@@ -44,9 +44,9 @@ if t.TYPE_CHECKING:
     from ..serde import Serde
 
     T = t.TypeVar("T")
-    AnyClient = t.TypeVar("AnyClient", httpx.Client, httpx.AsyncClient)
+    AnyClient = t.TypeVar("AnyClient", httpx2.Client, httpx2.AsyncClient)
 
-C = t.TypeVar("C", httpx.Client, httpx.AsyncClient)
+C = t.TypeVar("C", httpx2.Client, httpx2.AsyncClient)
 
 logger = logging.getLogger("bentoml.io")
 MAX_RETRIES = 3
@@ -81,20 +81,20 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         transport = None
         if parsed.scheme == "file":
             uds = uri_to_path(url)
-            if issubclass(client_cls, httpx.Client):
-                transport = httpx.HTTPTransport(uds=uds)
+            if issubclass(client_cls, httpx2.Client):
+                transport = httpx2.HTTPTransport(uds=uds)
             else:
-                transport = httpx.AsyncHTTPTransport(uds=uds)
+                transport = httpx2.AsyncHTTPTransport(uds=uds)
             url = "http://127.0.0.1:3000"
         elif parsed.scheme == "tcp":
             url = f"http://{parsed.netloc}"
         elif app is not None:
-            if issubclass(client_cls, httpx.Client):
+            if issubclass(client_cls, httpx2.Client):
                 from a2wsgi import ASGIMiddleware
 
-                transport = httpx.WSGITransport(app=ASGIMiddleware(app))
+                transport = httpx2.WSGITransport(app=ASGIMiddleware(app))
             else:
-                transport = httpx.ASGITransport(app=app)
+                transport = httpx2.ASGITransport(app=app)
         return client_cls(
             base_url=url,
             transport=transport,  # type: ignore
@@ -195,12 +195,12 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         args: t.Sequence[t.Any],
         kwargs: dict[str, t.Any],
         headers: t.Mapping[str, str],
-    ) -> httpx.Request:
+    ) -> httpx2.Request:
         from opentelemetry import propagate
 
         from _bentoml_sdk.io_models import IORootModel
 
-        headers = httpx.Headers({"Content-Type": self.media_type, **headers})
+        headers = httpx2.Headers({"Content-Type": self.media_type, **headers})
         propagate.inject(headers)
         if endpoint.input_spec is not None:
             model = endpoint.input_spec.from_inputs(*args, **kwargs)
@@ -223,7 +223,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     endpoint.route,
                     headers=headers,
                     content=payload.aiter_bytes()
-                    if isinstance(self.client, httpx.AsyncClient)
+                    if isinstance(self.client, httpx2.AsyncClient)
                     else payload.iter_bytes(),
                 )
         assert self.media_type == "application/json", (
@@ -260,7 +260,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 headers.update(payload.headers)
                 content = (
                     payload.aiter_bytes()
-                    if isinstance(self.client, httpx.AsyncClient)
+                    if isinstance(self.client, httpx2.AsyncClient)
                     else payload.iter_bytes()
                 )
             if not passthrough:
@@ -299,7 +299,7 @@ class HTTPClient(AbstractClient, t.Generic[C]):
             "POST",
             endpoint.route,
             content=payload.aiter_bytes()
-            if isinstance(self.client, httpx.AsyncClient)
+            if isinstance(self.client, httpx2.AsyncClient)
             else payload.iter_bytes(),
             headers=headers,
         )
@@ -308,8 +308,8 @@ class HTTPClient(AbstractClient, t.Generic[C]):
         self,
         endpoint: ClientEndpoint,
         model: IODescriptor | dict[str, t.Any],
-        headers: httpx.Headers,
-    ) -> httpx.Request:
+        headers: httpx2.Headers,
+    ) -> httpx2.Request:
         def is_file_field(k: str) -> bool:
             if isinstance(model, IODescriptor):
                 return k in model.multipart_fields
@@ -387,13 +387,13 @@ class HTTPClient(AbstractClient, t.Generic[C]):
     ) -> t.Any: ...
 
 
-class SyncHTTPClient(HTTPClient[httpx.Client]):
+class SyncHTTPClient(HTTPClient[httpx2.Client]):
     """A synchronous client for BentoML service.
 
     .. note:: Inner usage ONLY
     """
 
-    client_cls = httpx.Client
+    client_cls = httpx2.Client
 
     def __init__(
         self,
@@ -453,7 +453,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
                 resp = self.client.get(self._readyz_endpoint)
                 if resp.status_code == 200:
                     return
-            except (httpx.TimeoutException, httpx.ConnectError):
+            except (httpx2.TimeoutException, httpx2.ConnectError):
                 pass
         raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
 
@@ -466,10 +466,10 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
     def is_ready(self, timeout: int | None = None) -> bool:
         try:
             resp = self.client.get(
-                self._readyz_endpoint, timeout=timeout or httpx.USE_CLIENT_DEFAULT
+                self._readyz_endpoint, timeout=timeout or httpx2.USE_CLIENT_DEFAULT
             )
             return resp.status_code == 200
-        except httpx.TimeoutException:
+        except httpx2.TimeoutException:
             logger.warning("Timed out waiting for runner to be ready")
             return False
 
@@ -484,7 +484,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
         for data in resp:
             yield data
 
-    def request(self, method: str, url: str, **kwargs: t.Any) -> httpx.Response:
+    def request(self, method: str, url: str, **kwargs: t.Any) -> httpx2.Response:
         return self.client.request(method, url, **kwargs)
 
     def _submit(
@@ -576,12 +576,12 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
         finally:
             self._file_manager.close()
 
-    def _parse_response(self, endpoint: ClientEndpoint, resp: httpx.Response) -> t.Any:
+    def _parse_response(self, endpoint: ClientEndpoint, resp: httpx2.Response) -> t.Any:
         payload = Payload((resp.read(),), resp.headers)
         return self._deserialize_output(payload, endpoint)
 
     def _parse_stream_response(
-        self, endpoint: ClientEndpoint, resp: httpx.Response
+        self, endpoint: ClientEndpoint, resp: httpx2.Response
     ) -> t.Generator[t.Any, None, None]:
         try:
             for data in resp.iter_bytes():
@@ -590,7 +590,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
             resp.close()
 
     def _parse_file_response(
-        self, endpoint: ClientEndpoint, resp: httpx.Response
+        self, endpoint: ClientEndpoint, resp: httpx2.Response
     ) -> pathlib.Path | Image.Image:
         from PIL import Image
         from python_multipart.multipart import parse_options_header
@@ -619,13 +619,13 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
         return pathlib.Path(f.name)
 
 
-class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
+class AsyncHTTPClient(HTTPClient[httpx2.AsyncClient]):
     """An asynchronous client for BentoML service.
 
     .. note:: Inner usage ONLY
     """
 
-    client_cls = httpx.AsyncClient
+    client_cls = httpx2.AsyncClient
 
     async def _setup(self) -> None:
         if self._setup_done:
@@ -663,19 +663,19 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
                 resp = await self.client.get(self._readyz_endpoint)
                 if resp.status_code == 200:
                     return
-            except (httpx.TimeoutException, httpx.ConnectError):
+            except (httpx2.TimeoutException, httpx2.ConnectError):
                 pass
         raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
 
     async def is_ready(self, timeout: int | None = None) -> bool:
         try:
             resp = await self.client.get(
-                self._readyz_endpoint, timeout=timeout or httpx.USE_CLIENT_DEFAULT
+                self._readyz_endpoint, timeout=timeout or httpx2.USE_CLIENT_DEFAULT
             )
             status = resp.status_code
             await resp.aclose()
             return status == 200
-        except httpx.TimeoutException:
+        except httpx2.TimeoutException:
             logger.warning("Timed out waiting for runner to be ready")
             return False
 
@@ -704,7 +704,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
     async def __aexit__(self, *args: t.Any) -> None:
         return await self.close()
 
-    async def request(self, method: str, url: str, **kwargs: t.Any) -> httpx.Response:
+    async def request(self, method: str, url: str, **kwargs: t.Any) -> httpx2.Response:
         return await self.client.request(method, url, **kwargs)
 
     async def _submit(
@@ -799,13 +799,13 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
             self._file_manager.close()
 
     async def _parse_response(
-        self, endpoint: ClientEndpoint, resp: httpx.Response
+        self, endpoint: ClientEndpoint, resp: httpx2.Response
     ) -> t.Any:
         data = await resp.aread()
         return self._deserialize_output(Payload((data,), resp.headers), endpoint)
 
     async def _parse_stream_response(
-        self, endpoint: ClientEndpoint, resp: httpx.Response
+        self, endpoint: ClientEndpoint, resp: httpx2.Response
     ) -> t.AsyncGenerator[t.Any, None]:
         try:
             async for data in resp.aiter_bytes():
@@ -814,7 +814,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
             await resp.aclose()
 
     async def _parse_file_response(
-        self, endpoint: ClientEndpoint, resp: httpx.Response
+        self, endpoint: ClientEndpoint, resp: httpx2.Response
     ) -> pathlib.Path | Image.Image:
         from PIL import Image
         from python_multipart.multipart import parse_options_header

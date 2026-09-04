@@ -871,6 +871,8 @@ class RestApiClient:
     def __init__(self, endpoint: str, api_token: str, timeout: int = 60) -> None:
         self.endpoint = endpoint
         headers = {"X-YATAI-API-TOKEN": api_token, "X-Bentoml-Version": BENTOML_VERSION}
-        self.session = httpx2.Client(base_url=endpoint, timeout=timeout, headers=headers)
+        self.session = httpx2.Client(
+            base_url=endpoint, timeout=timeout, headers=headers
+        )
         self.v2 = RestApiClientV2(self.session)
         self.v1 = RestApiClientV1(self.session)

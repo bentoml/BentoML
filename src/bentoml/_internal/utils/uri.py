@@ -5,7 +5,6 @@ import pathlib
 import socket
 from typing import no_type_check
 from urllib.parse import quote
-from urllib.parse import unquote
 from urllib.parse import urlparse
 from urllib.request import url2pathname
 
@@ -44,7 +43,7 @@ def uri_to_path(uri: str) -> str:
     if parsed.scheme not in ("file", "filesystem", "unix"):
         raise ValueError("Unsupported URI scheme")
     host = "{0}{0}{mnt}{0}".format(os.path.sep, mnt=parsed.netloc)
-    return os.path.normpath(os.path.join(host, url2pathname(unquote(parsed.path))))
+    return os.path.normpath(os.path.join(host, url2pathname(parsed.path)))
 
 
 def encode_path_for_uri(path: str) -> str:

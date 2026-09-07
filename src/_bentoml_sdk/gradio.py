@@ -83,7 +83,7 @@ def mount_gradio_app(blocks: Blocks, path: str, name: str = "gradio_ui"):
         # Store Gradio app information for ASGI app mounting and startup event callback
         gradio_apps = getattr(target, "__bentoml_gradio_apps__", [])
         gradio_apps.append((gradio_app, path, name))
-        setattr(target, "__bentoml_gradio_apps__", gradio_apps)
+        target.__bentoml_gradio_apps__ = gradio_apps
 
         return obj
 

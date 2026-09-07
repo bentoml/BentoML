@@ -47,13 +47,13 @@ class Image:
     base_image: str = ""
     distro: str = "debian"
     python_version: str = DEFAULT_PYTHON_VERSION
-    commands: t.List[str] = attrs.field(factory=list)
+    commands: list[str] = attrs.field(factory=list)
     lock_python_packages: bool = True
     pack_git_packages: bool = True
     python_requirements: str = ""
-    post_commands: t.List[str] = attrs.field(factory=list)
-    build_include_paths: t.List[str] = attrs.field(factory=list)
-    scripts: t.Dict[str, str] = attrs.field(factory=dict, init=False)
+    post_commands: list[str] = attrs.field(factory=list)
+    build_include_paths: list[str] = attrs.field(factory=list)
+    scripts: dict[str, str] = attrs.field(factory=dict, init=False)
     _after_pip_install: bool = attrs.field(init=False, default=False, repr=False)
     _uv_lock: bool = attrs.field(init=False, default=False, repr=False)
 

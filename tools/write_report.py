@@ -32,7 +32,7 @@ def main():
         rate = Decimal(statements_covered) / Decimal(statements) * 100
         rate = rate.quantize(PRECISION, rounding=ROUND_DOWN)
         lines.append(
-            f"{package} | {100 if rate == 100 else rate}% ({statements_covered} / {statements})\n"  # noqa: PLR2004
+            f"{package} | {100 if rate == 100 else rate}% ({statements_covered} / {statements})\n"
         )
 
     total_statements_covered = total_data["statements_covered"]

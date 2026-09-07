@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import typing as t
 from datetime import datetime
 
 import attr
@@ -18,8 +17,8 @@ from bentoml._internal.cloud.schemas.modelschemas import TransmissionStrategy
 class BaseSchema:
     uid: str
     created_at: datetime
-    updated_at: t.Optional[datetime]
-    deleted_at: t.Optional[datetime]
+    updated_at: datetime | None
+    deleted_at: datetime | None
 
 
 @attr.define
@@ -33,7 +32,7 @@ class BaseListSchema:
 class ResourceSchema(BaseSchema):
     name: str
     resource_type: str
-    labels: t.List[LabelItemSchema]
+    labels: list[LabelItemSchema]
 
 
 @attr.define
@@ -56,7 +55,7 @@ class OrganizationSchema(ResourceSchema):
 
 @attr.define
 class OrganizationListSchema(BaseListSchema):
-    items: t.List[OrganizationSchema]
+    items: list[OrganizationSchema]
 
 
 @attr.define
@@ -64,7 +63,7 @@ class ClusterSchema(ResourceSchema):
     description: str
     organization_name: str
     creator: UserSchema
-    is_first: t.Optional[bool] = None
+    is_first: bool | None = None
 
 
 @attr.define
@@ -74,7 +73,7 @@ class ClusterConfigSchema:
 
 @attr.define
 class ClusterListSchema(BaseListSchema):
-    items: t.List[ClusterSchema]
+    items: list[ClusterSchema]
 
 
 @attr.define
@@ -92,19 +91,19 @@ class BentoSchema(ResourceSchema):
     upload_finished_reason: str
     presigned_upload_url: str
     presigned_download_url: str
-    manifest: t.Optional[BentoManifestSchema] = attr.field(default=None)
-    transmission_strategy: t.Optional[TransmissionStrategy] = attr.field(default=None)
-    upload_id: t.Optional[str] = attr.field(default=None)
+    manifest: BentoManifestSchema | None = attr.field(default=None)
+    transmission_strategy: TransmissionStrategy | None = attr.field(default=None)
+    upload_id: str | None = attr.field(default=None)
 
-    upload_started_at: t.Optional[datetime] = attr.field(default=None)
-    upload_finished_at: t.Optional[datetime] = attr.field(default=None)
+    upload_started_at: datetime | None = attr.field(default=None)
+    upload_finished_at: datetime | None = attr.field(default=None)
     build_at: datetime = attr.field(factory=datetime.now)
 
 
 @attr.define
 class BentoRepositorySchema(ResourceSchema):
     description: str
-    latest_bento: t.Optional[BentoSchema]
+    latest_bento: BentoSchema | None
 
 
 @attr.define
@@ -114,28 +113,28 @@ class BentoWithRepositorySchema(BentoSchema):
 
 @attr.define
 class BentoWithRepositoryListSchema(BaseListSchema):
-    items: t.List[BentoWithRepositorySchema] = attr.field(factory=list)
+    items: list[BentoWithRepositorySchema] = attr.field(factory=list)
 
 
 @attr.define
 class CreateBentoSchema:
     description: str
     version: str
-    manifest: t.Optional[BentoManifestSchema] = attr.field(default=None)
+    manifest: BentoManifestSchema | None = attr.field(default=None)
     build_at: datetime = attr.field(factory=datetime.now)
-    labels: t.List[LabelItemSchema] = attr.field(factory=list)
+    labels: list[LabelItemSchema] = attr.field(factory=list)
 
 
 @attr.define
 class UpdateBentoSchema:
-    description: t.Optional[str] = attr.field(default=None)
-    manifest: t.Optional[BentoManifestSchema] = attr.field(default=None)
-    labels: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
+    description: str | None = attr.field(default=None)
+    manifest: BentoManifestSchema | None = attr.field(default=None)
+    labels: list[LabelItemSchema] | None = attr.field(default=None)
 
 
 @attr.define
 class BentoFullSchema(BentoWithRepositorySchema):
-    models: t.List[ModelWithRepositorySchema] = attr.field(factory=list)
+    models: list[ModelWithRepositorySchema] = attr.field(factory=list)
 
 
 @attr.define
@@ -152,14 +151,14 @@ class CompletePartSchema:
 
 @attr.define
 class CompleteMultipartUploadSchema:
-    parts: t.List[CompletePartSchema]
+    parts: list[CompletePartSchema]
     upload_id: str
 
 
 @attr.define
 class FinishUploadSchema:
-    status: t.Optional[str]
-    reason: t.Optional[str]
+    status: str | None
+    reason: str | None
 
 
 @attr.define
@@ -179,18 +178,18 @@ class ModelSchema(ResourceSchema):
     presigned_download_url: str
     manifest: ModelManifestSchema
 
-    transmission_strategy: t.Optional[TransmissionStrategy] = attr.field(default=None)
-    upload_id: t.Optional[str] = attr.field(default=None)
+    transmission_strategy: TransmissionStrategy | None = attr.field(default=None)
+    upload_id: str | None = attr.field(default=None)
 
-    upload_started_at: t.Optional[datetime] = attr.field(default=None)
-    upload_finished_at: t.Optional[datetime] = attr.field(default=None)
+    upload_started_at: datetime | None = attr.field(default=None)
+    upload_finished_at: datetime | None = attr.field(default=None)
     build_at: datetime = attr.field(factory=datetime.now)
 
 
 @attr.define
 class ModelRepositorySchema(ResourceSchema):
     description: str
-    latest_model: t.Optional[ModelSchema]
+    latest_model: ModelSchema | None
 
 
 @attr.define
@@ -200,7 +199,7 @@ class ModelWithRepositorySchema(ModelSchema):
 
 @attr.define
 class ModelWithRepositoryListSchema(BaseListSchema):
-    items: t.List[ModelWithRepositorySchema] = attr.field(factory=list)
+    items: list[ModelWithRepositorySchema] = attr.field(factory=list)
 
 
 @attr.define
@@ -209,17 +208,17 @@ class CreateModelSchema:
     version: str
     manifest: ModelManifestSchema
     build_at: datetime = attr.field(factory=datetime.now)
-    labels: t.List[LabelItemSchema] = attr.field(factory=list)
+    labels: list[LabelItemSchema] = attr.field(factory=list)
 
 
 @attr.define
 class BentoRepositoryListSchema(BaseListSchema):
-    items: t.List[BentoRepositorySchema]
+    items: list[BentoRepositorySchema]
 
 
 @attr.define
 class BentoListSchema(BaseListSchema):
-    items: t.List[BentoSchema]
+    items: list[BentoSchema]
 
 
 @attr.define
@@ -229,9 +228,7 @@ class CreateDeploymentTargetSchema:
     bento_repository: str
     bento: str
     config: DeploymentTargetConfig
-    canary_rules: t.Optional[t.List[DeploymentTargetCanaryRule]] = attr.field(
-        default=None
-    )
+    canary_rules: list[DeploymentTargetCanaryRule] | None = attr.field(default=None)
 
 
 @attr.define
@@ -242,7 +239,7 @@ class DeploymentSchema(ResourceSchema):
     cluster: ClusterSchema
     status: str
     kube_namespace: str
-    latest_revision: t.Optional[DeploymentRevisionSchema] = attr.field(
+    latest_revision: DeploymentRevisionSchema | None = attr.field(
         default=None
     )  # Delete returns no latest revision
 
@@ -254,9 +251,7 @@ class DeploymentTargetSchema(ResourceSchema):
     creator: UserSchema
     bento: BentoFullSchema
     config: DeploymentTargetConfig
-    canary_rules: t.Optional[t.List[DeploymentTargetCanaryRule]] = attr.field(
-        default=None
-    )
+    canary_rules: list[DeploymentTargetCanaryRule] | None = attr.field(default=None)
 
 
 @attr.define
@@ -265,7 +260,7 @@ class DeploymentRevisionSchema(ResourceSchema):
     __forbid_extra_keys__ = False
     creator: UserSchema
     status: str
-    targets: t.List[DeploymentTargetSchema]
+    targets: list[DeploymentTargetSchema]
 
 
 @attr.define
@@ -283,24 +278,24 @@ class ClusterFullSchema(ClusterSchema):
     kube_config: str
     config: ClusterConfigSchema
     grafana_root_path: str
-    resource_instances: t.List[ResourceInstanceSchema]
+    resource_instances: list[ResourceInstanceSchema]
 
 
 @attr.define
 class DeploymentListSchema(BaseListSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    items: t.List[DeploymentSchema]
+    items: list[DeploymentSchema]
 
 
 @attr.define
 class UpdateDeploymentSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    targets: t.List[CreateDeploymentTargetSchema]
-    labels: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
-    description: t.Optional[str] = attr.field(default=None)
-    do_not_deploy: t.Optional[bool] = attr.field(default=None)
+    targets: list[CreateDeploymentTargetSchema]
+    labels: list[LabelItemSchema] | None = attr.field(default=None)
+    description: str | None = attr.field(default=None)
+    do_not_deploy: bool | None = attr.field(default=None)
 
 
 @attr.define(kw_only=True)
@@ -321,17 +316,17 @@ class DeploymentFullSchema(DeploymentSchema):
 @attr.define
 class SecretItem:
     key: str
-    sub_path: t.Optional[str] = attr.field(default=None)
-    value: t.Optional[str] = attr.field(default=None)
+    sub_path: str | None = attr.field(default=None)
+    value: str | None = attr.field(default=None)
 
 
 @attr.define
 class SecretContentSchema:
     type: str
-    items: t.List[SecretItem]
-    path: t.Optional[str] = attr.field(default=None)
+    items: list[SecretItem]
+    path: str | None = attr.field(default=None)
     # Secret availability stage: build-time only, runtime only, or both.
-    stage: t.Optional[str] = attr.field(default=None)
+    stage: str | None = attr.field(default=None)
 
 
 @attr.define
@@ -348,7 +343,7 @@ class SecretSchema(ResourceSchema):
 class SecretListSchema(BaseListSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    items: t.List[SecretSchema]
+    items: list[SecretSchema]
 
 
 @attr.define
@@ -357,7 +352,7 @@ class CreateSecretSchema:
     __forbid_extra_keys__ = False
     name: str
     content: SecretContentSchema
-    description: t.Optional[str] = attr.field(default=None)
+    description: str | None = attr.field(default=None)
 
 
 @attr.define
@@ -365,7 +360,7 @@ class UpdateSecretSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
     content: SecretContentSchema
-    description: t.Optional[str] = attr.field(default=None)
+    description: str | None = attr.field(default=None)
 
 
 @attr.define
@@ -373,23 +368,23 @@ class ApiTokenSchema(ResourceSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
     description: str
-    scopes: t.List[str]
+    scopes: list[str]
     user: UserSchema
     organization: OrganizationSchema
-    expired_at: t.Optional[datetime] = attr.field(default=None)
-    last_used_at: t.Optional[datetime] = attr.field(default=None)
+    expired_at: datetime | None = attr.field(default=None)
+    last_used_at: datetime | None = attr.field(default=None)
     is_expired: bool = attr.field(default=False)
     is_api_token: bool = attr.field(default=True)
     is_organization_token: bool = attr.field(default=False)
     is_global_access: bool = attr.field(default=False)
-    token: t.Optional[str] = attr.field(default=None)  # Only returned on create
+    token: str | None = attr.field(default=None)  # Only returned on create
 
 
 @attr.define
 class ApiTokenListSchema(BaseListSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    items: t.List[ApiTokenSchema]
+    items: list[ApiTokenSchema]
 
 
 @attr.define
@@ -397,6 +392,6 @@ class CreateApiTokenSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
     name: str
-    description: t.Optional[str] = attr.field(default=None)
-    scopes: t.Optional[t.List[str]] = attr.field(default=None)
-    expired_at: t.Optional[datetime] = attr.field(default=None)
+    description: str | None = attr.field(default=None)
+    scopes: list[str] | None = attr.field(default=None)
+    expired_at: datetime | None = attr.field(default=None)

@@ -1,26 +1,23 @@
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
-from typing import Union
+from typing import TypeAlias
 
 from .strategy.core import StrategyList
 from .strategy.dict import DictStrategies
 from .strategy.list import ListStrategies
 from .strategy.set import SetStrategies
 
-ConfigDictType = Dict[str, Any]
+ConfigDictType: TypeAlias = dict[str, Any]
 
 class Merger:
-    PROVIDED_TYPE_STRATEGIES: Dict[
-        type, Union[ListStrategies, DictStrategies, SetStrategies]
+    PROVIDED_TYPE_STRATEGIES: dict[
+        type, ListStrategies | DictStrategies | SetStrategies
     ] = ...
 
     def __init__(
         self,
-        type_strategies: List[Tuple[type, str]],
-        fallback_strategies: List[str],
-        type_conflict_strategies: List[str],
+        type_strategies: list[tuple[type, str]],
+        fallback_strategies: list[str],
+        type_conflict_strategies: list[str],
     ) -> None: ...
     def merge(self, base: ConfigDictType, nxt: ConfigDictType) -> None: ...
     def type_conflict_strategy(self, *args: Any) -> Any: ...

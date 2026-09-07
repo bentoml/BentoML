@@ -7,6 +7,7 @@ import typing as t
 
 import attrs
 import pydantic
+from typing_extensions import Self
 
 from bentoml._internal.service.openapi import SUCCESS_DESCRIPTION
 from bentoml._internal.service.openapi.specification import Encoding
@@ -141,7 +142,7 @@ class APIMethod(t.Generic[P, R]):
     @t.overload
     def __get__(self, instance: object, owner: type) -> t.Callable[P, R]: ...
 
-    def __get__(self: T, instance: t.Any, owner: type) -> t.Callable[P, R] | T:
+    def __get__(self, instance: t.Any, owner: type) -> t.Callable[P, R] | Self:
         if instance is None:
             return self
 

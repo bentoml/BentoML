@@ -40,7 +40,7 @@ class TraceIdRatioBasedAlwaysRecording(TraceIdRatioBased):
         name: str,
         kind: t.Optional["SpanKind"] = None,
         attributes: t.Optional["Attributes"] = None,
-        links: t.Optional[t.Sequence["Link"]] = None,
+        links: t.Sequence["Link"] | None = None,
         trace_state: t.Optional["TraceState"] = None,
     ) -> "SamplingResult":
         decision = Decision.RECORD_ONLY

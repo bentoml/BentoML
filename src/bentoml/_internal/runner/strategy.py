@@ -23,7 +23,7 @@ class Strategy(abc.ABC):
         cls,
         runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
-        workers_per_resource: int | float,
+        workers_per_resource: float,
     ) -> int: ...
 
     @classmethod
@@ -32,7 +32,7 @@ class Strategy(abc.ABC):
         cls,
         runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
-        workers_per_resource: int | float,
+        workers_per_resource: float,
         worker_index: int,
     ) -> dict[str, t.Any]:
         """
@@ -65,7 +65,7 @@ class DefaultStrategy(Strategy):
         cls,
         runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
-        workers_per_resource: int | float,
+        workers_per_resource: float,
     ) -> int:
         if resource_request is None:
             resource_request = system_resources()
@@ -108,7 +108,7 @@ class DefaultStrategy(Strategy):
         cls,
         runnable_class: type[Runnable],
         resource_request: dict[str, t.Any] | None,
-        workers_per_resource: int | float,
+        workers_per_resource: float,
         worker_index: int,
     ) -> dict[str, t.Any]:
         """

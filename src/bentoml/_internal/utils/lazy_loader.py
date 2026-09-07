@@ -71,7 +71,7 @@ class LazyLoader(types.ModuleType):
             self._module = self._load()
         return getattr(self._module, item)
 
-    def __dir__(self) -> t.List[str]:
+    def __dir__(self) -> list[str]:
         if self._module is None:
             self._module = self._load()
         return dir(self._module)

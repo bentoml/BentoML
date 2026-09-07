@@ -1,48 +1,25 @@
-from __future__ import annotations
-
 import typing as t
+from collections.abc import Sequence
 from enum import IntEnum
 from pathlib import Path
 from typing import Any
-from typing import Dict
 from typing import Literal
 from typing import Protocol
-from typing import Sequence
-from typing import Tuple
 from typing import TypeVar
-from typing import Union
 
 from _typeshed import SupportsRead
 from _typeshed import SupportsWrite
 from numpy.typing import DTypeLike
 from numpy.typing import NDArray
 
-_Mode = Literal[
+_Mode: t.TypeAlias = Literal[
     "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
 ]
-_Resample = Literal[0, 1, 2, 3, 4, 5]
-_Size = Tuple[int, int]
-_Box = Tuple[int, int, int, int]
-_ConversionMatrix = (
-    Union[
-        Tuple[float, float, float, float],
-        Tuple[
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-            float,
-        ],
-    ],
-)
-_Color = Union[float, Tuple[float, ...]]
+_Resample: t.TypeAlias = Literal[0, 1, 2, 3, 4, 5]
+_Size: t.TypeAlias = tuple[int, int]
+_Box: t.TypeAlias = tuple[int, int, int, int]
+_ConversionMatrix = ...
+_Color: t.TypeAlias = float | tuple[float, ...]
 _T = TypeVar("_T")
 _T_co = TypeVar("_T_co", covariant=True)
 
@@ -94,7 +71,7 @@ DECODERS: dict[str, Any]
 ENCODERS: dict[str, Any]
 MODES: list[_Mode]
 
-_ImageState = Tuple[Dict[str, Any], str, Tuple[int, int], Any, bytes]
+_ImageState: t.TypeAlias = tuple[dict[str, Any], str, tuple[int, int], Any, bytes]
 
 def init() -> int: ...
 
@@ -125,7 +102,7 @@ class Image:
     @property
     def size(self) -> tuple[int, int]: ...
     def __enter__(self) -> Image: ...
-    def __exit__(self, *args: Any) -> None: ...
+    def __exit__(self, *args: object) -> None: ...
     def close(self) -> None: ...
     def __eq__(self, other: object) -> bool: ...
     def __array__(self, dtype: DTypeLike = ...) -> Any: ...
@@ -176,7 +153,7 @@ class Image:
     ) -> None: ...
     def seek(self, frame: int) -> None: ...
     def show(self, title: str | None = ..., command: str | None = ...) -> None: ...
-    def split(self) -> Tuple[Image, ...]: ...
+    def split(self) -> tuple[Image, ...]: ...
     def getchannel(self, channel: int | str) -> Image: ...
     def tell(self) -> int: ...
     def thumbnail(
@@ -187,7 +164,7 @@ class Image:
     ) -> None: ...
 
 def new(
-    mode: _Mode, size: tuple[int, int], color: float | Tuple[float, ...] | str = ...
+    mode: _Mode, size: tuple[int, int], color: float | tuple[float, ...] | str = ...
 ) -> Image: ...
 def frombytes(
     mode: _Mode, size: tuple[int, int], data: bytes, decoder_name: str = ..., *args: Any

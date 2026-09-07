@@ -1,13 +1,10 @@
-from __future__ import annotations
-
+from collections.abc import Callable
+from collections.abc import Iterator
 from io import BytesIO
 from typing import IO
 from typing import Any
-from typing import Callable
-from typing import Iterator
-from typing import Text
+from typing import TypeAlias
 from typing import TypeVar
-from typing import Union
 from typing import overload
 
 from .dumper import Dumper as Dumper
@@ -15,14 +12,14 @@ from .error import YAMLError as YAMLError
 from .nodes import Node
 from .representer import BaseRepresenter as BaseRepresenter
 
-_Yaml = Any
+_Yaml: TypeAlias = Any
 __with_libyaml__: Any
 __version__: str
 _T = TypeVar("_T")
 _R = TypeVar("_R")
 
-def safe_load(stream: Union[bytes, IO[bytes], Text, IO[Text]]) -> Any: ...
-def safe_load_all(stream: Union[bytes, IO[bytes], Text, IO[Text]]) -> Iterator[Any]: ...
+def safe_load(stream: bytes | IO[bytes] | str | IO[str]) -> Any: ...
+def safe_load_all(stream: bytes | IO[bytes] | str | IO[str]) -> Iterator[Any]: ...
 @overload
 def dump(
     data: Any,

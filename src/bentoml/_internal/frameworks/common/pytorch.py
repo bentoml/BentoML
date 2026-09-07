@@ -114,7 +114,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         cls,
         batches: t.Sequence[torch.Tensor],
         batch_dim: int = 0,
-    ) -> t.Tuple[torch.Tensor, list[int]]:
+    ) -> tuple[torch.Tensor, list[int]]:
         batch = torch.cat(tuple(batches), dim=batch_dim)
         indices = list(
             itertools.accumulate(subbatch.shape[batch_dim] for subbatch in batches)
@@ -128,7 +128,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         batch: torch.Tensor,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-    ) -> t.List[torch.Tensor]:
+    ) -> list[torch.Tensor]:
         sizes = [indices[i] - indices[i - 1] for i in range(1, len(indices))]
         output: list[torch.Tensor] = torch.split(batch, sizes, dim=batch_dim)
         return output
@@ -139,7 +139,7 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         cls,
         batch: torch.Tensor,
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
         batch = batch.cpu().numpy()
         if plasma_db:
@@ -160,10 +160,10 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
     def from_payload(  # pylint: disable=arguments-differ
         cls,
         payload: Payload,
-        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
     ) -> torch.Tensor:
         if payload.meta.get("plasma"):
-            import pyarrow.plasma as plasma
+            from pyarrow import plasma
 
             assert plasma_db
             ret = plasma_db.get(plasma.ObjectID(payload.data))
@@ -179,8 +179,8 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         batch: torch.Tensor,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
-    ) -> t.List[Payload]:
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
+    ) -> list[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
         payloads = [cls.to_payload(i, batch_dim=batch_dim) for i in batches]
         return payloads
@@ -191,8 +191,8 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-        plasma_db: "ext.PlasmaClient" | None = Provide[BentoMLContainer.plasma_db],
-    ) -> t.Tuple[torch.Tensor, list[int]]:
+        plasma_db: ext.PlasmaClient | None = Provide[BentoMLContainer.plasma_db],
+    ) -> tuple[torch.Tensor, list[int]]:
         batches = [cls.from_payload(payload, plasma_db) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
 

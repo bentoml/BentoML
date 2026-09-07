@@ -54,7 +54,7 @@ class TestCircus(AsyncTestCase):
     arbiters = []
 
     def setUp(self):
-        super(TestCircus, self).setUp()
+        super().setUp()
         self.files = []
         self.dirs = []
         self.tmpfiles = []
@@ -108,7 +108,7 @@ class TestCircus(AsyncTestCase):
                     pass
 
         self.arbiters = []
-        super(TestCircus, self).tearDown()
+        super().tearDown()
 
     def make_plugin(
         self,

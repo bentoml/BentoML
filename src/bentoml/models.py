@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import typing as t
 from contextlib import contextmanager
 from types import ModuleType
@@ -29,20 +30,20 @@ if TYPE_CHECKING:
 
 @inject
 def list(  # pylint: disable=redefined-builtin
-    tag: t.Optional[t.Union[Tag, str]] = None,
+    tag: Tag | str | None = None,
     *,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.List["Model"]:
+    _model_store: ModelStore = Provide[BentoMLContainer.model_store],
+) -> builtins.list[Model]:
     return _model_store.list(tag)
 
 
 @inject
 def get(
-    tag: t.Union[Tag, str],
+    tag: Tag | str,
     *,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    model_aliases: t.Dict[str, str] = Provide[BentoMLContainer.model_aliases],
-) -> "Model":
+    _model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    model_aliases: dict[str, str] = Provide[BentoMLContainer.model_aliases],
+) -> Model:
     """Get a model by tag. If the tag is a string, it will be looked up in the model_aliases dict."""
     if isinstance(tag, str) and tag in model_aliases:
         tag = model_aliases[tag]
@@ -51,9 +52,9 @@ def get(
 
 @inject
 def delete(
-    tag: t.Union[Tag, str],
+    tag: Tag | str,
     *,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ):
     _model_store.delete(tag)
 
@@ -61,14 +62,14 @@ def delete(
 @inject
 def import_model(
     path: str,
-    input_format: t.Optional[str] = None,
+    input_format: str | None = None,
     *,
-    protocol: t.Optional[str] = None,
-    user: t.Optional[str] = None,
-    passwd: t.Optional[str] = None,
-    params: t.Optional[t.Dict[str, str]] = None,
-    subpath: t.Optional[str] = None,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    protocol: str | None = None,
+    user: str | None = None,
+    passwd: str | None = None,
+    params: dict[str, str] | None = None,
+    subpath: str | None = None,
+    _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> Model:
     """
     Import a bento model exported with :code:`bentoml.models.export_model`. To import a model saved
@@ -132,16 +133,16 @@ def import_model(
 
 @inject
 def export_model(
-    tag: t.Union[Tag, str],
+    tag: Tag | str,
     path: str,
-    output_format: t.Optional[str] = None,
+    output_format: str | None = None,
     *,
-    protocol: t.Optional[str] = None,
-    user: t.Optional[str] = None,
-    passwd: t.Optional[str] = None,
-    params: t.Optional[t.Dict[str, str]] = None,
-    subpath: t.Optional[str] = None,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    protocol: str | None = None,
+    user: str | None = None,
+    passwd: str | None = None,
+    params: dict[str, str] | None = None,
+    subpath: str | None = None,
+    _model_store: ModelStore = Provide[BentoMLContainer.model_store],
 ) -> str:
     """
     Export a BentoML model.
@@ -209,10 +210,10 @@ def export_model(
 
 @inject
 def push(
-    tag: t.Union[Tag, str],
+    tag: Tag | str,
     *,
     force: bool = False,
-    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    _model_store: ModelStore = Provide[BentoMLContainer.model_store],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
     from _bentoml_sdk.models import BentoModel
@@ -225,7 +226,7 @@ def push(
 
 @inject
 def pull(
-    tag: t.Union[Tag, str],
+    tag: Tag | str,
     *,
     force: bool = False,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
@@ -242,7 +243,7 @@ if t.TYPE_CHECKING:
         labels: dict[str, t.Any] | None
         options: ModelOptions | None
         custom_objects: dict[str, t.Any] | None
-        external_modules: t.List[ModuleType] | None
+        external_modules: builtins.list[ModuleType] | None
         metadata: dict[str, t.Any] | None
         context: t.Required[ModelContext]
         _model_store: t.NotRequired[ModelStore]
@@ -266,7 +267,7 @@ def _create(
     labels: dict[str, t.Any] | None = ...,
     options: ModelOptions | None = ...,
     custom_objects: dict[str, t.Any] | None = ...,
-    external_modules: t.List[ModuleType] | None = ...,
+    external_modules: builtins.list[ModuleType] | None = ...,
     metadata: dict[str, t.Any] | None = ...,
     context: ModelContext,
     _model_store: ModelStore = ...,
@@ -284,7 +285,7 @@ def _create(
     labels: dict[str, t.Any] | None = None,
     options: ModelOptions | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: builtins.list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
     context: ModelContext | None = None,
     _model_store: ModelStore = Provide[BentoMLContainer.model_store],
@@ -303,7 +304,7 @@ def _create(
         context=context or ModelContext("", {}),
     )
     external_modules = [] if external_modules is None else external_modules
-    imported_modules: t.List[ModuleType] = []
+    imported_modules: builtins.list[ModuleType] = []
     try:
         res.enter_cloudpickle_context(external_modules, imported_modules)
         yield res
@@ -335,7 +336,7 @@ def create(
     signatures: ModelSignaturesType = {},  # deprecated
     options: ModelOptions = ModelOptions(),  # deprecated
     custom_objects: dict[str, t.Any] | None = None,  # deprecated
-    external_modules: t.List[ModuleType] | None = None,  # deprecated
+    external_modules: builtins.list[ModuleType] | None = None,  # deprecated
     context: ModelContext = ModelContext(
         framework_name="", framework_versions={}
     ),  # deprecated
@@ -359,7 +360,7 @@ def create(
         context=context,
     )
     external_modules = [] if external_modules is None else external_modules
-    imported_modules: t.List[ModuleType] = []
+    imported_modules: builtins.list[ModuleType] = []
     try:
         res.enter_cloudpickle_context(external_modules, imported_modules)
         yield res
@@ -382,22 +383,22 @@ __new_sdk_members__ = ["BentoModel", "HuggingFaceModel"]
 
 
 __all__ = [
-    "list",
-    "get",
-    "delete",
-    "import_model",
-    "export_model",
-    "push",
-    "pull",
+    "BentoModel",
+    "HuggingFaceModel",
     "ModelContext",
     "ModelOptions",
     "create",
-    "BentoModel",
-    "HuggingFaceModel",
+    "delete",
+    "export_model",
+    "get",
+    "import_model",
+    "list",
+    "pull",
+    "push",
 ]
 
 
-def __dir__() -> t.List[str]:
+def __dir__() -> builtins.list[str]:
     return __all__ + __new_sdk_members__
 
 

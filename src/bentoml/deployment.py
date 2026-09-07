@@ -4,6 +4,7 @@ User facing python APIs for deployment
 
 from __future__ import annotations
 
+import builtins
 import typing as t
 
 import attr
@@ -38,9 +39,9 @@ def create(
     scaling_max: int | None = ...,
     instance_type: str | None = ...,
     strategy: str | None = ...,
-    envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = ...,
-    secrets: t.List[str] | None = ...,
-    labels: t.List[LabelItemSchema] | t.List[dict[str, str]] | None = ...,
+    envs: builtins.list[EnvItemSchema] | builtins.list[dict[str, t.Any]] | None = ...,
+    secrets: builtins.list[str] | None = ...,
+    labels: builtins.list[LabelItemSchema] | builtins.list[dict[str, str]] | None = ...,
     extras: dict[str, t.Any] | None = ...,
 ) -> Deployment: ...
 
@@ -77,9 +78,11 @@ def create(
     scaling_max: int | None = None,
     instance_type: str | None = None,
     strategy: str | None = None,
-    envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = None,
-    labels: t.List[LabelItemSchema] | t.List[dict[str, str]] | None = None,
-    secrets: t.List[str] | None = None,
+    envs: builtins.list[EnvItemSchema] | builtins.list[dict[str, t.Any]] | None = None,
+    labels: builtins.list[LabelItemSchema]
+    | builtins.list[dict[str, str]]
+    | None = None,
+    secrets: builtins.list[str] | None = None,
     extras: dict[str, t.Any] | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
@@ -142,8 +145,8 @@ def update(
     scaling_max: int | None = ...,
     instance_type: str | None = ...,
     strategy: str | None = ...,
-    envs: t.List[EnvItemSchema] | t.List[dict[str, t.Any]] | None = ...,
-    secrets: t.List[str] | None = ...,
+    envs: builtins.list[EnvItemSchema] | builtins.list[dict[str, t.Any]] | None = ...,
+    secrets: builtins.list[str] | None = ...,
     extras: dict[str, t.Any] | None = ...,
 ) -> Deployment: ...
 
@@ -183,15 +186,12 @@ def update(
     instance_type: str | None = None,
     strategy: str | None = None,
     envs: (
-        t.List[EnvItemSchema]
-        | t.List[dict[str, t.Any]]
-        | t.List[dict[str, t.Any]]
-        | None
+        builtins.list[EnvItemSchema] | builtins.list[dict[str, t.Any]] | None
     ) = None,
     labels: (
-        t.List[LabelItemSchema] | t.List[dict[str, str]] | t.List[dict[str, str]] | None
+        builtins.list[LabelItemSchema] | builtins.list[dict[str, str]] | None
     ) = None,
-    secrets: t.List[str] | None = None,
+    secrets: builtins.list[str] | None = None,
     extras: dict[str, t.Any] | None = None,
     config_dict: dict[str, t.Any] | None = None,
     config_file: str | None = None,
@@ -241,22 +241,22 @@ def update(
 @t.overload
 def apply(
     name: str | None = ...,
-    cluster: t.Optional[str] = ...,
-    path_context: t.Optional[str] = ...,
+    cluster: str | None = ...,
+    path_context: str | None = ...,
     *,
-    bento: t.Optional[t.Union[Tag, str]] = ...,
-    config_dict: t.Optional[dict[str, t.Any]] = ...,
+    bento: Tag | str | None = ...,
+    config_dict: dict[str, t.Any] | None = ...,
 ) -> Deployment: ...
 
 
 @t.overload
 def apply(
     name: str | None = ...,
-    cluster: t.Optional[str] = ...,
-    path_context: t.Optional[str] = ...,
+    cluster: str | None = ...,
+    path_context: str | None = ...,
     *,
-    bento: t.Optional[t.Union[Tag, str]] = ...,
-    config_file: t.Optional[str] = ...,
+    bento: Tag | str | None = ...,
+    config_file: str | None = ...,
 ) -> Deployment: ...
 
 
@@ -354,9 +354,11 @@ def list(
     search: str | None = None,
     dev: bool = False,
     q: str | None = None,
-    labels: t.List[LabelItemSchema] | t.List[dict[str, t.Any]] | None = None,
+    labels: builtins.list[LabelItemSchema]
+    | builtins.list[dict[str, t.Any]]
+    | None = None,
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
-) -> t.List[Deployment]:
+) -> builtins.list[Deployment]:
     # Syntatic sugar to enable searching by `labels` argument
     if labels is not None:
         label_query = " ".join(
@@ -375,4 +377,4 @@ def list(
     return _cloud_client.deployment.list(cluster=cluster, search=search, dev=dev, q=q)
 
 
-__all__ = ["create", "get", "update", "apply", "terminate", "start", "delete", "list"]
+__all__ = ["apply", "create", "delete", "get", "list", "start", "terminate", "update"]

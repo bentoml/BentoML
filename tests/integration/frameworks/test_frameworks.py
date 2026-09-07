@@ -185,7 +185,7 @@ def test_get_runnable(
         pytest.skip(f"No get_runnable for framework '{framework.__name__}'")
     runnable = framework.get_runnable(saved_model)
 
-    assert isinstance(runnable, t.Type), (
+    assert isinstance(runnable, type), (
         "get_runnable for {bento_model.info.name} does not return a type"
     )
     assert issubclass(runnable, bentoml.legacy.Runnable), (
@@ -305,7 +305,7 @@ def test_runner_cpu_multi_threading(
     for config in test_model.configurations:
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
-        runnable: t.Type[bentoml.legacy.Runnable] = framework.get_runnable(
+        runnable: type[bentoml.legacy.Runnable] = framework.get_runnable(
             model_with_options
         )
         if "cpu" not in runnable.SUPPORTED_RESOURCES:
@@ -355,7 +355,7 @@ def test_runner_cpu(
     for config in test_model.configurations:
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
-        runnable: t.Type[bentoml.legacy.Runnable] = framework.get_runnable(
+        runnable: type[bentoml.legacy.Runnable] = framework.get_runnable(
             model_with_options
         )
         if not runnable.SUPPORTS_CPU_MULTI_THREADING:
@@ -407,7 +407,7 @@ def test_runner_nvidia_gpu(
     for config in test_model.configurations:
         model_with_options = saved_model.with_options(**config.load_kwargs)
 
-        runnable: t.Type[bentoml.legacy.Runnable] = framework.get_runnable(
+        runnable: type[bentoml.legacy.Runnable] = framework.get_runnable(
             model_with_options
         )
         if "nvidia.com/gpu" not in runnable.SUPPORTED_RESOURCES:

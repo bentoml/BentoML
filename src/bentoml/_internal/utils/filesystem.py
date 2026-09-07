@@ -135,9 +135,7 @@ def validate_or_create_dir(*path: PathType) -> None:
             path_obj.mkdir(parents=True, exist_ok=True)
 
 
-def resolve_user_filepath(
-    filepath: str, ctx: t.Optional[str], secure: bool = True
-) -> str:
+def resolve_user_filepath(filepath: str, ctx: str | None, secure: bool = True) -> str:
     """Resolve the abspath of a filepath provided by user. User provided file path can:
     * be a relative path base on ctx dir
     * contain leading "~" for HOME directory

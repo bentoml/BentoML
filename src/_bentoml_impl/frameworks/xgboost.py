@@ -101,9 +101,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> xgb.Booster | xgb.XGBM
                 f"Model '{bento_model.tag}' is missing the required 'model_class' option. This should not be possible; please file an issue if you encounter this error."
             )
         try:
-            xgb_class: type[xgb.XGBModel] | type[xgb.Booster] = getattr(
-                xgb, model_class
-            )
+            xgb_class: type[xgb.XGBModel | xgb.Booster] = getattr(xgb, model_class)
         except AttributeError:
             if model_class != "Booster":
                 raise BentoMLException(
@@ -125,7 +123,7 @@ def save_model(
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
@@ -217,7 +215,7 @@ def save_model(
 
 
 @deprecated(suggestion="Use `get_service` instead.")
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
@@ -343,7 +341,7 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
                 pred_interactions: bool = False,
                 validate_features: bool = True,
                 training: bool = False,
-                iteration_range: t.Tuple[int, int] = (0, 0),
+                iteration_range: tuple[int, int] = (0, 0),
                 strict_shape: bool = False,
             ) -> np.ndarray:
                 assert isinstance(self.model, xgb.Booster)
@@ -367,8 +365,8 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
                 data: np.ndarray,
                 output_margin: bool = False,
                 validate_features: bool = True,
-                base_margin: t.Optional[t.List[t.Any]] = None,
-                iteration_range: t.Optional[t.Tuple[int, int]] = None,
+                base_margin: list[t.Any] | None = None,
+                iteration_range: tuple[int, int] | None = None,
             ) -> np.ndarray:
                 assert isinstance(self.model, XGBModel)
                 return self.model.predict(

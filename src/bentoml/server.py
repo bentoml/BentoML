@@ -43,7 +43,7 @@ warn(
     stacklevel=2,
 )
 
-__all__ = ["Server", "GrpcServer", "HTTPServer"]
+__all__ = ["GrpcServer", "HTTPServer", "Server"]
 
 
 ClientType = t.TypeVar("ClientType", bound=Client)

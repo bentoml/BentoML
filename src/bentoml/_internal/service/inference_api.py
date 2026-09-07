@@ -80,9 +80,9 @@ class InferenceAPI(t.Generic[IOType]):
                             f"API function has extra parameter with name '{key}'."
                         )
 
-                    annotation: t.Type[t.Any] = sig.parameters[key].annotation
+                    annotation: type[t.Any] = sig.parameters[key].annotation
                     if (
-                        isinstance(annotation, t.Type)
+                        isinstance(annotation, type)
                         and annotation != inspect.Signature.empty
                     ):
                         # if type annotations have been successfully resolved
@@ -102,7 +102,7 @@ class InferenceAPI(t.Generic[IOType]):
                 first_arg = next(param_iter)
                 annotation = sig.parameters[first_arg].annotation
                 if (
-                    isinstance(annotation, t.Type)
+                    isinstance(annotation, type)
                     and annotation != inspect.Signature.empty
                     and not is_compatible_type(input_type, annotation)
                 ):
@@ -120,7 +120,7 @@ class InferenceAPI(t.Generic[IOType]):
                     second_arg = next(param_iter)
                     annotation = sig.parameters[second_arg].annotation
                     if (
-                        isinstance(annotation, t.Type)
+                        isinstance(annotation, type)
                         and annotation != inspect.Signature.empty
                         and not annotation == Context
                     ):
@@ -145,21 +145,19 @@ class InferenceAPI(t.Generic[IOType]):
         self.route = route
 
     def __str__(self):
-        return f"{self.__class__.__name__}({str(self.input)} → {str(self.output)})"
+        return f"{self.__class__.__name__}({self.input!s} → {self.output!s})"
 
     @staticmethod
     def _validate_name(api_name: str):
         if not api_name.isidentifier():
             raise InvalidArgument(
-                "Invalid API name: '{}', a valid identifier may only contain letters,"
-                " numbers, underscores and not starting with a number.".format(api_name)
+                f"Invalid API name: '{api_name}', a valid identifier may only contain letters,"
+                " numbers, underscores and not starting with a number."
             )
 
         if api_name in RESERVED_API_NAMES:
             raise InvalidArgument(
-                "Reserved API name: '{}' is reserved for infra endpoints".format(
-                    api_name
-                )
+                f"Reserved API name: '{api_name}' is reserved for infra endpoints"
             )
 
     @staticmethod
@@ -168,12 +166,10 @@ class InferenceAPI(t.Generic[IOType]):
             r"[?#]+|^(//)|^:", route
         ):  # contains '?' or '#' OR  start with '//' OR start with ':'
             # https://tools.ietf.org/html/rfc3986#page-22
-            raise InvalidArgument(
-                "The path {} contains illegal url characters".format(route)
-            )
+            raise InvalidArgument(f"The path {route} contains illegal url characters")
         if route in RESERVED_API_NAMES:
             raise InvalidArgument(
-                "Reserved API route: '{}' is reserved for infra endpoints".format(route)
+                f"Reserved API route: '{route}' is reserved for infra endpoints"
             )
 
 

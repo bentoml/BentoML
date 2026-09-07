@@ -171,10 +171,10 @@ class ServiceContext:
 
 class _ServiceTraceContext:
     _request_id_var = contextvars.ContextVar(
-        "_request_id_var", default=t.cast("t.Optional[int]", None)
+        "_request_id_var", default=t.cast("int | None", None)
     )
     _service_name_var = contextvars.ContextVar(
-        "_service_name_var", default=t.cast("t.Optional[str]", None)
+        "_service_name_var", default=t.cast("str | None", None)
     )
 
     @property
@@ -199,22 +199,22 @@ class _ServiceTraceContext:
         return span.get_span_context().span_id
 
     @property
-    def request_id(self) -> t.Optional[int]:
+    def request_id(self) -> int | None:
         """
         Different from span_id, request_id is unique for each inbound request.
         """
         return self._request_id_var.get()
 
     @request_id.setter
-    def request_id(self, request_id: t.Optional[int]) -> None:
+    def request_id(self, request_id: int | None) -> None:
         self._request_id_var.set(request_id)
 
     @property
-    def service_name(self) -> t.Optional[str]:
+    def service_name(self) -> str | None:
         return self._service_name_var.get()
 
     @service_name.setter
-    def service_name(self, service_name: t.Optional[str]) -> None:
+    def service_name(self, service_name: str | None) -> None:
         self._service_name_var.set(service_name)
 
 

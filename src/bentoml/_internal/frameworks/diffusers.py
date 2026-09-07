@@ -46,8 +46,8 @@ API_VERSION = "v1"
 
 logger = logging.getLogger(__name__)
 
-LoraOptionType = t.Union[str, t.Dict[str, str]]
-TextualInversionOptionType = t.Union[str, t.Dict[str, str]]
+LoraOptionType = t.Union[str, dict[str, str]]
+TextualInversionOptionType = t.Union[str, dict[str, str]]
 
 
 @attr.define
@@ -274,7 +274,7 @@ def load_model(
         import bentoml
         pipeline = bentoml.diffusers.load_model('my_diffusers_model:latest')
         pipeline(prompt)
-    """  # noqa
+    """
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
 
@@ -386,7 +386,7 @@ def import_model(
     signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
     # ...
 ) -> bentoml.Model:
@@ -463,7 +463,7 @@ def import_model(
 
     if sync_with_hub_version:
         if tag.version is not None:
-            logger.warn(
+            logger.warning(
                 f"sync_with_hub_version is True, user provided version {tag.version} may be overridden by huggingface hub's commit hash"
             )
 
@@ -564,7 +564,7 @@ def save_model(
     signatures: dict[str, ModelSignatureDict | ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
@@ -638,7 +638,7 @@ def save_model(
         return bento_model
 
 
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
@@ -799,8 +799,8 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
                 f"Class {pipeline_class} is not a subclass of LoraLoaderMixin, cannot unload lora weights"
             )
 
-    setattr(DiffusersRunnable, "_load_lora_weights", _load_lora_weights)
-    setattr(DiffusersRunnable, "_unload_lora_weights", _unload_lora_weights)
+    DiffusersRunnable._load_lora_weights = _load_lora_weights
+    DiffusersRunnable._unload_lora_weights = _unload_lora_weights
 
     def make_run_method(
         method_name: str, partial_kwargs: dict[str, t.Any] | None

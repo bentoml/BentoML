@@ -22,10 +22,10 @@ except (ImportError, MissingDependencyException):
     pass
 
 __all__ = [
-    "monitor",
-    "MonitorBase",
     "DefaultMonitor",
+    "MonitorBase",
     "NoOpMonitor",
+    "monitor",
 ]
 
 if _is_otlp_available:

@@ -434,10 +434,10 @@ register_default_backends()
 REGISTERED_BACKENDS = list(BUILDER_REGISTRY.keys())
 
 __all__ = [
+    "REGISTERED_BACKENDS",
     "build",
+    "get_backend",
     "health",
     "register_backend",
-    "get_backend",
-    "REGISTERED_BACKENDS",
     "split_envs_by_stage",
 ]

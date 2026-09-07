@@ -117,7 +117,7 @@ class Spinner:
             SpinnerColumn("simpleDots"),
             console=self.console,
         )
-        self._spinner_task_id: t.Optional[TaskID] = None
+        self._spinner_task_id: TaskID | None = None
         self._live = Live(self, console=self.console)
         self._start_count = 0
 
@@ -144,7 +144,7 @@ class Spinner:
         return task_id
 
     def __rich_console__(
-        self, console: "Console", options: "ConsoleOptions"
+        self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
         yield Panel(Group(*self._logs, self._spinner_progress))
         yield self.transmission_progress
@@ -172,5 +172,5 @@ class Spinner:
         self.start()
         return self
 
-    def __exit__(self, *_: t.Any) -> None:
+    def __exit__(self, *_: object) -> None:
         self.stop()

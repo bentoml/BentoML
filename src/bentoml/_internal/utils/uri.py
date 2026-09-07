@@ -1,8 +1,11 @@
+import asyncio
 import contextlib
 import ipaddress
 import os
 import pathlib
 import socket
+import threading
+from typing import Any
 from typing import no_type_check
 from urllib.parse import quote
 from urllib.parse import unquote
@@ -56,24 +59,37 @@ def is_http_url(url: str) -> bool:
     return urlparse(url).scheme in {"http", "https"}
 
 
-original_create_connection = None
+# Reference-counted state for the create_connection() guard, keyed by event
+# loop class. Each entry maps the patched loop class to a tuple of
+# (number of open guarded windows, saved original unbound create_connection).
+_safe_connect_state: dict[type, tuple[int, Any]] = {}
+# Event loop classes are process-global, and guarded windows may be entered
+# from multiple threads (each running its own loop); this lock serializes
+# install/restore transitions.
+_safe_connect_lock = threading.Lock()
 
 
 @contextlib.contextmanager
 def make_safe_connect():
-    """Patch loop.create_connection() method to reject unsafe URLs."""
+    """Patch loop.create_connection() method to reject unsafe URLs.
+
+    The patch is reference-counted per event loop class: the first guarded
+    window installs it, and overlapping windows (e.g. concurrent requests)
+    only increment the reference count. An exiting window therefore never
+    restores the original method while another window still relies on the
+    guard; the restore happens only when the last window closes.
+    """
 
     from urllib.request import getproxies
 
     import httpx
-    from uvloop import Loop
 
     from bentoml.exceptions import BadInput
 
-    global original_create_connection
-
-    if original_create_connection is None:
-        original_create_connection = Loop.create_connection
+    # Patch the class of the loop that is currently running, so that the
+    # guard also applies to plain asyncio (or Windows) event loops instead
+    # of only uvloop.
+    loop_class = type(asyncio.get_running_loop())
 
     # Do not check connections with proxy servers
     proxies = [
@@ -93,18 +109,35 @@ def make_safe_connect():
             else:
                 if ip.is_private or ip.is_loopback or ip.is_link_local:
                     raise socket.gaierror(f"Blocked private IP address {host}")
-        return await original_create_connection(
-            self, protocol_factory, host=host, port=port, **kwargs
-        )
+        original = _safe_connect_state[loop_class][1]
+        return await original(self, protocol_factory, host=host, port=port, **kwargs)
 
-    Loop.create_connection = safe_create_connection
+    with _safe_connect_lock:
+        state = _safe_connect_state.get(loop_class)
+        if state is None:
+            # No guarded window is open for this loop class: install the
+            # patch and remember the original method for the final restore.
+            original = loop_class.create_connection
+            _safe_connect_state[loop_class] = (1, original)
+            loop_class.create_connection = safe_create_connection
+        else:
+            depth, original = state
+            _safe_connect_state[loop_class] = (depth + 1, original)
     try:
         yield
     except httpx.ConnectError as e:
         if "All connection attempts failed" in str(e):
             raise BadInput("Connection blocked due to insecure input URL") from e
     finally:
-        Loop.create_connection = original_create_connection
+        with _safe_connect_lock:
+            depth, original = _safe_connect_state[loop_class]
+            if depth <= 1:
+                # This is the last open guarded window for this loop class:
+                # it is now safe to restore the original method.
+                del _safe_connect_state[loop_class]
+                loop_class.create_connection = original
+            else:
+                _safe_connect_state[loop_class] = (depth - 1, original)
 
 
 def join_paths(*paths: str) -> str:

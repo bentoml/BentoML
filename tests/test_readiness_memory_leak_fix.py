@@ -20,7 +20,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 try:
-    import httpx
+    import httpx2
 
     from _bentoml_impl.client.http import AsyncHTTPClient
     from _bentoml_sdk.service.dependency import Dependency
@@ -89,7 +89,7 @@ class TestAsyncHTTPClientFix:
 
         # Mock client that raises timeout
         mock_client = AsyncMock()
-        mock_client.get.side_effect = httpx.TimeoutException("timeout")
+        mock_client.get.side_effect = httpx2.TimeoutException("timeout")
 
         # Create and configure AsyncHTTPClient
         client = AsyncHTTPClient(url="http://test.example.com")

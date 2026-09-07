@@ -8,7 +8,7 @@ import uuid
 from queue import Empty
 from urllib.parse import urlencode
 
-import httpx
+import httpx2
 from httpx_ws import WebSocketNetworkError
 from httpx_ws import connect_ws
 from wsproto.utilities import LocalProtocolError
@@ -64,11 +64,11 @@ logger = logging.getLogger(__name__)
 
 
 class BaseRestApiClient:
-    def __init__(self, session: httpx.Client) -> None:
+    def __init__(self, session: httpx2.Client) -> None:
         self.session = session
 
     @staticmethod
-    def _is_not_found(resp: httpx.Response) -> bool:
+    def _is_not_found(resp: httpx2.Response) -> bool:
         # We used to return 400 for record not found, handle both cases
         return (
             resp.status_code == 404
@@ -77,7 +77,7 @@ class BaseRestApiClient:
         )
 
     @staticmethod
-    def _check_resp(resp: httpx.Response) -> None:
+    def _check_resp(resp: httpx2.Response) -> None:
         if resp.status_code >= 500:
             if "x-trace-id" in resp.headers:
                 logger.error(
@@ -248,7 +248,7 @@ class RestApiClientV1(BaseRestApiClient):
     @contextlib.contextmanager
     def download_bento(
         self, bento_repository_name: str, version: str
-    ) -> t.Generator[httpx.Response, None, None]:
+    ) -> t.Generator[httpx2.Response, None, None]:
         url = f"/api/v1/bento_repositories/{bento_repository_name}/bentos/{version}/download"
         with self.session.stream("GET", url) as resp:
             self._check_resp(resp)
@@ -367,7 +367,7 @@ class RestApiClientV1(BaseRestApiClient):
     @contextlib.contextmanager
     def download_model(
         self, model_repository_name: str, version: str
-    ) -> t.Generator[httpx.Response, None, None]:
+    ) -> t.Generator[httpx2.Response, None, None]:
         url = f"/api/v1/model_repositories/{model_repository_name}/models/{version}/download"
         with self.session.stream("GET", url) as resp:
             self._check_resp(resp)
@@ -871,6 +871,8 @@ class RestApiClient:
     def __init__(self, endpoint: str, api_token: str, timeout: int = 60) -> None:
         self.endpoint = endpoint
         headers = {"X-YATAI-API-TOKEN": api_token, "X-Bentoml-Version": BENTOML_VERSION}
-        self.session = httpx.Client(base_url=endpoint, timeout=timeout, headers=headers)
+        self.session = httpx2.Client(
+            base_url=endpoint, timeout=timeout, headers=headers
+        )
         self.v2 = RestApiClientV2(self.session)
         self.v1 = RestApiClientV1(self.session)

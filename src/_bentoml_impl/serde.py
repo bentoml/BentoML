@@ -166,7 +166,7 @@ class JSONSerde(GenericSerde, Serde):
         )
 
     async def parse_request(self, request: Request, cls: type[T]) -> T:
-        import httpx
+        import httpx2
 
         from _bentoml_sdk.io_models import IORootModel
 
@@ -174,7 +174,7 @@ class JSONSerde(GenericSerde, Serde):
         if issubclass(cls, IORootModel) and cls.multipart_fields:
             url = body.decode("utf-8", "ignore")
             if is_http_url(url):
-                async with httpx.AsyncClient() as client:
+                async with httpx2.AsyncClient() as client:
                     logger.debug("Request with URL, downloading file from %s", url)
                     with make_safe_connect():
                         resp = await client.get(url)
@@ -198,14 +198,14 @@ class MultipartSerde(JSONSerde):
 
     @staticmethod
     async def ensure_file(obj: str | UploadFile) -> UploadFile:
-        import httpx
+        import httpx2
 
         if isinstance(obj, UploadFile):
             return obj
 
         url = obj.strip("\"'")
 
-        async with httpx.AsyncClient() as client:
+        async with httpx2.AsyncClient() as client:
             with make_safe_connect():
                 resp = await client.get(url)
             if not resp.is_success:

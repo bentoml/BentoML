@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-import httpx
+import httpx2
 from simple_di import Provide
 from simple_di import inject
 
@@ -262,7 +262,7 @@ class YataiClient:
             )
             try:
                 if presigned_upload_url is not None:
-                    resp = httpx.put(presigned_upload_url, data=tar_io)
+                    resp = httpx2.put(presigned_upload_url, data=tar_io)
                     if resp.status_code != 200:
                         finish_req = FinishUploadSchema(
                             status=UploadStatus.FAILED,
@@ -316,7 +316,7 @@ class YataiClient:
                             )
 
                             with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
-                                resp = httpx.put(
+                                resp = httpx2.put(
                                     remote_bento.presigned_upload_url, data=chunk_io
                                 )
                                 if resp.status_code != 200:
@@ -503,7 +503,7 @@ class YataiClient:
                         presigned_download_url = remote_bento.presigned_download_url
 
             with NamedTemporaryFile() as tar_file:
-                with httpx.stream("GET", presigned_download_url) as response:
+                with httpx2.stream("GET", presigned_download_url) as response:
                     if response.status_code != 200:
                         raise BentoMLException(
                             f'Failed to download bento "{_tag}": {response.text}'
@@ -695,7 +695,7 @@ class YataiClient:
             )
             try:
                 if presigned_upload_url is not None:
-                    resp = httpx.put(presigned_upload_url, data=tar_io)
+                    resp = httpx2.put(presigned_upload_url, data=tar_io)
                     if resp.status_code != 200:
                         finish_req = FinishUploadSchema(
                             status=UploadStatus.FAILED,
@@ -750,7 +750,7 @@ class YataiClient:
                             )
 
                             with CallbackIOWrapper(chunk, read_cb=io_cb) as chunk_io:
-                                resp = httpx.put(
+                                resp = httpx2.put(
                                     remote_model.presigned_upload_url, content=chunk_io
                                 )
                                 if resp.status_code != 200:
@@ -940,7 +940,7 @@ class YataiClient:
                     presigned_download_url = remote_model.presigned_download_url
 
         with NamedTemporaryFile() as tar_file:
-            with httpx.stream("GET", presigned_download_url) as response:
+            with httpx2.stream("GET", presigned_download_url) as response:
                 if response.status_code != 200:
                     raise BentoMLException(
                         f'Failed to download model "{_tag}": {response.text}'

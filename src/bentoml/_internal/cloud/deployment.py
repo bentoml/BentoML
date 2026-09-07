@@ -637,7 +637,7 @@ class Deployment:
         timeout: int = 3600,
         check_interval: int = 10,
     ) -> int:
-        from httpx import TimeoutException
+        from httpx2 import TimeoutException
 
         start_time = time.time()
         stop_tail_event = Event()
@@ -1142,8 +1142,8 @@ class Deployment:
         runner_color: dict[str, str] = defaultdict(lambda: next(colors))
 
         def heartbeat(event: Event, check_interval: float = 5.0) -> None:
-            from httpx import NetworkError
-            from httpx import TimeoutException
+            from httpx2 import NetworkError
+            from httpx2 import TimeoutException
 
             endpoint_url = self.get_endpoint_urls(False)[0]
             while not event.is_set():

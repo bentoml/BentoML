@@ -7,7 +7,7 @@ import typing as t
 
 import aiohttp
 import anyio
-import httpx
+import httpx2
 from pyparsing import cast
 from starlette.requests import Request
 
@@ -101,7 +101,7 @@ def create_proxy_app(service: Service[t.Any]) -> Starlette:
                 state = {
                     "proc": proc,
                     "client": await stack.enter_async_context(
-                        httpx.AsyncClient(base_url=proxy_url, timeout=None)
+                        httpx2.AsyncClient(base_url=proxy_url, timeout=None)
                     ),  # For backward compatibility
                 }
                 service.context.state.update(state)

@@ -65,7 +65,7 @@ def make_safe_connect():
 
     from urllib.request import getproxies
 
-    import httpx
+    import httpx2
     from uvloop import Loop
 
     from bentoml.exceptions import BadInput
@@ -100,7 +100,7 @@ def make_safe_connect():
     Loop.create_connection = safe_create_connection
     try:
         yield
-    except httpx.ConnectError as e:
+    except httpx2.ConnectError as e:
         if "All connection attempts failed" in str(e):
             raise BadInput("Connection blocked due to insecure input URL") from e
     finally:

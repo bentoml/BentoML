@@ -609,7 +609,9 @@ def make_default_signatures(pretrained_cls: t.Any) -> ModelSignaturesType:
         )
         return {}
 
-    return {k: default_config for k in infer_fn}
+    # NOTE: filter out methods that are not available on the given class, since
+    # the set of generation methods varies between transformers versions.
+    return {k: default_config for k in infer_fn if hasattr(pretrained_cls, k)}
 
 
 def import_model(
@@ -1208,7 +1210,8 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
                                 "cuda" if available_gpus not in ("", "-1") else "cpu"
                             )
                         )
-                        torch.set_default_tensor_type("torch.cuda.FloatTensor")
+                        if available_gpus not in ("", "-1"):
+                            torch.set_default_tensor_type("torch.cuda.FloatTensor")
                     elif "tf" == bento_model.info.metadata["_framework"]:
                         with tf.device(
                             "/device:CPU:0"
@@ -1239,6 +1242,15 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
 
             self.predict_fns: dict[str, t.Callable[..., t.Any]] = {}
             for method_name in bento_model.info.signatures:
+                if not hasattr(self.model, method_name):
+                    # model was saved with a transformers version that had
+                    # methods the installed version no longer provides.
+                    logger.warning(
+                        "Saved signature method '%s' is not available on %s and will be skipped.",
+                        method_name,
+                        type(self.model).__name__,
+                    )
+                    continue
                 self.predict_fns[method_name] = getattr(self.model, method_name)
 
     def add_runnable_method(method_name: str, options: ModelSignature):

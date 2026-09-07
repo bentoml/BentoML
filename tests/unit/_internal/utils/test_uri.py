@@ -1,5 +1,6 @@
 import os
 import typing as t
+from pathlib import Path
 
 import psutil
 import pytest
@@ -32,3 +33,20 @@ def test_uri_path_conversion(
     for path in example_paths:
         restored = uri_to_path(path_to_uri(path))
         assert restored == path or restored == os.path.abspath(path)
+
+
+@pytest.mark.parametrize("scheme", ["file", "filesystem", "unix"])
+@pytest.mark.parametrize(
+    "filename",
+    ["model%20name", "model%2Fname", "model%25name", "model%2520name", "model%FFname"],
+)
+def test_uri_to_path_preserves_literal_percent_escapes(
+    tmp_path: Path, scheme: str, filename: str
+) -> None:
+    from bentoml._internal.utils.uri import path_to_uri
+    from bentoml._internal.utils.uri import uri_to_path
+
+    path = str(tmp_path / filename)
+    uri = path_to_uri(path).replace("file:", f"{scheme}:", 1)
+
+    assert uri_to_path(uri) == path

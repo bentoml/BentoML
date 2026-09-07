@@ -436,16 +436,15 @@ class PandasDataFrame(
         return sample
 
     def _convert_dtype(
-        self, value: ext.PdDTypeArg | None
+        self, value: bool | ext.PdDTypeArg | pd.Series[ext.PdDType] | None
     ) -> str | dict[str, t.Any] | None:
-        # TODO: support extension dtypes
         if LazyType["ext.NpNDArray"]("numpy", "ndarray").isinstance(value):
             return str(value.dtype)
-        elif isinstance(value, bool):
+        elif isinstance(value, (bool, np.dtype, pd.api.extensions.ExtensionDtype)):
             return str(value)
         elif isinstance(value, str):
             return value
-        elif isinstance(value, dict):
+        elif isinstance(value, (dict, pd.Series)):
             return {str(k): self._convert_dtype(v) for k, v in value.items()}
         elif value is None:
             return "null"

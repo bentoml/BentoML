@@ -26,6 +26,8 @@ from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.resource import system_resources
 from bentoml._internal.server.base_app import BaseAppFactory
+from bentoml._internal.server.http.traffic import MaxConcurrencyMiddleware
+from bentoml._internal.server.http.traffic import TimeoutMiddleware
 from bentoml._internal.server.http_app import log_exception
 from bentoml._internal.types import LazyType
 from bentoml._internal.utils import is_async_callable
@@ -185,6 +187,10 @@ class ServiceAppFactory(BaseAppFactory):
         def build_path(*path_segments: str) -> str:
             return join_paths(self.service.path_prefix, *path_segments)
 
+        skip_paths = [self.service.config.get("endpoints", {}).get("livez", "/health")]
+        if readyz_endpoint := self.service.config.get("endpoints", {}).get("readyz"):
+            skip_paths.append(readyz_endpoint)
+
         if self.service.has_custom_command():
             # This may obscure all the routes behind, but this is expected.
             self.service.mount_asgi_app(create_proxy_app(self.service), name="proxy")
@@ -212,6 +218,16 @@ class ServiceAppFactory(BaseAppFactory):
                 )
             app.add_route(build_path("/"), self.index_page, name="index")
 
+        # Apply timeout and concurrency middleware AFTER mounting to ensure they
+        # cover mounted ASGI apps. Mounted apps bypass the parent application's
+        # middleware chain, so applying these as outer ASGI wrappers is required
+        # for the configured traffic timeout to take effect on mounted routes.
+        if self.max_concurrency is not None:
+            app = MaxConcurrencyMiddleware(
+                app, max_concurrency=self.max_concurrency, skip_paths=skip_paths
+            )
+        if self.timeout is not None:
+            app = TimeoutMiddleware(app, timeout=self.timeout)
         return app
 
     @property
@@ -221,7 +237,6 @@ class ServiceAppFactory(BaseAppFactory):
     @property
     def middlewares(self) -> list[Middleware]:
         from bentoml._internal.container import BentoMLContainer
-        from bentoml._internal.server.http.traffic import MaxConcurrencyMiddleware
 
         middlewares: list[Middleware] = []
         access_log_config = BentoMLContainer.api_server_config.logging.access
@@ -276,13 +291,18 @@ class ServiceAppFactory(BaseAppFactory):
                     skip_paths=[*access_log_config.skip_paths.get(), *skip_paths],
                 )
             )
-        # TimeoutMiddleware and MaxConcurrencyMiddleware
-        middlewares.extend(super().middlewares)
-        for middleware in middlewares:
+        # TimeoutMiddleware and MaxConcurrencyMiddleware are intentionally NOT
+        # added here. Because Starlette mounts (including mounted ASGI apps and
+        # the custom command proxy) bypass the parent application's middleware
+        # chain, those middlewares would not cover mounted apps. Instead they
+        # are applied as outer ASGI wrappers *after* mounting in ``__call__`` so
+        # that they cover both the service's own routes and all mounted apps.
+        for middleware in super().middlewares:
             if inspect.isclass(middleware.cls) and issubclass(
-                middleware.cls, MaxConcurrencyMiddleware
+                middleware.cls, (TimeoutMiddleware, MaxConcurrencyMiddleware)
             ):
-                middleware.kwargs["skip_paths"] = skip_paths
+                continue
+            middlewares.append(middleware)
         for middleware_cls, options in self.service.middlewares:
             middlewares.append(Middleware(middleware_cls, **options))
         # CORS middleware

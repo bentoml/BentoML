@@ -41,7 +41,7 @@ class Params(t.Generic[T]):
         self.args = args
         self.kwargs = kwargs
 
-    def items(self) -> t.Iterator[t.Tuple[t.Union[int, str], T]]:
+    def items(self) -> t.Iterator[tuple[int | str, T]]:
         return itertools.chain(enumerate(self.args), self.kwargs.items())
 
     @classmethod

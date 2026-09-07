@@ -221,7 +221,7 @@ class AliasCommand(click.Command):
     def __init__(
         self, *args: t.Any, aliases: list[str] | None = None, **kwargs: t.Any
     ) -> None:
-        super(AliasCommand, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.aliases = aliases or []
 
 
@@ -363,7 +363,7 @@ class BentoMLCommandGroup(click.Group):
             try:
                 return func(*args, **kwargs)
             except BentoMLException as err:
-                msg = f"[{cmd_group.name}] `{command_name}` failed: {str(err)}"
+                msg = f"[{cmd_group.name}] `{command_name}` failed: {err!s}"
                 if get_debug_mode():
                     ClickException(click.style(msg, fg="red")).show()
                     raise err from None
@@ -374,7 +374,7 @@ class BentoMLCommandGroup(click.Group):
 
     def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         self.aliases = kwargs.pop("aliases", [])
-        super(BentoMLCommandGroup, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # these two dictionaries will store known aliases for commands and groups
         self._commands: dict[str, list[str]] = {}
         self._aliases: dict[str, str] = {}
@@ -416,7 +416,7 @@ class BentoMLCommandGroup(click.Group):
 
     def get_command(self, ctx: Context, cmd_name: str) -> Command | None:
         cmd_name = self.resolve_alias(cmd_name)
-        return super(BentoMLCommandGroup, self).get_command(ctx, cmd_name)
+        return super().get_command(ctx, cmd_name)
 
     def format_commands(self, ctx: Context, formatter: HelpFormatter) -> None:
         rows: list[tuple[str, str]] = []
@@ -447,7 +447,7 @@ class BentoMLCommandGroup(click.Group):
         self, ctx: Context, args: list[str]
     ) -> tuple[str | None, Command | None, list[str]]:
         try:
-            return super(BentoMLCommandGroup, self).resolve_command(ctx, args)
+            return super().resolve_command(ctx, args)
         except UsageError as e:
             error_msg = str(e)
             original_cmd_name = click.utils.make_str(args[0])

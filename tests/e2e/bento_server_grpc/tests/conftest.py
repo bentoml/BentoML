@@ -22,7 +22,6 @@ def prepare_model() -> None:
     subprocess.check_call([sys.executable, f"{os.path.join(PROJECT_DIR, 'train.py')}"])
 
 
-@pytest.mark.usefixtures("change_test_dir")
 @pytest.fixture(scope="module")
 def host(
     bentoml_home: str,

@@ -22,13 +22,14 @@ from .typing_utils import is_file_like
 from .typing_utils import is_image_type
 
 if t.TYPE_CHECKING:
+    from typing import Literal
+
     import numpy as np
     import pandas as pd
     import tensorflow as tf
     import torch
     from pydantic import GetCoreSchemaHandler
     from pydantic import GetJsonSchemaHandler
-    from typing_extensions import Literal
 
     TensorType = t.Union[np.ndarray[t.Any, t.Any], tf.Tensor, torch.Tensor]
     TensorFormat = Literal["numpy-array", "tf-tensor", "torch-tensor"]
@@ -176,8 +177,8 @@ class FileSchema:
 @attrs.frozen(unsafe_hash=True)
 class TensorSchema:
     format: TensorFormat
-    dtype: t.Optional[str] = None
-    shape: t.Optional[t.Tuple[int, ...]] = None
+    dtype: str | None = None
+    shape: tuple[int, ...] | None = None
 
     @property
     def dim(self) -> int | None:

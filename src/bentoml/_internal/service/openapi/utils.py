@@ -14,7 +14,7 @@ from .specification import Schema
 
 if TYPE_CHECKING:
     import pydantic
-    import pydantic.schema as schema
+    from pydantic import schema
 
     if pkg_version_info("pydantic")[0] >= 2:
         import pydantic.json_schema as jschema
@@ -78,7 +78,7 @@ def exception_components_schema() -> dict[str, Schema]:
     }
 
 
-def exception_schema(ex: t.Type[BentoMLException]) -> t.Iterable[FilledExceptionSchema]:
+def exception_schema(ex: type[BentoMLException]) -> t.Iterable[FilledExceptionSchema]:
     # convert BentoML exception to OpenAPI components schema
     error_properties = {
         "error": Schema(title="Message", type="string"),

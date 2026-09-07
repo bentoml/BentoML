@@ -206,7 +206,7 @@ class _BentoMLContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def model_store(base_dir: str = Provide[model_store_dir]) -> "ModelStore":
+    def model_store(base_dir: str = Provide[model_store_dir]) -> ModelStore:
         from ..models import ModelStore
 
         return ModelStore(base_dir)
@@ -428,7 +428,7 @@ class _BentoMLContainerClass:
             return ExcludeList([])
 
     # Mapping from runner name to RunnerApp file descriptor
-    remote_runner_mapping = providers.Static[t.Dict[str, str]]({})
+    remote_runner_mapping = providers.Static[dict[str, str]]({})
     plasma_db = providers.Static[t.Optional["ext.PlasmaClient"]](None)
 
     @providers.SingletonFactory

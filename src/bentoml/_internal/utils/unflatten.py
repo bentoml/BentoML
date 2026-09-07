@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Unflatten nested dict/array data
 *** This is a modified version of the original unflatten.py from https://github.com/dairiki/unflatten, which is
 published under the license ***
@@ -36,7 +35,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 """
 
-from __future__ import absolute_import
 from __future__ import annotations
 
 import re
@@ -218,7 +216,7 @@ def _parse_key(flat_key: str):
             if len(string) == 0:
                 string = ""
             elif i == 0:
-                string = string[1:] if string.startswith(".") else string
+                string = string.removeprefix(".")
             else:
                 if string[0] != ".":
                     raise ValueError("invalid string %r in key %r" % (string, flat_key))
@@ -236,9 +234,7 @@ def _unparse_key(parsed: list[t.Any]) -> str:
     bits: list[str] = []
     for part in parsed:
         if isinstance(part, string_type):
-            if part.isidentifier():
-                fmt = ".%s" if bits else "%s"
-            elif part == "":
+            if part.isidentifier() or part == "":
                 fmt = ".%s" if bits else "%s"
             else:
                 fmt = '."%s"' if bits else '"%s"'

@@ -62,7 +62,7 @@ def load_model(bento_model: str | Tag | Model) -> SklearnModel:
 
         import bentoml
         sklearn = bentoml.sklearn.load_model('my_model:latest')
-    """  # noqa
+    """
     if not isinstance(bento_model, Model):
         bento_model = bentoml.models.get(bento_model)
 
@@ -80,10 +80,10 @@ def save_model(
     model: SklearnModel,
     *,
     signatures: ModelSignaturesType | None = None,
-    labels: t.Dict[str, str] | None = None,
-    custom_objects: t.Dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
-    metadata: t.Dict[str, t.Any] | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: list[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
@@ -120,7 +120,7 @@ def save_model(
         model.fit(X, Y)
 
         bento_model = bentoml.sklearn.save_model('kneighbors', model)
-    """  # noqa
+    """
     if not (
         LazyType("sklearn.base.BaseEstimator").isinstance(model)
         or LazyType("sklearn.pipeline.Pipeline").isinstance(model)

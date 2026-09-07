@@ -72,7 +72,7 @@ class BentoCloudClient:
         )
 
     @classmethod
-    def for_context(cls, context: str | None = None) -> "BentoCloudClient":
+    def for_context(cls, context: str | None = None) -> BentoCloudClient:
         cfg = CloudClientConfig.get_config()
         ctx = cfg.get_context(context)
         return cls(ctx.api_token, ctx.endpoint)

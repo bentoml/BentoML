@@ -27,7 +27,7 @@ except ImportError:  # pragma: no cover
 MODULE_NAME = "bentoml.pytorch_lightning"
 
 
-__all__ = ["save_model", "load_model", "get_runnable", "get"]
+__all__ = ["get", "get_runnable", "load_model", "save_model"]
 
 
 def get(tag_like: str | Tag) -> Model:
@@ -41,7 +41,7 @@ def get(tag_like: str | Tag) -> Model:
 
 def load_model(
     bentoml_model: str | Tag | Model,
-    device_id: t.Optional[str] = "cpu",
+    device_id: str | None = "cpu",
 ) -> torch.ScriptModule:
     """
     Load a model from BentoML local modelstore with given name.
@@ -81,10 +81,10 @@ def save_model(
     model: pl.LightningModule,
     *,
     signatures: ModelSignaturesType | None = None,
-    labels: t.Dict[str, str] | None = None,
-    custom_objects: t.Dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
-    metadata: t.Dict[str, t.Any] | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: list[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.

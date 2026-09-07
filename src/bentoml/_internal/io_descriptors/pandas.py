@@ -595,7 +595,7 @@ class PandasDataFrame(
             return Response(resp, media_type=serialization_format.mime_type)
 
     def validate_dataframe(
-        self, dataframe: ext.PdDataFrame, exception_cls: t.Type[Exception] = BadInput
+        self, dataframe: ext.PdDataFrame, exception_cls: type[Exception] = BadInput
     ) -> ext.PdDataFrame:
         if not LazyType["ext.PdDataFrame"]("pandas.core.frame.DataFrame").isinstance(
             dataframe
@@ -1058,7 +1058,7 @@ class PandasSeries(
             )
 
     def validate_series(
-        self, series: ext.PdSeries, exception_cls: t.Type[Exception] = BadInput
+        self, series: ext.PdSeries, exception_cls: type[Exception] = BadInput
     ) -> ext.PdSeries:
         # TODO: dtype check
         if not LazyType["ext.PdSeries"]("pandas.core.series.Series").isinstance(series):

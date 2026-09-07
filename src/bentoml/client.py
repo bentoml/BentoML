@@ -27,12 +27,12 @@ from ._internal.client.http import SyncHTTPClient
 
 __all__ = [
     "AsyncClient",
-    "SyncClient",
-    "Client",
-    "AsyncHTTPClient",
-    "SyncHTTPClient",
-    "HTTPClient",
     "AsyncGrpcClient",
-    "SyncGrpcClient",
+    "AsyncHTTPClient",
+    "Client",
     "GrpcClient",
+    "HTTPClient",
+    "SyncClient",
+    "SyncGrpcClient",
+    "SyncHTTPClient",
 ]

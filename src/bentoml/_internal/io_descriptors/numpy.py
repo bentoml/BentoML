@@ -346,7 +346,7 @@ class NumpyNdarray(
         }
 
     def validate_array(
-        self, arr: ext.NpNDArray, exception_cls: t.Type[Exception] = BadInput
+        self, arr: ext.NpNDArray, exception_cls: type[Exception] = BadInput
     ) -> ext.NpNDArray:
         if self._dtype is not None and self._dtype != arr.dtype:
             # ‘same_kind’ means only safe casts or casts within a kind, like float64

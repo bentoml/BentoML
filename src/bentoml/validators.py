@@ -8,8 +8,8 @@ from _bentoml_sdk.validators import TensorSchema
 
 __all__ = [
     "ContentType",
-    "DataframeSchema",
     "DType",
+    "DataframeSchema",
     "FileSchema",
     "PILImageEncoder",
     "Shape",

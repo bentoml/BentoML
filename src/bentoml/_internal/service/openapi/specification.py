@@ -32,9 +32,9 @@ class Contact:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
-    name: t.Optional[str] = None
-    url: t.Optional[str] = None
-    email: t.Optional[str] = None
+    name: str | None = None
+    url: str | None = None
+    email: str | None = None
 
 
 @attr.frozen
@@ -43,7 +43,7 @@ class ExternalDocumentation:
     __forbid_extra_keys__ = True
 
     url: str
-    description: t.Optional[str] = None
+    description: str | None = None
 
 
 @attr.frozen
@@ -51,10 +51,10 @@ class Link:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
-    operationRef: t.Optional[str] = None
-    operationId: t.Optional[str] = None
-    requestBody: t.Optional[t.Any] = None
-    description: t.Optional[str] = None
+    operationRef: str | None = None
+    operationId: str | None = None
+    requestBody: t.Any | None = None
+    description: str | None = None
 
     # not yet supported: parameters
 
@@ -72,7 +72,7 @@ class Discriminator:
     __forbid_extra_keys__ = True
 
     propertyName: str
-    mapping: t.Optional[t.Dict[str, str]] = None
+    mapping: dict[str, str] | None = None
 
 
 @attr.frozen
@@ -82,42 +82,42 @@ class Schema:
 
     __rename_fields__ = {"ref": "$ref", "not_": "not"}
 
-    type: t.Optional[str] = None
-    ref: t.Optional[str] = None
-    title: t.Optional[str] = None
-    multipleOf: t.Optional[float] = None
-    maximum: t.Optional[float] = None
-    exclusiveMaximum: t.Optional[float] = None
-    minimum: t.Optional[float] = None
-    exclusiveMinimum: t.Optional[float] = None
-    maxLength: t.Optional[int] = None
-    minLength: t.Optional[int] = None
-    pattern: t.Optional[str] = None
-    maxItems: t.Optional[int] = None
-    minItems: t.Optional[int] = None
-    uniqueItems: t.Optional[bool] = None
-    prefixItems: t.Optional[t.List[Schema]] = None
-    maxProperties: t.Optional[int] = None
-    minProperties: t.Optional[int] = None
-    required: t.Optional[t.List[str]] = None
-    enum: t.Optional[t.List[t.Any]] = None
-    allOf: t.Optional[t.List[Schema]] = None
-    oneOf: t.Optional[t.List[Schema]] = None
-    anyOf: t.Optional[t.List[Schema]] = None
-    not_: t.Optional[Schema] = None
-    items: t.Optional[t.Union[Schema, t.List[Schema]]] = None
-    properties: t.Optional[t.Dict[str, t.Union[Schema, Reference]]] = None
-    additionalProperties: t.Optional[t.Union[Schema, Reference, bool]] = None
-    description: t.Optional[str] = None
-    format: t.Optional[str] = None
-    default: t.Optional[t.Any] = None
-    nullable: t.Optional[bool] = None
-    discriminator: t.Optional[Discriminator] = None
-    readOnly: t.Optional[bool] = None
-    writeOnly: t.Optional[bool] = None
-    externalDocs: t.Optional[ExternalDocumentation] = None
-    example: t.Optional[t.Any] = None
-    deprecated: t.Optional[bool] = None
+    type: str | None = None
+    ref: str | None = None
+    title: str | None = None
+    multipleOf: float | None = None
+    maximum: float | None = None
+    exclusiveMaximum: float | None = None
+    minimum: float | None = None
+    exclusiveMinimum: float | None = None
+    maxLength: int | None = None
+    minLength: int | None = None
+    pattern: str | None = None
+    maxItems: int | None = None
+    minItems: int | None = None
+    uniqueItems: bool | None = None
+    prefixItems: list[Schema] | None = None
+    maxProperties: int | None = None
+    minProperties: int | None = None
+    required: list[str] | None = None
+    enum: list[t.Any] | None = None
+    allOf: list[Schema] | None = None
+    oneOf: list[Schema] | None = None
+    anyOf: list[Schema] | None = None
+    not_: Schema | None = None
+    items: Schema | list[Schema] | None = None
+    properties: dict[str, Schema | Reference] | None = None
+    additionalProperties: Schema | Reference | bool | None = None
+    description: str | None = None
+    format: str | None = None
+    default: t.Any | None = None
+    nullable: bool | None = None
+    discriminator: Discriminator | None = None
+    readOnly: bool | None = None
+    writeOnly: bool | None = None
+    externalDocs: ExternalDocumentation | None = None
+    example: t.Any | None = None
+    deprecated: bool | None = None
     root_input: bool = False
     # not yet supported: xml
 
@@ -127,10 +127,10 @@ class Example:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
-    summary: t.Optional[str] = None
-    description: t.Optional[str] = None
-    value: t.Optional[t.Any] = None
-    externalValue: t.Optional[str] = None
+    summary: str | None = None
+    description: str | None = None
+    value: t.Any | None = None
+    externalValue: str | None = None
 
 
 @attr.frozen
@@ -138,10 +138,10 @@ class Encoding:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
-    contentType: t.Optional[str] = None
-    style: t.Optional[str] = None
-    explode: t.Optional[bool] = None
-    allowReserved: t.Optional[bool] = None
+    contentType: str | None = None
+    style: str | None = None
+    explode: bool | None = None
+    allowReserved: bool | None = None
 
     # not yet supported: headers
 
@@ -151,10 +151,10 @@ class MediaType:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
-    schema: t.Optional[t.Union[Schema, Reference]]
-    example: t.Optional[t.Any] = None
-    examples: t.Optional[t.Dict[str, t.Union[Example, Reference]]] = None
-    encoding: t.Optional[t.Dict[str, Encoding]] = None
+    schema: Schema | Reference | None
+    example: t.Any | None = None
+    examples: dict[str, Example | Reference] | None = None
+    encoding: dict[str, Encoding] | None = None
 
 
 @attr.frozen
@@ -163,8 +163,8 @@ class Response:
     __forbid_extra_keys__ = True
 
     description: str
-    content: t.Optional[t.Dict[str, MediaType]] = None
-    links: t.Optional[t.Dict[str, t.Union[Link, Reference]]] = None
+    content: dict[str, MediaType] | None = None
+    links: dict[str, Link | Reference] | None = None
 
     # not yet supported: headers
 
@@ -174,9 +174,9 @@ class RequestBody:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
-    content: t.Dict[str, MediaType]
-    description: t.Optional[str] = None
-    required: t.Optional[bool] = None
+    content: dict[str, MediaType]
+    description: str | None = None
+    required: bool | None = None
 
 
 @attr.frozen
@@ -184,13 +184,13 @@ class Operation:
     __omit_if_default__ = True
     __forbid_extra_keys__ = True
 
-    responses: t.Dict[t.Union[str, int], t.Union[Response, Reference]]
-    tags: t.Optional[t.List[t.Union[str, Tag]]] = None
-    summary: t.Optional[str] = None
-    description: t.Optional[str] = None
-    externalDocs: t.Optional[ExternalDocumentation] = None
-    operationId: t.Optional[str] = None
-    requestBody: t.Optional[t.Union[RequestBody, Reference, t.Dict[str, t.Any]]] = None
+    responses: dict[str | int, Response | Reference]
+    tags: list[str | Tag] | None = None
+    summary: str | None = None
+    description: str | None = None
+    externalDocs: ExternalDocumentation | None = None
+    operationId: str | None = None
+    requestBody: RequestBody | Reference | dict[str, t.Any] | None = None
 
     # Not yet supported: parameters, callbacks, deprecated, servers, security
 
@@ -204,8 +204,8 @@ class Info:
 
     title: str
     version: str
-    description: t.Optional[str] = None
-    contact: t.Optional[Contact] = None
+    description: str | None = None
+    contact: Contact | None = None
 
     # Not yet supported: termsOfService
 
@@ -219,17 +219,17 @@ class PathItem:
 
     __rename_fields__ = {"ref": "$ref"}
 
-    ref: t.Optional[str] = None
-    summary: t.Optional[str] = None
-    description: t.Optional[str] = None
-    get: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
-    put: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
-    post: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
-    delete: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
-    options: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
-    head: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
-    patch: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
-    trace: t.Optional[t.Union[Operation, t.Dict[str, t.Any]]] = None
+    ref: str | None = None
+    summary: str | None = None
+    description: str | None = None
+    get: Operation | dict[str, t.Any] | None = None
+    put: Operation | dict[str, t.Any] | None = None
+    post: Operation | dict[str, t.Any] | None = None
+    delete: Operation | dict[str, t.Any] | None = None
+    options: Operation | dict[str, t.Any] | None = None
+    head: Operation | dict[str, t.Any] | None = None
+    patch: Operation | dict[str, t.Any] | None = None
+    trace: Operation | dict[str, t.Any] | None = None
     # not yet supported: servers, parameters
 
 
@@ -241,8 +241,8 @@ class Tag:
     __preserve_cls_structure__ = True
 
     name: str
-    description: t.Optional[str] = None
-    externalDocs: t.Optional[ExternalDocumentation] = None
+    description: str | None = None
+    externalDocs: ExternalDocumentation | None = None
 
 
 @attr.frozen
@@ -252,17 +252,15 @@ class Components:
 
     __preserve_cls_structure__ = True
 
-    schemas: t.Dict[str, t.Union[Schema, Reference]]
-    responses: t.Optional[t.Dict[str, t.Union[Response, Reference]]] = None
-    examples: t.Optional[t.Dict[str, t.Union[Example, Reference]]] = None
-    requestBodies: t.Optional[
-        t.Dict[str, t.Union[RequestBody, Reference, t.Dict[str, t.Any]]]
-    ] = None
-    links: t.Optional[t.Dict[str, t.Union[Link, Reference]]] = None
+    schemas: dict[str, Schema | Reference]
+    responses: dict[str, Response | Reference] | None = None
+    examples: dict[str, Example | Reference] | None = None
+    requestBodies: dict[str, RequestBody | Reference | dict[str, t.Any]] | None = None
+    links: dict[str, Link | Reference] | None = None
 
     # Not yet supported: securitySchemes, callbacks, parameters, headers
 
-    def asdict(self) -> t.Dict[str, t.Any]:
+    def asdict(self) -> dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)
 
 
@@ -273,10 +271,10 @@ class OpenAPISpecification:
 
     openapi: str
     info: Info
-    paths: t.Dict[str, PathItem]
-    servers: t.List[t.Any]
-    tags: t.Optional[t.List[Tag]] = None
-    components: t.Optional[Components] = None
+    paths: dict[str, PathItem]
+    servers: list[t.Any]
+    tags: list[Tag] | None = None
+    components: Components | None = None
 
     # Not yet supported: servers, security, externalDocs, webhooks, jsonSchemaDialect
 
@@ -297,12 +295,10 @@ class OpenAPISpecification:
             raise
 
 
-def _structure_rename_fields_hook(data: t.Dict[str, t.Any], cl: t.Type[_T]) -> _T:
+def _structure_rename_fields_hook(data: dict[str, t.Any], cl: type[_T]) -> _T:
     # pop is atomic, so we don't need to worry about performance deficit.
     # See https://stackoverflow.com/a/17326099/8643197.
-    rev = {
-        k: data.pop(v) for k, v in getattr(cl, "__rename_fields__").items() if v in data
-    }
+    rev = {k: data.pop(v) for k, v in cl.__rename_fields__.items() if v in data}
     return cl(**rev, **data)
 
 
@@ -325,7 +321,7 @@ bentoml_cattr.register_unstructure_hook_factory(
 
 # register all class in this structure whom
 # implement a '__preserve_cls_structure__' method
-def _preserve_cls_structure(data: dict[str, t.Any], cl: t.Type[_T]) -> _T:
+def _preserve_cls_structure(data: dict[str, t.Any], cl: type[_T]) -> _T:
     if isinstance(data, cl):
         return data
     return cl(**data)

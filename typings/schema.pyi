@@ -30,7 +30,6 @@ class And(OpsMeta):
         schema: Schema | None = ...,
         ignore_extra_keys: bool = ...,
     ) -> None: ...
-    def __repr__(self) -> str: ...
     @property
     def args(self) -> tuple[_CallableLike, ...]: ...
 
@@ -54,20 +53,18 @@ class Regex(OpsMeta):
         flags: int | None = ...,
         error: str | None = ...,
     ) -> None: ...
-    def __repr__(self) -> str: ...
     @property
     def pattern_str(self) -> str: ...
 
 class Use(OpsMeta):
     def __init__(self, callable_: _CallableLike, error: str | None = ...) -> None: ...
-    def __repr__(self) -> str: ...
 
-COMPARABLE = t.Literal["0"]
-CALLABLE = t.Literal["1"]
-VALIDATOR = t.Literal["2"]
-TYPE = t.Literal["3"]
-DICT = t.Literal["4"]
-ITERABLE = t.Literal["5"]
+COMPARABLE: t.TypeAlias = t.Literal["0"]
+CALLABLE: t.TypeAlias = t.Literal["1"]
+VALIDATOR: t.TypeAlias = t.Literal["2"]
+TYPE: t.TypeAlias = t.Literal["3"]
+DICT: t.TypeAlias = t.Literal["4"]
+ITERABLE: t.TypeAlias = t.Literal["5"]
 
 def _priority(
     s: OpsType,
@@ -86,7 +83,6 @@ class Schema(OpsMeta):
         description: str | None = ...,
         as_reference: bool = ...,
     ) -> None: ...
-    def __repr__(self) -> str: ...
     @property
     def schema(self) -> AcceptedDictType: ...
     @property
@@ -122,7 +118,9 @@ class Optional(Schema):
     def __eq__(self, other: Optional) -> bool: ...
     def reset(self) -> None: ...
 
-_HookCallback = t.Callable[[str, t.Any, str | list[str]], SchemaError | None | t.Any]
+_HookCallback: t.TypeAlias = t.Callable[
+    [str, t.Any, str | list[str]], SchemaError | None | t.Any
+]
 
 class Hook(Schema):
     key: Schema
@@ -149,7 +147,7 @@ class Literal:
 
 class Const(Schema): ...
 
-OpsType = Schema | And | Or | Use | Optional | Regex | Literal | Const
-AcceptedDictType = dict[str | OpsType, t.Any]
-_CallableLike = FunctionType | BuiltinFunctionType | t.Callable[..., t.Any]
-_SchemaLike = _CallableLike | OpsType | AcceptedDictType
+OpsType: t.TypeAlias = Schema | And | Or | Use | Optional | Regex | Literal | Const
+AcceptedDictType: t.TypeAlias = dict[str | OpsType, t.Any]
+_CallableLike: t.TypeAlias = FunctionType | BuiltinFunctionType | t.Callable[..., t.Any]
+_SchemaLike: t.TypeAlias = _CallableLike | OpsType | AcceptedDictType

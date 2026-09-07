@@ -6,16 +6,16 @@ from bentoml_cli.env_manager import remove_env_arg
 
 testdata = [
     (
-        "bentoml serve --env conda iris_classifier".split(),
-        "bentoml serve iris_classifier".split(),
+        ["bentoml", "serve", "--env", "conda", "iris_classifier"],
+        ["bentoml", "serve", "iris_classifier"],
     ),
     (
-        "bentoml serve --env=conda iris_classifier".split(),
-        "bentoml serve iris_classifier".split(),
+        ["bentoml", "serve", "--env=conda", "iris_classifier"],
+        ["bentoml", "serve", "iris_classifier"],
     ),
     (
-        "bentoml serve --env=conda env_conda_bento".split(),
-        "bentoml serve env_conda_bento".split(),
+        ["bentoml", "serve", "--env=conda", "env_conda_bento"],
+        ["bentoml", "serve", "env_conda_bento"],
     ),
 ]
 

@@ -125,11 +125,11 @@ For detailed explanations, read the [Hello World example](https://docs.bentoml.c
 
 ## Examples
 
-- LLMs: [Llama 3.2](https://github.com/bentoml/BentoVLLM/tree/main/llama3.2-11b-vision-instruct), [Mistral](https://github.com/bentoml/BentoVLLM/tree/main/ministral-8b-instruct-2410), [DeepSeek Distil](https://github.com/bentoml/BentoVLLM/tree/main/deepseek-r1-distill-llama3.1-8b-tool-calling), and more.
-- Image Generation: [Stable Diffusion 3 Medium](https://github.com/bentoml/BentoDiffusion/tree/main/sd3-medium), [Stable Video Diffusion](https://github.com/bentoml/BentoDiffusion/tree/main/svd), [Stable Diffusion XL Turbo](https://github.com/bentoml/BentoDiffusion/tree/main/sdxl-turbo), [ControlNet](https://github.com/bentoml/BentoDiffusion/tree/main/controlnet), and [LCM LoRAs](https://github.com/bentoml/BentoDiffusion/tree/main/lcm).
+- LLMs: [DeepSeek R1 Distill of Llama 3.3 70B](https://github.com/bentoml/BentoVLLM/tree/main/deepseek-r1-llama3.3-70b), [Llama 4 Scout](https://github.com/bentoml/BentoVLLM/tree/main/llama4-17b-scout-instruct), [Qwen3 8B](https://github.com/bentoml/BentoVLLM/tree/main/qwen3-8b), and more.
+- Image Generation: [Stable Diffusion 3.5 Large Turbo](https://github.com/bentoml/BentoDiffusion/tree/main/sd3.5-large-turbo), [Stable Diffusion 3 Medium](https://github.com/bentoml/BentoDiffusion/tree/main/sd3-medium), [Stable Diffusion XL Turbo](https://github.com/bentoml/BentoDiffusion/tree/main/sdxl-turbo), [ControlNet](https://github.com/bentoml/BentoDiffusion/tree/main/controlnet), and more.
 - Embeddings: [SentenceTransformers](https://github.com/bentoml/BentoSentenceTransformers) and [ColPali](https://github.com/bentoml/BentoColPali)
 - Audio: [ChatTTS](https://github.com/bentoml/BentoChatTTS), [XTTS](https://github.com/bentoml/BentoXTTS), [WhisperX](https://github.com/bentoml/BentoWhisperX), [Bark](https://github.com/bentoml/BentoBark)
-- Computer Vision: [YOLO](https://github.com/bentoml/BentoYolo) and [ResNet](https://github.com/bentoml/BentoResnet)
+- Computer Vision: [ResNet](https://github.com/bentoml/BentoResnet), [EasyOCR](https://github.com/bentoml/BentoOCR), and more in the [BentoML gallery](https://github.com/bentoml/gallery)
 - Advanced examples: [Function calling](https://github.com/bentoml/BentoFunctionCalling), [LangGraph](https://github.com/bentoml/BentoLangGraph), [CrewAI](https://github.com/bentoml/BentoCrewAI)
 
 Check out the [full list](https://docs.bentoml.com/en/latest/examples/overview.html) for more sample code and usage.

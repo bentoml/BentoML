@@ -196,6 +196,13 @@ You can perform the following operations on models by using the BentoML CLI.
             pip install fs-s3fs  *# Additional dependency required for working with s3*
             bentoml models export summarization-model:latest s3://my_bucket/my_prefix/
 
+        The ``s3://`` scheme works with Amazon S3 and with any S3-compatible object store, such as Backblaze B2, Cloudflare R2 and MinIO. Set the standard ``AWS_ENDPOINT_URL`` environment variable to point the Model Store at a non-AWS endpoint.
+
+        .. code-block:: bash
+
+            export AWS_ENDPOINT_URL=https://your-s3-endpoint.example.com
+            bentoml models export summarization-model:latest s3://my_bucket/my_prefix/
+
     .. tab-item:: Pull/Push
 
         `BentoCloud <https://cloud.bentoml.com/>`_ provides a centralized model repository with flexible APIs and a web console for managing all models created by your team. After you :doc:`log in to BentoCloud </scale-with-bentocloud/manage-api-tokens>`, use ``bentoml models push`` and ``bentoml models pull`` to upload your models to and download them from BentoCloud:

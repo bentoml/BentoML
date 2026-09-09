@@ -211,9 +211,9 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
                         **error_responses,
                     },
                     "tags": [APP_TAG.name],
-                    "x-bentoml-name": f"{api.name}_retry",
+                    "x-bentoml-name": f"{api.name}_cancel",
                     "description": f"Cancel an in-progress task of {api.name}",
-                    "operationId": f"{svc.name}__{api.name}_retry",
+                    "operationId": f"{svc.name}__{api.name}_cancel",
                     "parameters": [
                         {
                             "name": "task_id",

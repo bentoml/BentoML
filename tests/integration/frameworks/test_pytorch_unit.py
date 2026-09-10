@@ -3,8 +3,20 @@ from __future__ import annotations
 import pytest
 import torch
 
+import bentoml
+from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.frameworks.pytorch import PyTorchTensorContainer
+from bentoml._internal.models import ModelStore
 from bentoml._internal.runner.container import AutoContainer
+
+
+class _Net(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.fc = torch.nn.Linear(4, 2)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.fc(x)
 
 
 @pytest.mark.parametrize("batch_axis", [0, 1])
@@ -39,3 +51,22 @@ def test_pytorch_container(batch_axis: int):
         AutoContainer.from_payload(AutoContainer.to_payload(one_batch, batch_dim=0))
         == one_batch
     ).all()
+
+
+def test_load_model_defaults_to_weights_only_false(tmp_path):
+    # Regression test for #5365: PyTorch >= 2.6 defaults `torch.load` to
+    # `weights_only=True`, which cannot unpickle the whole-model artifact that
+    # `save_model` writes via cloudpickle. `load_model` must default to
+    # `weights_only=False` so a trusted, BentoML-produced model loads correctly,
+    # while still honoring an explicit override passed by the caller.
+    BentoMLContainer.model_store.set(ModelStore(str(tmp_path)))
+    try:
+        saved = bentoml.pytorch.save_model("weights_only_model", _Net())
+
+        loaded = bentoml.pytorch.load_model(saved)
+        assert isinstance(loaded, torch.nn.Module)
+
+        with pytest.raises(Exception):
+            bentoml.pytorch.load_model(saved, weights_only=True)
+    finally:
+        BentoMLContainer.model_store.reset()

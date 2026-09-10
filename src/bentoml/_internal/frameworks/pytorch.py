@@ -77,6 +77,13 @@ def load_model(
         )
 
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
+    # `save_model` serializes the whole model object (not just a state dict) via
+    # `torch.load`'s pickle path, so it must be loaded with `weights_only=False`.
+    # PyTorch >= 2.6 flipped the default to `weights_only=True`, which cannot
+    # unpickle arbitrary classes and breaks loading. The model store is a trusted,
+    # BentoML-produced artifact, so default to `weights_only=False` while still
+    # allowing the caller to override it through `torch_load_args`.
+    torch_load_args.setdefault("weights_only", False)
     with Path(weight_file).open("rb") as file:
         model: "torch.nn.Module" = torch.load(
             file, map_location=device_id, **torch_load_args

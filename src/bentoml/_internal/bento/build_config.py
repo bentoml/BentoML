@@ -443,6 +443,11 @@ class PythonOptions:
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
     )
+    pylock_toml: t.Optional[str] = attr.field(
+        default=None,
+        validator=attr.validators.optional(attr.validators.instance_of(str)),
+    )
+
     packages: t.Optional[t.List[str]] = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
@@ -493,7 +498,7 @@ class PythonOptions:
             )
 
     def is_empty(self) -> bool:
-        return not self.requirements_txt and not self.packages
+        return not self.requirements_txt and not self.packages and not self.pylock_toml
 
     @property
     def _jinja_environment(self) -> jinja2.Environment:
@@ -531,6 +536,11 @@ class PythonOptions:
             for whl_file in self.wheels:  # pylint: disable=not-an-iterable
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
                 shutil.copy2(whl_file, wheels_folder)
+
+        # Move over pylock.toml if specified
+        if self.pylock_toml is not None:
+            pylock_path = resolve_user_filepath(self.pylock_toml, build_ctx)
+            shutil.copy2(pylock_path, py_folder / "pylock.toml")
 
         pip_compile_compat: list[str] = []
         if self.index_url:

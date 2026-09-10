@@ -31,6 +31,11 @@ Load models
 Manage models
 -------------
 
+.. autoclass:: bentoml.Model
+    :members: tag, info, custom_objects, creation_time, path, path_of, file_size, save, from_path, import_from, export, to_runner, to_runnable, load_model, with_options
+    :inherited-members:
+    :show-inheritance:
+
 .. autofunction:: bentoml.models.create
 .. autofunction:: bentoml.models.list
 .. autofunction:: bentoml.models.get

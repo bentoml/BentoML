@@ -26,6 +26,7 @@ from bentoml._internal.container import BentoMLContainer
 from bentoml._internal.marshal.dispatcher import CorkDispatcher
 from bentoml._internal.resource import system_resources
 from bentoml._internal.server.base_app import BaseAppFactory
+from bentoml._internal.server.http.traffic import TimeoutMiddleware
 from bentoml._internal.server.http_app import log_exception
 from bentoml._internal.types import LazyType
 from bentoml._internal.utils import is_async_callable
@@ -190,6 +191,8 @@ class ServiceAppFactory(BaseAppFactory):
             self.service.mount_asgi_app(create_proxy_app(self.service), name="proxy")
 
         for mount_app, path, name in self.service.mount_apps:
+            if self.timeout is not None:
+                mount_app = TimeoutMiddleware(mount_app, timeout=self.timeout)
             app.router.routes.append(PassiveMount(path, mount_app, name=name))
 
         if self.is_main:

@@ -44,7 +44,7 @@ def load_model(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag:
+        bentoml_model:
             Tag of a saved model in BentoML local modelstore.
         device_id:
             Optional devices to put the given model on. Refer to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device

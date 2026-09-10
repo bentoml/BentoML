@@ -100,7 +100,6 @@ class OCIBuilder:
         Initialize the OCI builder.
 
         Args:
-            backend: The name of the OCI builder.
             env: Environment variables to be passed to the OCI builder.
             enable_buildkit: Whether to enable BuildKit support for given OCI builder.
             build_cmd: The build command to be used by the OCI builder, minus the backend name.

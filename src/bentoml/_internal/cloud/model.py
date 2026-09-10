@@ -526,7 +526,7 @@ class ModelAPI:
         """Get a model from the remote model store
 
         Args:
-            tag: The tag of the model to get
+            name: The tag of the model to get
 
         Returns:
             The model

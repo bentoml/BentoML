@@ -58,6 +58,34 @@ def is_http_url(url: str) -> bool:
 
 original_create_connection = None
 
+# RFC 6598 Shared Address Space (CGNAT), e.g. used for carrier-grade NAT and internal
+# cloud load balancers. Not classified as private/loopback/link-local/reserved by
+# ipaddress, so it must be checked explicitly (GHSA-mrmq-3q62-6cc8 follow-up).
+_CGNAT_NETWORK = ipaddress.ip_network("100.64.0.0/10")
+
+
+def is_unsafe_address(
+    ip: "ipaddress.IPv4Address | ipaddress.IPv6Address",
+) -> bool:
+    """Whether `ip` must be blocked from outbound connections initiated by BentoML
+    (e.g. when fetching a user-supplied URL). Covers private, loopback, link-local,
+    and reserved ranges, plus the IPv4 CGNAT range which `ipaddress` does not
+    classify as any of the above."""
+    # Canonicalize IPv4-mapped IPv6 addresses (e.g. ::ffff:100.64.1.1) to their
+    # embedded IPv4 form before checking. `is_private`/`is_loopback`/etc already
+    # see through the mapping on CPython >= 3.10, but the CGNAT range below is a
+    # manual membership check that doesn't, so a mapped CGNAT address would
+    # otherwise slip past this guard.
+    if ip.version == 6 and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
+    return bool(
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or (ip.version == 4 and ip in _CGNAT_NETWORK)
+    )
+
 
 @contextlib.contextmanager
 def make_safe_connect():
@@ -91,7 +119,7 @@ def make_safe_connect():
             except ValueError:
                 raise socket.gaierror(f"Blocked invalid IP address {host}")
             else:
-                if ip.is_private or ip.is_loopback or ip.is_link_local:
+                if is_unsafe_address(ip):
                     raise socket.gaierror(f"Blocked private IP address {host}")
         return await original_create_connection(
             self, protocol_factory, host=host, port=port, **kwargs

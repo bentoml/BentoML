@@ -776,11 +776,25 @@ def _model_spec_structure_hook(
 
 EnvStage = t.Literal["all", "build", "runtime"]
 
+# POSIX env-var name (IEEE Std 1003.1, section 3.231): starts with letter or
+# underscore, followed by letters, digits, or underscores. Catching malformed
+# names at parse time gives a clear bentofile error and is defense-in-depth
+# on CVE-2026-44346, where Dockerfile command injection via envs[*].name was
+# fixed at template render time via shell-quote.
+_POSIX_ENV_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _validate_posix_env_name(instance: t.Any, attribute: t.Any, value: str) -> None:
+    if not _POSIX_ENV_NAME_RE.match(value):
+        raise ValueError(
+            f"envs[*].name {value!r} must match {_POSIX_ENV_NAME_RE.pattern} (POSIX env-var)"
+        )
+
 
 @attr.define(eq=True)
 class BentoEnvSchema:
     __forbid_extra_keys__ = False
-    name: str
+    name: str = attr.field(validator=_validate_posix_env_name)
     value: str = ""
     stage: EnvStage = attr.field(
         default="all",

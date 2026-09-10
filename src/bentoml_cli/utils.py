@@ -514,6 +514,8 @@ def set_build_args_from_file(ctx: Context, param: Parameter, value: str) -> None
             data = yaml.safe_load(f)
         except yaml.YAMLError as e:
             raise click.BadParameter(f"Invalid YAML file: {value}") from e
+    if not isinstance(data, dict):
+        raise click.BadParameter("Argument file must contain a YAML mapping")
     set_arguments(data, override=False)
 
 

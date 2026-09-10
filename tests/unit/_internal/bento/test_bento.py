@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 from __future__ import annotations
 
+import io
 import os
 import posixpath
 from datetime import datetime
@@ -375,3 +376,82 @@ def test_build_bento_with_args():
     )
     BentoMLContainer.bento_arguments.reset()
     assert bento.info.args == {"label": "awesome"}
+
+
+def test_from_yaml_file_missing_name_and_version_raises():
+    """from_yaml_file should raise BentoMLException when name/version are missing
+    and no fallback tag is provided."""
+    from bentoml.exceptions import BentoMLException
+
+    yaml_content = """\
+service: "service:svc"
+bentoml_version: "1.1.1"
+creation_time: '2024-07-26T17:03:11.523664+00:00'
+labels: {}
+models: []
+runners: []
+apis: []
+docker:
+  distro: debian
+  python_version: '3.11'
+python:
+  requirements_txt: null
+conda:
+  environment_yml: null
+"""
+    stream = io.StringIO(yaml_content)
+    with pytest.raises(BentoMLException, match="Missing required field"):
+        BaseBentoInfo.from_yaml_file(stream)
+
+
+def test_from_yaml_file_missing_name_and_version_with_fallback_tag():
+    """from_yaml_file should use the fallback tag when name/version are missing."""
+    yaml_content = """\
+service: "service:svc"
+bentoml_version: "1.1.1"
+creation_time: '2024-07-26T17:03:11.523664+00:00'
+labels: {}
+models: []
+runners: []
+apis: []
+docker:
+  distro: debian
+  python_version: '3.11'
+python:
+  requirements_txt: null
+conda:
+  environment_yml: null
+"""
+    fallback_tag = Tag("myservice", "abc123")
+    stream = io.StringIO(yaml_content)
+    info = BaseBentoInfo.from_yaml_file(stream, tag=fallback_tag)
+    assert info.tag == fallback_tag
+    assert info.name == "myservice"
+    assert info.version == "abc123"
+
+
+def test_from_yaml_file_missing_only_version_raises():
+    """from_yaml_file should raise BentoMLException when version is missing
+    and no fallback tag is provided."""
+    from bentoml.exceptions import BentoMLException
+
+    yaml_content = """\
+service: "service:svc"
+name: myservice
+bentoml_version: "1.1.1"
+creation_time: '2024-07-26T17:03:11.523664+00:00'
+labels: {}
+models: []
+runners: []
+apis: []
+docker:
+  distro: debian
+  python_version: '3.11'
+python:
+  requirements_txt: null
+conda:
+  environment_yml: null
+"""
+    stream = io.StringIO(yaml_content)
+    with pytest.raises(BentoMLException, match="Missing required field.*version"):
+        BaseBentoInfo.from_yaml_file(stream)

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from _bentoml_impl.docker import generate_dockerfile as generate_v2_dockerfile
+from bentoml._internal.bento.bento import ImageInfo
+from bentoml._internal.bento.build_config import BentoEnvSchema
 from bentoml._internal.bento.build_config import CondaOptions
 from bentoml._internal.bento.build_config import DockerOptions
 from bentoml._internal.container.generate import build_environment
@@ -19,6 +22,51 @@ def test_build_environment_registers_normalize_line_filter() -> None:
     assert environment.filters["normalize_line"]("  python:3.11-slim\n  ") == (
         "python:3.11-slim"
     )
+
+
+def test_generate_containerfile_env_dict_collapses_newlines(tmp_path) -> None:
+    dockerfile = generate_containerfile(
+        DockerOptions(
+            distro="debian",
+            python_version="3.11",
+            env={"X": "a\nRUN echo PWNED\n"},
+        ),
+        str(tmp_path),
+        conda=CondaOptions(),
+        bento_fs=tmp_path,
+    )
+
+    # the value stays on the quoted ARG line instead of injecting an instruction
+    assert "ARG X='a RUN echo PWNED'" in dockerfile
+    assert "\nRUN echo PWNED" not in dockerfile
+
+
+def test_generate_v2_containerfile_env_collapses_newlines(tmp_path) -> None:
+    dockerfile = generate_v2_dockerfile(
+        ImageInfo(base_image="python:3.11-slim", python_version="3.11"),
+        tmp_path,
+        envs=[BentoEnvSchema(name="X", value="a\nRUN echo PWNED\n")],
+        command="true",
+    )
+
+    assert "ARG X='a RUN echo PWNED'" in dockerfile
+    assert "\nRUN echo PWNED" not in dockerfile
+
+
+def test_docker_options_env_preserves_value_whitespace() -> None:
+    options = DockerOptions(
+        env={
+            "JAVA_OPTS": "-Xmx1g  -Xms512m",
+            "PEM": "  indented value  ",
+            "TABBED": "a\tb",
+        },
+    )
+
+    assert options.env == {
+        "JAVA_OPTS": "-Xmx1g  -Xms512m",
+        "PEM": "  indented value  ",
+        "TABBED": "a\tb",
+    }
 
 
 def test_generate_containerfile_quotes_system_packages(tmp_path) -> None:

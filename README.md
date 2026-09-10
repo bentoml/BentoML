@@ -129,7 +129,7 @@ For detailed explanations, read the [Hello World example](https://docs.bentoml.c
 - Image Generation: [Stable Diffusion 3 Medium](https://github.com/bentoml/BentoDiffusion/tree/main/sd3-medium), [Stable Video Diffusion](https://github.com/bentoml/BentoDiffusion/tree/main/svd), [Stable Diffusion XL Turbo](https://github.com/bentoml/BentoDiffusion/tree/main/sdxl-turbo), [ControlNet](https://github.com/bentoml/BentoDiffusion/tree/main/controlnet), and [LCM LoRAs](https://github.com/bentoml/BentoDiffusion/tree/main/lcm).
 - Embeddings: [SentenceTransformers](https://github.com/bentoml/BentoSentenceTransformers) and [ColPali](https://github.com/bentoml/BentoColPali)
 - Audio: [ChatTTS](https://github.com/bentoml/BentoChatTTS), [XTTS](https://github.com/bentoml/BentoXTTS), [WhisperX](https://github.com/bentoml/BentoWhisperX), [Bark](https://github.com/bentoml/BentoBark)
-- Computer Vision: [YOLO](https://github.com/bentoml/BentoYolo) and [ResNet](https://github.com/bentoml/BentoResnet)
+- Computer Vision: [ResNet](https://github.com/bentoml/BentoResnet)
 - Advanced examples: [Function calling](https://github.com/bentoml/BentoFunctionCalling), [LangGraph](https://github.com/bentoml/BentoLangGraph), [CrewAI](https://github.com/bentoml/BentoCrewAI)
 
 Check out the [full list](https://docs.bentoml.com/en/latest/examples/overview.html) for more sample code and usage.

@@ -4,6 +4,7 @@ Annotates requests with human presence score via X-Trust header.
 Zero KYC, zero PII. Doctrine AIR: annotate, never block.
 github.com/htl-syterme/htl-core
 """
+
 import base64
 import hashlib
 import hmac

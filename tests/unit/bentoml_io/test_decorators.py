@@ -173,3 +173,15 @@ def test_api_root_input_illegal():
         @bentoml.api
         def root_input(_, name: str, /, age: int) -> str:
             return name
+
+
+def test_from_output_bare_iterator():
+    import typing as t
+    from _bentoml_sdk.io_models import IODescriptor
+
+    def my_stream_fn() -> t.Iterator:
+        yield 1
+
+    output = IODescriptor.from_output(my_stream_fn)
+    assert output is not None
+

@@ -177,6 +177,7 @@ def test_api_root_input_illegal():
 
 def test_from_output_bare_iterator():
     import typing as t
+
     from _bentoml_sdk.io_models import IODescriptor
 
     def my_stream_fn() -> t.Iterator:
@@ -184,4 +185,3 @@ def test_from_output_bare_iterator():
 
     output = IODescriptor.from_output(my_stream_fn)
     assert output is not None
-

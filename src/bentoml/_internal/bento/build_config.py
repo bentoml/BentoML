@@ -57,7 +57,7 @@ def _convert_python_version(py_version: str | None) -> str | None:
     if not isinstance(py_version, str):
         py_version = str(py_version)
 
-    match = re.match(r"^(\d{1})\.(\d{,2})(?:\.\w+)?$", py_version)
+    match = re.match(r"^(\d{1})\.(\d{1,2})(?:\.\w+)?$", py_version)
     if match is None:
         raise InvalidArgument(
             f'Invalid build option: docker.python_version="{py_version}", python '

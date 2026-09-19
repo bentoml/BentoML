@@ -57,3 +57,26 @@ def test_load_multi_service_module():
         ImportServiceError, match="Multiple `bentoml.Service` instances found in module"
     ):
         import_service("multi_service_in_package")
+
+
+def test_import_service_outside_working_dir(tmp_path):
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+    app_other = tmp_path / "app_other"
+    app_other.mkdir()
+
+    service_file = app_other / "service.py"
+    service_file.write_text("import bentoml\n")
+
+    with pytest.raises(ImportServiceError, match="not found in working directory"):
+        import_service(str(service_file), working_dir=str(app_dir))
+
+
+def test_import_service_invalid_extension(tmp_path):
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+    text_file = app_dir / "service.txt"
+    text_file.write_text("import bentoml\n")
+
+    with pytest.raises(ImportServiceError, match='Invalid module extension ".txt"'):
+        import_service(str(text_file), working_dir=str(app_dir))

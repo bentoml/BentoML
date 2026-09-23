@@ -9,6 +9,7 @@ import subprocess
 import sys
 import typing as t
 from pathlib import Path
+from pathlib import PurePosixPath
 from sys import version_info
 
 import attr
@@ -996,12 +997,23 @@ class BentoPathSpec:
                 )
         return recurse_exclude_spec
 
+    def _in_virtualenv(self, path: str) -> bool:
+        # PEP 405: venv, virtualenv and uv all write pyvenv.cfg at the env root, so
+        # this catches virtualenvs under any name, not just the ones in ``extra``.
+        # ponytail: O(depth) stats per file, no cache; add one if profiling says so.
+        parts = PurePosixPath(path).parent.parts
+        return any(
+            os.path.isfile(os.path.join(self.ctx_dir, *parts[:i], "pyvenv.cfg"))
+            for i in range(1, len(parts) + 1)
+        )
+
     def includes(self, path: str) -> bool:
         """Determine whether a path is included or not."""
         to_include = (
             self.include.match_file(path)
             and not self.exclude.match_file(path)
             and not self.extra.match_file(path)
+            and not self._in_virtualenv(path)
         )
         if to_include:
             return not any(

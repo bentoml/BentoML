@@ -53,8 +53,10 @@ class ErroringService:
         return x
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def client() -> TestClient:
+    # function-scoped on purpose: to_asgi() swaps the global config, and the
+    # plugin's autouse reset fixture only restores it around function scope
     with TestClient(app=ErroringService.to_asgi()) as c:
         yield c
 

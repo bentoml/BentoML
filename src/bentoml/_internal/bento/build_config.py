@@ -996,12 +996,28 @@ class BentoPathSpec:
                 )
         return recurse_exclude_spec
 
+    def _in_virtualenv(self, path: str) -> bool:
+        # PEP 405: venv, virtualenv and uv all write pyvenv.cfg at the env root, next
+        # to bin/ (Scripts/ on Windows), so this catches virtualenvs under any name,
+        # not just the ones in ``extra``. A pyvenv.cfg on its own is user payload.
+        # ponytail: O(depth) stats per file, no cache; add one if profiling says so.
+        parts = Path(path).parent.parts
+        roots = (
+            os.path.join(self.ctx_dir, *parts[:i]) for i in range(1, len(parts) + 1)
+        )
+        return any(
+            os.path.isfile(os.path.join(root, "pyvenv.cfg"))
+            and any(os.path.isdir(os.path.join(root, d)) for d in ("bin", "Scripts"))
+            for root in roots
+        )
+
     def includes(self, path: str) -> bool:
         """Determine whether a path is included or not."""
         to_include = (
             self.include.match_file(path)
             and not self.exclude.match_file(path)
             and not self.extra.match_file(path)
+            and not self._in_virtualenv(path)
         )
         if to_include:
             return not any(

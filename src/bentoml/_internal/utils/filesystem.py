@@ -142,27 +142,26 @@ def resolve_user_filepath(
     * be a relative path base on ctx dir
     * contain leading "~" for HOME directory
     * contain environment variables such as "$HOME/workspace"
-    """
-    # Return if filepath exist after expanduser
 
+    In secure mode, paths must stay within ctx (or cwd when ctx is not provided).
+    """
+    base_dir = Path(os.path.expanduser(ctx) if ctx else os.getcwd()).resolve()
     _path = Path(os.path.expanduser(os.path.expandvars(filepath)))
 
     # Try finding file in ctx if provided
     if not _path.is_absolute():
-        ctx = os.path.expanduser(ctx) if ctx else os.getcwd()
-        _path = Path(ctx).joinpath(_path)
+        _path = base_dir.joinpath(_path)
     elif secure:
         raise ValueError(f"Absolute path {filepath} is not allowed")
     _path = _path.resolve()
     if not _path.exists():
         raise FileNotFoundError(f"file {filepath} not found")
     if secure:
-        cwd = Path().resolve()
-        if not _path.is_relative_to(cwd):
+        if not _path.is_relative_to(base_dir):
             raise ValueError(
-                f"Accessing file outside of current working directory is not allowed: {_path}"
+                f"Accessing file outside of build context is not allowed: {_path}"
             )
-        if any(part.startswith(".") for part in _path.parts):
+        if any(part.startswith(".") for part in _path.relative_to(base_dir).parts):
             raise ValueError(f"Accessing hidden files is not allowed: {_path}")
         if any(_path.is_relative_to(item) for item in ("/etc", "/proc")):
             raise ValueError(f"Accessing system files is not allowed: {_path}")

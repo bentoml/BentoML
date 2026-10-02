@@ -64,3 +64,28 @@ def test_generate_containerfile_normalizes_custom_base_image(tmp_path) -> None:
 
     assert "FROM python:3.11-slim RUN touch /tmp/pwned as base-container" in dockerfile
     assert "\nRUN touch /tmp/pwned" not in dockerfile
+
+
+def test_custom_template_in_build_context_outside_cwd(tmp_path, monkeypatch) -> None:
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    build_ctx = tmp_path / ".cache" / "bento"
+    build_ctx.mkdir(parents=True)
+    (build_ctx / "Dockerfile.template").write_text(
+        "{% extends bento_base_template %}\n"
+        "{% block SETUP_BENTO_COMPONENTS %}\n"
+        "{{ super() }}\nRUN echo custom-template\n{% endblock %}\n"
+    )
+
+    dockerfile = generate_containerfile(
+        DockerOptions(
+            base_image="python:3.11-slim", dockerfile_template="Dockerfile.template"
+        ),
+        str(build_ctx),
+        conda=CondaOptions(),
+        bento_fs=build_ctx,
+    )
+
+    assert "RUN echo custom-template" in dockerfile
+    assert "FROM python:3.11-slim" in dockerfile

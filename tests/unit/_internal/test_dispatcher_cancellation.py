@@ -173,3 +173,54 @@ async def test_cancelling_inflight_request_preserves_other_batch_results():
     await outbound
     assert await second == "second"
     assert not dispatcher._sema.is_locked()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("oldest_wait, shed_oldest", [(0.1, False), (0.9, True)])
+async def test_controller_sheds_using_live_jobs_after_discard(
+    monkeypatch, oldest_wait, shed_oldest
+):
+    dispatcher = CorkDispatcher(
+        1000, 2, fallback=lambda: None, get_batch_size=lambda _: 1
+    )
+    dispatched = asyncio.Event()
+    batches = []
+
+    async def skip_training(*args):
+        pass
+
+    async def callback(inputs):
+        batches.append(inputs)
+        dispatched.set()
+        return inputs
+
+    dispatcher(callback)
+    dispatcher.train_optimizer = skip_training
+    dispatcher.optimizer.o_a = 0.1
+    dispatcher.optimizer.o_b = 0
+    dispatcher.optimizer.wait = 0
+    monkeypatch.setattr(
+        "bentoml._internal.marshal.dispatcher.time.time", lambda: 1000.0
+    )
+    loop = asyncio.get_running_loop()
+    dead = Job(990.0, "dead", loop.create_future())
+    oldest = Job(1000.0 - oldest_wait, "oldest", loop.create_future())
+    newest = Job(999.95, "newest", loop.create_future())
+    dead.future.cancel()
+    dispatcher._queue.extend((dead, oldest, newest))
+    controller = asyncio.create_task(dispatcher.controller())
+    try:
+        await asyncio.wait_for(dispatched.wait(), timeout=2)
+        assert await asyncio.wait_for(newest.future, timeout=2) == "newest"
+        if shed_oldest:
+            assert oldest.future.cancelled()
+            assert batches == [("newest",)]
+        else:
+            assert await oldest.future == "oldest"
+            assert batches == [("oldest", "newest")]
+        assert dead.future.cancelled()
+        assert not dispatcher._queue
+        assert not dispatcher._sema.is_locked()
+    finally:
+        controller.cancel()
+        await asyncio.gather(controller, return_exceptions=True)

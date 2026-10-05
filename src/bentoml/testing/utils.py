@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from starlette.datastructures import Headers
 
 
-async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":
+async def parse_multipart_form(headers: Headers, body: bytes) -> FormData:
     """
     parse starlette forms from headers and body
     """

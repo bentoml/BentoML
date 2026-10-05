@@ -3,8 +3,6 @@ from __future__ import annotations
 import io
 import json
 from typing import TYPE_CHECKING
-from typing import Dict
-from typing import Tuple
 
 import numpy as np
 import pytest
@@ -220,7 +218,7 @@ async def test_image(host: str, img_file: str):
 
 
 @pytest.fixture(name="img_form_data")
-def fixture_img_form_data(img_file: str) -> Dict[str, Tuple[str, bytes, str]]:
+def fixture_img_form_data(img_file: str) -> dict[str, tuple[str, bytes, str]]:
     with open(img_file, "rb") as f1, open(img_file, "rb") as f2:
         files = {
             "original": (img_file, f1.read(), "image/bmp"),
@@ -231,7 +229,7 @@ def fixture_img_form_data(img_file: str) -> Dict[str, Tuple[str, bytes, str]]:
 
 @pytest.mark.asyncio
 async def test_multipart_image_io(
-    host: str, img_form_data: Dict[str, Tuple[str, bytes, str]]
+    host: str, img_form_data: dict[str, tuple[str, bytes, str]]
 ):
     from starlette.datastructures import UploadFile
 
@@ -252,7 +250,7 @@ async def test_multipart_image_io(
 
 @pytest.mark.asyncio
 async def test_multipart_different_args(
-    host: str, img_form_data: Dict[str, Tuple[str, bytes, str]]
+    host: str, img_form_data: dict[str, tuple[str, bytes, str]]
 ):
     async with await AsyncHTTPClient.from_url(f"http://{host}") as client:
         response = await client.client.post(

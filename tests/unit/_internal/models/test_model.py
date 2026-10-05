@@ -81,7 +81,7 @@ class ModelOptions(InternalModelOptions):
 
 
 @pytest.mark.usefixtures("change_test_dir")
-def test_model_info(tmpdir: "Path"):
+def test_model_info(tmpdir: Path):
     start = datetime.now(timezone.utc)
     modelinfo_a = ModelInfo(
         tag=Tag("tag"),
@@ -218,7 +218,7 @@ def test_model_equal(bento_model):
     assert eq_to_b.__hash__() == bento_model.__hash__()
 
 
-def test_model_export_import(bento_model, tmp_path: "Path"):
+def test_model_export_import(bento_model, tmp_path: Path):
     # note: these tests rely on created models having a system path
     sys_written_path = bento_model.path_of("sys_written/file")
     assert sys_written_path == os.path.join(bento_model.path, "sys_written", "file")
@@ -257,7 +257,7 @@ def test_model_export_import(bento_model, tmp_path: "Path"):
     assert repr(from_fs_model) == f'Model(tag="{bento_model.tag}", path="{save_path}")'
 
 
-def test_load_bad_model(tmp_path: "Path"):
+def test_load_bad_model(tmp_path: Path):
     tmp_path.joinpath("nonexistent").mkdir(parents=True, exist_ok=True)
     with pytest.raises(BentoMLException):
         Model.from_path(os.path.join(tmp_path, "nonexistent"))

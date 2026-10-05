@@ -1,11 +1,11 @@
-from typing import Generator
+from collections.abc import Generator
+from typing import Annotated
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pytest
 from starlette.testclient import TestClient
-from typing_extensions import Annotated
 
 import bentoml
 from _bentoml_sdk.validators import TensorSchema

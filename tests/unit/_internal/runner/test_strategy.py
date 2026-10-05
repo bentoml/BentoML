@@ -27,7 +27,7 @@ class MultiThreadRunnable(bentoml.legacy.Runnable):
     SUPPORTS_CPU_MULTI_THREADING = True
 
 
-def unvalidated_get_resource(x: t.Dict[str, t.Any], y: str):
+def unvalidated_get_resource(x: dict[str, t.Any], y: str):
     return get_resource(x, y, validate=False)
 
 

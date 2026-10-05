@@ -32,7 +32,7 @@ except ImportError:  # pragma: no cover
     )
 
 if t.TYPE_CHECKING:
-    import torch.nn as nn
+    from torch import nn
 
     from .. import external_typing as ext
     from ..models.model import ModelSignaturesType
@@ -40,7 +40,7 @@ else:
     nn = LazyLoader("nn", globals(), "torch.nn")
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get"]
+__all__ = ["get", "get_runnable", "load_model", "save_model"]
 
 MODULE_NAME = "bentoml.detectron"
 API_VERSION = "v1"
@@ -136,7 +136,7 @@ def save_model(
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
@@ -204,7 +204,7 @@ def save_model(
 
               predictor = DefaultPredictor(cloned)
               bento_model = bentoml.detectron2.save_model('mask_rcnn', predictor)
-    """  # noqa
+    """
     context = ModelContext(
         framework_name="detectron2",
         framework_versions={"detectron2": get_pkg_version("detectron2")},

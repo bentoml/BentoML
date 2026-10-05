@@ -68,8 +68,8 @@ class ServiceEnvConfig(t.TypedDict, total=False):
 
 
 def with_config(
-    func: t.Callable[t.Concatenate["Service[t.Any]", P], R],
-) -> t.Callable[t.Concatenate["Service[t.Any]", P], R]:
+    func: t.Callable[t.Concatenate[Service[t.Any], P], R],
+) -> t.Callable[t.Concatenate[Service[t.Any], P], R]:
     def wrapper(self: Service[t.Any], *args: P.args, **kwargs: P.kwargs) -> R:
         self.inject_config()
         return func(self, *args, **kwargs)
@@ -77,7 +77,7 @@ def with_config(
     return wrapper
 
 
-def convert_envs(envs: t.List[ServiceEnvConfig]) -> t.List[BentoEnvSchema]:
+def convert_envs(envs: list[ServiceEnvConfig]) -> list[BentoEnvSchema]:
     return [BentoEnvSchema(**env) for env in envs]
 
 
@@ -92,14 +92,14 @@ class Service(t.Generic[T_co]):
     name: str
     config: Config = attrs.field(factory=Config)
     inner: type[T_co] = _DummyService
-    image: t.Optional[Image] = None
-    description: t.Optional[str] = None
+    image: Image | None = None
+    description: str | None = None
     path_prefix: str = ""
-    envs: t.List[BentoEnvSchema] = attrs.field(factory=list, converter=convert_envs)
-    labels: t.Dict[str, str] = attrs.field(factory=dict)
+    envs: list[BentoEnvSchema] = attrs.field(factory=list, converter=convert_envs)
+    labels: dict[str, str] = attrs.field(factory=dict)
     models: list[Model[t.Any]] = attrs.field(factory=list)
-    cmd: t.Optional[t.List[str]] = None
-    bento: t.Optional[Bento] = attrs.field(init=False, default=None)
+    cmd: list[str] | None = None
+    bento: Bento | None = attrs.field(init=False, default=None)
     apis: dict[str, APIMethod[..., t.Any]] = attrs.field(factory=dict)
     dependencies: dict[str, Dependency[t.Any]] = attrs.field(factory=dict, init=False)
     mount_apps: list[tuple[ext.ASGIApp, str, str]] = attrs.field(
@@ -453,7 +453,7 @@ class Service(t.Generic[T_co]):
         rest_config = {
             k: main_config[k] for k in main_config if k not in api_server_keys
         }
-        existing = t.cast(t.Dict[str, t.Any], BentoMLContainer.config.get())
+        existing = t.cast(dict[str, t.Any], BentoMLContainer.config.get())
         deep_merge(existing, {"api_server": api_server_config, **rest_config})
         BentoMLContainer.config.set(existing)  # type: ignore
 

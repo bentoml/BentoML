@@ -7,6 +7,7 @@ import logging
 import pickle
 import posixpath
 import typing as t
+from typing import get_args
 from urllib.parse import unquote
 from urllib.parse import urlparse
 
@@ -14,7 +15,6 @@ import attrs
 from pydantic import BaseModel
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile
-from typing_extensions import get_args
 
 from _bentoml_sdk.typing_utils import is_list_type
 from _bentoml_sdk.typing_utils import is_union_type

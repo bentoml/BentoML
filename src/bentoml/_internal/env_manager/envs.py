@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
-import typing as t
 from abc import ABC
 from abc import abstractmethod
 from pathlib import Path
@@ -57,7 +56,7 @@ class Environment(ABC):
 
     @staticmethod
     def run_script_subprocess(
-        script_file_path: t.Union[str, os.PathLike[str]],
+        script_file_path: str | os.PathLike[str],
         capture_output: bool,
         debug_mode: bool,
     ):

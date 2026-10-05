@@ -77,8 +77,8 @@ def _convert_python_version(py_version: str | None) -> str | None:
 
 
 def _convert_cuda_version(
-    cuda_version: t.Optional[t.Union[str, int]],
-) -> t.Optional[str]:
+    cuda_version: str | int | None,
+) -> str | None:
     if cuda_version is None or cuda_version == "" or cuda_version == "None":
         return None
 
@@ -151,30 +151,30 @@ class DockerOptions:
     # always omit config values in case of default values got changed in future BentoML releases
     __omit_if_default__ = False
 
-    distro: t.Optional[str] = attr.field(
+    distro: str | None = attr.field(
         default=None,
         validator=attr.validators.optional(
             attr.validators.in_(CONTAINER_SUPPORTED_DISTROS)
         ),
     )
-    python_version: t.Optional[str] = attr.field(
+    python_version: str | None = attr.field(
         converter=_convert_python_version, default=None
     )
-    cuda_version: t.Optional[str] = attr.field(
+    cuda_version: str | None = attr.field(
         default=None,
         converter=_convert_cuda_version,
         validator=attr.validators.optional(
             attr.validators.in_(ALLOWED_CUDA_VERSION_ARGS)
         ),
     )
-    env: t.Optional[t.Union[str, t.List[str], t.Dict[str, str]]] = attr.field(
+    env: str | list[str] | dict[str, str] | None = attr.field(
         default=None,
         converter=_convert_env,
     )
-    system_packages: t.Optional[t.List[str]] = None
-    setup_script: t.Optional[str] = None
-    base_image: t.Optional[str] = None
-    dockerfile_template: t.Optional[str] = None
+    system_packages: list[str] | None = None
+    setup_script: str | None = None
+    base_image: str | None = None
+    dockerfile_template: str | None = None
 
     def __attrs_post_init__(self):
         if self.base_image is not None:
@@ -214,7 +214,7 @@ class DockerOptions:
         self, default_envs: list[BentoEnvSchema] | None = None
     ) -> DockerOptions:
         # Convert from user provided options to actual build options with default values
-        defaults: t.Dict[str, t.Any] = {}
+        defaults: dict[str, t.Any] = {}
 
         if self.base_image is None:
             if self.distro is None:
@@ -327,15 +327,15 @@ class CondaOptions:
     # no need to omit since BentoML has already handled the default values.
     __omit_if_default__ = False
 
-    environment_yml: t.Optional[str] = None
-    channels: t.Optional[t.List[str]] = attr.field(
+    environment_yml: str | None = None
+    channels: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    dependencies: t.Optional[DependencyType] = attr.field(
+    dependencies: DependencyType | None = attr.field(
         default=None, validator=attr.validators.optional(conda_dependencies_validator)
     )
-    pip: t.Optional[t.List[str]] = attr.field(
+    pip: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
@@ -439,45 +439,45 @@ class PythonOptions:
     # no need to omit since BentoML has already handled the default values.
     __omit_if_default__ = False
 
-    requirements_txt: t.Optional[str] = attr.field(
+    requirements_txt: str | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
     )
-    packages: t.Optional[t.List[str]] = attr.field(
+    packages: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    lock_packages: t.Optional[bool] = None
-    pack_git_packages: t.Optional[bool] = None
-    index_url: t.Optional[str] = attr.field(
+    lock_packages: bool | None = None
+    pack_git_packages: bool | None = None
+    index_url: str | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
     )
-    no_index: t.Optional[bool] = attr.field(
+    no_index: bool | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(bool)),
     )
-    trusted_host: t.Optional[t.List[str]] = attr.field(
+    trusted_host: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    find_links: t.Optional[t.List[str]] = attr.field(
+    find_links: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    extra_index_url: t.Optional[t.List[str]] = attr.field(
+    extra_index_url: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    pip_args: t.Optional[str] = attr.field(
+    pip_args: str | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
     )
-    wheels: t.Optional[t.List[str]] = attr.field(
+    wheels: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    is_src_layout: t.Optional[bool] = None
+    is_src_layout: bool | None = None
 
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
@@ -716,7 +716,7 @@ class PythonOptions:
             f.write(parsed_requirements.dumps(preserve_one_empty_line=True))
 
 
-def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:
+def _python_options_structure_hook(d: t.Any, _: type[PythonOptions]) -> PythonOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
     for field in ["trusted_host", "find_links", "extra_index_url"]:
         if field in d and isinstance(d[field], str):
@@ -733,7 +733,7 @@ if t.TYPE_CHECKING:
 
 
 def dict_options_converter(
-    options_type: t.Type[OptionsCls],
+    options_type: type[OptionsCls],
 ) -> t.Callable[[OptionsCls | dict[str, t.Any] | None], OptionsCls]:
     def _converter(value: OptionsCls | dict[str, t.Any] | None) -> OptionsCls:
         if value is None:
@@ -748,8 +748,8 @@ def dict_options_converter(
 @attr.frozen
 class ModelSpec:
     tag: str
-    filter: t.Optional[str] = None
-    alias: t.Optional[str] = None
+    filter: str | None = None
+    alias: str | None = None
 
     @classmethod
     def from_item(cls, item: str | dict[str, t.Any] | ModelSpec) -> ModelSpec:
@@ -769,7 +769,7 @@ def convert_models_config(
 
 
 def _model_spec_structure_hook(
-    d: str | dict[str, t.Any], cls: t.Type[ModelSpec]
+    d: str | dict[str, t.Any], cls: type[ModelSpec]
 ) -> ModelSpec:
     return cls.from_item(d)
 
@@ -807,11 +807,11 @@ class BentoBuildConfig:
     __omit_if_default__ = False
 
     service: str = ""
-    name: t.Optional[str] = None
-    description: t.Optional[str] = None
-    labels: t.Dict[str, str] = attr.field(factory=dict)
-    include: t.Optional[t.List[str]] = None
-    exclude: t.Optional[t.List[str]] = None
+    name: str | None = None
+    description: str | None = None
+    labels: dict[str, str] = attr.field(factory=dict)
+    include: list[str] | None = None
+    exclude: list[str] | None = None
     docker: DockerOptions = attr.field(
         default=None,
         converter=dict_options_converter(DockerOptions),
@@ -824,11 +824,9 @@ class BentoBuildConfig:
         default=None,
         converter=dict_options_converter(CondaOptions),
     )
-    models: t.List[ModelSpec] = attr.field(
-        factory=list, converter=convert_models_config
-    )
-    envs: t.List[BentoEnvSchema] = attr.field(factory=list)
-    args: t.Dict[str, t.Any] = attr.field(factory=dict)
+    models: list[ModelSpec] = attr.field(factory=list, converter=convert_models_config)
+    envs: list[BentoEnvSchema] = attr.field(factory=list)
+    args: dict[str, t.Any] = attr.field(factory=dict)
 
     def __attrs_post_init__(self) -> None:
         use_conda = not self.conda.is_empty()
@@ -895,7 +893,7 @@ class BentoBuildConfig:
         )
 
     @property
-    def model_aliases(self) -> t.Dict[str, str]:
+    def model_aliases(self) -> dict[str, str]:
         return {model.alias: model.tag for model in self.models if model.alias}
 
     @classmethod
@@ -1014,13 +1012,13 @@ class BentoPathSpec:
 
 class FilledBentoBuildConfig(BentoBuildConfig):
     service: str
-    name: t.Optional[str]
-    description: t.Optional[str]
-    labels: t.Dict[str, str]
-    include: t.List[str]
-    exclude: t.List[str]
+    name: str | None
+    description: str | None
+    labels: dict[str, str]
+    include: list[str]
+    exclude: list[str]
     docker: DockerOptions
     python: PythonOptions
     conda: CondaOptions
-    models: t.List[ModelSpec]
-    envs: t.List[BentoEnvSchema]
+    models: list[ModelSpec]
+    envs: list[BentoEnvSchema]

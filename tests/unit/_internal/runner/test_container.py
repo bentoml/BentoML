@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import typing as t
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -11,7 +9,7 @@ import bentoml._internal.runner.container as c
 
 @pytest.mark.parametrize("batch_dim_exc", [AssertionError])
 @pytest.mark.parametrize("wrong_batch_dim", [1, 19])
-def test_default_container(batch_dim_exc: t.Type[Exception], wrong_batch_dim: int):
+def test_default_container(batch_dim_exc: type[Exception], wrong_batch_dim: int):
     l1 = [1, 2, 3]
     l2 = [3, 4, 5, 6]
     batch, indices = c.DefaultContainer.batches_to_batch([l1, l2])
@@ -74,7 +72,7 @@ def test_ndarray_container(batch_dim: int):
 
 @pytest.mark.parametrize("batch_dim_exc", [AssertionError])
 @pytest.mark.parametrize("wrong_batch_dim", [1, 19])
-def test_pandas_container(batch_dim_exc: t.Type[Exception], wrong_batch_dim: int):
+def test_pandas_container(batch_dim_exc: type[Exception], wrong_batch_dim: int):
     cols = ["a", "b", "c"]
     arr1 = np.ones((3, 3))
     df1 = pd.DataFrame(arr1, columns=cols)

@@ -1,16 +1,14 @@
+from collections.abc import Callable
 from typing import Any
-from typing import Callable
-from typing import List
-from typing import Optional
-from typing import Union
+from typing import TypeAlias
 
-_StringOrFunction = Union[str, Callable[..., Any]]
+_StringOrFunction: TypeAlias = str | Callable[..., Any]
 STRATEGY_END: object = ...
 
 class StrategyList:
-    NAME: Optional[str] = ...
+    NAME: str | None = ...
     def __init__(
-        self, strategy_list: Union[_StringOrFunction, List[_StringOrFunction]]
+        self, strategy_list: _StringOrFunction | list[_StringOrFunction]
     ) -> None: ...
     @classmethod
     def _expand_strategy(cls, strategy: _StringOrFunction) -> _StringOrFunction: ...

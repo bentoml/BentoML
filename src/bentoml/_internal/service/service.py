@@ -95,15 +95,15 @@ class Service:
     """
 
     name: str
-    runners: t.List[Runner | _TritonRunner]
-    models: t.List[Model]
+    runners: list[Runner | _TritonRunner]
+    models: list[Model]
 
     # starlette related
-    mount_apps: t.List[t.Tuple[ext.ASGIApp, str, str]] = attr.field(
+    mount_apps: list[tuple[ext.ASGIApp, str, str]] = attr.field(
         init=False, factory=list
     )
-    middlewares: t.List[t.Tuple[t.Type[ext.AsgiMiddleware], t.Dict[str, t.Any]]] = (
-        attr.field(init=False, factory=list)
+    middlewares: list[tuple[type[ext.AsgiMiddleware], dict[str, t.Any]]] = attr.field(
+        init=False, factory=list
     )
 
     # gRPC related
@@ -116,7 +116,7 @@ class Service:
     grpc_handlers: list[grpc.GenericRpcHandler] = attr.field(init=False, factory=list)
 
     # list of APIs from @svc.api
-    apis: t.Dict[str, InferenceAPI[t.Any]] = attr.field(init=False, factory=dict)
+    apis: dict[str, InferenceAPI[t.Any]] = attr.field(init=False, factory=dict)
 
     # Tag/Bento are only set when the service was loaded from a bento
     tag: Tag | None = attr.field(init=False, default=None)
@@ -219,7 +219,7 @@ class Service:
 
         # validate runners list contains Runner instances and runner names are unique
         if runners is not None:
-            runner_names: t.Set[str] = set()
+            runner_names: set[str] = set()
             for r in runners:
                 assert isinstance(r, AbstractRunner), (
                     f'Service runners list can only contain bentoml.legacy.Runner instances, type "{type(r)}" found.'
@@ -352,7 +352,7 @@ class Service:
     def __str__(self) -> str:
         return repr(self)
 
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Service):
             return NotImplemented
         if self is other:
@@ -425,25 +425,25 @@ class Service:
         return self.get_grpc_servicer(protocol_version=LATEST_PROTOCOL_VERSION)
 
     @property
-    def asgi_app(self) -> "ext.ASGIApp":
+    def asgi_app(self) -> ext.ASGIApp:
         from ..server.http_app import HTTPAppFactory
 
         return HTTPAppFactory(self)()
 
     def mount_asgi_app(
-        self, app: "ext.ASGIApp", path: str = "/", name: t.Optional[str] = None
+        self, app: ext.ASGIApp, path: str = "/", name: str | None = None
     ) -> None:
         self.mount_apps.append((app, path, name))  # type: ignore
 
     def mount_wsgi_app(
-        self, app: ext.WSGIApp, path: str = "/", name: t.Optional[str] = None
+        self, app: ext.WSGIApp, path: str = "/", name: str | None = None
     ) -> None:
         from a2wsgi import WSGIMiddleware
 
         self.mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
     def add_asgi_middleware(
-        self, middleware_cls: t.Type[ext.AsgiMiddleware], **options: t.Any
+        self, middleware_cls: type[ext.AsgiMiddleware], **options: t.Any
     ) -> None:
         self.middlewares.append((middleware_cls, options))
 
@@ -456,7 +456,7 @@ class Service:
         self.mount_servicers.append((servicer_cls, add_servicer_fn, service_names))
 
     def add_grpc_interceptor(
-        self, interceptor_cls: t.Type[grpc.aio.ServerInterceptor], **options: t.Any
+        self, interceptor_cls: type[grpc.aio.ServerInterceptor], **options: t.Any
     ) -> None:
         from bentoml.exceptions import BadInput
 

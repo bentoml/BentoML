@@ -4,8 +4,7 @@ import collections.abc
 import sys
 import types
 import typing as t
-
-from typing_extensions import Literal
+from typing import Literal
 
 if t.TYPE_CHECKING:
     from PIL import Image
@@ -13,8 +12,8 @@ if t.TYPE_CHECKING:
 LITERAL_TYPES: set[type] = {Literal}
 if hasattr(t, "Literal"):
     LITERAL_TYPES.add(t.Literal)
-LIST_TYPES: set[type] = {list, t.List, t.Sequence, t.MutableSequence}
-TUPLE_TYPES: set[type] = {tuple, t.Tuple}
+LIST_TYPES: set[type] = {list, list, t.Sequence, t.MutableSequence}
+TUPLE_TYPES: set[type] = {tuple, tuple}
 SYNC_ITERATOR_TYPES: set[type] = {
     t.Iterator,
     t.Generator,
@@ -36,7 +35,7 @@ def get_origin(type_: t.Any) -> type:
     return t.get_origin(type_) or type_
 
 
-def get_args(type_: t.Any) -> t.Tuple[t.Any, ...]:
+def get_args(type_: t.Any) -> tuple[t.Any, ...]:
     if hasattr(type_, "__args__"):
         return type_.__args__
     return t.get_args(type_)

@@ -182,7 +182,7 @@ def delete(
         * Bulk delete multiple models by name and version, separated by ",", e.g.: `bentoml models delete iris_clf:v1,iris_clf:v2`
         * Bulk delete multiple models by name and version, separated by " ", e.g.: `bentoml models delete iris_clf:v1 iris_clf:v2`
         * Bulk delete without confirmation, e.g.: `bentoml models delete IrisClassifier --yes`
-    """  # noqa
+    """
     from bentoml.exceptions import BentoMLException
 
     def check_model_is_used(tag: Tag) -> None:

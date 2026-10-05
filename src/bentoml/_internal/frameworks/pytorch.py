@@ -21,7 +21,7 @@ from ..utils.pkg import get_pkg_version
 from .common.pytorch import PyTorchTensorContainer
 from .common.pytorch import torch
 
-__all__ = ["load_model", "save_model", "get_runnable", "get", "PyTorchTensorContainer"]
+__all__ = ["PyTorchTensorContainer", "get", "get_runnable", "load_model", "save_model"]
 
 
 MODULE_NAME = "bentoml.pytorch"
@@ -46,7 +46,7 @@ def get(tag_like: str | Tag) -> Model:
 
 def load_model(
     bentoml_model: str | Tag | Model,
-    device_id: t.Optional[str] = "cpu",
+    device_id: str | None = "cpu",
     **torch_load_args: Any,
 ) -> torch.nn.Module:
     """
@@ -78,7 +78,7 @@ def load_model(
 
     weight_file = bentoml_model.path_of(MODEL_FILENAME)
     with Path(weight_file).open("rb") as file:
-        model: "torch.nn.Module" = torch.load(
+        model: torch.nn.Module = torch.load(
             file, map_location=device_id, **torch_load_args
         )
     return model
@@ -86,13 +86,13 @@ def load_model(
 
 def save_model(
     name: Tag | str,
-    model: "torch.nn.Module",
+    model: torch.nn.Module,
     *,
     signatures: ModelSignaturesType | None = None,
-    labels: t.Dict[str, str] | None = None,
-    custom_objects: t.Dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
-    metadata: t.Dict[str, t.Any] | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: list[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
@@ -199,7 +199,7 @@ def get_runnable(bento_model: Model):
     from .common.pytorch import make_pytorch_runnable_method
     from .common.pytorch import partial_class
 
-    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
+    partial_kwargs: dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
 
     runnable_class: type[PytorchModelRunnable] = partial_class(
         PytorchModelRunnable,

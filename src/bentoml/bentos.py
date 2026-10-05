@@ -4,6 +4,7 @@ User facing python APIs for managing local bentos and build new bentos.
 
 from __future__ import annotations
 
+import builtins
 import logging
 import typing as t
 
@@ -42,16 +43,16 @@ if t.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    "list",
-    "get",
-    "delete",
-    "import_bento",
-    "export_bento",
-    "push",
-    "pull",
     "build",
     "build_bentofile",
     "containerize",
+    "delete",
+    "export_bento",
+    "get",
+    "import_bento",
+    "list",
+    "pull",
+    "push",
 ]
 
 
@@ -59,7 +60,7 @@ __all__ = [
 def list(
     tag: Tag | str | None = None,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
-) -> t.List[Bento]:
+) -> builtins.list[Bento]:
     return _bento_store.list(tag)
 
 
@@ -89,9 +90,9 @@ def import_bento(
     protocol: str | None = None,
     user: str | None = None,
     passwd: str | None = None,
-    params: t.Optional[t.Dict[str, str]] = None,
+    params: dict[str, str] | None = None,
     subpath: str | None = None,
-    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
     """
     Import a bento.
@@ -279,13 +280,13 @@ def build(
     name: str | None = None,
     labels: dict[str, str] | None = None,
     description: str | None = None,
-    include: t.List[str] | None = None,
-    exclude: t.List[str] | None = None,
-    envs: t.List[BentoEnvSchema] | None = None,
+    include: builtins.list[str] | None = None,
+    exclude: builtins.list[str] | None = None,
+    envs: builtins.list[BentoEnvSchema] | None = None,
     docker: DockerOptions | dict[str, t.Any] | None = None,
     python: PythonOptions | dict[str, t.Any] | None = None,
     conda: CondaOptions | dict[str, t.Any] | None = None,
-    models: t.List[ModelSpec | str | dict[str, t.Any]] | None = None,
+    models: builtins.list[ModelSpec | str | dict[str, t.Any]] | None = None,
     version: str | None = None,
     build_ctx: str | None = None,
     platform: str | None = None,

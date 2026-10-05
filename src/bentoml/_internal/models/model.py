@@ -69,7 +69,7 @@ class ModelOptions:
 
 @attr.define
 class PartialKwargsModelOptions(ModelOptions):
-    partial_kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
+    partial_kwargs: dict[str, t.Any] = attr.field(factory=dict)
 
 
 @attr.define(repr=False, eq=False)
@@ -80,7 +80,7 @@ class Model(StoreItem):
     _custom_objects: dict[str, t.Any] | None = None
     _internal: bool = attr.field(kw_only=True, default=False)
 
-    _runnable: t.Type[Runnable] | None = attr.field(init=False, default=None)
+    _runnable: type[Runnable] | None = attr.field(init=False, default=None)
     _model: t.Any = attr.field(init=False, default=None)
     _attr: str | None = attr.field(init=False, default=None)
 
@@ -107,7 +107,7 @@ class Model(StoreItem):
         return self._info
 
     @property
-    def custom_objects(self) -> t.Dict[str, t.Any]:
+    def custom_objects(self) -> dict[str, t.Any]:
         if self._custom_objects is None:
             if self._path.joinpath(CUSTOM_OBJECTS_FILENAME).is_file():
                 with self._path.joinpath(CUSTOM_OBJECTS_FILENAME).open("rb") as cofile:
@@ -348,7 +348,7 @@ class Model(StoreItem):
             scheduling_strategy=scheduling_strategy,
         )
 
-    def to_runnable(self) -> t.Type[Runnable]:
+    def to_runnable(self) -> type[Runnable]:
         if self._runnable is None:
             self._runnable = self.info.imported_module.get_runnable(self)
         return self._runnable
@@ -378,7 +378,7 @@ class ModelStore(Store[Model]):
 @attr.frozen
 class ModelContext:
     framework_name: str
-    framework_versions: t.Dict[str, str]
+    framework_versions: dict[str, str]
 
     # using factory explicitly instead of default because omit_if_default is enabled in ModelInfo
     bentoml_version: str = attr.field(factory=lambda: BENTOML_VERSION)
@@ -450,7 +450,7 @@ class ModelSignature:
     """
 
     batchable: bool = False
-    batch_dim: t.Tuple[int, int] = (0, 0)
+    batch_dim: tuple[int, int] = (0, 0)
     # TODO: define input/output spec struct
     input_spec: t.Any = None
     output_spec: t.Any = None
@@ -509,20 +509,20 @@ class ModelInfo:
     name: str
     version: str
     module: str
-    labels: t.Dict[str, str] = attr.field(
+    labels: dict[str, str] = attr.field(
         validator=label_validator, converter=normalize_labels_value
     )
-    _options: t.Dict[str, t.Any]
+    _options: dict[str, t.Any]
     metadata: MetadataDict = attr.field(validator=metadata_validator, converter=dict)
     context: ModelContext = attr.field()
-    signatures: t.Dict[str, ModelSignature] = attr.field(
+    signatures: dict[str, ModelSignature] = attr.field(
         converter=ModelSignature.convert_signatures_dict
     )
     api_version: str
     creation_time: datetime
 
-    _cached_module: t.Optional[ModuleType] = attr.field(init=False, default=None)
-    _cached_options: t.Optional[ModelOptions] = attr.field(init=False, default=None)
+    _cached_module: ModuleType | None = attr.field(init=False, default=None)
+    _cached_options: ModelOptions | None = attr.field(init=False, default=None)
 
     def __init__(
         self,
@@ -622,7 +622,7 @@ class ModelInfo:
         assert self._cached_options is not None
         return self._cached_options
 
-    def to_dict(self) -> t.Dict[str, t.Any]:
+    def to_dict(self) -> dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)
 
     @overload
@@ -696,7 +696,7 @@ bentoml_cattr.register_unstructure_hook_func(
 
 
 def copy_model(
-    model_tag: t.Union[Tag, str],
+    model_tag: Tag | str,
     *,
     src_model_store: ModelStore,
     target_model_store: ModelStore,

@@ -42,9 +42,9 @@ class HuggingFaceModel(Model[str]):
 
     model_id: str
     revision: str = "main"
-    endpoint: t.Optional[str] = attrs.field(factory=lambda: os.getenv("HF_ENDPOINT"))
-    include: t.Optional[t.List[str]] = None
-    exclude: t.Optional[t.List[str]] = None
+    endpoint: str | None = attrs.field(factory=lambda: os.getenv("HF_ENDPOINT"))
+    include: list[str] | None = None
+    exclude: list[str] | None = None
 
     @cached_property
     def _hf_api(self) -> HfApi:
@@ -59,7 +59,7 @@ class HuggingFaceModel(Model[str]):
             or self.revision
         )
 
-    def resolve(self, base_path: t.Union[PathType, None] = None) -> str:
+    def resolve(self, base_path: PathType | None = None) -> str:
         from huggingface_hub import snapshot_download
 
         snapshot_path = snapshot_download(

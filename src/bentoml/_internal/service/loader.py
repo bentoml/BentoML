@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 def import_service(
     svc_import_path: str,
     *,
-    working_dir: t.Optional[str] = None,
+    working_dir: str | None = None,
     reload: bool = False,
     standalone_load: bool = False,
     model_store: ModelStore = Provide[BentoMLContainer.model_store],
@@ -144,7 +144,7 @@ def _do_import(
             )
 
         # move up until no longer in a python package or in the working dir
-        module_name_parts: t.List[str] = []
+        module_name_parts: list[str] = []
         path = file_name
         while True:
             path, name = os.path.split(path)
@@ -220,7 +220,7 @@ def load_bento(
     bento: str | Tag | Bento,
     reload: bool = False,
     standalone_build: bool = False,
-    bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
 ) -> AnyService:
     """Load a Service instance from a bento found in local bento store:
 
@@ -306,7 +306,7 @@ def _load_bento(
 
 def load(
     bento_identifier: str | Tag | Bento,
-    working_dir: t.Optional[str] = None,
+    working_dir: str | None = None,
     reload: bool = False,
     standalone_load: bool = False,
 ) -> AnyService:

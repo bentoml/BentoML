@@ -209,7 +209,7 @@ def save_config(config_file_handle: t.IO[t.Any]):
 
     from ..configuration.containers import BentoMLContainer
 
-    content = yaml.safe_dump(BentoMLContainer.config)
+    content = yaml.safe_dump(BentoMLContainer.config.get())
     config_file_handle.write(content)
 
 

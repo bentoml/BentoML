@@ -83,10 +83,10 @@ def save_model(
     model: torch.ScriptModule,
     *,
     signatures: ModelSignaturesType | None = None,
-    labels: t.Dict[str, str] | None = None,
-    custom_objects: t.Dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
-    metadata: t.Dict[str, t.Any] | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: list[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
     _framework_name: str = "torchscript",
     _module_name: str = MODULE_NAME,
     _extra_files: dict[str, t.Any] | None = None,
@@ -176,7 +176,7 @@ def get_runnable(bento_model: Model):
     from .common.pytorch import make_pytorch_runnable_method
     from .common.pytorch import partial_class
 
-    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
+    partial_kwargs: dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
     model_runnable_class = partial_class(
         PytorchModelRunnable,
         bento_model=bento_model,

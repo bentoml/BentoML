@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import typing as t
 from datetime import datetime
 
@@ -54,7 +55,7 @@ class ApiToken(ApiTokenSchema):
 class ApiTokenAPI:
     _client: RestApiClient
 
-    def list(self, search: str | None = None) -> t.List[ApiToken]:
+    def list(self, search: str | None = None) -> builtins.list[ApiToken]:
         """
         List all API tokens.
 
@@ -71,7 +72,7 @@ class ApiTokenAPI:
         self,
         name: str,
         description: str | None = None,
-        scopes: t.List[str] | None = None,
+        scopes: builtins.list[str] | None = None,
         expired_at: datetime | None = None,
     ) -> ApiToken:
         """

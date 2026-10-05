@@ -33,7 +33,7 @@ else:
     ListStr = list
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get"]
+__all__ = ["get", "get_runnable", "load_model", "save_model"]
 
 MODULE_NAME = "bentoml.easyocr"
 API_VERSION = "v1"
@@ -106,7 +106,7 @@ def save_model(
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
@@ -136,7 +136,7 @@ def save_model(
 
         reader = easyocr.Reader(['en'])
         bento_model = bentoml.easyocr.save_model('en_reader', reader)
-    """  # noqa
+    """
     context = ModelContext(
         framework_name="easyocr",
         framework_versions={"easyocr": get_pkg_version("easyocr")},

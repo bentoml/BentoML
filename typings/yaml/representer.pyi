@@ -1,19 +1,19 @@
 import datetime
 import sys
+from collections.abc import Callable
+from collections.abc import Iterable
+from collections.abc import Mapping
 from types import BuiltinFunctionType
 from types import FunctionType
 from types import ModuleType
 from types import NoneType
 from typing import Any
-from typing import Callable
 from typing import ClassVar
-from typing import Iterable
-from typing import Mapping
 from typing import NoReturn
-from typing import Tuple
 from typing import TypeVar
 
 from _typeshed import SupportsItems
+from typing_extensions import Self
 
 from .error import YAMLError as YAMLError
 from .nodes import MappingNode as MappingNode
@@ -48,11 +48,11 @@ class BaseRepresenter:
     def represent_data(self, data: Any) -> Node: ...
     @classmethod
     def add_representer(
-        cls: type[_R], data_type: type[_T], representer: Callable[[_R, _T], Node]
+        cls, data_type: type[_T], representer: Callable[[Self, _T], Node]
     ) -> None: ...
     @classmethod
     def add_multi_representer(
-        cls: type[_R], data_type: type[_T], representer: Callable[[_R, _T], Node]
+        cls, data_type: type[_T], representer: Callable[[Self, _T], Node]
     ) -> None: ...
     def represent_scalar(
         self, tag: str, value: Any, style: str | None = ...
@@ -63,7 +63,7 @@ class BaseRepresenter:
     def represent_mapping(
         self,
         tag: str,
-        mapping: SupportsItems[Any, Any] | Iterable[Tuple[Any, Any]],
+        mapping: SupportsItems[Any, Any] | Iterable[tuple[Any, Any]],
         flow_style: bool | None = ...,
     ) -> MappingNode: ...
     def ignore_aliases(self, data: Any) -> bool: ...
@@ -82,7 +82,7 @@ class SafeRepresenter(BaseRepresenter):
     def represent_float(self, data: float) -> ScalarNode: ...
     def represent_list(self, data: Iterable[Any]) -> SequenceNode: ...
     def represent_dict(
-        self, data: SupportsItems[Any, Any] | Iterable[Tuple[Any, Any]]
+        self, data: SupportsItems[Any, Any] | Iterable[tuple[Any, Any]]
     ) -> MappingNode: ...
     def represent_set(self, data: Iterable[Any]) -> MappingNode: ...
     def represent_date(self, data: datetime.date) -> ScalarNode: ...

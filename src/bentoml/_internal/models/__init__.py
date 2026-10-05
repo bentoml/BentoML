@@ -15,4 +15,4 @@ PTH_EXT = ".pth"
 TXT_EXT = ".txt"
 YAML_EXT = ".yaml"
 
-__all__ = ["Model", "ModelStore", "ModelContext", "ModelOptions", "copy_model"]
+__all__ = ["Model", "ModelContext", "ModelOptions", "ModelStore", "copy_model"]

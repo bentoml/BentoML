@@ -232,7 +232,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
 
     def export_data(
         self,
-        datas: t.Dict[str, collections.deque[JSONSerializable]],
+        datas: dict[str, collections.deque[JSONSerializable]],
     ) -> None:
         """
         Export data. This method should be called after all data is logged.

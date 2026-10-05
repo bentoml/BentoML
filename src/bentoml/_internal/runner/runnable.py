@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from typing import overload
 
 import attr
+from typing_extensions import Self
 
 from ...exceptions import BentoMLException
 from ..types import LazyType
@@ -55,13 +56,13 @@ class Runnable:
 
     @classmethod
     def add_method(
-        cls: t.Type[T],
-        method: t.Callable[t.Concatenate[T, P], t.Any],
+        cls,
+        method: t.Callable[t.Concatenate[Self, P], t.Any],
         name: str,
         *,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
-        input_spec: LazyType[t.Any] | t.Tuple[LazyType[t.Any], ...] | None = None,
+        input_spec: LazyType[t.Any] | tuple[LazyType[t.Any], ...] | None = None,
         output_spec: LazyType[t.Any] | None = None,
     ):
         meth = Runnable.method(
@@ -138,7 +139,7 @@ class RunnableMethod(t.Generic[T, P, R]):
     config: RunnableMethodConfig
     _bentoml_runnable_method: None = None
 
-    def __get__(self, obj: T | None, _: t.Type[T] | None = None) -> t.Callable[P, R]:
+    def __get__(self, obj: T | None, _: type[T] | None = None) -> t.Callable[P, R]:
         from ..utils import is_async_callable
 
         if obj is None:

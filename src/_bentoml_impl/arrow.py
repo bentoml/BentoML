@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from _bentoml_sdk.validators import arrow_serialization
 
-SchemaDict: t.TypeAlias = t.Dict[str, t.Any]
+SchemaDict: t.TypeAlias = dict[str, t.Any]
 
 T = t.TypeVar("T", bound=BaseModel)
 

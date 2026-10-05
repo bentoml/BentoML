@@ -1,5 +1,4 @@
 import os
-import typing as t
 
 import psutil
 import pytest
@@ -24,7 +23,7 @@ def example_paths():
 
 
 def test_uri_path_conversion(
-    example_paths: t.List[str],  # pylint: disable=redefined-outer-name
+    example_paths: list[str],  # pylint: disable=redefined-outer-name
 ) -> None:
     from bentoml._internal.utils.uri import path_to_uri
     from bentoml._internal.utils.uri import uri_to_path

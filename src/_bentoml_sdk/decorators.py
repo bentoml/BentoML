@@ -23,19 +23,19 @@ else:
 
 def on_shutdown(func: F) -> F:
     """Mark a method as a shutdown hook for the service."""
-    setattr(func, "__bentoml_shutdown_hook__", True)
+    func.__bentoml_shutdown_hook__ = True
     return func
 
 
 def on_startup(func: F) -> F:
     """Mark a method as a startup hook for the service."""
-    setattr(func, "__bentoml_startup_hook__", True)
+    func.__bentoml_startup_hook__ = True
     return func
 
 
 def on_deployment(func: t.Callable[P, R] | staticmethod[P, R]) -> staticmethod[P, R]:
     inner = func.__func__ if isinstance(func, staticmethod) else func
-    setattr(inner, "__bentoml_deployment_hook__", True)
+    inner.__bentoml_deployment_hook__ = True
     return func if isinstance(func, staticmethod) else staticmethod(func)  # type: ignore
 
 
@@ -133,7 +133,7 @@ def asgi_app(
         else:
             mount_apps = getattr(obj, "__bentoml_mounted_apps__", [])
             mount_apps.append((app, path, name))
-            setattr(obj, "__bentoml_mounted_apps__", mount_apps)
+            obj.__bentoml_mounted_apps__ = mount_apps
             if lazy_fastapi.isinstance(app):
                 make_fastapi_class_views(obj, app)
         return obj

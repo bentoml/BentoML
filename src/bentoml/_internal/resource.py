@@ -15,7 +15,7 @@ from ..exceptions import BentoMLConfigException
 
 logger = logging.getLogger(__name__)
 
-_RESOURCE_REGISTRY: dict[str, t.Type[Resource[t.Any]]] = {}
+_RESOURCE_REGISTRY: dict[str, type[Resource[t.Any]]] = {}
 
 T = t.TypeVar("T")
 
@@ -26,7 +26,7 @@ def get_resource(
     if resource_kind not in _RESOURCE_REGISTRY:
         raise BentoMLConfigException(f"Unknown resource kind '{resource_kind}'.")
 
-    resource: t.Type[Resource[t.Any]] = _RESOURCE_REGISTRY[resource_kind]
+    resource: type[Resource[t.Any]] = _RESOURCE_REGISTRY[resource_kind]
 
     if resource_kind in resources:
         if resources[resource_kind] == "system":
@@ -214,7 +214,7 @@ def query_os_cpu_count() -> int:
 #         raise ValueError(f"Invalid MEM resource limit '{mem}'")
 
 
-class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
+class NvidiaGpuResource(Resource[list[int]], resource_id="nvidia.com/gpu"):
     @classmethod
     def from_spec(cls, spec: int | str | list[int | str]) -> list[int]:
         if not isinstance(spec, (int, str, list)):
@@ -262,7 +262,7 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
                 pass
 
     @classmethod
-    def validate(cls, val: t.List[int]):
+    def validate(cls, val: list[int]):
         if any([gpu_index < 0 for gpu_index in val]):
             raise BentoMLConfigException(f"Negative GPU device in {val}.")
         if any([gpu_index >= len(cls.from_system()) for gpu_index in val]):
@@ -271,7 +271,7 @@ class NvidiaGpuResource(Resource[t.List[int]], resource_id="nvidia.com/gpu"):
             )
 
 
-def get_gpu_memory(dev: int) -> t.Tuple[float, float]:
+def get_gpu_memory(dev: int) -> tuple[float, float]:
     """
     Return Total Memory and Free Memory in given GPU device. in MiB
     """
@@ -289,12 +289,12 @@ def get_gpu_memory(dev: int) -> t.Tuple[float, float]:
 
     try:
         inst = nvidia_smi.getInstance()
-        query: t.Dict[str, int] = inst.DeviceQuery(dev)  # type: ignore
+        query: dict[str, int] = inst.DeviceQuery(dev)  # type: ignore
     except (pynvml.nvml.NVMLError, OSError):
         return 0.0, 0.0
 
     try:
-        gpus: t.List[t.Dict[str, t.Any]] = query.get("gpu", [])  # type: ignore
+        gpus: list[dict[str, t.Any]] = query.get("gpu", [])  # type: ignore
         gpu = gpus[dev]
         unit = gpu["fb_memory_usage"]["unit"]
         total = gpu["fb_memory_usage"]["total"] * unit_multiplier[unit]

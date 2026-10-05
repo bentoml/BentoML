@@ -388,8 +388,8 @@ class Image(
         # rfc2183
         content_disposition_filename = quote(filename)
         if content_disposition_filename != filename:
-            content_disposition = "attachment; filename*=utf-8''{}".format(
-                content_disposition_filename
+            content_disposition = (
+                f"attachment; filename*=utf-8''{content_disposition_filename}"
             )
         else:
             content_disposition = f'attachment; filename="{filename}"'

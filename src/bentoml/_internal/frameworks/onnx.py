@@ -63,7 +63,7 @@ class ModelOptions(BaseModelOptions):
     input_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
     output_specs: dict[str, list[dict[str, t.Any]]] = attr.field(factory=dict)
     providers: ProvidersType = attr.field(default=None)
-    session_options: t.Optional["ort.SessionOptions"] = attr.field(default=None)
+    session_options: ort.SessionOptions | None = attr.field(default=None)
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -130,7 +130,7 @@ def load_model(
 
         import bentoml
         sess = bentoml.onnx.load_model("my_onnx_model")
-    """  # noqa
+    """
 
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
@@ -162,7 +162,7 @@ def save_model(
     signatures: dict[str, ModelSignatureDict] | dict[str, ModelSignature] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """Save a onnx model instance to the BentoML model store.
@@ -318,7 +318,7 @@ def save_model(
         return bento_model
 
 
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """

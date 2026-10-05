@@ -104,7 +104,7 @@ def echo_json_sync(json_obj: JSONSerializable) -> JSONSerializable:
 
 class ValidateSchema(pydantic.BaseModel):
     name: str
-    endpoints: t.List[str]
+    endpoints: list[str]
 
 
 @svc.api(
@@ -144,8 +144,8 @@ async def predict_ndarray_enforce_dtype(inp: NDArray[t.Any]) -> NDArray[t.Any]:
     output=NumpyNdarray(),
 )
 async def predict_ndarray_multi_output(
-    inp: "np.ndarray[t.Any, np.dtype[t.Any]]",
-) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+    inp: np.ndarray[t.Any, np.dtype[t.Any]],
+) -> np.ndarray[t.Any, np.dtype[t.Any]]:
     out1, out2 = await py_model.echo_multi_ndarray.async_run(inp, inp)
     return out1 + out2
 
@@ -243,7 +243,6 @@ class AllowPingMiddleware:
                 scope["path"] = "/livez"
 
         await self.app(scope, receive, send)
-        return
 
 
 svc.add_asgi_middleware(AllowPingMiddleware)  # type: ignore (hint not yet supported for hooks)

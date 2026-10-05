@@ -25,9 +25,9 @@ if t.TYPE_CHECKING:
 
     InputType = (
         UnionType
-        | t.Type[t.Any]
+        | type[t.Any]
         | LazyType[t.Any]
-        | dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]
+        | dict[str, type[t.Any] | UnionType | LazyType[t.Any]]
     )
     OpenAPIResponse = dict[str, str | dict[str, t.Any]]
     F = t.Callable[..., t.Any]
@@ -83,10 +83,10 @@ class IODescriptor(ABC, _OpenAPIMeta, t.Generic[IOType]):
 
     __slots__ = (
         "_mime_type",
-        "proto_fields",
+        "_sample",
         "descriptor_id",
         "from_sample",
-        "_sample",
+        "proto_fields",
     )
 
     HTTP_METHODS = ("POST",)

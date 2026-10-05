@@ -176,9 +176,12 @@ async def test_cancelling_inflight_request_preserves_other_batch_results():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("oldest_wait, shed_oldest", [(0.1, False), (0.9, True)])
+@pytest.mark.parametrize(
+    "oldest_wait, shed_oldest, dead_first",
+    [(0.1, False, True), (0.9, True, True), (0.75, False, False)],
+)
 async def test_controller_sheds_using_live_jobs_after_discard(
-    monkeypatch, oldest_wait, shed_oldest
+    monkeypatch, oldest_wait, shed_oldest, dead_first
 ):
     dispatcher = CorkDispatcher(
         1000, 2, fallback=lambda: None, get_batch_size=lambda _: 1
@@ -203,11 +206,13 @@ async def test_controller_sheds_using_live_jobs_after_discard(
         "bentoml._internal.marshal.dispatcher.time.time", lambda: 1000.0
     )
     loop = asyncio.get_running_loop()
-    dead = Job(990.0, "dead", loop.create_future())
+    dead = Job(990.0 if dead_first else 999.97, "dead", loop.create_future())
     oldest = Job(1000.0 - oldest_wait, "oldest", loop.create_future())
     newest = Job(999.95, "newest", loop.create_future())
     dead.future.cancel()
-    dispatcher._queue.extend((dead, oldest, newest))
+    dispatcher._queue.extend(
+        (dead, oldest, newest) if dead_first else (oldest, dead, newest)
+    )
     controller = asyncio.create_task(dispatcher.controller())
     try:
         await asyncio.wait_for(dispatched.wait(), timeout=2)

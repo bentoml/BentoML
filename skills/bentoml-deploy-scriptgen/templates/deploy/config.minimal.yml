@@ -1,0 +1,5 @@
+project: ..
+image: "{{IMAGE_URL}}"
+kubernetes:
+  context: "{{K8S_CONTEXT}}"
+  namespace: "{{NAMESPACE}}"

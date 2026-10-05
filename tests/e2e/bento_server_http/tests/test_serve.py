@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -104,6 +105,16 @@ async def test_serve_with_lifecycle_hooks(
             assert await response.aread() == b"hello", (
                 "The state data can't be read correctly"
             )
+
+        # Each worker writes its own data-*.txt from on_startup, but the server
+        # answers as soon as the FIRST worker is ready, so wait for the rest
+        # before leaving the context manager shuts them down. Without this the
+        # assertions below race the slower workers on a loaded machine.
+        deadline = time.monotonic() + 60
+        while (
+            len(list(tmp_path.glob("data-*.txt"))) < 4 and time.monotonic() < deadline
+        ):
+            await asyncio.sleep(0.1)
 
     data_files = list(tmp_path.glob("data-*.txt"))
     assert len(data_files) == 4, "on_startup should be run 4 times"

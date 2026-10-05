@@ -143,6 +143,7 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    get-started/async-task-queues
    get-started/packaging-for-deployment
    get-started/cloud-deployment
+   get-started/agent-skills
 
 .. toctree::
    :caption: Learn by Examples

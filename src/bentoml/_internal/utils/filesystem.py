@@ -83,6 +83,10 @@ def safe_extract_tarfile(tar: tarfile.TarFile, destination: str) -> None:
                     member.linkname,
                 )
                 continue
+            if os.name == "nt":
+                # Tar linknames are POSIX-style; Windows symlinks with "/" in
+                # the target fail to resolve (EINVAL on open through the link).
+                member.linkname = member.linkname.replace("/", os.sep)
             try:
                 tar._extract_member(member, path)
             except Exception as exc:

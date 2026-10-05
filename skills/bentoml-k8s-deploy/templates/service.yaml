@@ -1,0 +1,59 @@
+# =============================================================================
+# REFERENCE SHAPE of the Service rendered for ONE BentoML service, alongside
+# that service's Deployment.
+#
+# Not the file you edit -- `config.yml` is; the `<-` notes name the key each
+# value comes from, and `deploy.py --render-only` emits the real thing. Only
+# users who set `kubernetes.manifests_dir` own Service YAML directly, and they
+# should start from `--render-only` output, not from this template.
+#
+# Rendered for BentoML service: {{BENTOML_SERVICE_NAME}}   (bento: {{BENTO_NAME}})
+#
+# The Service name IS the in-cluster hostname, so it is what dependency URLs
+# point at:  http://{{SLUG}}.{{NAMESPACE}}.svc.cluster.local:3000
+# The renderer keeps those URLs in step with the slug automatically; a hand
+# rename means updating BENTOML_SERVE_DEPENDS on every caller's Deployment.
+#
+# type is ClusterIP for every NON-ENTRY service, always -- config.yml rejects
+# `expose:` on a non-entry service, and this is a security boundary, not a style
+# rule. Inter-service traffic is `application/vnd.bentoml+pickle`, i.e. an
+# unauthenticated pickle deserialization endpoint: reachable from outside the
+# cluster (NodePort/LoadBalancer/Ingress) it hands anyone who can reach it
+# arbitrary code execution in that pod. Only the ENTRY service, which speaks
+# ordinary JSON HTTP, may carry another type.
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  # == the in-cluster DNS name.            <- services.<Name>.slug
+  name: {{SLUG}}
+  #                                        <- kubernetes.namespace
+  namespace: {{NAMESPACE}}
+  labels:
+    app.kubernetes.io/name: {{SLUG}}
+    app.kubernetes.io/component: {{BENTOML_SERVICE_NAME}}
+    app.kubernetes.io/part-of: {{BENTO_NAME}}
+    app.kubernetes.io/managed-by: bentoml-k8s-deploy
+    # plus every pair from kubernetes.extra_labels (which can never override the
+    # four app.kubernetes.io/* identity labels above)
+  # Rendered only when the ENTRY service sets expose.annotations -- cloud
+  # load-balancer tuning (internal LB, idle timeout, NLB vs ALB). Keep any idle /
+  # proxy timeout >= the service's traffic.timeout, or the LB 504s first.
+  # See references/exposure-options.md.
+  annotations:
+    {{SERVICE_ANNOTATION_KEY}}: "{{SERVICE_ANNOTATION_VALUE}}"
+spec:
+  # ClusterIP for every non-entry service; the entry service's value comes from
+  # services.<EntryName>.expose.type (ClusterIP | NodePort | LoadBalancer).
+  type: {{SERVICE_TYPE}}
+  selector:
+    # Per-service, so this Service never picks up a sibling service's pods.
+    app.kubernetes.io/name: {{SLUG}}
+  ports:
+    - name: http
+      port: 3000                 # port on the Service; dependency URLs use this
+      targetPort: http           # the container's named port, so containerPort can move
+      protocol: TCP
+      # Rendered only for expose.type NodePort with expose.node_port set
+      # (30000-32767); omitted to let Kubernetes pick the port.
+      nodePort: {{NODE_PORT}}

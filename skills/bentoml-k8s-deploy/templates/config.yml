@@ -1,0 +1,312 @@
+# =============================================================================
+# BentoML Kubernetes deployment config -- THE ONE FILE YOU EDIT.
+#
+# The Kubernetes manifests are RENDERED from this file by deploy/deploy.py --
+# the same renderer and the same validator the CI path uses -- so they are
+# output, not input. To change the deployment: edit this file, re-render,
+# re-apply:
+#
+#   python3 deploy/deploy.py --target k8s --render-only k8s --image <ref>   # review
+#   python3 deploy/deploy.py --target k8s --check-only --local-only         # validate
+#
+# This file lives NEXT TO deploy.py (<project>/deploy/config.yml), which is where
+# deploy.py looks for it by default (`--config PATH` overrides it).
+#
+# This is the ANNOTATED REFERENCE: it shows every knob that exists, at its
+# default. It is a MENU, not a required form -- a real config only needs the
+# handful of lines in `config.minimal.yml`, and every block below may be
+# deleted. A key you do not write gets the documented default; a key you write
+# at its default value changes nothing.
+#
+# -----------------------------------------------------------------------------
+# WHAT THIS FILE NO LONGER CONTAINS (the script works it out itself, every run)
+#
+#   * the service list, WHICH SERVICE IS THE ENTRY, and the dependency DAG --
+#     read from the bento's own `bento.yaml` (`entry_service`, `services[].name`,
+#     `services[].dependencies[].service`). There is no `entry:` and no
+#     `depends:` key any more, so this file can never disagree with the code:
+#     add a `bentoml.depends()` in service.py, rebuild, and the next deploy
+#     wires it. Nothing here to keep in sync.
+#   * the rollout order (topological sort of that DAG, deepest tier first)
+#   * BENTOML_SERVE_DEPENDS for every non-leaf service (dependency slug +
+#     namespace); leaves get no env var. Never hand-write it, and NEVER set
+#     BENTOML_RUNNER_MAP -- an unresolved runner map makes a pod instantiate its
+#     dependencies IN-PROCESS (every model in one pod) while /readyz still
+#     returns 200.
+#   * slugs (object names / in-cluster hostnames), labels and selectors
+#   * ClusterIP for every non-entry service (see the RCE note under `expose`)
+#   * THE IMAGE TAG: it is the bento version (by default the short git SHA that
+#     `bentoml build --version` stamped), so `image` below carries NO tag.
+#     `--version TAG` overrides it; `--image <full ref>` skips build+push.
+#   * the registry type: an `*.dkr.ecr.<region>.amazonaws.com` host means ECR
+#     (automatic login, repository created if missing); anything else means you
+#     must already be logged in. No `registry_type` / `ecr_region` key.
+#   * the build platform: the builder's arch (`docker info`) is compared with
+#     the cluster's node arch (`kubectl get nodes -L kubernetes.io/arch`) and a
+#     cross-build is passed `--opt platform=linux/<node arch>` automatically,
+#     with a log line saying so. This is the "exec format error" class of bug,
+#     removed rather than made configurable.
+#
+# Reference for the knobs that are NOT Kubernetes-shaped (server-side
+# behaviour: workers, timeouts, concurrency, logging, CORS, tracing ->
+# `config_overrides`): references/customization.md
+# =============================================================================
+
+# Schema version. The loader rejects anything else; do not edit.
+schema: bentoml-deploy-config/v4
+
+# Project root (the directory holding `pyproject.toml` / `bentofile.yaml`),
+# resolved relative to THIS file and required to exist. `..` for the normal
+# layout, with this file in `deploy/` next to deploy.py; `.` for a config kept
+# at the project root.
+project: ..
+
+# OPTIONAL. Build target `module:Class` of the entry service, exactly as you
+# would pass it to `bentoml build`. Only needed when plain `bentoml build`
+# cannot work out which service to build; omit it otherwise.
+# build_target: service:Gateway
+
+# Image repository the cluster pulls from, WITHOUT a tag (the tag is the bento
+# version -- see the header). One URL, so registry auth is derived from the
+# host: `*.dkr.ecr.<region>.amazonaws.com` -> ECR login + describe-or-create;
+# anything else -> you are expected to have run `docker login`.
+# Prerequisite: a writable registry the cluster can pull from.
+# Set it to "" only for a local cluster where you load the image onto the nodes
+# yourself (`kind load docker-image` / `minikube image load`): then nothing is
+# pushed and the bento tag is used as the image name.
+# See references/private-registries.md.
+image: ghcr.io/acme/gateway
+
+kubernetes:
+  # kubectl context to deploy into. Always confirmed with a human first --
+  # never silently the current context.
+  context: my-cluster
+  # ONE namespace for every service of the bento: in-cluster dependency URLs
+  # are rendered with it, so services cannot be split across namespaces. It must
+  # already exist -- nothing here ever creates a Namespace.
+  namespace: demos
+  # docker-registry Secret in this namespace, referenced by every Deployment
+  # (all services run the same image). null for public images.
+  # Create it with `kubectl create secret docker-registry ...` -- never here.
+  image_pull_secret: null
+  # Budget for `kubectl rollout status` per service. Must exceed the model
+  # loading time allowed by `probes.startup_failure_threshold` below.
+  rollout_timeout_seconds: 900
+  # Local port for the verification port-forward. Deliberately NOT 3000: a dev
+  # server squatting on the port makes curl hit it instead of your pod.
+  # The dependency-metrics scrape uses this port + 1.
+  local_port: 3130
+  # Labels merged onto every rendered object (cost center, team, env). The four
+  # app.kubernetes.io/* identity labels are managed by the renderer and WIN over
+  # anything here: overriding app.kubernetes.io/name would desync a Deployment's
+  # selector from its own pod template, and the API server rejects that (a
+  # client-side dry-run does NOT catch it).
+  extra_labels: {}
+  # ESCAPE HATCH. null = render manifests from this config (normal case).
+  # Set it to a directory and those files are applied AS-IS: nothing here shapes
+  # the workload any more and you own the YAML, its wiring and its image
+  # reference (hand-owned files pin whatever tag they contain). Trade-off: you
+  # get arbitrary Kubernetes (sidecars, volumes, PDBs, affinity,
+  # terminationGracePeriodSeconds, path_prefix probe paths) and you lose every
+  # guarantee listed in the header -- rollout order, BENTOML_SERVE_DEPENDS,
+  # ClusterIP-only dependencies, HPA-vs-replicas exclusivity. Migration path:
+  # render once (`--render-only k8s`), commit that directory, then point here --
+  # after which --render-only refuses to run, since nothing is rendered any more.
+  manifests_dir: null
+
+# OPTIONAL, and OVERRIDES ONLY. The service list comes from bento.yaml; this
+# section only says where a service should differ from the defaults. Omit it
+# entirely (see config.minimal.yml) and every service gets:
+#   replicas 1 | requests cpu "500m" / memory "1Gi" | limits cpu "2" / memory "4Gi"
+#   startup_failure_threshold 60 | readiness_timeout_seconds 6 | no HPA
+#   ClusterIP everywhere (the entry service verified through a port-forward)
+#
+# The KEY is the BentoML service name EXACTLY as it appears in bento.yaml
+# (`@bentoml.service(name=...)` when set, else the class name) -- the same name
+# `--service-name` and the dependency lookup use. A key that matches no service
+# in the bento is an ERROR, not a silent no-op: that is your typo protection,
+# now that the service list is discovered rather than declared.
+services:
+
+  # --- any service: the full menu of per-service knobs ----------------------
+  Tokenizer:
+    # OPTIONAL. Kubernetes object name and in-cluster hostname. Defaults to the
+    # service name snake_cased with "_" -> "-" (Tokenizer -> tokenizer,
+    # TTSService -> tts-service). Must be DNS-1035 (lowercase, starts with a
+    # LETTER, <=63 chars) and unique; set it only to resolve a collision or to
+    # keep a legacy name. Renaming it rewrites the dependency URLs of every
+    # caller automatically.
+    slug: tokenizer
+    # Fixed pod count. Ignored (and omitted from the Deployment) when
+    # autoscaling.enabled is true, so the HPA and this value cannot fight.
+    replicas: 1
+    resources:
+      # `@bentoml.service(resources={"cpu"/"memory"})` is INERT in open-source
+      # BentoML -- these values are the ONLY thing that constrains the pod, so
+      # a service that declares resources in its decorator still needs them
+      # here to get them. Every quantity must be a QUOTED string ("1", not 1):
+      # an unquoted whole number makes `kubectl apply` report "configured" on
+      # every run and makes GitOps drift detection lie.
+      requests:
+        # What the scheduler reserves; also the denominator of CPU-utilization
+        # autoscaling, so a CPU HPA is meaningless without it.
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        # CPU over the limit throttles (latency); memory over the limit is
+        # OOMKilled -- size it to the model's real resident footprint.
+        cpu: "2"
+        memory: "4Gi"
+        # GPUs go here too, integer and limits-only, e.g.
+        #   nvidia.com/gpu: "1"
+        # plus `node_selector`/`tolerations` for the GPU pool.
+        # See references/gpu-scheduling.md.
+    # Plain, NON-secret env vars for this pod, e.g. {LOG_LEVEL: info}.
+    # BENTOML_RUNNER_MAP / BENTOML_SERVE_RUNNER_MAP are REJECTED here (they make
+    # the pod instantiate dependencies in-process with no log line). Setting
+    # BENTOML_SERVE_DEPENDS or BENTOML_CONFIG_OVERRIDES here is allowed and your
+    # raw value WINS: the derived one is then not emitted at all (no duplicate
+    # env entry), and the loader warns so the override is never silent.
+    env: {}
+    # Names of existing Secrets, mounted wholesale as env (envFrom.secretRef),
+    # e.g. [gateway-env] for HF_TOKEN. Create them with
+    # `kubectl create secret generic ... --from-literal=...`; secret VALUES
+    # never belong in this file. Caveat: a Secret's CONTENTS are invisible to
+    # every static check here, so one containing BENTOML_RUNNER_MAP (rejected
+    # when written in `env`) or BENTOML_SERVE_DEPENDS still reaches the pod and
+    # silently overrides the derived wiring. Keep runtime knobs out of Secrets.
+    env_from_secrets: []
+    # BENTOML_CONFIG_OVERRIDES for this pod: retunes the BentoML server with no
+    # rebuild (workers, traffic.timeout, max_concurrency, logging, CORS,
+    # tracing). It BEATS the @bentoml.service(...) decorator -- but only under
+    # the named service, which is why the renderer nests what you write here
+    # under {"services": {"<ThisServiceName>": ...}}. A global
+    # {"services": {"traffic": ...}} is merged UNDER the decorator and loses,
+    # so write bare keys here and let the renderer key them.
+    # Keys: references/customization.md Table 2. Example:
+    #   config_overrides: {workers: 2, traffic: {timeout: 120}}
+    config_overrides: {}
+    # Node placement, e.g. {kubernetes.io/arch: amd64} or a GPU pool label.
+    node_selector: {}
+    # Tolerations, verbatim Kubernetes syntax (GPU pools are usually tainted):
+    #   tolerations:
+    #     - {key: nvidia.com/gpu, operator: Exists, effect: NoSchedule}
+    tolerations: []
+    probes:
+      # startupProbe budget = this x 10s periodSeconds. 60 -> 10 minutes of
+      # model loading before the pod is declared failed. Raise for big models.
+      startup_failure_threshold: 60
+      # timeoutSeconds for the probes that hit /readyz. 6 IS A FLOOR, not a
+      # default to tune down: when /readyz fans out to a dependency, BentoML
+      # gives that dependency a HARD-CODED 5s budget, so /readyz can
+      # legitimately take just over 5s. At 3s the kubelet hangs up first and
+      # the pod is permanently unready, with nothing in its own logs to say
+      # why. Raise it for a deep chain; never lower it -- and keep leaves on
+      # the same value, since a leaf that gains a dependency later would
+      # otherwise break silently.
+      # (`runner_probe.timeout` cannot change the 5s; it is inert on 1.2+.)
+      readiness_timeout_seconds: 6
+    autoscaling:
+      # false = no HPA; `replicas` above is authoritative.
+      enabled: false
+      # Floor. There is no scale-to-zero here: must be >= 1.
+      min_replicas: 1
+      # Ceiling; also bounded by cluster capacity (and free GPUs).
+      max_replicas: 5
+      # cpu = stock metrics-server, works only because requests.cpu is always
+      # set (a busy GPU pod can idle at 5% CPU, so it is a poor GPU signal).
+      # concurrency = in-flight requests per pod
+      # (`bentoml_service_request_in_progress`), needs prometheus-adapter or
+      # KEDA. Label trap: filter on runner_name (the SERVICE name);
+      # service_name is the BENTO name.
+      metric: cpu
+      # % CPU utilization for metric: cpu, in-flight requests per pod for
+      # metric: concurrency. Keep traffic.max_concurrency (a per-worker
+      # semaphore that 429s instantly) comfortably ABOVE workers x this, or the
+      # service sheds load before it ever scales.
+      target: 70
+
+  # --- a service that calls another: the both-pods timeout trap -------------
+  # There is nothing to declare about the call itself (the DAG comes from
+  # bento.yaml), but one runtime knob is keyed to the CALLEE inside the CALLER:
+  Enricher:
+    # The client deadline for Enricher's call to Tokenizer is read from THIS
+    # pod's config under services.Tokenizer.traffic.timeout, which
+    # config_overrides cannot name (it is always nested under Enricher). Two
+    # ways out: raise it in Tokenizer's decorator
+    # (`@bentoml.service(traffic={"timeout": N})`, which every pod of the bento
+    # sees, at the cost of a rebuild), or write the full document as a raw env
+    # var on this caller --
+    #   env: {BENTOML_CONFIG_OVERRIDES: '{"services":{"Tokenizer":{"traffic":{"timeout":300}}}}'}
+    # -- which replaces the derived value entirely (nothing is emitted twice)
+    # and is warned about at load time. Either way do the same on Tokenizer, so
+    # its own 504 middleware stops firing first.
+    config_overrides: {}
+
+  # --- the ENTRY service: the only externally reachable one -----------------
+  # Which service this is comes from bento.yaml's `entry_service` -- you do not
+  # declare it. Putting `expose:` (or `ingress:`) on any OTHER service is
+  # rejected at load time, and that is a security boundary, not a style rule:
+  # inter-service traffic is `application/vnd.bentoml+pickle`, i.e.
+  # unauthenticated pickle deserialization. Reachable from outside the cluster,
+  # it is remote code execution. Non-entry services are always ClusterIP.
+  Gateway:
+    replicas: 2
+    expose:
+      # ClusterIP (the default -- reach it with port-forward, or via `ingress`
+      # below) | NodePort (any routable node IP) | LoadBalancer (billable, and
+      # public with no auth in front of the model).
+      # See references/exposure-options.md.
+      type: NodePort
+      # NodePort only, 30000-32767. Omit/null to let Kubernetes pick -- pinning
+      # it keeps the URL stable across Service recreation.
+      node_port: 31530
+      # Service annotations, e.g. cloud LB tuning (internal LB, idle timeout,
+      # NLB vs ALB). Keep any proxy/idle timeout >= this service's
+      # traffic.timeout, or the LB 504s before BentoML answers.
+      annotations: {}
+    ingress:
+      # Needs an installed controller (`kubectl get ingressclass`) and normally
+      # expose.type: ClusterIP. Routes `/` to the entry service only.
+      enabled: false
+      # From `kubectl get ingressclass`, e.g. nginx.
+      class_name: nginx
+      # Hostname whose DNS points at the ingress controller.
+      host: ""
+      # Existing TLS Secret in this namespace (cert-manager or
+      # `kubectl create secret tls`). null = plain HTTP.
+      tls_secret: null
+      # Controller annotations. Inference usually needs a raised proxy timeout
+      # (nginx defaults to 60s) and a body-size limit that fits the payload;
+      # keep any timeout >= this service's traffic.timeout.
+      annotations: {}
+
+verify:
+  # How long to wait for the entry service's /readyz through the port-forward.
+  readyz_timeout_seconds: 600
+  # Prove each dependency was really called OVER THE NETWORK, in its own pod
+  # (access-log line + request counter). Keep it true for multi-service bentos:
+  # a mis-wired dependency returns correct answers from the wrong pod, so
+  # neither /readyz nor the response body can detect it. It needs a real
+  # request, so it is skipped (with a logged note) when `inference` is absent.
+  dependency_metrics: true
+  # OPTIONAL. Without it, verification is /readyz only -- which proves the pods
+  # came up and nothing about the answers or the dependency path. Add it as soon
+  # as you know one real route.
+  inference:
+    # One real API route on the ENTRY service. Each `@bentoml.api def foo(...)`
+    # is POST /foo. Never call a dependency directly -- it speaks pickle.
+    path: /analyze
+    # Request body as native YAML (not a JSON string); sent as JSON.
+    body:
+      text: "I love this wonderful product, but the manual is terrible."
+    # Substring that MUST appear in the response. This is the real pass/fail
+    # signal: HTTP 200 alone proves nothing about the model's answer.
+    expect_substring: "sentiment"
+    # Per-request client timeout; keep it >= the entry service's
+    # traffic.timeout so the server, not curl, decides when a call is too slow.
+    timeout_seconds: 60
+
+# A `bentoml-deploy-scriptgen` bundle that also targets EC2 keeps an `ec2:`
+# section in this same file. It is a valid sibling of `kubernetes:` and is
+# ignored by `--target k8s`, so leave it alone if it is there.

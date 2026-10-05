@@ -43,7 +43,7 @@ jobs:
           cache: pip
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: pipx install pdm && pipx install nox
+        run: pipx install pdm==2.28.0 && pipx inject --force pdm dep-logic==0.6.0 && pipx install nox
       - name: Unit tests
         run: nox --session unit-${{ matrix.python-version }}
       - name: Disambiguate coverage filename
@@ -94,7 +94,7 @@ jobs:
           python-version: '3.9'
           cache: pip
       - name: Install dependencies
-        run: pipx install pdm && pipx install nox
+        run: pipx install pdm==2.28.0 && pipx inject --force pdm dep-logic==0.6.0 && pipx install nox
       - name: Run framework integration tests
         run: nox --session "framework-integration(framework='${{ matrix.framework }}')"
       - name: Disambiguate coverage filename
@@ -135,7 +135,7 @@ jobs:
           cache: pip
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: pipx install pdm && pipx install nox
+        run: pipx install pdm==2.28.0 && pipx inject --force pdm dep-logic==0.6.0 && pipx install nox
       - name: Run the monitoring tests
         run: nox -s e2e-monitoring-${{ matrix.python-version }}
       - name: Disambiguate coverage filename
@@ -184,7 +184,7 @@ jobs:
           cache: pip
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: pipx install pdm && pipx install nox
+        run: pipx install pdm==2.28.0 && pipx inject --force pdm dep-logic==0.6.0 && pipx install nox
       - name: Run ${{ matrix.suite }} tests
         run: nox -s "e2e-testing-${{ matrix.python-version }}(suite='${{ matrix.suite }}')"
       - name: Disambiguate coverage filename
@@ -234,7 +234,7 @@ jobs:
           pattern: coverage-unit-data-*
           merge-multiple: true
       - name: Install dependencies
-        run: pipx install pdm && pipx install nox
+        run: pipx install pdm==2.28.0 && pipx inject --force pdm dep-logic==0.6.0 && pipx install nox
       - name: Export coverage reports and generate summary
         run: nox -s coverage
       - name: Upload uncovered HTML report

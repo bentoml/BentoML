@@ -1,0 +1,117 @@
+# =============================================================================
+# REFERENCE SHAPE of the HorizontalPodAutoscaler rendered for ONE BentoML
+# service. Rendered only when services.<Name>.autoscaling.enabled is true; the
+# `metric` key there picks VARIANT A (cpu) or VARIANT B (concurrency) below --
+# exactly one `metrics:` list is emitted.
+#
+# Not the file you edit -- `config.yml` is:
+#   services.<Name>.autoscaling.{enabled,min_replicas,max_replicas,metric,target}
+#
+# Rendered for BentoML service: {{BENTOML_SERVICE_NAME}}   (bento: {{BENTO_NAME}})
+#
+# Guaranteed by the renderer, and worth re-checking by hand if you take over the
+# manifests: the Deployment of an autoscaled service carries NO `spec.replicas`
+# (otherwise every `kubectl apply` resets the count and fights the HPA).
+#
+# Preconditions:
+#  * `kubectl --context <ctx> top pods -n {{NAMESPACE}}` must return numbers --
+#    that proves metrics-server is installed and serving metrics.k8s.io.
+#  * If this service uses @bentoml.service(path_prefix="/x"), /metrics moves to
+#    /x/metrics -- fix your scrape config, or the custom metric never appears.
+#  * Scale each BentoML service independently: the bottleneck is almost never
+#    spread evenly across the DAG, and the entry service is usually cheap.
+# =============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{SLUG}}
+  namespace: {{NAMESPACE}}
+  labels:
+    app.kubernetes.io/name: {{SLUG}}
+    app.kubernetes.io/component: {{BENTOML_SERVICE_NAME}}
+    app.kubernetes.io/part-of: {{BENTO_NAME}}
+    app.kubernetes.io/managed-by: bentoml-k8s-deploy
+    # plus every pair from kubernetes.extra_labels (which can never override the
+    # four app.kubernetes.io/* identity labels above)
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    # This service's own Deployment, never the entry service's.
+    name: {{SLUG}}
+  # There is no scale-to-zero here; config.yml requires min_replicas >= 1.
+  minReplicas: {{MIN_REPLICAS}}
+  # Hard ceiling. Also bounded by cluster capacity / available GPUs.
+  maxReplicas: {{MAX_REPLICAS}}
+
+  # ---------------------------------------------------------------------------
+  # VARIANT A -- autoscaling.metric: cpu.  Works with a stock metrics-server,
+  # nothing else to install. It is usable ONLY because every rendered Deployment
+  # sets `resources.requests.cpu`: "utilization" means used/requested, so a pod
+  # with no CPU request has undefined utilization and the HPA reports <unknown>.
+  # Good for CPU-bound preprocessing; a poor proxy for GPU inference (a busy GPU
+  # pod can sit at 5% CPU) -- use VARIANT B there.
+  # ---------------------------------------------------------------------------
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          # <- services.<Name>.autoscaling.target (percent). 70 is a sane start;
+          # lower = more headroom and more pods.
+          averageUtilization: {{CPU_TARGET_PERCENT}}
+
+  # ---------------------------------------------------------------------------
+  # VARIANT B -- autoscaling.metric: concurrency. In-flight requests per pod, the
+  # real BentoML concurrency signal. Requires a custom-metrics provider:
+  # prometheus-adapter or KEDA. Verify with
+  #   kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1" | head
+  # BentoML exposes on :3000/metrics, per service:
+  #   bentoml_service_request_in_progress   (Gauge, livesum)  <- scale on this
+  #   bentoml_service_request_total         (Counter)
+  #   bentoml_service_request_duration_seconds (Histogram)
+  #
+  # LABEL TRAP: on these metrics `runner_name` is the BentoML SERVICE name
+  # ({{BENTOML_SERVICE_NAME}}) and `service_name` is the BENTO name
+  # ({{BENTO_NAME}}). Filtering on service_name="{{BENTOML_SERVICE_NAME}}"
+  # silently matches nothing and the HPA sits at <unknown> forever.
+  #
+  # PROBE TRAFFIC IS COUNTED. The health endpoints are excluded from the access log,
+  # NOT from these metrics, so every kubelet /readyz and /livez hit shows up in
+  # request_in_progress while it is in flight. On a service whose /readyz fans out to
+  # dependencies that is seconds of in-flight time per probe period, which is enough to
+  # keep an autoscaler warm on an idle service -- so exclude the health endpoints in the
+  # query below rather than summing over all endpoints.
+  #
+  # prometheus-adapter rule (values.yaml `rules.custom`) producing a Pods metric
+  # named bentoml_inflight:
+  #   - seriesQuery: 'bentoml_service_request_in_progress{namespace!="",pod!=""}'
+  #     resources: {overrides: {namespace: {resource: namespace}, pod: {resource: pod}}}
+  #     name: {matches: "^bentoml_service_request_in_progress$", as: "bentoml_inflight"}
+  #     metricsQuery: 'sum(bentoml_service_request_in_progress{<<.LabelMatchers>>,runner_name="{{BENTOML_SERVICE_NAME}}",endpoint!~"/(livez|readyz|healthz|metrics)"}) by (<<.GroupBy>>)'
+  #
+  # The rendered form, with autoscaling.target as in-flight requests PER POD (the
+  # gauge is livesum, so it already covers every worker in the pod):
+  # metrics:
+  #   - type: Pods
+  #     pods:
+  #       metric:
+  #         name: bentoml_inflight
+  #       target:
+  #         type: AverageValue
+  #         averageValue: "{{CONCURRENCY_TARGET}}"
+  #
+  # INTERACTION with traffic.max_concurrency: that is a per-worker semaphore that
+  # returns HTTP 429 the instant it is exceeded, and the HPA needs ~30-60s to add a
+  # pod. Set max_concurrency comfortably ABOVE (workers x averageValue) or the
+  # service sheds load before it ever scales. See references/customization.md.
+  # ---------------------------------------------------------------------------
+
+  # Scaling reflexes. Model-loading pods are expensive to start, so scale up
+  # briskly and down slowly.
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30    # react fast to a traffic spike
+    scaleDown:
+      stabilizationWindowSeconds: 300   # >= worst-case model load time, or it thrashes

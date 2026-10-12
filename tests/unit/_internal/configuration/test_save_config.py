@@ -4,7 +4,8 @@ import io
 
 import yaml
 
-from bentoml._internal.configuration import load_config, save_config
+from bentoml._internal.configuration import load_config
+from bentoml._internal.configuration import save_config
 from bentoml._internal.configuration.containers import BentoMLContainer
 
 

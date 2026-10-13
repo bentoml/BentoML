@@ -21,7 +21,7 @@ BentoML is a Python library for building online serving systems optimized for AI
 - **🐳 Docker Containers made simple.** No more dependency hell! Manage your environments, dependencies and model versions with a simple config file. BentoML automatically generates Docker images, ensures reproducibility, and simplifies how you deploy to different environments.
 - **🧭 Maximize CPU/GPU utilization.** Build high performance inference APIs leveraging built-in serving optimization features like dynamic batching, model parallelism, multi-stage pipeline and multi-model inference-graph orchestration.
 - **👩‍💻 Fully customizable.** Easily implement your own APIs or task queues, with custom business logic, model inference and multi-model composition. Supports any ML framework, modality, and inference runtime.
-- **🚀 Ready for Production.** Develop, run and debug locally. Seamlessly deploy to production with Docker containers or [BentoCloud](https://www.bentoml.com/).
+- **🚀 Ready for Production.** Develop, run and debug locally. Seamlessly deploy to production with Docker containers or Kubernetes.
 
 ## Getting started
 
@@ -105,24 +105,6 @@ Run the generated image:
 docker run --rm -p 3000:3000 summarization:latest
 ```
 
-### ☁️ Deploy on BentoCloud
-
-[BentoCloud](https://www.bentoml.com) provides compute infrastructure for rapid and reliable GenAI adoption. It helps speed up your BentoML development process leveraging cloud compute resources, and simplify how you deploy, scale and operate BentoML in production.
-
-[Sign up for BentoCloud](https://cloud.bentoml.com/signup) for personal access; for enterprise use cases, [contact our team](https://www.bentoml.com/contact).
-
-```bash
-# After signup, run the following command to create an API token:
-bentoml cloud login
-
-# Deploy from current directory:
-bentoml deploy
-```
-
-![bentocloud-ui](./docs/source/_static/img/get-started/cloud-deployment/first-bento-on-bentocloud.png)
-
-For detailed explanations, read the [Hello World example](https://docs.bentoml.com/en/latest/get-started/hello-world.html).
-
 ## Examples
 
 - LLMs: [Llama 3.2](https://github.com/bentoml/BentoVLLM/tree/main/llama3.2-11b-vision-instruct), [Mistral](https://github.com/bentoml/BentoVLLM/tree/main/ministral-8b-instruct-2410), [DeepSeek Distil](https://github.com/bentoml/BentoVLLM/tree/main/deepseek-r1-distill-llama3.1-8b-tool-calling), and more.
@@ -141,10 +123,8 @@ Check out the [full list](https://docs.bentoml.com/en/latest/examples/overview.h
 - [Adaptive batching](https://docs.bentoml.com/en/latest/get-started/adaptive-batching.html)
 - [GPU inference](https://docs.bentoml.com/en/latest/build-with-bentoml/gpu-inference.html)
 - [Distributed serving systems](https://docs.bentoml.com/en/latest/build-with-bentoml/distributed-services.html)
-- [Concurrency and autoscaling](https://docs.bentoml.com/en/latest/scale-with-bentocloud/scaling/autoscaling.html)
 - [Model loading and Model Store](https://docs.bentoml.com/en/latest/build-with-bentoml/model-loading-and-management.html)
 - [Observability](https://docs.bentoml.com/en/latest/build-with-bentoml/observability/index.html)
-- [BentoCloud deployment](https://docs.bentoml.com/en/latest/get-started/cloud-deployment.html)
 
 See [Documentation](https://docs.bentoml.com) for more tutorials and guides.
 

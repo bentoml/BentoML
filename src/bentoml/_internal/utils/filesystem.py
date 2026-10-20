@@ -162,7 +162,9 @@ def resolve_user_filepath(
             raise ValueError(
                 f"Accessing file outside of current working directory is not allowed: {_path}"
             )
-        if any(part.startswith(".") for part in _path.parts):
+        # Only the part below cwd is user-supplied; an ancestor of cwd may legitimately be
+        # hidden (e.g. a bento built under BENTOML_HOME=~/.bentoml).
+        if any(part.startswith(".") for part in _path.relative_to(cwd).parts):
             raise ValueError(f"Accessing hidden files is not allowed: {_path}")
         if any(_path.is_relative_to(item) for item in ("/etc", "/proc")):
             raise ValueError(f"Accessing system files is not allowed: {_path}")

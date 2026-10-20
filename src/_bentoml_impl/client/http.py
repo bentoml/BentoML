@@ -503,9 +503,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
             data = resp.json()
             return Task(data["task_id"], __endpoint, self)
         finally:
-            for f in self._opened_files:
-                f.close()
-            self._opened_files.clear()
+            self._file_manager.close()
 
     def _get_task_result(self, __endpoint: ClientEndpoint, /, task_id: str) -> t.Any:
         resp = self.request(

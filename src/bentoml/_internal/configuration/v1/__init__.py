@@ -241,7 +241,7 @@ def migration(*, override_config: dict[str, t.Any]):
     # 4. if ssl is present, in version 2 we introduce a api_server.ssl.enabled field to determine
     # whether user want to enable SSL.
     if len([f for f in override_config if f.startswith("api_server.ssl")]) != 0:
-        override_config["api_server.ssl.enabled"] = True
+        override_config.setdefault("api_server.ssl.enabled", True)
 
     # 5. migrate all tracing fields to api_server.tracing
     # 5.1. migrate tracing.type -> api_server.tracing.expoerter_type

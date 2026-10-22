@@ -241,11 +241,11 @@ Available fields for ``monitoring``:
   - ``log_path``: Defines the directory where monitoring logs will be stored, which is relative to the Service's running location. It defaults to ``monitoring``.
   - ``log_backup_count``: The number of rotated daily data log files retained by the default logging configuration. Set a positive integer to remove older backups during rotation. The default, ``0``, retains all backups. The current data log and schema log are kept separately. A custom ``log_config_file`` controls its own retention settings.
 
-You can configure retention through the ``monitoring.options`` dictionary or the ``BENTOML_CONFIG_OPTIONS`` environment variable. For example, to retain seven rotated data logs per worker:
+You can configure retention through the ``monitoring.options`` dictionary or the ``BENTOML_CONFIG_OVERRIDES`` environment variable. For example, to retain seven rotated data logs per worker:
 
 .. code-block:: bash
 
-    BENTOML_CONFIG_OPTIONS='monitoring.options.log_backup_count=7' bentoml serve service:Summarization
+    BENTOML_CONFIG_OVERRIDES='{"monitoring":{"options":{"log_backup_count":7}}}' bentoml serve service:Summarization
 
 For deployments using :doc:`the OCI-compliant image </get-started/packaging-for-deployment>`, you can persist log files by mounting the specified log directory (``monitoring`` in the example) to a volume. This ensures that your monitoring data is retained across container restarts and redeployments.
 

@@ -42,10 +42,10 @@ def test_default_monitor_log_retention(
     env = os.environ.copy()
     env.pop("BENTOML_CONFIG", None)
     env.pop("BENTOML_CONFIG_OPTIONS", None)
+    env.pop("BENTOML_CONFIG_OVERRIDES", None)
+    options: dict[str, Any] = {}
     if backup_count is not None:
-        env["BENTOML_CONFIG_OPTIONS"] = (
-            f"monitoring.options.log_backup_count={backup_count}"
-        )
+        options["log_backup_count"] = backup_count
     if custom_backup_count is not None:
         config = {
             "version": 1,
@@ -71,8 +71,10 @@ def test_default_monitor_log_retention(
             },
         }
         (tmp_path / "logging.yaml").write_text(yaml.safe_dump(config))
-        env["BENTOML_CONFIG_OPTIONS"] += (
-            ' monitoring.options.log_config_file="logging.yaml"'
+        options["log_config_file"] = "logging.yaml"
+    if options:
+        env["BENTOML_CONFIG_OVERRIDES"] = json.dumps(
+            {"monitoring": {"options": options}}
         )
     result = subprocess.run(
         [sys.executable, "-c", ROTATE_MONITOR_LOGS],

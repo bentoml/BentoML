@@ -82,7 +82,7 @@ COPY --chown={{ bento__user }}:{{ bento__user }} ./env/docker ./env/docker/
 {% for command in __options__commands %}
 {% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {% endcall -%} {{ __secret_exports__ }}{{ command }}
 {% endfor %}
-{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {% endcall -%} {{ __secret_exports__ }}command -v uv >/dev/null || pip install uv
+{% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {% endcall -%} {{ common.install_uv() }}
 {% call common.RUN(__enable_buildkit__) -%} {{ __secret_mounts__ }} {% endcall -%} {{ __secret_exports__ }}UV_PYTHON_INSTALL_DIR=/app/python/ uv venv --python {{ __options__python_version }} /app/.venv && \
     chown -R {{ bento__user }}:{{ bento__user }} /app/.venv
 ENV VIRTUAL_ENV=/app/.venv

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from io import StringIO
+
+from bentoml._internal.bento.build_config import BentoBuildConfig
 from bentoml._internal.bento.build_config import CondaOptions
 from bentoml._internal.bento.build_config import DockerOptions
 from bentoml._internal.container.generate import build_environment
@@ -64,3 +67,31 @@ def test_generate_containerfile_normalizes_custom_base_image(tmp_path) -> None:
 
     assert "FROM python:3.11-slim RUN touch /tmp/pwned as base-container" in dockerfile
     assert "\nRUN touch /tmp/pwned" not in dockerfile
+
+
+def test_generate_containerfile_merges_bento_and_docker_envs(tmp_path) -> None:
+    config = BentoBuildConfig.from_yaml(
+        StringIO(
+            """\
+service: service:TestService
+envs:
+  - name: TEST_ENV
+    value: test
+docker:
+  distro: debian
+  python_version: "3.10"
+  env:
+    TEST_ENV_2: test
+"""
+        )
+    ).with_defaults()
+
+    dockerfile = generate_containerfile(
+        config.docker,
+        str(tmp_path),
+        conda=config.conda,
+        bento_fs=tmp_path,
+    )
+
+    assert "ARG TEST_ENV=test\nENV TEST_ENV=$TEST_ENV\n" in dockerfile
+    assert "ARG TEST_ENV_2=test\nENV TEST_ENV_2=$TEST_ENV_2\n" in dockerfile

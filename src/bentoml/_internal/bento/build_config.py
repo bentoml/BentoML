@@ -223,8 +223,9 @@ class DockerOptions:
                 python_version = f"{version_info.major}.{version_info.minor}"
                 defaults["python_version"] = python_version
 
-        if self.env is None and default_envs:
+        if default_envs:
             defaults["env"] = {e.name: e.value for e in default_envs}
+            defaults["env"].update(self.env or {})
 
         return attr.evolve(self, **defaults)
 

@@ -567,6 +567,7 @@ You set environment variables under the ``envs`` key in ``bentofile.yaml``. Each
              value: "your_api_key_here"
 
 The specified environment variables will be injected into the Bento container.
+When ``docker.env`` is also configured, variables from both settings are included. For variables with the same name, the value in ``docker.env`` takes precedence.
 
 .. note::
 

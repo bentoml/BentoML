@@ -36,6 +36,7 @@ handlers:
     formatter: bentoml_json
     filename: '{data_filename}'
     when: "D"
+    backupCount: {log_backup_count}
   bentoml_monitor_schema:
     class: logging.handlers.RotatingFileHandler
     level: INFO
@@ -67,10 +68,18 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         name: str,
         log_path: str,
         log_config_file: str | None = None,
+        log_backup_count: int = 0,
         **_: t.Any,
     ) -> None:
         super().__init__(name, **_)
+        if (
+            isinstance(log_backup_count, bool)
+            or not isinstance(log_backup_count, int)
+            or log_backup_count < 0
+        ):
+            raise ValueError("log_backup_count must be a non-negative integer")
         self.log_config_file = log_config_file
+        self.log_backup_count = log_backup_count
         self.log_path = log_path
         self.data_logger = None
         self.schema_logger = None
@@ -98,6 +107,7 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
             data_filename=str(data_path.absolute()),
             worker_id=worker_id,
             monitor_name=self.name,
+            log_backup_count=self.log_backup_count,
         )
 
         try:

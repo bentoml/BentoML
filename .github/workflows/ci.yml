@@ -202,6 +202,9 @@ jobs:
     name: report-coverage
     # pinned: on ubuntu-latest (26.04) pipx uses system Python 3.14, and pinned deps have no 3.14 wheels.
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write # sticky coverage comment; repo default token is read-only
     needs:
       - e2e-test
       - e2e-monitoring

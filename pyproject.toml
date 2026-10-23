@@ -33,7 +33,6 @@ dependencies = [
     "click-option-group",
     "cloudpickle>=2.0.0",
     "httpx",
-    # drops the compromised eMudhra/emSign CA certificates
     "certifi>=2026.10.19",
     "numpy",
     "nvidia-ml-py",

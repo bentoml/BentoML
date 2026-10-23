@@ -4,8 +4,6 @@
 {% if not enable_buildkit %}RUN {% else -%}RUN {{ caller() }} {%- endif -%}
 {%- endmacro -%}
 
-{#- uv < 0.13.4 bundles the compromised eMudhra intermediate CAs, and the base image's pip may
-    still trust them too, so the pinned uv is installed with --require-hashes. -#}
 {%- macro install_uv() -%}
 { command -v uv >/dev/null && uv --version | awk '{split($2,v,"."); exit !(v[1]>0||v[2]>13||(v[2]==13&&v[3]>=4))}'; } || { \
     printf '%s\n' 'uv==0.13.4 \

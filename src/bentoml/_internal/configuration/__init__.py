@@ -20,6 +20,27 @@ if t.TYPE_CHECKING:
 # used within functions in this file
 logger = logging.getLogger(__name__)
 
+UV_VERSION = "0.13.4"
+UV_HASHES = (
+    "205a4f93e568fb24f45a2f3834f1c0a8f1adb5f396bf473c71030ed707dce048",
+    "e90ab42825587821096cb0d071e387468da38cfa22818c91f9c0b3c0453048e8",
+    "3a9dcb6762c3ba249d8c084315ba03839082af3ece3536cc4164ec735c351d68",
+    "8ae6ff2b07892379dc767c9064c2b8bbfac88e767edac7ce28e1b0f15d86abb4",
+    "25cc14ff4fd8335d3be2cc493a621a003fdafcb0fb1c953c905daabe4def5ab8",
+    "77062b02856c74697f48328d8a6583ab07e6da0a993e86c2db46f3d1da27c637",
+    "fb0e2028d9a8929884344afb7d91d0f65d9783f640d28aede89fca3602bedde9",
+    "05e4332791b4d55b6dde8695b7fa6079b26991519f44760887c5dfbd5ca4fe53",
+    "7b3cdf868e5415631fe797b648c0d6945d38d388f23367bdd0b6332e80a1fcb0",
+    "4e6b08578c920b86910897f36bb6da7229c8e7e0187976570e2a538cb28b777e",
+    "d86a5dec8ab30c70519c71ca5085c8aaf28664836cbc600951cedaa3fc678cbf",
+    "5d89d1028c2e22977d9215cbb79cfe12559cb0c8a507a12e2f3a7e47930cf1bf",
+    "52b5c753a7c2d5f8323a70bb4c93118988356331d0758afa6446c81f974e7196",
+    "b0bff5b9a5061f7a35b1d0c1a94c19af134222c48eb7aadc42f85a038be1b248",
+)
+UV_REQUIREMENT = f"uv=={UV_VERSION} " + " ".join(
+    f"--hash=sha256:{h}" for h in UV_HASHES
+)
+
 DEBUG_ENV_VAR = "BENTOML_DEBUG"
 QUIET_ENV_VAR = "BENTOML_QUIET"
 VERBOSITY_ENV_VAR = "BENTOML_VERBOSITY"
@@ -228,6 +249,18 @@ def set_serialization_strategy(serialization_strategy: SerializationStrategy):
     BentoMLContainer.serialization_strategy.set(serialization_strategy)
 
 
+def _uv_version(cmd: list[str]) -> Version | None:
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            [*cmd, "--version"], check=True, capture_output=True, text=True
+        ).stdout
+        return Version(out.split()[1])
+    except (OSError, subprocess.CalledProcessError, IndexError, ValueError):
+        return None
+
+
 @lru_cache(maxsize=1)
 def get_uv_command() -> list[str]:
     """
@@ -236,17 +269,37 @@ def get_uv_command() -> list[str]:
     import shutil
     import subprocess
     import sys
+    import tempfile
 
-    if uv := shutil.which("uv"):
+    min_version = Version(UV_VERSION)
+    if (uv := shutil.which("uv")) and (
+        _uv_version([uv]) or Version("0")
+    ) >= min_version:
         return [uv]
 
+    module_cmd = [sys.executable, "-m", "uv"]
     try:
-        importlib.metadata.version("uv")
+        installed = Version(importlib.metadata.version("uv"))
     except importlib.metadata.PackageNotFoundError:
-        install_cmd = [sys.executable, "-m", "pip", "install", "-q", "uv"]
-        logger.info(
-            "uv is not installed, installing it with: %s", " ".join(install_cmd)
-        )
+        installed = None
+    if installed is not None and installed >= min_version:
+        return module_cmd
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        requirements = os.path.join(tmpdir, "uv-requirements.txt")
+        with open(requirements, "w") as f:
+            f.write(UV_REQUIREMENT + "\n")
+        install_cmd = [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "-q",
+            "--require-hashes",
+            "-r",
+            requirements,
+        ]
+        logger.info("Installing uv==%s with: %s", UV_VERSION, " ".join(install_cmd))
         try:
             subprocess.run(
                 install_cmd,
@@ -259,4 +312,4 @@ def get_uv_command() -> list[str]:
                 f"Failed to install uv: {e.stderr.decode()}"
             ) from None
 
-    return [sys.executable, "-m", "uv"]
+    return module_cmd

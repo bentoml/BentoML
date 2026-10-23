@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING
 from jinja2.loaders import FileSystemLoader
 from jinja2.sandbox import SandboxedEnvironment as Environment
 
+from ..configuration import UV_REQUIREMENT
+from ..configuration import UV_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..utils.filesystem import resolve_user_filepath
 from .frontend.dockerfile import DistroSpec
@@ -131,6 +133,8 @@ def build_environment() -> Environment:
     environment.filters["bash_quote"] = shlex.quote
     environment.filters["normalize_line"] = normalize_line
     environment.globals["expands_bento_path"] = expands_bento_path
+    environment.globals["uv_version"] = UV_VERSION
+    environment.globals["uv_requirement"] = UV_REQUIREMENT
     return environment
 
 

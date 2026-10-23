@@ -5,7 +5,9 @@ import typing as t
 from bentoml._internal.types import LazyType
 
 from .io_models import IODescriptor
+from .method import DEFAULT_MAX_LATENCY_MS
 from .method import APIMethod
+from .method import MaxLatency
 
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 R = t.TypeVar("R")
@@ -53,7 +55,7 @@ def api(
     batchable: bool = ...,
     batch_dim: int | tuple[int, int] = ...,
     max_batch_size: int = ...,
-    max_latency_ms: int = ...,
+    max_latency_ms: MaxLatency = ...,
 ) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]: ...
 
 
@@ -67,7 +69,7 @@ def api(
     batchable: bool = False,
     batch_dim: int | tuple[int, int] = 0,
     max_batch_size: int = 100,
-    max_latency_ms: int = 60000,
+    max_latency_ms: MaxLatency = DEFAULT_MAX_LATENCY_MS,
 ) -> (
     APIMethod[P, R]
     | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]
@@ -84,7 +86,8 @@ def api(
         batchable: Whether the API is batchable.
         batch_dim: The batch dimension of the API.
         max_batch_size: The maximum batch size of the API.
-        max_latency_ms: The maximum latency of the API.
+        max_latency_ms: A positive static latency in milliseconds, or a synchronous
+            request resolver returning a positive latency in milliseconds.
     """
 
     def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
@@ -169,7 +172,7 @@ def task(
     batchable: bool = False,
     batch_dim: int | tuple[int, int] = 0,
     max_batch_size: int = 100,
-    max_latency_ms: int = 60000,
+    max_latency_ms: int = DEFAULT_MAX_LATENCY_MS,
 ) -> (
     APIMethod[P, R]
     | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]

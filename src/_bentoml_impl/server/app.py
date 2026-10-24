@@ -772,7 +772,7 @@ class ServiceAppFactory(BaseAppFactory):
         media_type = media_type.split(";")[0].strip()
 
         # NOTE: The following check is for security concern, DO NOT REMOVE
-        if self.is_main and media_type == "application/vnd.bentoml+pickle":
+        if media_type == "application/vnd.bentoml+pickle":
             raise BentoMLException(
                 "application/vnd.bentoml+pickle is not allowed in main server",
                 error_code=HTTPStatus.UNSUPPORTED_MEDIA_TYPE,

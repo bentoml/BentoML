@@ -25,3 +25,16 @@ def test_file_schema_decode_with_path_separator_in_filename(tmp_path: Path):
     assert result.exists()
     assert result.read_bytes() == file_content
     assert result.suffix == ".pdf"
+
+
+def test_file_schema_decode_with_string_payload(tmp_path: Path):
+    file_content = "test content"
+
+    with patch(
+        "bentoml._internal.context.request_temp_dir", return_value=str(tmp_path)
+    ):
+        result = FileSchema().decode(file_content)
+
+    assert isinstance(result, Path)
+    assert result.exists()
+    assert result.read_text() == file_content

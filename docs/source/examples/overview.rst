@@ -11,7 +11,7 @@ Deploy an OpenAI-compatible LLM API service with BentoML and vLLM:
 
 - `DeepSeek R1 Distill of Llama 3.3 70B <https://github.com/bentoml/BentoVLLM/tree/main/deepseek-r1-llama3.3-70b>`_
 - `Llama 4 Scout <https://github.com/bentoml/BentoVLLM/tree/main/llama4-17b-scout-instruct>`_
-- `Mistral Small 24B <https://github.com/bentoml/BentoVLLM/tree/main/mistral-small-3.1-24b-instruct-2503>`_
+- `Qwen3 8B <https://github.com/bentoml/BentoVLLM/tree/main/qwen3-8b>`_
 - Check out the `BentoVLLM project <https://github.com/bentoml/BentoVLLM/#featured-models>`_ to see more supported models.
 
 Customize your LLM inference runtime:
@@ -67,9 +67,9 @@ Computer vision
 
 Serve computer vision models with BentoML:
 
-- `YOLO: Object detection <https://github.com/bentoml/BentoYolo>`_
 - `ResNet: Image classification <https://github.com/bentoml/BentoResnet>`_
 - `EasyOCR: Optical character recognition <https://github.com/bentoml/BentoOCR>`_
+- Check out the `BentoML gallery <https://github.com/bentoml/gallery>`_ for additional computer vision examples.
 
 Embeddings
 ----------

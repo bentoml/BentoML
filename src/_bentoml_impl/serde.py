@@ -106,10 +106,15 @@ class GenericSerde:
         if schema.get("type") == "object" and schema.get("properties"):
             if isinstance(obj, BaseModel):
                 return obj.model_dump(mode=mode)
+            properties = schema["properties"]
+            additional_schema = schema.get("additionalProperties", {})
+            if not isinstance(additional_schema, dict):
+                additional_schema = {}
             return {
-                k: self._encode(obj[k], child)
-                for k, child in schema["properties"].items()
-                if k in obj
+                k: self._encode(v, properties.get(k, additional_schema))
+                for k, v in obj.items()
+                if k in properties
+                or schema.get("additionalProperties", True) is not False
             }
         return obj
 
@@ -133,10 +138,16 @@ class GenericSerde:
             and schema.get("properties")
             and isinstance(obj, t.Mapping)
         ):
+            obj = t.cast(t.Mapping[str, t.Any], obj)
+            properties = schema["properties"]
+            additional_schema = schema.get("additionalProperties", {})
+            if not isinstance(additional_schema, dict):
+                additional_schema = {}
             return {
-                k: self._decode(obj[k], child)
-                for k, child in schema["properties"].items()
-                if k in obj
+                k: self._decode(v, properties.get(k, additional_schema))
+                for k, v in obj.items()
+                if k in properties
+                or schema.get("additionalProperties", True) is not False
             }
         return obj
 

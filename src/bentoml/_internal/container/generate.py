@@ -201,7 +201,9 @@ def generate_containerfile(
 
     user_templates = docker.dockerfile_template
     if user_templates is not None:
-        dir_path = os.path.dirname(resolve_user_filepath(user_templates, build_ctx))
+        dir_path = os.path.dirname(
+            resolve_user_filepath(user_templates, build_ctx, secure=False)
+        )
         user_templates = os.path.basename(user_templates)
         templates_path.append(dir_path)
         environment = ENVIRONMENT.overlay(

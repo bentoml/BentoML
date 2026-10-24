@@ -76,9 +76,19 @@ def get(
 def delete(
     tag: Tag | str,
     *,
+    cloud: bool = False,
     _bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
-    _bento_store.delete(tag)
+    if cloud:
+        _tag = Tag.from_taglike(tag)
+        if _tag.version is None:
+            raise BentoMLException(
+                f'Bento version is required for cloud deletion. Please specify a version, e.g. "{_tag.name}:<version>"'
+            )
+        _cloud_client.bento.delete(_tag.name, _tag.version)
+    else:
+        _bento_store.delete(tag)
 
 
 @inject

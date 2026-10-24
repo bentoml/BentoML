@@ -220,13 +220,21 @@ def bento_management_commands() -> click.Group:
         is_flag=True,
         help="Skip confirmation when deleting a specific bento bundle",
     )
+    @click.option(
+        "--cloud",
+        is_flag=True,
+        default=False,
+        help="Delete Bento from BentoCloud remote server",
+    )
     @inject
     def delete(
         delete_targets: list[str],
         yes: bool,
+        cloud: bool,
         bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
     ) -> None:  # type: ignore (not accessed)
-        """Delete Bento in local bento store.
+        """Delete Bento in local bento store or from BentoCloud.
 
         \b
         Examples:
@@ -235,25 +243,37 @@ def bento_management_commands() -> click.Group:
             * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `bentoml delete Irisclassifier:v1,MyPredictService:v2`
             * Bulk delete multiple bento bundles by name and version, separated by " ", e.g.: `bentoml delete Irisclassifier:v1 MyPredictService:v2`
             * Bulk delete without confirmation, e.g.: `bentoml delete IrisClassifier --yes`
+            * Delete from BentoCloud, e.g.: `bentoml delete IrisClassifier:v1 --cloud`
         """
 
         def delete_target(target: str) -> None:
             tag = Tag.from_str(target)
 
-            if tag.version is None:
-                to_delete_bentos = bento_store.list(target)
+            if cloud:
+                if tag.version is None:
+                    raise click.BadParameter(
+                        f'Deleting all versions is not supported for cloud bentos. Please specify a version, e.g. "{tag.name}:<version>"'
+                    )
+                if not yes:
+                    if not click.confirm(f"delete bento {tag} from BentoCloud?"):
+                        return
+                cloud_client.bento.delete(tag.name, tag.version)
+                rich.print(f"Bento {tag} deleted from BentoCloud.")
             else:
-                to_delete_bentos = [bento_store.get(tag)]
-
-            for bento in to_delete_bentos:
-                if yes:
-                    delete_confirmed = True
+                if tag.version is None:
+                    to_delete_bentos = bento_store.list(target)
                 else:
-                    delete_confirmed = click.confirm(f"delete bento {bento.tag}?")
+                    to_delete_bentos = [bento_store.get(tag)]
 
-                if delete_confirmed:
-                    bento_store.delete(bento.tag)
-                    rich.print(f"{bento} deleted.")
+                for bento in to_delete_bentos:
+                    if yes:
+                        delete_confirmed = True
+                    else:
+                        delete_confirmed = click.confirm(f"delete bento {bento.tag}?")
+
+                    if delete_confirmed:
+                        bento_store.delete(bento.tag)
+                        rich.print(f"{bento} deleted.")
 
         for target in delete_targets:
             delete_target(target)

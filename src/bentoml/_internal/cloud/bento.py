@@ -562,6 +562,19 @@ class BentoAPI:
         ]
         return res
 
+    def delete(self, name: str, version: str) -> None:
+        """Delete a bento from the remote bento store
+
+        Args:
+            name: The name of the bento repository
+            version: The version of the bento to delete
+        """
+        rest_client = self._client
+        res = rest_client.v1.get_bento(bento_repository_name=name, version=version)
+        if res is None:
+            raise NotFound(f'Bento "{name}:{version}" not found on remote')
+        rest_client.v1.delete_bento(bento_repository_name=name, version=version)
+
     def get(self, name: str, version: str | None) -> BentoSchema:
         """Get a bento by name and version
 

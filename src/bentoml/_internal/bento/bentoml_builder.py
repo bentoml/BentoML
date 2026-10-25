@@ -21,6 +21,7 @@ else:
 logger = logging.getLogger(__name__)
 
 BENTOML_DEV_BUILD = "BENTOML_BUNDLE_LOCAL_BUILD"
+BUILD_TIMEOUT = 120
 
 
 def build_bentoml_sdist(
@@ -170,4 +171,66 @@ def build_git_repo(url: str, ref: str, subdirectory: str | None, dst_path: str) 
         logger.info(f"Built sdist {sdist.name}")
         os.makedirs(dst_path, exist_ok=True)
         shutil.move(sdist, dst_path)
+        return sdist.name
+
+
+def build_local_dep(source_dir: str, dst_path: str) -> str:
+    """
+    Build an sdist from a local directory using uv build and copy it to dst_path.
+    """
+    import shutil
+    import subprocess
+    import tempfile
+
+    from ...exceptions import BentoMLException
+    from ..configuration import get_uv_command
+
+    # Build inside a temporary directory to avoid polluting the user's workspace
+    with tempfile.TemporaryDirectory(prefix="bentoml-build-") as temp_dir:
+        build_cmd = [
+            *get_uv_command(),
+            "build",
+            "--sdist",
+            "--out-dir",
+            temp_dir,
+        ]
+        completed_process = None
+        try:
+            completed_process = subprocess.run(
+                build_cmd,
+                cwd=source_dir,
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=BUILD_TIMEOUT,
+            )
+        except subprocess.TimeoutExpired as e:
+            raise BentoMLException(
+                f"Timeout building workspace dependency in '{source_dir}' after {BUILD_TIMEOUT} seconds.\n"
+                f"Command: {' '.join(build_cmd)}"
+            ) from e
+        except subprocess.CalledProcessError as e:
+            raise BentoMLException(
+                f"Failed to build workspace dependency in '{source_dir}':\n"
+                f"Command: {' '.join(build_cmd)}\n"
+                f"Exit Code: {e.returncode}\n"
+                f"Stdout: {e.stdout}\n"
+                f"Stderr: {e.stderr}"
+            ) from e
+
+        try:
+            sdist = next(Path(temp_dir).glob("*.tar.gz"))
+        except StopIteration:
+            stdout = completed_process.stdout if completed_process else ""
+            stderr = completed_process.stderr if completed_process else ""
+            raise BentoMLException(
+                f"Failed to find built sdist (*.tar.gz) in temporary directory for '{source_dir}':\n"
+                f"Command: {' '.join(build_cmd)}\n"
+                f"Stdout: {stdout}\n"
+                f"Stderr: {stderr}"
+            )
+
+        logger.info(f"Successfully built workspace sdist: {sdist.name}")
+        os.makedirs(dst_path, exist_ok=True)
+        shutil.copy2(sdist, dst_path)
         return sdist.name

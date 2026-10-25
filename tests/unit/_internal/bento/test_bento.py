@@ -178,7 +178,7 @@ def build_test_bento() -> Bento:
 
 
 @pytest.mark.usefixtures("change_test_dir")
-def test_bento_export(tmp_path: "Path", model_store: "ModelStore"):
+def test_bento_export(tmp_path: Path, model_store: ModelStore):
     working_dir = os.getcwd()
 
     testbento = build_test_bento()
@@ -320,7 +320,7 @@ def test_bento_export(tmp_path: "Path", model_store: "ModelStore"):
 
 
 @pytest.mark.usefixtures("change_test_dir")
-def test_export_bento_with_models(model_store: ModelStore, tmp_path: "Path"):
+def test_export_bento_with_models(model_store: ModelStore, tmp_path: Path):
     working_dir = os.getcwd()
     bento = build_test_bento()
     os.chdir(working_dir)
@@ -375,3 +375,203 @@ def test_build_bento_with_args():
     )
     BentoMLContainer.bento_arguments.reset()
     assert bento.info.args == {"label": "awesome"}
+
+
+def test_uv_workspace_support(tmp_path: Path):
+    from bentoml._internal.bento.build_config import PythonOptions
+    from bentoml._internal.bento.build_config import find_workspace_root
+    from bentoml._internal.bento.build_config import get_workspace_members
+    from bentoml._internal.bento.build_config import rewrite_if_workspace_member
+
+    # 1. Setup workspace structure
+    workspace_root = tmp_path / "workspace"
+    workspace_root.mkdir()
+
+    # root pyproject.toml
+    root_pyproject = workspace_root / "pyproject.toml"
+    root_pyproject.write_text(
+        "[tool.uv.workspace]\n"
+        'members = ["packages/*", "my-app"]\n'
+        'exclude = ["**/excluded-member"]\n'
+    )
+
+    # packages
+    packages_dir = workspace_root / "packages"
+    packages_dir.mkdir()
+
+    bird_feeder = packages_dir / "bird-feeder"
+    bird_feeder.mkdir()
+    (bird_feeder / "pyproject.toml").write_text(
+        "[project]\n"
+        'name = "bird-feeder"\n'
+        'version = "0.1.0"\n'
+        'dependencies = ["worm-catcher"]\n'
+        "[tool.uv.sources]\n"
+        "worm-catcher = { workspace = true }\n"
+        "[build-system]\n"
+        'requires = ["hatchling"]\n'
+        'build-backend = "hatchling.build"\n'
+    )
+    (bird_feeder / "src").mkdir()
+    (bird_feeder / "src" / "__init__.py").touch()
+
+    worm_catcher = packages_dir / "worm-catcher"
+    worm_catcher.mkdir()
+    (worm_catcher / "pyproject.toml").write_text(
+        "[project]\n"
+        'name = "worm-catcher"\n'
+        'version = "0.1.0"\n'
+        "dependencies = []\n"
+        "[build-system]\n"
+        'requires = ["hatchling"]\n'
+        'build-backend = "hatchling.build"\n'
+    )
+    (worm_catcher / "src").mkdir()
+    (worm_catcher / "src" / "__init__.py").touch()
+
+    excluded_member = packages_dir / "excluded-member"
+    excluded_member.mkdir()
+    (excluded_member / "pyproject.toml").write_text(
+        '[project]\nname = "excluded-member"\nversion = "0.1.0"\n'
+    )
+
+    my_app = workspace_root / "my-app"
+    my_app.mkdir()
+    (my_app / "pyproject.toml").write_text(
+        "[project]\n"
+        'name = "my-app"\n'
+        'version = "0.1.0"\n'
+        'dependencies = ["bird-feeder"]\n'
+        "[tool.uv.sources]\n"
+        "bird-feeder = { workspace = true }\n"
+        "[build-system]\n"
+        'requires = ["hatchling"]\n'
+        'build-backend = "hatchling.build"\n'
+    )
+    (my_app / "service.py").write_text("import bentoml\nsvc = bentoml.Service('svc')\n")
+
+    # 2. Test helpers
+    assert find_workspace_root(str(my_app)) == str(workspace_root)
+    assert find_workspace_root(str(bird_feeder)) == str(workspace_root)
+
+    members = get_workspace_members(str(workspace_root))
+    assert "my-app" in members
+    assert "bird-feeder" in members
+    assert "worm-catcher" in members
+    assert "excluded-member" not in members
+
+    # Test rewrite helper
+    members_map = {
+        "bird-feeder": str(bird_feeder),
+        "worm-catcher": str(worm_catcher),
+    }
+    # Package without version or extra
+    assert rewrite_if_workspace_member("bird-feeder", members_map) == str(bird_feeder)
+    # Package with extras
+    assert (
+        rewrite_if_workspace_member("bird-feeder[dev]", members_map)
+        == f"{bird_feeder!s}[dev]"
+    )
+    # Package with environment marker
+    assert (
+        rewrite_if_workspace_member(
+            'bird-feeder ; python_version >= "3.10"', members_map
+        )
+        == f'{bird_feeder!s} ; python_version >= "3.10"'
+    )
+    # Package with extra and marker
+    assert (
+        rewrite_if_workspace_member(
+            'bird-feeder[dev] ; python_version >= "3.10"', members_map
+        )
+        == f'{bird_feeder!s}[dev] ; python_version >= "3.10"'
+    )
+    # Non-member package
+    assert rewrite_if_workspace_member("tqdm>=4", members_map) == "tqdm>=4"
+
+    # 3. Test Security Boundary Check in fix_dep_urls
+    outside_dir = tmp_path / "outside-dir"
+    outside_dir.mkdir()
+    (outside_dir / "pyproject.toml").write_text(
+        "[project]\nname = 'outside-pkg'\nversion = '1.0'\n"
+    )
+
+    from bentoml.exceptions import BentoMLException
+
+    # We expect BentoMLException to be raised when referencing a directory outside the workspace root
+    req_file = tmp_path / "reqs.txt"
+    req_file.write_text(f"outside-pkg @ {outside_dir.as_uri()}\n")
+    wheels_dir = tmp_path / "wheels"
+    wheels_dir.mkdir()
+
+    with pytest.raises(BentoMLException) as excinfo:
+        PythonOptions.fix_dep_urls(
+            str(req_file),
+            str(wheels_dir),
+            pack_git_packages=False,
+            workspace_root=str(workspace_root),
+        )
+    assert "Security violation" in str(excinfo.value)
+
+    # 4. Zero-pollution Assertion
+    def get_file_snapshot(dir_path):
+        snapshot = set()
+        for root, dirs, files in os.walk(dir_path):
+            for file in files:
+                rel = os.path.relpath(os.path.join(root, file), dir_path)
+                snapshot.add(rel)
+        return snapshot
+
+    before_snapshot = get_file_snapshot(str(bird_feeder))
+
+    from bentoml._internal.bento.bentoml_builder import build_local_dep
+
+    out_wheels = tmp_path / "out-wheels"
+    out_wheels.mkdir()
+    build_local_dep(str(bird_feeder), str(out_wheels))
+
+    after_snapshot = get_file_snapshot(str(bird_feeder))
+    assert before_snapshot == after_snapshot, (
+        f"Source directory was polluted! Diff: {after_snapshot - before_snapshot}"
+    )
+
+
+def test_uv_workspace_symlink_escape(tmp_path: Path):
+    import sys
+
+    from bentoml._internal.bento.build_config import PythonOptions
+    from bentoml.exceptions import BentoMLException
+
+    workspace_root = tmp_path / "workspace"
+    workspace_root.mkdir()
+
+    outside_dir = tmp_path / "outside-dir"
+    outside_dir.mkdir()
+    (outside_dir / "pyproject.toml").write_text(
+        "[project]\nname = 'outside-pkg'\nversion = '1.0'\n"
+    )
+
+    symlink_dir = workspace_root / "symlink-dir"
+    try:
+        symlink_dir.symlink_to(outside_dir, target_is_directory=True)
+    except OSError:
+        if sys.platform == "win32":
+            pytest.skip(
+                "Symlink creation not supported on Windows without Developer Mode/Admin rights"
+            )
+        else:
+            raise
+
+    req_file_symlink = tmp_path / "reqs_symlink.txt"
+    req_file_symlink.write_text(f"outside-pkg @ {symlink_dir.as_uri()}\n")
+    wheels_dir = tmp_path / "wheels"
+    wheels_dir.mkdir()
+
+    with pytest.raises(BentoMLException) as excinfo_sym:
+        PythonOptions.fix_dep_urls(
+            str(req_file_symlink),
+            str(wheels_dir),
+            pack_git_packages=False,
+            workspace_root=str(workspace_root),
+        )
+    assert "Security violation" in str(excinfo_sym.value)

@@ -59,22 +59,24 @@ class MonitorBase(t.Generic[DT]):
         datas: dict[str, collections.deque[DT]] = MON_DATAS_VAR.get()  # type: ignore
         assert datas is not None
 
-        if len(datas) == 0:
-            logger.warning("No data logged in this record. Will skip output.")
-            return
+        try:
+            if len(datas) == 0:
+                logger.warning("No data logged in this record. Will skip output.")
+                return
 
-        if self.columns_schema is None:
-            columns = MON_COLUMN_VAR.get()
-            assert columns is not None
-            self.columns_schema = columns
-            self.export_schema(columns)
+            if self.columns_schema is None:
+                columns = MON_COLUMN_VAR.get()
+                assert columns is not None
+                self.columns_schema = columns
+                self.export_schema(columns)
+                MON_COLUMN_VAR.set(None)
+
+            if len(set(len(q) for q in datas.values())) != 1:
+                raise ValueError("All columns should have the same length.")
+            self.export_data(datas)
+        finally:
             MON_COLUMN_VAR.set(None)
-
-        if len(set(len(q) for q in datas.values())) != 1:
-            assert ValueError("All columns should have the same length.")
-        self.export_data(datas)
-
-        MON_DATAS_VAR.set(None)
+            MON_DATAS_VAR.set(None)
 
     def export_schema(self, columns_schema: dict[str, dict[str, str]]) -> None:
         """

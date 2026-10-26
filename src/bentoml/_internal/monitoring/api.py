@@ -132,5 +132,7 @@ def monitor(
 
     mon = _MONITOR_INSTANCES[name]
     mon.start_record()
-    yield mon
-    mon.stop_record()
+    try:
+        yield mon
+    finally:
+        mon.stop_record()

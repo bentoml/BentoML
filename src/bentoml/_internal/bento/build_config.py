@@ -224,7 +224,9 @@ class DockerOptions:
                 defaults["python_version"] = python_version
 
         if default_envs:
-            defaults["env"] = {e.name: e.value for e in default_envs}
+            defaults["env"] = {
+                e.name: e.value for e in default_envs if e.stage != "build"
+            }
             defaults["env"].update(self.env or {})
 
         return attr.evolve(self, **defaults)
@@ -880,6 +882,19 @@ class BentoBuildConfig:
         Returns:
             BentoBuildConfig: a new copy of self, with default values filled
         """
+        docker_env = self.docker.env or {}
+        envs = [
+            attr.evolve(env, value=docker_env.get(env.name, env.value))
+            if env.stage != "build"
+            else env
+            for env in self.envs
+        ]
+        runtime_names = {env.name for env in envs if env.stage != "build"}
+        envs.extend(
+            BentoEnvSchema(name=name, value=value)
+            for name, value in docker_env.items()
+            if name not in runtime_names
+        )
         return FilledBentoBuildConfig(
             service=self.service,
             name=self.name,
@@ -891,7 +906,7 @@ class BentoBuildConfig:
             python=self.python.with_defaults(),
             conda=self.conda.with_defaults(),
             models=self.models,
-            envs=self.envs,
+            envs=envs,
             args=self.args,
         )
 

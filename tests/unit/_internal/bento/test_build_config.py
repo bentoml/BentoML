@@ -72,3 +72,27 @@ def test_bento_envs_without_docker_env(docker_env) -> None:
 
     assert filled.env == {"BENTO_ONLY": "bento"}
     assert options.env is None
+
+
+def test_docker_env_merge_preserves_stage_and_build_secret_value() -> None:
+    config = BentoBuildConfig.load(
+        {
+            "envs": [
+                {"name": "SHARED", "value": "secret", "stage": "build"},
+                {"name": "RUNTIME", "value": "default", "stage": "runtime"},
+            ],
+            "docker": {"env": {"SHARED": "public", "RUNTIME": "override"}},
+        }
+    )
+
+    filled = config.with_defaults()
+
+    assert filled.envs == [
+        BentoEnvSchema(name="SHARED", value="secret", stage="build"),
+        BentoEnvSchema(name="RUNTIME", value="override", stage="runtime"),
+        BentoEnvSchema(name="SHARED", value="public"),
+    ]
+    assert filled.docker.env == {"SHARED": "public", "RUNTIME": "override"}
+    assert filled.with_defaults().envs == filled.envs
+    assert config.envs[0].value == "secret"
+    assert config.envs[1].value == "default"

@@ -30,7 +30,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.9, 3.11, 3.12]
     name: unit-tests (python${{ matrix.python-version }}.${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    # setup-python has no 3.9 build for ubuntu-latest (26.04); keep 3.9 on 24.04.
+    runs-on: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == 3.9 && 'ubuntu-24.04' || matrix.os }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -56,7 +57,7 @@ jobs:
           include-hidden-files: true
   integrations:
     name: framework-integration-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # pinned: Python 3.9 isn't available on ubuntu-latest (26.04)
     strategy:
       fail-fast: false
       matrix:
@@ -112,7 +113,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.9, 3.11, 3.12]
     name: monitoring-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    # setup-python has no 3.9 build for ubuntu-latest (26.04); keep 3.9 on 24.04.
+    runs-on: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == 3.9 && 'ubuntu-24.04' || matrix.os }}
     timeout-minutes: 90
     env:
       BENTOML_BUNDLE_LOCAL_BUILD: True
@@ -161,7 +163,8 @@ jobs:
             suite: bento_server_http
             python-version: 3.12
     name: ${{ matrix.suite }}-e2e-tests (python${{ matrix.python-version }}.${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    # setup-python has no 3.9 build for ubuntu-latest (26.04); keep 3.9 on 24.04.
+    runs-on: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == 3.9 && 'ubuntu-24.04' || matrix.os }}
     timeout-minutes: 90
     env:
       BENTOML_BUNDLE_LOCAL_BUILD: True
@@ -197,7 +200,11 @@ jobs:
           include-hidden-files: true
   coverage:
     name: report-coverage
-    runs-on: ubuntu-latest
+    # pinned: on ubuntu-latest (26.04) pipx uses system Python 3.14, and pinned deps have no 3.14 wheels.
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write # sticky coverage comment; repo default token is read-only
     needs:
       - e2e-test
       - e2e-monitoring

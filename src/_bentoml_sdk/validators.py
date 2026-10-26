@@ -65,8 +65,11 @@ class PILImageEncoder:
             return t.cast("PILImage.Image", obj)
         if isinstance(obj, UploadFile):
             formats = None
-            if obj.headers.get("Content-Type", "").startswith("image/"):
-                formats = [obj.headers["Content-Type"][6:].upper()]
+            media_type = (
+                obj.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            )
+            if media_type.startswith("image/"):
+                formats = [media_type[6:].upper()]
             return PILImage.open(obj.file, formats=formats)
         if is_file_like(obj):
             return PILImage.open(obj)

@@ -64,3 +64,16 @@ def test_generate_containerfile_normalizes_custom_base_image(tmp_path) -> None:
 
     assert "FROM python:3.11-slim RUN touch /tmp/pwned as base-container" in dockerfile
     assert "\nRUN touch /tmp/pwned" not in dockerfile
+
+
+def test_generate_containerfile_installs_hash_pinned_uv(tmp_path) -> None:
+    dockerfile = generate_containerfile(
+        DockerOptions(distro="debian", python_version="3.11"),
+        str(tmp_path),
+        conda=CondaOptions(),
+        bento_fs=tmp_path,
+    )
+
+    assert "pip install uv\n" not in dockerfile
+    assert "uv==0.13.4" in dockerfile
+    assert "pip install --no-cache-dir --require-hashes" in dockerfile

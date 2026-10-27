@@ -44,7 +44,7 @@ Set up the environment
 
    .. note::
 
-      We recommend you create a virtual environment for dependency isolation. If you don't want to set up a local development environment, skip to the :doc:`BentoCloud deployment document <cloud-deployment>`.
+      We recommend you create a virtual environment for dependency isolation.
 
 3. Install BentoML and the required dependencies for the model.
 
@@ -146,4 +146,4 @@ What's next
 - :doc:`Batch requests <adaptive-batching>`
 - :doc:`Load your own model </build-with-bentoml/model-loading-and-management>`
 - :doc:`Create a Docker image <packaging-for-deployment>`
-- :doc:`Deploy to the cloud <cloud-deployment>`
+- :doc:`Deploy to Kubernetes or EC2 with agent skills <agent-skills>`

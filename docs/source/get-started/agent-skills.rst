@@ -14,7 +14,7 @@ The skills follow the same pipeline you would follow by hand. See :doc:`hello-wo
 
 .. note::
 
-   The skills cover **basic deployment on self-managed infrastructure**, not on BentoCloud.
+   The skills cover **basic deployment on self-managed infrastructure**.
 
 Install the skills
 ------------------

@@ -68,10 +68,6 @@ In this example, the ``summarize`` method on the client is directly mapped to th
 
 If you define :ref:`root input <root-input>` for an API endpoint, use only the positional argument in your client without specifying the parameter name.
 
-.. note::
-
-    If you deploy your Service to BentoCloud, you can get the client of a Deployment by using ``get_client()`` or ``get_async_client()``. For more information, see :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:interact with the Deployment`.
-
 Use a context manager
 ^^^^^^^^^^^^^^^^^^^^^
 

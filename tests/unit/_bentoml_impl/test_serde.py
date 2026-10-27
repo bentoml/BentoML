@@ -88,7 +88,5 @@ async def test_multipart_non_str_fields_still_parse_json() -> None:
 
 
 def test_json_path_unchanged() -> None:
-    result = JSONSerde().deserialize_model(
-        Payload((b'{"text": "123"}',)), _EchoInput
-    )
+    result = JSONSerde().deserialize_model(Payload((b'{"text": "123"}',)), _EchoInput)
     assert result.text == "123"

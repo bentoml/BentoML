@@ -22,40 +22,23 @@ Featured examples
 
         Serve large language models with OpenAI-compatible APIs and vLLM inference backend.
 
-    .. grid-item-card:: :doc:`Document Q&A with RAG </examples/rag>`
-        :link: /examples/rag
+    .. grid-item-card:: :doc:`Serve a LangGraph agent </examples/langgraph>`
+        :link: /examples/langgraph
         :link-type: doc
 
-        Deploy private RAG systems with open-source embedding and large language models.
+        Serve a LangGraph agent that searches the web and calls an external or open-source LLM.
 
-    .. grid-item-card:: :doc:`Serve diffusion models </examples/sdxl-turbo>`
-        :link: /examples/sdxl-turbo
+    .. grid-item-card:: :doc:`Serve MLflow models </examples/mlflow>`
+        :link: /examples/mlflow
         :link-type: doc
 
-        Deploy image generation APIs with flexible customization and optimized batch processing.
+        Import an MLflow model into BentoML and serve it as an inference API.
 
-    .. grid-item-card:: :doc:`Deploy ComfyUI pipelines </examples/comfyui>`
-        :link: /examples/comfyui
+    .. grid-item-card:: :doc:`Serve XGBoost models </examples/xgboost>`
+        :link: /examples/xgboost
         :link-type: doc
 
-        Automate reproducible workflows with queued execution using ComfyUI pipelines.
-
-    .. grid-item-card:: `Build a phone calling agent <https://github.com/bentoml/BentoTwilioConversationRelay>`_
-        :link: https://github.com/bentoml/BentoTwilioConversationRelay
-
-        Build a phone calling agent with end-to-end streaming capabilities using open-source models and Twilio.
-
-    .. grid-item-card:: :doc:`/examples/shieldgemma`
-        :link: /examples/shieldgemma
-        :link-type: doc
-
-        Protect your LLM API endpoint from harmful input using Google's safety content moderation model.
-
-    .. grid-item-card:: :doc:`More examples 👉</examples/overview>`
-        :link: /examples/overview
-        :link-type: doc
-
-        Explore what developers are building with BentoML.
+        Serve a gradient boosting model for tabular predictions, such as breast cancer classification.
 
 What is BentoML
 ---------------
@@ -147,15 +130,8 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    :caption: Learn by Examples
    :hidden:
 
-   examples/overview
    examples/vllm
-   examples/function-calling
    examples/langgraph
-   examples/shieldgemma
-   examples/rag
-   examples/sdxl-turbo
-   examples/comfyui
-   examples/controlnet
    examples/mlflow
    examples/xgboost
 

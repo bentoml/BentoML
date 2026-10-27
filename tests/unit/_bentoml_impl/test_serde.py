@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import typing as t
 
 import pytest
@@ -31,17 +32,23 @@ class _EchoInput(BaseModel):
     multipart_fields: t.ClassVar[set[str]] = set()
 
 
-@pytest.mark.parametrize(
-    "annotation,expected",
-    [
-        (str, True),
-        (t.Optional[str], True),
-        (str | None, True),
-        (int, False),
-        (t.List[str], False),
-        (t.Union[str, int], False),
-    ],
-)
+# NOTE: `str | None` (PEP 604) cannot be evaluated on Python 3.9 at all, so
+# it must not appear in a module-level parametrize list: a skipif mark would
+# not help, since the expression is still evaluated at decoration time.
+# Build the case list conditionally instead; on 3.9 the expression below is
+# never executed, so test collection succeeds there.
+_IS_STR_ANNOTATION_CASES: list[tuple[t.Any, bool]] = [
+    (str, True),
+    (t.Optional[str], True),
+    (int, False),
+    (t.List[str], False),
+    (t.Union[str, int], False),
+]
+if sys.version_info >= (3, 10):
+    _IS_STR_ANNOTATION_CASES.append((str | None, True))
+
+
+@pytest.mark.parametrize("annotation,expected", _IS_STR_ANNOTATION_CASES)
 def test_is_str_annotation(annotation: t.Any, expected: bool) -> None:
     assert _is_str_annotation(annotation) is expected
 

@@ -161,7 +161,17 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    :caption: References
    :hidden:
 
-   reference/bentoml/index
+   reference/bentoml/stores
+   reference/bentoml/sdk
+   reference/bentoml/bento-build-options
+   reference/bentoml/cli
+   reference/bentoml/client
+   reference/bentoml/frameworks/index
+   reference/bentoml/configurations
+   reference/bentoml/batch
+   reference/bentoml/exceptions
+   reference/bentoml/container
+   reference/bentoml/types
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML

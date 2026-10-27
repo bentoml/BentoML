@@ -37,4 +37,3 @@ Manage models
 .. autofunction:: bentoml.models.delete
 .. autofunction:: bentoml.models.export_model
 .. autofunction:: bentoml.models.import_model
-

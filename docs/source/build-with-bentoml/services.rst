@@ -63,12 +63,12 @@ By default, the server is accessible at `http://localhost:3000/ <http://localhos
 Service configurations
 ----------------------
 
-You use the ``@bentoml.service`` decorator to specify :doc:`Service-level configurations </reference/bentoml/configurations>` like resource requirements and timeout. These configurations are applied both when you serve the Service locally and deploy the resulting Bento on BentoCloud (or the Bento image as containers in environments like Kubernetes). For example:
+You use the ``@bentoml.service`` decorator to specify :doc:`Service-level configurations </reference/bentoml/configurations>` like resource requirements and timeout. These configurations are applied both when you serve the Service locally and when you run the Bento image as containers in environments like Kubernetes. For example:
 
 .. code-block:: python
 
     @bentoml.service(
-        resources={"memory": "500MiB"},
+        resources={"gpu": 1},
         traffic={"timeout": 10},
     )
     class Summarization:

@@ -6,7 +6,7 @@ BentoML Documentation
 
 ----
 
-BentoML is a **Unified Inference Platform** for deploying and scaling AI systems with any model, on any cloud.
+BentoML is a **Unified Model Serving Framework** for building model inference APIs and multi-model serving systems with any open-source or custom AI models.
 
 Featured examples
 -----------------
@@ -22,59 +22,41 @@ Featured examples
 
         Serve large language models with OpenAI-compatible APIs and vLLM inference backend.
 
-    .. grid-item-card:: :doc:`Document Q&A with RAG </examples/rag>`
-        :link: /examples/rag
+    .. grid-item-card:: :doc:`Serve a LangGraph agent </examples/langgraph>`
+        :link: /examples/langgraph
         :link-type: doc
 
-        Deploy private RAG systems with open-source embedding and large language models.
+        Serve a LangGraph agent that searches the web and calls an external or open-source LLM.
 
-    .. grid-item-card:: :doc:`Serve diffusion models </examples/sdxl-turbo>`
-        :link: /examples/sdxl-turbo
+    .. grid-item-card:: :doc:`Serve MLflow models </examples/mlflow>`
+        :link: /examples/mlflow
         :link-type: doc
 
-        Deploy image generation APIs with flexible customization and optimized batch processing.
+        Import an MLflow model into BentoML and serve it as an inference API.
 
-    .. grid-item-card:: :doc:`Deploy ComfyUI pipelines </examples/comfyui>`
-        :link: /examples/comfyui
+    .. grid-item-card:: :doc:`Serve XGBoost models </examples/xgboost>`
+        :link: /examples/xgboost
         :link-type: doc
 
-        Automate reproducible workflows with queued execution using ComfyUI pipelines.
-
-    .. grid-item-card:: `Build a phone calling agent <https://github.com/bentoml/BentoTwilioConversationRelay>`_
-        :link: https://github.com/bentoml/BentoTwilioConversationRelay
-
-        Build a phone calling agent with end-to-end streaming capabilities using open-source models and Twilio.
-
-    .. grid-item-card:: :doc:`/examples/shieldgemma`
-        :link: /examples/shieldgemma
-        :link-type: doc
-
-        Protect your LLM API endpoint from harmful input using Google's safety content moderation model.
-
-    .. grid-item-card:: :doc:`More examples 👉</examples/overview>`
-        :link: /examples/overview
-        :link-type: doc
-
-        Explore what developers are building with BentoML.
+        Serve a gradient boosting model for tabular predictions, such as breast cancer classification.
 
 What is BentoML
 ---------------
 
-BentoML is a **Unified Inference Platform** for deploying and scaling AI models with production-grade reliability, all without the complexity of managing infrastructure. It enables your developers to **build AI systems 10x faster with custom models, scale efficiently in your cloud, and maintain complete control over security and compliance**.
+BentoML is an open-source Python library for building online serving systems optimized for AI apps and model inference. With BentoML, you can:
 
-.. image:: _static/img/homepage/bentoml-inference-platform.png
-    :alt: The architecture diagram of the BentoML unified inference platform
+- **Build APIs for any AI/ML model.** Turn any model inference script into a REST API server with a few lines of code and standard Python type hints.
+- **Package and containerize with ease.** Manage environments, dependencies and model versions in one place. BentoML generates reproducible Docker images that you can deploy to any environment.
+- **Maximize CPU/GPU utilization.** Use built-in serving optimizations like adaptive batching, model parallelism, multi-stage pipelines and multi-model composition.
+- **Customize everything.** Implement your own APIs or task queues with custom business logic, model inference and multi-model composition. BentoML supports any ML framework, modality and inference runtime.
+- **Run in production on your own infrastructure.** Develop, run and debug locally, then deploy with Docker containers or Kubernetes.
 
-To get started with BentoML:
+To get started, use `pip <https://pip.pypa.io/en/stable/installation/>`_ to install `BentoML <https://github.com/bentoml/BentoML>`_, which is distributed as a Python package on `PyPI <https://pypi.org/project/bentoml/>`_.
 
-- Use `pip <https://pip.pypa.io/en/stable/installation/>`_ to install the `BentoML open-source model serving framework <https://github.com/bentoml/BentoML>`_, which is distributed as a Python package on `PyPI <https://pypi.org/project/bentoml/>`_.
+.. code-block:: bash
 
-  .. code-block:: bash
-
-     # Recommend Python 3.9+
-     pip install bentoml
-
-- `Sign up for BentoCloud <https://www.bentoml.com/>`_ to get a free trial.
+   # Recommend Python 3.9+
+   pip install bentoml
 
 How-tos
 -------
@@ -90,17 +72,17 @@ How-tos
 
         Build your custom AI APIs with BentoML.
 
-    .. grid-item-card:: :doc:`/scale-with-bentocloud/deployment/create-deployments`
-        :link: /scale-with-bentocloud/deployment/create-deployments
+    .. grid-item-card:: :doc:`/get-started/packaging-for-deployment`
+        :link: /get-started/packaging-for-deployment
         :link-type: doc
 
-        Deploy your AI application to production with one command.
+        Package your AI application as a Bento and containerize it for deployment.
 
-    .. grid-item-card:: :doc:`/scale-with-bentocloud/scaling/autoscaling`
-        :link: /scale-with-bentocloud/scaling/autoscaling
+    .. grid-item-card:: :doc:`/get-started/agent-skills`
+        :link: /get-started/agent-skills
         :link-type: doc
 
-        Configure fast autoscaling to achieve optimal performance.
+        Let a coding agent deploy your BentoML Service to Kubernetes or EC2.
 
     .. grid-item-card:: :doc:`/build-with-bentoml/gpu-inference`
         :link: /build-with-bentoml/gpu-inference
@@ -108,11 +90,11 @@ How-tos
 
         Run model inference on GPUs with BentoML.
 
-    .. grid-item-card:: :doc:`/scale-with-bentocloud/codespaces`
-        :link: /scale-with-bentocloud/codespaces
+    .. grid-item-card:: :doc:`/get-started/adaptive-batching`
+        :link: /get-started/adaptive-batching
         :link-type: doc
 
-        Develop with powerful cloud GPUs using your favorite IDE.
+        Batch requests dynamically for higher throughput and better resource utilization.
 
     .. grid-item-card:: :doc:`/build-with-bentoml/model-loading-and-management`
         :link: /build-with-bentoml/model-loading-and-management
@@ -142,22 +124,14 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    get-started/model-composition
    get-started/async-task-queues
    get-started/packaging-for-deployment
-   get-started/cloud-deployment
    get-started/agent-skills
 
 .. toctree::
    :caption: Learn by Examples
    :hidden:
 
-   examples/overview
    examples/vllm
-   examples/function-calling
    examples/langgraph
-   examples/shieldgemma
-   examples/rag
-   examples/sdxl-turbo
-   examples/comfyui
-   examples/controlnet
    examples/mlflow
    examples/xgboost
 
@@ -184,22 +158,20 @@ For release notes and detailed changelogs, see the `Releases <https://github.com
    build-with-bentoml/testing
 
 .. toctree::
-   :caption: Scale with BentoCloud
-   :hidden:
-
-   scale-with-bentocloud/deployment/index
-   scale-with-bentocloud/scaling/index
-   scale-with-bentocloud/manage-secrets-and-env-vars
-   scale-with-bentocloud/manage-api-tokens
-   scale-with-bentocloud/codespaces
-   scale-with-bentocloud/administering/index
-
-.. toctree::
    :caption: References
    :hidden:
 
-   reference/bentoml/index
-   reference/bentocloud/index
+   reference/bentoml/stores
+   reference/bentoml/sdk
+   reference/bentoml/bento-build-options
+   reference/bentoml/cli
+   reference/bentoml/client
+   reference/bentoml/frameworks/index
+   reference/bentoml/configurations
+   reference/bentoml/batch
+   reference/bentoml/exceptions
+   reference/bentoml/container
+   reference/bentoml/types
 
 .. |pypi_status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
    :target: https://pypi.org/project/BentoML

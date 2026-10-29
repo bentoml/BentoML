@@ -18,13 +18,13 @@ You only need to specify the configurations you want to customize. BentoML autom
 .. code-block:: python
 
     @bentoml.service(
-        resources={"cpu": "2"},
+        resources={"gpu": 1},
         traffic={"timeout": 60},
     )
     class Summarization:
         # Service implementation
 
-- ``"cpu": "2"`` indicates that the Service is allocated 2 CPU cores. This is important for ensuring the Service has sufficient processing resources.
+- ``"gpu": 1`` assigns one GPU to the Service's workers. See :ref:`resources` for details.
 - ``"timeout": 60`` sets the maximum duration (in seconds) that the Service will wait for a response before timing out. In this case, it's set to 60 seconds.
 
 Configuration fields
@@ -37,14 +37,16 @@ BentoML offers a comprehensive set of configuration fields, allowing detailed cu
 ``resources``
 ^^^^^^^^^^^^^
 
-The ``resources`` field in BentoML allows you to specify the resource allocation for a Service, including CPU, memory, and GPU. It is useful for managing and optimizing resource usage, particularly when dealing with resource-intensive tasks. Note that **this field only takes effect on BentoCloud**. Available fields are:
+The ``resources`` field in BentoML allows you to specify the resource allocation for a Service, including CPU, memory, and GPU. It is useful for managing and optimizing resource usage, particularly when dealing with resource-intensive tasks. Available fields are:
 
 - ``cpu``: The number (or the amount) of CPUs that the Service should use. This is a string, like ``“200m”`` or ``“1”``.
 - ``memory``: The amount of memory that the Service should use.
-- ``gpu``: The number of GPUs allocated to the Service.
-- ``gpu_type``: A specific type of GPU to be used on BentoCloud, following the naming conventions of cloud providers like AWS EC2 or GCP GPU instances. To list available GPU types, run ``bentoml deployment list-instance-types``.
+- ``gpu``: The number of GPUs allocated to the Service. When the Service starts, BentoML assigns this number of GPUs to the Service's workers by setting ``CUDA_VISIBLE_DEVICES``. GPU assignment is skipped if ``CUDA_VISIBLE_DEVICES`` or ``BENTOML_DISABLE_GPU_ALLOCATION`` is already set in the environment, or if ``workers`` is set to ``cpu_count``.
+- ``gpu_type``: A specific type of GPU, following the naming conventions of cloud providers like AWS EC2 or GCP GPU instances.
 
-We recommend you specify at least one field of ``resources``, so that resources can be automatically allocated to the Service on BentoCloud.
+.. note::
+
+   ``cpu``, ``memory`` and ``gpu_type`` are stored in the Bento but have no effect when BentoML runs the Service. To limit CPU and memory or schedule the Service on a specific GPU type, configure your container runtime or orchestrator, such as Docker resource constraints or Kubernetes resource requests and node selectors.
 
 Here is an example:
 
@@ -120,7 +122,7 @@ For more information, see :doc:`/build-with-bentoml/runtime-environment`.
 ``envs``
 ^^^^^^^^
 
-``envs`` allows you to set the environment variables required for your Service. Each environment variable is defined with ``name`` and ``value`` keys. To avoid exposing sensitive information, you can omit the value and set it when deploying it to BentoCloud.
+``envs`` allows you to set the environment variables required for your Service. Each environment variable is defined with ``name`` and ``value`` keys. To avoid exposing sensitive information, you can omit the value and set it when you run the Service, for example, with ``docker run -e HF_TOKEN=<value>``.
 
 .. code-block:: python
 
@@ -140,10 +142,10 @@ For more information, see :doc:`/build-with-bentoml/runtime-environment`.
 
 ``traffic`` in BentoML allows you to manage how requests are handled by your Service. It includes settings for managing request concurrency and ensuring timely responses, which are helpful for optimizing the Service's responsiveness and load management. The following fields are available:
 
-- ``timeout``: Determines the maximum time the Service will wait for a response to be sent back to the client. The default timeout is set to 60 seconds.
-- ``max_concurrency``: Specifies the hard limit on the number of requests that can be processed simultaneously by a single Service instance. It helps you control the load and prevent the Service from being overwhelmed by too many simultaneous requests.
-- ``concurrency``: A BentoCloud-specific field that represents the ideal number of simultaneous requests a Service is designed to handle. Concurrency helps optimize resource utilization and influences how BentoCloud autoscales your Service. By default, concurrency is set to allow infinite requests to avoid system bottlenecks. For detailed information, see :doc:`/scale-with-bentocloud/scaling/autoscaling`.
-- ``external_queue``: A BentoCloud-specific field. When deploying a Service on BentoCloud with this field enabled, an external request queue is used to manage incoming traffic more effectively. This is done by queuing excess requests until they can be processed within the defined ``concurrency`` limits.
+- ``timeout``: The maximum time in seconds the Service waits for a response to start before returning HTTP 504. For streaming responses, only the start of the response must arrive within this time. It defaults to 60 seconds.
+- ``max_concurrency``: The hard limit on the number of requests a Service processes simultaneously, split evenly across its workers. Requests beyond the limit are rejected immediately with HTTP 429. Health check and metrics endpoints are not counted.
+- ``concurrency``: The ideal number of simultaneous requests a Service is designed to handle. This field is reserved and has no effect in open-source BentoML.
+- ``external_queue``: Whether to queue excess requests in an external request queue. This field is reserved and has no effect in open-source BentoML.
 
 Here is an example of configuring these settings in your Service definition:
 
@@ -153,8 +155,6 @@ Here is an example of configuring these settings in your Service definition:
         traffic={
             "timeout": 120,
             "max_concurrency": 50,
-            "concurrency": 32, # BentoCloud only
-            "external_queue": True, # BentoCloud only
         }
     )
     class MyService:
@@ -163,7 +163,7 @@ Here is an example of configuring these settings in your Service definition:
 ``runner_probe``
 ^^^^^^^^^^^^^^^^
 
-Configure health check settings on BentoCloud for the Service using the endpoints ``readyz``, ``livez``, and ``healthz``. Available fields are:
+Configure health check settings for the Service using the endpoints ``readyz``, ``livez``, and ``healthz``. Available fields are:
 
 - ``enabled``: Determines whether the health checks are enabled.
 - ``timeout``: The maximum time in seconds to wait for a health check probe to complete before considering it failed.

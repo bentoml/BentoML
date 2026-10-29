@@ -230,44 +230,49 @@ End-to-end tests
 
 End-to-end testing is important to ensure that your AI application not only performs well under controlled test conditions but also runs effectively in a live, production-like environment.
 
-You can implement the following in your end-to-end test when deploying a BentoML Service to :doc:`BentoCloud </bentocloud/get-started>`.
+You can implement the following in your end-to-end test by running your BentoML Service as a container, the same way it runs in production.
 
-1. **Create a test Deployment**: Deploy your BentoML Service to BentoCloud.
-2. **Wait for Deployment readiness**: Ensure the Deployment is fully ready to handle requests.
-3. **Send test requests and verify output**: Interact with the Deployment by sending test requests and validating the responses to ensure the Service is performing as expected.
-4. **Shut down and delete the Deployment**: Clean up by shutting down and deleting the test deployment to avoid unnecessary costs.
+1. **Build and containerize the Service**: Build a Bento and create a Docker image from it. See :doc:`/get-started/packaging-for-deployment` for details.
+
+   .. code-block:: bash
+
+       bentoml build
+       bentoml containerize summarization:latest -t summarization:test
+
+2. **Start the container**: Run the image in the background.
+3. **Wait for readiness**: Ensure the Service is fully ready to handle requests.
+4. **Send test requests and verify output**: Interact with the Service by sending test requests and validating the responses to ensure the Service is performing as expected.
+5. **Stop the container**: Clean up by stopping the container after the test.
 
 An example:
 
 .. code-block:: python
     :caption: `test_e2e.py`
 
+    import subprocess
+
     import pytest
     import bentoml
-    from service import Summarization, EXAMPLE_INPUT  # Imported from the Summarization service.py file
+    from service import EXAMPLE_INPUT  # Imported from the Summarization service.py file
+
+    IMAGE = "summarization:test"
 
     @pytest.fixture(scope="session")
     def bentoml_client():
-        # Deploy the Summarization Service to BentoCloud
-        deployment = bentoml.deployment.create(
-            bento="./path_to_your_project", # Alternatively, use an existing Bento tag
-            name="test-summarization",
-            scaling_min=1,
-            scaling_max=1
-        )
+        # Start the containerized Summarization Service in the background
+        container_id = subprocess.check_output(
+            ["docker", "run", "-d", "--rm", "-p", "3000:3000", IMAGE], text=True
+        ).strip()
         try:
-            # Wait until the Deployment is ready
-            deployment.wait_until_ready(timeout=3600)
-
-            # Provide the Deployment's client for testing
-            yield deployment.get_client()
+            # Wait until the Service is ready, then provide a client for testing
+            with bentoml.SyncHTTPClient("http://localhost:3000", server_ready_timeout=600) as client:
+                yield client
         finally:
             # Clean up
-            bentoml.deployment.terminate(name="test-summarization")
-            bentoml.deployment.delete(name="test-summarization")
+            subprocess.run(["docker", "stop", container_id], check=True)
 
     def test_summarization_service(bentoml_client):
-        # Send a request to the deployed Summarization service
+        # Send a request to the running Summarization Service
         summarized_text: str = bentoml_client.summarize(text=EXAMPLE_INPUT)
         # Ensure the summarized text is not empty
         assert summarized_text, "The summarized text should not be empty."
@@ -278,9 +283,9 @@ An example:
 
 This test does the following:
 
-- Set up the Deployment of the Summarization Service on BentoCloud with the ``bentoml_client`` fixture. It ensures the Deployment is created and ready before yielding a client for testing.
+- Start the Summarization Service container with the ``bentoml_client`` fixture. It ensures the Service is ready before yielding a client for testing.
 - Use the client to interact with the Summarization Service and make assertions to ensure the Service is functioning correctly.
-- Clean up by terminating and deleting the Deployment after the test to prevent ongoing charges for unused resources.
+- Clean up by stopping the container after the test.
 
 Run the end-to-end test:
 
@@ -302,8 +307,6 @@ Expected result:
     test_e2e.py::test_summarization_service PASSED                                                                                                                                                                      [100%]
 
     ============================================================================================== 1 passed in 120.65s (0:02:00) ==============================================================================================
-
-For more information, see :doc:`/scale-with-bentocloud/deployment/configure-deployments` and :doc:`/scale-with-bentocloud/deployment/manage-deployments`.
 
 Best practices
 --------------

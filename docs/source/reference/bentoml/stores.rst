@@ -37,12 +37,3 @@ Manage models
 .. autofunction:: bentoml.models.delete
 .. autofunction:: bentoml.models.export_model
 .. autofunction:: bentoml.models.import_model
-
-
-Work with BentoCloud
---------------------
-
-.. autofunction:: bentoml.push
-.. autofunction:: bentoml.pull
-.. autofunction:: bentoml.models.push
-.. autofunction:: bentoml.models.pull

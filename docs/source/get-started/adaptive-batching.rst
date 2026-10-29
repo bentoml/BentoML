@@ -94,9 +94,74 @@ Other available parameters for adaptive batching:
 
 - ``batch_dim``: The batch dimension for both input and output, which can be a tuple or a single value. See :ref:`reference/bentoml/sdk:Service api` for more information.
 - ``max_batch_size``: The upper limit for the number of requests that can be grouped into a single batch. Set this parameter based on the available resources, like memory or GPU, to avoid overloading the system.
-- ``max_latency_ms``:  The upper limit, in milliseconds, for the end-to-end batch processing delay. The dispatcher will respect this value by predicting the time it takes to process the batch.
+- ``max_latency_ms``: A positive latency target in milliseconds. It can be a
+  static integer for all requests or a synchronous callable that receives the
+  incoming Starlette ``Request`` and returns a positive integer for that request.
 
-When you specify ``max_batch_size`` and ``max_latency_ms`` parameters, BentoML ensures that these constraints are respected, even as it dynamically adjusts batch sizes and processing intervals based on the adaptive batching algorithm. The algorithm's primary goal is to optimize both throughput (by batching requests together) and latency (by ensuring requests are processed within an acceptable time frame). However, it operates within the bounds set by these parameters.
+With a static value, every request submitted to the API uses the same target:
+
+.. code-block:: python
+
+    @bentoml.api(
+        batchable=True,
+        max_batch_size=32,
+        max_latency_ms=50,
+    )
+    def predict(self, inputs: list[str]) -> list[str]:
+        return self.model(inputs)
+
+For request-specific targets, provide a synchronous resolver:
+
+.. code-block:: python
+
+    from starlette.requests import Request
+
+
+    def latency_budget(request: Request) -> int:
+        priority = request.headers.get("X-Priority")
+        return {
+            "realtime": 5,
+            "interactive": 20,
+            "background": 100,
+        }.get(priority, 20)
+
+
+    @bentoml.api(
+        batchable=True,
+        max_batch_size=32,
+        max_latency_ms=latency_budget,
+    )
+    def predict(self, inputs: list[str]) -> list[str]:
+        return self.model(inputs)
+
+Requests with different latency budgets still share one adaptive batching queue
+within each Service worker. A tighter deadline in the next FIFO candidate can
+release the batch earlier, allowing looser-deadline requests already in that
+candidate to use the same model invocation. The latency changes when BentoML
+releases work; it does not give the request priority or move it ahead of earlier
+requests.
+
+The resolver runs once after request decoding and before queueing. It must be
+synchronous and return a positive integer without coercion. Dynamic resolution
+applies to request-backed ``@bentoml.api`` calls. Local Python invocation,
+``@bentoml.task``, legacy Runner configuration, and legacy gRPC APIs do not use
+the resolver.
+
+.. warning::
+
+    Treat client-provided latency metadata as untrusted input. Authenticate and
+    clamp requested values so a client cannot force arbitrarily small batches.
+
+    .. code-block:: python
+
+        def latency_budget(request: Request) -> int:
+            requested = int(request.headers.get("X-Latency", "50"))
+            return min(100, max(5, requested))
+
+The adaptive batching algorithm continues to optimize throughput within the
+configured batch-size limit. Predicted execution time caps additional waiting,
+but BentoML does not reject an immediately dispatchable request solely because
+the prediction indicates that its target may be missed.
 
 .. note::
 
@@ -156,4 +221,8 @@ In the code snippet:
 Error handling
 --------------
 
-If a Service can't process requests fast enough and exceeds the ``max_latency_ms``, it will return an HTTP 503 Service Unavailable error. To resolve this, either increase ``max_latency_ms`` or improve system resources, such as adding more memory or CPUs.
+If a queued request reaches its resolved ``max_latency_ms`` before dispatch,
+BentoML returns HTTP 503 Service Unavailable through the existing overload
+fallback. Increase the latency target or improve available capacity if this
+occurs regularly. Once a batch has been dispatched, BentoML does not preempt the
+model invocation if an estimate proves inaccurate.

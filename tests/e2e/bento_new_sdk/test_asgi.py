@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Union
 
 import pydantic
+import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -42,6 +44,17 @@ class RootModelInput:
     @bentoml.api
     def get(self, input: InputModel, /) -> str:
         return f"root-{input.key}"
+
+
+@bentoml.service(metrics={"enabled": False})
+class NullableFileLists:
+    @bentoml.api
+    def none_first(self, files: Union[None, list[Path]] = None) -> list[str]:
+        return [path.read_text() for path in files] if files is not None else []
+
+    @bentoml.api
+    def list_first(self, files: Union[list[Path], None] = None) -> list[str]:
+        return [path.read_text() for path in files] if files is not None else []
 
 
 @bentoml.service(metrics={"enabled": False})
@@ -92,6 +105,21 @@ def test_service_root_input(tmp_path: Path):
 
         assert resp.status_code == 200
         assert resp.text == "root-hello"
+
+
+@pytest.mark.parametrize("endpoint", ["none_first", "list_first"])
+def test_nullable_file_list_input(endpoint: str):
+    with TestClient(app=NullableFileLists.to_asgi()) as client:
+        response = client.post(
+            f"/{endpoint}",
+            files=[
+                ("files", ("one.txt", b"one", "text/plain")),
+                ("files", ("two.txt", b"two", "text/plain")),
+            ],
+        )
+
+    assert response.status_code == 200
+    assert response.json() == ["one", "two"]
 
 
 app = FastAPI()

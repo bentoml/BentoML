@@ -20,7 +20,7 @@ Task results are stored for a configurable amount of time, default 24 hours, and
 
 .. note::
 
-    The diagram above illustrates the architecture of async tasks running on BentoCloud. When a BentoML service is deployed locally, the request queue and ephemeral storage are created in non-persistent memory, intended solely for development purposes.
+    BentoML creates the request queue and ephemeral storage in non-persistent memory. Queued tasks and stored results are lost when the Service restarts.
 
 Define a task endpoint
 ----------------------

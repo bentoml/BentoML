@@ -11,8 +11,8 @@ XGBoost
 
 .. note::
 
-   You can find more examples for **XGBoost** in our
-   :examples:`examples/xgboost <xgboost>` directory.
+   You can find an example for **XGBoost** in :doc:`/examples/xgboost` and the
+   `BentoXGBoost <https://github.com/bentoml/BentoXGBoost>`_ repository.
 
 
 .. currentmodule:: bentoml.xgboost

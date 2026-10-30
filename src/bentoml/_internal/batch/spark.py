@@ -60,8 +60,51 @@ def _load_bento_spark(bento_tag: Tag):
         return load_bento(bento_tag)
 
 
+def _is_legacy_service(svc: t.Any) -> bool:
+    from bentoml._internal.service.service import Service as LegacyService
+
+    return isinstance(svc, LegacyService)
+
+
+def _result_to_record_batch(
+    results: list[t.Any], output_schema: StructType
+) -> RecordBatch:
+    import numpy as np
+    import pandas as pd
+    import pyarrow as pa
+
+    if not results:
+        return pa.RecordBatch.from_pandas(
+            pd.DataFrame({n: [] for n in output_schema.names})
+        )
+    first = results[0]
+    if isinstance(first, pa.RecordBatch):
+        return first
+    if isinstance(first, pa.Table):
+        return first.to_batches()[0]
+    if isinstance(first, pd.DataFrame):
+        return pa.RecordBatch.from_pandas(first)
+    if isinstance(first, np.ndarray):
+        return pa.RecordBatch.from_pandas(
+            pd.DataFrame({output_schema.names[0]: [r.tolist() for r in results]})
+        )
+    if isinstance(first, list):
+        if isinstance(first[0], dict) if first else False:
+            return pa.RecordBatch.from_pandas(
+                pd.concat([pd.DataFrame(r) for r in results], ignore_index=True)
+            )
+        return pa.RecordBatch.from_pandas(
+            pd.DataFrame({output_schema.names[0]: list(results)})
+        )
+    if isinstance(first, dict):
+        return pa.RecordBatch.from_pandas(pd.DataFrame(results))
+    return pa.RecordBatch.from_pandas(pd.DataFrame({output_schema.names[0]: results}))
+
+
 def _get_process(
-    bento_tag: Tag, api_name: str
+    bento_tag: Tag,
+    api_name: str,
+    output_schema: StructType | None = None,
 ) -> t.Callable[[t.Iterable[RecordBatch]], t.Generator[RecordBatch, None, None]]:
     def process(
         iterator: t.Iterable[RecordBatch],
@@ -71,8 +114,8 @@ def _get_process(
         assert api_name in svc.apis, (
             "An error occurred transferring the Bento to the Spark worker."
         )
-        inference_api = svc.apis[api_name]
-        assert inference_api.func is not None, "Inference API function not defined"
+        api = svc.apis[api_name]
+        assert api.func is not None, "Inference API function not defined"
 
         # start bento server
         with reserve_free_port() as port:
@@ -80,12 +123,24 @@ def _get_process(
 
         server = serve(bento_tag, port=port)
         Client.wait_until_server_ready("localhost", port, 30)
-        client = HTTPClient(svc, server.url)
 
-        for batch in iterator:
-            func_input = inference_api.input.from_arrow(batch)
-            func_output = client.call(api_name, func_input)
-            yield inference_api.output.to_arrow(func_output)
+        if _is_legacy_service(svc):
+            client = HTTPClient(svc, server.url)
+            for batch in iterator:
+                func_input = api.input.from_arrow(batch)
+                func_output = client.call(api_name, func_input)
+                yield api.output.to_arrow(func_output)
+        else:
+            from _bentoml_impl.client import SyncHTTPClient as NewSyncHTTPClient
+
+            with NewSyncHTTPClient(server.url, timeout=300) as client:
+                for batch in iterator:
+                    pdf = batch.to_pandas()
+                    row_results = []
+                    for _, row in pdf.iterrows():
+                        kwargs = row.to_dict()
+                        row_results.append(client.call(api_name, **kwargs))
+                    yield _result_to_record_batch(row_results, output_schema)
 
     return process
 
@@ -163,9 +218,18 @@ def run_in_spark(
 
     _distribute_bento(spark, bento)
 
-    process = _get_process(bento.tag, api_name)
-
-    if output_schema is None:
-        output_schema = api.output.spark_schema()
+    if _is_legacy_service(svc):
+        if output_schema is None:
+            output_schema = api.output.spark_schema()
+        process = _get_process(bento.tag, api_name)
+    else:
+        if output_schema is None:
+            raise BentoMLException(
+                "'output_schema' is required for services defined with the "
+                "'@bentoml.service()' decorator, since the output schema "
+                "cannot be automatically inferred. Please provide an "
+                "'output_schema' argument when calling 'run_in_spark'."
+            )
+        process = _get_process(bento.tag, api_name, output_schema)
 
     return df.mapInArrow(process, output_schema)

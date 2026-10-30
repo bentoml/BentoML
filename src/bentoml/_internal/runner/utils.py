@@ -53,7 +53,12 @@ class Params(t.Generic[T]):
 
     def all_equal(self) -> bool:
         value_iter = iter(self.items())
-        _, first = next(value_iter)
+        try:
+            _, first = next(value_iter)
+        except StopIteration:
+            # An empty Params has no values that could disagree, so this is
+            # vacuously true. Avoid leaking a bare StopIteration (see #4263).
+            return True
         return all(v == first for _, v in value_iter)
 
     def map(self, function: t.Callable[[T], To]) -> Params[To]:
@@ -125,7 +130,18 @@ class Params(t.Generic[T]):
         """
         if self.args:
             return self.args[0]
-        return next(iter(self.kwargs.values()))
+        try:
+            return next(iter(self.kwargs.values()))
+        except StopIteration:
+            # An empty ``Params`` has no sample value. This happens when a runner
+            # method takes zero arguments; such a method cannot be batched because
+            # there is no input to derive a batch size from. Raise a clear error
+            # instead of leaking a bare ``StopIteration`` (see issue #4263), which
+            # is confusing and a PEP 479 hazard inside generators/async code.
+            raise ValueError(
+                "Cannot get a sample from an empty Params. A batchable runner "
+                "method must take at least one argument."
+            ) from None
 
 
 PAYLOAD_META_HEADER = "Bento-Payload-Meta"

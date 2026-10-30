@@ -303,8 +303,10 @@ class AsyncClient(AbstractClient):
                 timeout=aiohttp.ClientTimeout(timeout) if timeout else None,
             )
             return resp.status == 200
-        except aiohttp.ServerTimeoutError:
-            logger.warning("Timed out waiting for runner to be ready")
+        except (aiohttp.ClientError, asyncio.TimeoutError):
+            logger.warning(
+                "Timed out or could not connect while waiting for runner to be ready"
+            )
             return False
 
     async def __aenter__(self) -> t.Self:

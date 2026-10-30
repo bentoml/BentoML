@@ -369,8 +369,10 @@ class RemoteRunnerClient(RunnerHandle):
                 timeout=aio_timeout,
             ) as resp:
                 return resp.status == 200
-        except asyncio.TimeoutError:
-            logger.warn("Timed out waiting for runner to be ready")
+        except (aiohttp.ClientError, asyncio.TimeoutError):
+            logger.warning(
+                "Timed out or could not connect while waiting for runner to be ready"
+            )
             return False
 
     def __del__(self) -> None:

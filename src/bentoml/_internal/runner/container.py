@@ -405,7 +405,7 @@ class PandasDataFrameContainer(
         assert batch_dim == 0, (
             "PandasDataFrameContainer does not support batch_dim other than 0"
         )
-        return batch.shape
+        return batch.shape[0]
 
     @classmethod
     def from_payload(

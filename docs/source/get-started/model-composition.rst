@@ -24,7 +24,7 @@ Examples
 
 Model composition in BentoML can involve single or multiple :doc:`Services </build-with-bentoml/services>`, depending on your application.
 
-For each Service, you can use ``resources`` in the ``@bentoml.service`` decorator to configure the required resources for deployment, such as GPUs. Note that :ref:`this field only takes effect on BentoCloud <resources>`.
+For each Service, you can use ``resources`` in the ``@bentoml.service`` decorator to configure the required resources for deployment, such as GPUs. In open-source BentoML, only the ``gpu`` field takes effect. See :ref:`resources` for details.
 
 Run multiple models in one Service
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

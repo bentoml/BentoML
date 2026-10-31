@@ -55,13 +55,13 @@ If you have an existing model on disk, you can import it into the BentoML Model 
 Load a model
 ------------
 
-BentoML provides an efficient mechanism for loading AI models to accelerate model deployment on BentoCloud, reducing image build time and cold start time.
+BentoML lets you declare the models a Service depends on, so they are tracked with your Service and loaded consistently wherever it runs.
 
 .. tab-set::
 
-   .. tab-item:: From the Model Store or BentoCloud
+   .. tab-item:: From the Model Store
 
-      To load a model from the local Model Store or BentoCloud, instantiate a ``BentoModel`` from ``bentoml.models`` and specify its model tag. Make sure the model is stored locally or available in BentoCloud.
+      To load a model from the local Model Store, instantiate a ``BentoModel`` from ``bentoml.models`` and specify its model tag. Make sure the model is stored locally.
 
       Here is an example:
 
@@ -74,7 +74,7 @@ BentoML provides an efficient mechanism for loading AI models to accelerate mode
          @bentoml.service(resources={"cpu": "200m", "memory": "512Mi"})
          class MyService:
              # Define model reference at the class level
-             # Load a model from the Model Store or BentoCloud
+             # Load a model from the Model Store
              iris_ref = BentoModel("iris_sklearn:latest")
 
              def __init__(self):
@@ -112,16 +112,11 @@ BentoML provides an efficient mechanism for loading AI models to accelerate mode
 
          model_path = HuggingFaceModel("your_model_id", endpoint="https://my.huggingface.co/")
 
-      After deploying the HF model to BentoCloud, you can view and verify it on the Bento details page. It is indicated with the HF icon. Clicking it redirects you to the model page on HF.
-
-      .. image:: ../../_static/img/build-with-bentoml/model-loading-and-management/hf-model-on-bentocloud.png
-         :alt: Hugging Face model marked with an icon on BentoCloud console
-
-When using ``BentoModel`` or ``HuggingFaceModel``, you must load the model from the class scope of a Service. Defining the model as a class variable declares it as a dependency of the Service, ensuring the models are referenced by the Bento when transported and deployed. If you call these two APIs within the constructor of a Service class, the model will not be referenced by the Bento. As a result, it will not be pushed or deployed, leading to a model ``NotFound`` error.
+When using ``BentoModel`` or ``HuggingFaceModel``, you must load the model from the class scope of a Service. Defining the model as a class variable declares it as a dependency of the Service, ensuring the models are referenced by the Bento when transported and deployed. If you call these two APIs within the constructor of a Service class, the model will not be referenced by the Bento. As a result, it will not be packaged or deployed, leading to a model ``NotFound`` error.
 
 .. note::
 
-    BentoML accelerates model loading in two key ways. First, when using ``BentoModel`` or ``HuggingFaceModel``, models are downloaded during image building rather than at Service startup. The downloaded models are cached and mounted directly into containers, significantly reducing cold start time and improving scaling performance, especially for large models. Second, BentoML optimizes the actual loading process itself with parallel loading using safetensors. Instead of loading model weights sequentially, multiple parts of the model are loaded simultaneously.
+    When you build a Bento, models declared with ``BentoModel`` are packaged into the Bento. Models declared with ``HuggingFaceModel`` are recorded with a pinned revision and downloaded from Hugging Face when the Service starts.
 
 For more information, see :doc:`/reference/bentoml/stores`.
 
@@ -196,22 +191,6 @@ You can perform the following operations on models by using the BentoML CLI.
             pip install fs-s3fs  *# Additional dependency required for working with s3*
             bentoml models export summarization-model:latest s3://my_bucket/my_prefix/
 
-    .. tab-item:: Pull/Push
-
-        `BentoCloud <https://cloud.bentoml.com/>`_ provides a centralized model repository with flexible APIs and a web console for managing all models created by your team. After you :doc:`log in to BentoCloud </scale-with-bentocloud/manage-api-tokens>`, use ``bentoml models push`` and ``bentoml models pull`` to upload your models to and download them from BentoCloud:
-
-        .. code-block:: bash
-
-            $ bentoml models push summarization-model:latest
-
-            Successfully pushed model "summarization-model:btwtmvu5kwqc67i3"                                                                                                                                                                                           │
-
-        .. code-block:: bash
-
-            $ bentoml models pull summarization-model:latest
-
-            Successfully pulled model "summarization-model:btwtmvu5kwqc67i3"
-
     .. tab-item:: Delete
 
         .. code-block:: bash
@@ -256,19 +235,6 @@ In addition to the CLI commands, BentoML also provides equivalent Python APIs fo
         .. code-block:: python
 
             bentoml.models.import_model('s3://my_bucket/folder/my_model.bentomodel')
-
-    .. tab-item:: Push/Pull
-
-        If you :doc:`have access to BentoCloud </scale-with-bentocloud/manage-api-tokens>`, you can also push local models to or pull models from it.
-
-        .. code-block:: python
-
-            import bentoml
-            bentoml.models.push("summarization-model:latest")
-
-        .. code-block:: python
-
-            bentoml.models.pull("summarization-model:latest")
 
     .. tab-item:: Delete
 

@@ -26,7 +26,7 @@ When a single GPU is available, frameworks like PyTorch and TensorFlow default t
         # Use a Hugging Face model
         model_path = bentoml.models.HuggingFaceModel("org_name/model_id")
 
-        # Use a model from the Model Store or BentoCloud
+        # Use a model from the Model Store
         # model_path = bentoml.models.BentoModel("model_name:latest")
 
         def __init__(self):
@@ -53,7 +53,7 @@ To use a specific GPU:
         model1_path = bentoml.models.HuggingFaceModel("org_name/model1_id")
         model2_path = bentoml.models.HuggingFaceModel("org_name/model2_id")
 
-        # Use a model from the Model Store or BentoCloud
+        # Use a model from the Model Store
         # model_path = bentoml.models.BentoModel("model_name:latest")
 
         def __init__(self):
@@ -110,39 +110,6 @@ When building your Bento, simply add PyTorch and TensorFlow using the ``python_p
         # Service implementation
 
 To customize the installation of CUDA driver and libraries, use the ``base_image`` parameter and the ``system_packages`` and ``run`` methods when :doc:`defining the runtime specifications </build-with-bentoml/runtime-environment>`.
-
-BentoCloud
-^^^^^^^^^^
-
-When deploying on BentoCloud, specify ``resources`` with ``gpu`` or ``gpu_type`` in the ``@bentoml.service`` decorator to allow BentoCloud to allocate the necessary GPU resources:
-
-.. code-block:: python
-
-    @bentoml.service(
-        resources={
-            "gpu": 1, # The number of allocated GPUs
-            "gpu_type": "nvidia-l4" # A specific GPU type on BentoCloud
-        }
-    )
-    class MyService:
-        # Service implementation
-
-To list available GPU types on your BentoCloud account, run:
-
-.. code-block:: bash
-
-    $ bentoml deployment list-instance-types
-
-    Name        Price  CPU    Memory  GPU  GPU Type
-    cpu.1       *      500m   2Gi
-    cpu.2       *      1000m  2Gi
-    cpu.4       *      2000m  8Gi
-    cpu.8       *      4000m  16Gi
-    gpu.t4.1    *      2000m  8Gi     1    nvidia-tesla-t4
-    gpu.l4.1    *      4000m  16Gi    1    nvidia-l4
-    gpu.a100.1  *      6000m  43Gi    1    nvidia-tesla-a100
-
-After your Service is ready, you can then deploy it to BentoCloud by running ``bentoml deploy .``. See :doc:`/scale-with-bentocloud/deployment/create-deployments` for details.
 
 Docker
 ^^^^^^

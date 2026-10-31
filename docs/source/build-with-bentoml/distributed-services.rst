@@ -71,48 +71,21 @@ Using ``bentoml.depends()`` is a recommended way for creating a BentoML project 
 Depend on an external deployment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-BentoML also allows you to set an external deployment as a dependency for a Service. This means the Service can call a remote model and its exposed API endpoints. To specify an external deployment, use the ``bentoml.depends()`` function, either by providing the deployment name on BentoCloud or the URL if it's already running.
+BentoML also allows you to set an external deployment as a dependency for a Service. This means the Service can call a remote model and its exposed API endpoints. To specify an external deployment that is already running, pass its URL to the ``url`` parameter of ``bentoml.depends()``.
 
-.. tab-set::
+.. code-block:: python
 
-   .. tab-item:: Specify the Deployment name on BentoCloud
+   import bentoml
 
-      You can also pass the ``cluster`` parameter to specify the cluster where your Deployment is running.
+   @bentoml.service
+   class MyService:
+       # Call the model served elsewhere by specifying its URL
+       iris = bentoml.depends(url="http://192.168.1.1:3000")
 
-      .. code-block:: python
-
-         import bentoml
-
-         @bentoml.service
-         class MyService:
-             # `cluster` is optional if your Deployment is in a non-default cluster
-             iris = bentoml.depends(deployment="iris-classifier-x6dewa", cluster="my_cluster_name")
-
-             @bentoml.api
-             def predict(self, input: np.ndarray) -> int:
-                 # Call the predict function from the remote Deployment
-                 return int(self.iris.predict(input)[0][0])
-
-   .. tab-item:: Specify the URL
-
-      If the external deployment is already running and its API is exposed via a public URL, you can reference it by specifying the ``url`` parameter. Note that ``url`` and ``deployment``/``cluster`` are mutually exclusive.
-
-      .. code-block:: python
-
-         import bentoml
-
-         @bentoml.service
-         class MyService:
-             # Call the model deployed on BentoCloud by specifying its URL
-             iris = bentoml.depends(url="https://<iris.example-url.bentoml.ai>")
-
-             # Call the model served elsewhere
-             # iris = bentoml.depends(url="http://192.168.1.1:3000")
-
-             @bentoml.api
-             def predict(self, input: np.ndarray) -> int:
-                 # Make a request to the external service hosted at the specified URL
-                 return int(self.iris.predict(input)[0][0])
+       @bentoml.api
+       def predict(self, input: np.ndarray) -> int:
+           # Make a request to the external service hosted at the specified URL
+           return int(self.iris.predict(input)[0][0])
 
 .. tip::
 
@@ -125,66 +98,4 @@ BentoML also allows you to set an external deployment as a dependency for a Serv
       @bentoml.service
       class MyService:
           # Specify the external Service class for type-safe integration
-          iris = bentoml.depends(IrisClassifier, deployment="iris-classifier-x6dewa", cluster="my_cluster")
-
-Deploy distributed Services
----------------------------
-
-To deploy a project with distributed Services to BentoCloud, we recommend you use a separate configuration file and reference it in the BentoML CLI command or Python API for deployment.
-
-Here is an example:
-
-.. code-block:: yaml
-    :caption: `config-file.yaml`
-
-    name: "deployment-name"
-    bento: .
-    description: "This project creates an AI agent application"
-    envs: # Optional. If you specify environment variables here, they will be applied to all Services
-      - name: "GLOBAL_ENV_VAR_NAME"
-        value: "env_var_value"
-    services: # Add the configs of each Service under this field
-      Preprocessing: # Service one
-        instance_type: "gpu.l4.1"
-        scaling:
-          max_replicas: 2
-          min_replicas: 1
-        envs: # Environment variables specific to Service one
-          - name: "ENV_VAR_NAME"
-            value: "env_var_value"
-        deployment_strategy: "RollingUpdate"
-        config_overrides:
-          traffic:
-            # float in seconds
-            timeout: 700
-            max_concurrency: 20
-            external_queue: true
-          resources:
-            cpu: "400m"
-            memory: "1Gi"
-          workers:
-            - gpu: 1
-      Inference: # Service two
-        instance_type: "cpu.1"
-        scaling:
-          max_replicas: 5
-          min_replicas: 1
-
-To deploy these Services to :doc:`BentoCloud </bentocloud/get-started>`, you can choose either the BentoML CLI or Python API:
-
-.. tab-set::
-
-    .. tab-item:: BentoML CLI
-
-        .. code-block:: bash
-
-            bentoml deploy -f config-file.yaml
-
-    .. tab-item:: Python API
-
-        .. code-block:: python
-
-            import bentoml
-            bentoml.deployment.create(config_file="config-file.yaml")
-
-Refer to :doc:`/scale-with-bentocloud/deployment/configure-deployments` to see the available configuration fields.
+          iris = bentoml.depends(IrisClassifier, url="http://192.168.1.1:3000")

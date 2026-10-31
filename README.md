@@ -114,7 +114,7 @@ docker run --rm -p 3000:3000 summarization:latest
 - Computer Vision: [YOLO](https://github.com/bentoml/BentoYolo) and [ResNet](https://github.com/bentoml/BentoResnet)
 - Advanced examples: [Function calling](https://github.com/bentoml/BentoFunctionCalling), [LangGraph](https://github.com/bentoml/BentoLangGraph), [CrewAI](https://github.com/bentoml/BentoCrewAI)
 
-Check out the [full list](https://docs.bentoml.com/en/latest/examples/overview.html) for more sample code and usage.
+Check out the [full list](https://github.com/orgs/bentoml/repositories) for more sample code and usage.
 
 ## Advanced topics
 

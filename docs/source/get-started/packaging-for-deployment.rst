@@ -60,8 +60,6 @@ After building, each Bento is automatically assigned a unique version. You can l
 
    bentoml list
 
-The ``bentoml build`` command is part of the ``bentoml deploy`` workflow. You should use this command only if you want to build a Bento without deploying it to BentoCloud. To deploy your project to BentoCloud directly, use ``bentoml deploy``. For details, see :doc:`cloud-deployment`.
-
 Containerize a Bento
 --------------------
 

@@ -11,8 +11,8 @@ MLflow
 
 .. note::
 
-   You can find more examples for **MLflow** in our :examples:`examples/mlflow <mlflow>`
-   directory.
+   You can find an example for **MLflow** in :doc:`/examples/mlflow` and the
+   `BentoMLflow <https://github.com/bentoml/BentoMLflow>`_ repository.
 
 
 .. currentmodule:: bentoml.mlflow

@@ -61,14 +61,12 @@ You can use ``use_arguments()`` directly without a Pydantic model. This returns 
 Provide argument values
 -----------------------
 
-After setting the template arguments, you can supply their values dynamically through the CLI when running commands like ``bentoml serve``, ``bentoml build``, ``bentoml deploy`` (when passing the Bento path), and ``bentoml code``. For example:
+After setting the template arguments, you can supply their values dynamically through the CLI when running commands like ``bentoml serve`` and ``bentoml build``. For example:
 
 .. code-block:: bash
 
    bentoml build --arg model_name=meta-llama/Llama-3.3-70B-Instruct --arg gpu=4
    bentoml serve --arg model_name=deepseek-ai/DeepSeek-V3
-   bentoml deploy --arg model_name=deepseek-ai/DeepSeek-V3
-   bentoml deployment update <deployment_name> --arg model_tag=$MODEL_TAG --bento ./project/directory
 
    # Define arguments in a YAML file and pass it
    bentoml build --arg-file bento_args.yaml

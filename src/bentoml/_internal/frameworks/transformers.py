@@ -596,7 +596,7 @@ def make_default_signatures(pretrained_cls: t.Any) -> ModelSignaturesType:
         )
     elif issubclass(pretrained_cls, transformers.FlaxPreTrainedModel):
         infer_fn = ("__call__", "generate")
-    elif issubclass(
+    elif transformers.is_vision_available() and issubclass(
         pretrained_cls, transformers.image_processing_utils.BaseImageProcessor
     ):
         infer_fn = ("__call__", "preprocess")

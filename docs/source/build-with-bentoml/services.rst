@@ -60,6 +60,16 @@ By default, the server is accessible at `http://localhost:3000/ <http://localhos
 - Manages the lifecycle of the Service instance defined.
 - Creates a URL route based on the method name. In this example, it is ``http://localhost:3000/summarize``. This route can be customized.
 
+New-style ``@bentoml.service()`` Services can also be served over gRPC:
+
+.. code-block:: bash
+
+    bentoml serve-grpc service.py:MyService
+
+The gRPC server speaks protocol **v1** and currently supports ``str`` (text), JSON (Pydantic models, dicts, and lists), NumPy arrays (``ndarray``), and files. Streaming, batch, and task APIs return ``UNIMPLEMENTED``. Pandas DataFrames, images, multipart payloads, and protocol ``v1alpha1`` are not supported yet.
+
+For APIs using :ref:`bentoml.Context <inference-context>`, incoming gRPC metadata is available through ``ctx.request.headers`` and ``ctx.response.headers`` is returned as trailing gRPC metadata. HTTP-specific response status codes and cookies do not have a gRPC equivalent.
+
 Service configurations
 ----------------------
 

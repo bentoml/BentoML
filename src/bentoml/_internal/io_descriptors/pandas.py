@@ -347,31 +347,6 @@ class PandasDataFrame(
 
         Args:
             sample: Given sample ``pd.DataFrame`` data
-            orient: Indication of expected JSON string format. Compatible JSON strings can be
-                    produced by :func:`pandas.io.json.to_json()` with a corresponding orient value.
-                    Possible orients are:
-
-                    - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
-                    - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
-                    - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
-                    - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
-                    - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
-                    - :obj:`table` - :code:`dict[str, Any]` ↦ {``schema``: { schema }, ``data``: { data }}
-            apply_column_names: Update incoming DataFrame columns. ``columns`` must be specified at
-                                function signature. If you don't want to enforce a specific columns
-                                name then change ``apply_column_names=False``.
-            enforce_dtype: Enforce a certain data type. `dtype` must be specified at function
-                           signature. If you don't want to enforce a specific dtype then change
-                           ``enforce_dtype=False``.
-            enforce_shape: Enforce a certain shape. ``shape`` must be specified at function
-                           signature. If you don't want to enforce a specific shape then change
-                           ``enforce_shape=False``.
-            default_format: The default serialization format to use if the request does not specify a ``Content-Type`` Headers.
-                            It is also the serialization format used for the response. Possible values are:
-
-                            - :obj:`json` - JSON text format (inferred from content-type ``"application/json"``)
-                            - :obj:`parquet` - Parquet binary format (inferred from content-type ``"application/vnd.apache.parquet"``)
-                            - :obj:`csv` - CSV text format (inferred from content-type ``"text/csv"``)
 
         Returns:
             :class:`~bentoml._internal.io_descriptors.pandas.PandasDataFrame`: IODescriptor from given users inputs.
@@ -640,8 +615,7 @@ class PandasDataFrame(
         Process incoming protobuf request and convert it to ``pandas.DataFrame``
 
         Args:
-            request: Incoming RPC request message.
-            context: grpc.ServicerContext
+            field: Incoming RPC request message.
 
         Returns:
             a ``pandas.DataFrame`` object. This can then be used
@@ -698,7 +672,6 @@ class PandasDataFrame(
 
         Args:
             obj: ``pandas.DataFrame`` that will be serialized to protobuf
-            context: grpc.aio.ServicerContext from grpc.aio.Server
         Returns:
             ``service_pb2.Response``:
                 Protobuf representation of given ``pandas.DataFrame``
@@ -849,9 +822,6 @@ class PandasSeries(
                 - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
                 - :obj:`columns` - :code:`dict[str, Any]` ↦ {``column`` ↠ {``index`` ↠ ``value``}}
                 - :obj:`values` - :code:`dict[str, Any]` ↦ Values arrays
-        columns: List of columns name that users wish to update.
-        apply_column_names: Whether to update incoming DataFrame columns. If :code:`apply_column_names=True`,
-                            then ``columns`` must be specified.
         dtype: Data type users wish to convert their inputs/outputs to. If it is a boolean,
                then pandas will infer dtypes. Else if it is a dictionary of column to
                ``dtype``, then applies those to incoming dataframes. If ``False``, then don't
@@ -898,21 +868,7 @@ class PandasSeries(
         Create a :class:`~bentoml._internal.io_descriptors.pandas.PandasSeries` IO Descriptor from given inputs.
 
         Args:
-            sample_input: Given sample ``pd.DataFrame`` data
-            orient: Indication of expected JSON string format. Compatible JSON strings can be
-                    produced by :func:`pandas.io.json.to_json()` with a corresponding orient value.
-                    Possible orients are:
-
-                    - :obj:`split` - :code:`dict[str, Any]` ↦ {``idx`` ↠ ``[idx]``, ``columns`` ↠ ``[columns]``, ``data`` ↠ ``[values]``}
-                    - :obj:`records` - :code:`list[Any]` ↦ [{``column`` ↠ ``value``}, ..., {``column`` ↠ ``value``}]
-                    - :obj:`index` - :code:`dict[str, Any]` ↦ {``idx`` ↠ {``column`` ↠ ``value``}}
-                    - :obj:`table` - :code:`dict[str, Any]` ↦ {``schema``: { schema }, ``data``: { data }}
-            enforce_dtype: Enforce a certain data type. `dtype` must be specified at function
-                           signature. If you don't want to enforce a specific dtype then change
-                           ``enforce_dtype=False``.
-            enforce_shape: Enforce a certain shape. ``shape`` must be specified at function
-                           signature. If you don't want to enforce a specific shape then change
-                           ``enforce_shape=False``.
+            sample: Given sample ``pd.DataFrame`` data
 
         Returns:
             :class:`~bentoml._internal.io_descriptors.pandas.PandasSeries`: IODescriptor from given users inputs.
@@ -1095,8 +1051,7 @@ class PandasSeries(
         Process incoming protobuf request and convert it to ``pandas.Series``
 
         Args:
-            request: Incoming RPC request message.
-            context: grpc.ServicerContext
+            field: Incoming RPC request message.
 
         Returns:
             a ``pandas.Series`` object. This can then be used
@@ -1157,7 +1112,6 @@ class PandasSeries(
 
         Args:
             obj: ``pandas.Series`` that will be serialized to protobuf
-            context: grpc.aio.ServicerContext from grpc.aio.Server
         Returns:
             ``service_pb2.Response``:
                 Protobuf representation of given ``pandas.Series``

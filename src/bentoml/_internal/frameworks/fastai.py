@@ -137,7 +137,7 @@ def save_model(
     Args:
         name: The name to give to the model in the BentoML store. This must be a valid
               :obj:`~bentoml.Tag` name.
-        learner: :obj:`~fastai.learner.Learner` to be saved.
+        learner_: :obj:`~fastai.learner.Learner` to be saved.
         signatures: Signatures of predict methods to be used. If not provided, the signatures default to
                     ``predict``. See :obj:`~bentoml.types.ModelSignature` for more details.
         labels: A default set of management labels to be associated with the model. An example is ``{"training-set": "data-1"}``.

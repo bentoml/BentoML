@@ -433,12 +433,6 @@ class NumpyNdarray(
         Args:
             sample: Given sample ``np.ndarray`` data. It also accepts a sequence-like data type that
                     can be converted to ``np.ndarray``.
-            enforce_dtype: Enforce a certain data type. :code:`dtype` must be specified at function
-                           signature. If you don't want to enforce a specific dtype then change
-                           :code:`enforce_dtype=False`.
-            enforce_shape: Enforce a certain shape. :code:`shape` must be specified at function
-                           signature. If you don't want to enforce a specific shape then change
-                           :code:`enforce_shape=False`.
 
         Returns:
             :class:`~bentoml._internal.io_descriptors.numpy.NumpyNdarray`: IODescriptor from given users inputs.
@@ -491,8 +485,7 @@ class NumpyNdarray(
         Process incoming protobuf request and convert it to ``numpy.ndarray``
 
         Args:
-            request: Incoming RPC request message.
-            context: grpc.ServicerContext
+            field: Incoming RPC request message.
 
         Returns:
             ``numpy.ndarray``: A ``np.array`` constructed from given protobuf message.

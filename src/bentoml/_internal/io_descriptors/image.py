@@ -205,11 +205,6 @@ class Image(
 
         Args:
             sample: Given File-like object, or a path to a file.
-            pilmode: Optional color mode for PIL. Default to ``RGB``.
-            mime_type: The MIME type of the file type that this descriptor should return.
-                       If not specified, then ``from_sample`` will try to infer the MIME type
-                       from file extension.
-            allowed_mime_types: An optional list of MIME types to restrict input to.
 
         Returns:
             :class:`~bentoml._internal.io_descriptors.image.Image`: IODescriptor from given users inputs.

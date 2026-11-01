@@ -133,7 +133,6 @@ def import_bento(
     `FS URL documentation <https://docs.pyfilesystem.org/en/latest/openers.html>`_.
 
     Args:
-        tag: the tag of the bento to export
         path: can be one of two things:
               * a folder on the local filesystem
               * an `FS URL <https://docs.pyfilesystem.org/en/latest/openers.html>`_,

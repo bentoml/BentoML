@@ -7,6 +7,7 @@ import pytest
 from _bentoml_sdk.images import Image
 from bentoml._internal.bento import Bento
 from bentoml._internal.bento.build_config import BentoBuildConfig
+from bentoml._internal.bento.build_config import BentoEnvSchema
 from bentoml._internal.bento.build_config import PythonOptions
 from bentoml._internal.cloud.client import RestApiClient
 from bentoml._internal.cloud.deployment import DeploymentConfigParameters
@@ -101,3 +102,53 @@ def test_empty_docker_defaults_preserve_deployment_requirements(
     assert sorted(
         rebuilt_config.with_defaults().get_image_envs(), key=lambda env: env.name
     ) == sorted(config.with_defaults().get_image_envs(), key=lambda env: env.name)
+
+
+@pytest.mark.parametrize("docker_value", [None, "explicit-build", ""])
+def test_service_runtime_override_stays_out_of_image(
+    tmp_path, monkeypatch, docker_value
+):
+    module = f"staged_service_{docker_value is None}_{bool(docker_value)}"
+    (tmp_path / f"{module}.py").write_text(
+        "import bentoml\n"
+        '@bentoml.service(envs=[{"name": "SHARED", "value": "runtime-only", "stage": "runtime"}])\n'
+        "class StagedService:\n"
+        "    @bentoml.api\n"
+        "    def echo(self, text: str) -> str:\n"
+        "        return text\n"
+    )
+    config = BentoBuildConfig.load(
+        {
+            "service": f"{module}:StagedService",
+            "envs": [{"name": "SHARED", "value": "build-default", "stage": "all"}],
+            "docker": {"env": {} if docker_value is None else {"SHARED": docker_value}},
+        }
+    )
+    monkeypatch.setattr(Image, "_freeze_python_requirements", lambda *args: "")
+    bento = Bento.create(config, build_ctx=str(tmp_path), enabled_features=[])
+    restored = Bento.from_path(bento.path)
+    build_value = "build-default" if docker_value is None else docker_value
+    assert restored.info.envs == [
+        BentoEnvSchema(name="SHARED", value="build-default"),
+        BentoEnvSchema(name="SHARED", value="runtime-only", stage="runtime"),
+    ]
+    assert restored.info.image_envs == [
+        BentoEnvSchema(name="SHARED", value=build_value),
+        BentoEnvSchema(
+            name="SHARED",
+            value="runtime-only" if docker_value is None else docker_value,
+            stage="runtime",
+        ),
+    ]
+    packaged_config = BentoBuildConfig.from_file(bento.path_of("src/bentofile.yaml"))
+    assert packaged_config.get_image_envs() == restored.info.image_envs
+    expected_arg = f"ARG SHARED{'=' + build_value if build_value else ''}\n"
+    with open(bento.path_of("env/docker/Dockerfile")) as stream:
+        generated = stream.read()
+    assert expected_arg in generated
+    assert "runtime-only" not in generated
+    with construct_containerfile(restored) as (_, dockerfile):
+        with open(dockerfile) as stream:
+            rebuilt = stream.read()
+        assert expected_arg in rebuilt
+        assert "runtime-only" not in rebuilt

@@ -874,7 +874,9 @@ class BentoBuildConfig:
             # and the command line args take precedence
             set_arguments(self.args, override=False)
 
-    def with_defaults(self) -> FilledBentoBuildConfig:
+    def with_defaults(
+        self, *, merge_docker_envs: bool = True
+    ) -> FilledBentoBuildConfig:
         """
         Convert from user provided options to actual build options with defaults
         values filled in.
@@ -889,7 +891,7 @@ class BentoBuildConfig:
             labels=self.labels,
             include=["*"] if self.include is None else self.include,
             exclude=[] if self.exclude is None else self.exclude,
-            docker=self.docker.with_defaults(self.envs),
+            docker=self.docker.with_defaults(self.envs if merge_docker_envs else None),
             python=self.python.with_defaults(),
             conda=self.conda.with_defaults(),
             models=self.models,

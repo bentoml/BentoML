@@ -272,7 +272,9 @@ class Bento(StoreItem):
                 image = svc.image
         if not disable_image:
             image = populate_image_from_build_config(image, build_config, build_ctx)
-        build_config = build_config.with_defaults()
+        # V2 images merge the explicit Docker mapping with staged declarations.
+        # Flattened legacy defaults would promote runtime values into build stages.
+        build_config = build_config.with_defaults(merge_docker_envs=image is None)
         tag = Tag(bento_name, version)
         if version is None:
             tag = tag.make_new_version()

@@ -502,7 +502,8 @@ class Exportable(ABC):
 
         fs, fspath = fsspec.url_to_fs(resource_url)
         if output_format == "folder":
-            fs.put(str(self._path), fspath, recursive=True)
+            # Copy the contents even when the destination directory already exists.
+            fs.put(f"{self._path.as_posix()}/", fspath, recursive=True)
         else:
             temp_name = tempfile.mktemp(prefix="bentoml-export-")
             compressed = self._compress(temp_name, output_format)

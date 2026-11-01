@@ -210,6 +210,7 @@ def construct_containerfile(
                 bento_fs=Path(tempdir),
                 enable_buildkit=enable_buildkit,
                 add_header=add_header,
+                envs=options.envs,
             )
             instruction.append(dockerfile)
             if features is not None:

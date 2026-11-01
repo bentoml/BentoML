@@ -246,7 +246,12 @@ class DockerOptions:
         # By default, BentoML containerization will use BuildKit. To opt-out specify DOCKER_BUILDKIT=0
         dockerfile_path.write_text(
             generate_containerfile(
-                self, build_ctx, conda=conda, bento_fs=bento_fs, enable_buildkit=False
+                self,
+                build_ctx,
+                conda=conda,
+                bento_fs=bento_fs,
+                enable_buildkit=False,
+                envs=envs,
             ),
         )
         shutil.copy2(

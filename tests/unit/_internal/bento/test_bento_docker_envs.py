@@ -21,6 +21,25 @@ from bentoml._internal.container import construct_containerfile
 from bentoml.exceptions import BentoMLException
 
 
+def run_entrypoint(context, environment, keys, cwd):
+    bash = shutil.which("bash")
+    if bash is None:
+        pytest.skip("bash is required to execute the container entrypoint")
+    output = subprocess.check_output(
+        [
+            bash,
+            Path(context, "env/docker/entrypoint.sh").as_posix(),
+            Path(sys.executable).as_posix(),
+            "-c",
+            f"import json, os; print(json.dumps({{key: os.environ.get(key) for key in {keys!r}}}))",
+        ],
+        cwd=cwd,
+        env={**environment, "BENTO_PATH": Path(context).as_posix()},
+        text=True,
+    )
+    return json.loads(output)
+
+
 @pytest.mark.parametrize("spec", [1, 2])
 def test_empty_docker_defaults_preserve_deployment_requirements(
     tmp_path, monkeypatch, spec
@@ -172,15 +191,36 @@ def test_service_runtime_override_stays_out_of_image(
     expected_arg = (
         f"ARG SHARED{'=' + build_value if build_value or spec == 1 else ''}\n"
     )
+
+    def check_runtime(context, dockerfile):
+        if spec != 1:
+            return
+        for external_value in (None, "build-default", "external", ""):
+            environment = {
+                key: val for key, val in os.environ.items() if key != "SHARED"
+            }
+            if "ENV SHARED=$SHARED\n" in dockerfile:
+                environment["SHARED"] = build_value
+            if external_value is not None:
+                environment["SHARED"] = external_value
+            expected = "runtime-only" if docker_value is None else docker_value
+            if external_value is not None:
+                expected = external_value
+            assert run_entrypoint(context, environment, ["SHARED"], tmp_path) == {
+                "SHARED": expected
+            }
+
     with open(bento.path_of("env/docker/Dockerfile")) as stream:
         generated = stream.read()
     assert expected_arg in generated
     assert "runtime-only" not in generated
-    with construct_containerfile(restored) as (_, dockerfile):
+    check_runtime(restored.path, generated)
+    with construct_containerfile(restored) as (context, dockerfile):
         with open(dockerfile) as stream:
             rebuilt = stream.read()
         assert expected_arg in rebuilt
         assert "runtime-only" not in rebuilt
+        check_runtime(context, rebuilt)
 
 
 @pytest.mark.parametrize("legacy", [True, False])
@@ -189,9 +229,6 @@ def test_service_runtime_override_stays_out_of_image(
 def test_legacy_entrypoint_restores_runtime_defaults(
     tmp_path, monkeypatch, legacy, external_value, docker_env
 ):
-    bash = shutil.which("bash")
-    if bash is None:
-        pytest.skip("bash is required to execute the container entrypoint")
     module = f"runtime_defaults_{legacy}_{external_value is None}_{bool(external_value)}_{docker_env}"
     service = (
         'svc = bentoml.legacy.Service("runtime_defaults")\n'
@@ -229,20 +266,7 @@ def test_legacy_entrypoint_restores_runtime_defaults(
         environment["BENTO_TEST_RUNTIME"] = external_value
 
     def check_entrypoint(context):
-        environment["BENTO_PATH"] = Path(context).as_posix()
-        output = subprocess.check_output(
-            [
-                bash,
-                Path(context, "env/docker/entrypoint.sh").as_posix(),
-                Path(sys.executable).as_posix(),
-                "-c",
-                f"import json, os; print(json.dumps({{key: os.environ.get(key) for key in {keys!r}}}))",
-            ],
-            cwd=tmp_path,
-            env=environment,
-            text=True,
-        )
-        assert json.loads(output) == {
+        assert run_entrypoint(context, environment, keys, tmp_path) == {
             "BENTO_TEST_RUNTIME": value if external_value is None else external_value,
             "BENTO_TEST_DOCKER": "docker" if docker_env else "default",
             "BENTO_TEST_EMPTY": "" if docker_env else "default",

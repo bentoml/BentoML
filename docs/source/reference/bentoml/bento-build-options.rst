@@ -572,6 +572,8 @@ When ``docker.env`` is also configured, variables from both settings are include
 
 Legacy and ``no_image`` containers apply runtime-only defaults in their entrypoint before starting the service. Environment variables supplied by the container or by ``docker.env``, including empty strings, take precedence over these defaults.
 
+When an all-stage default shares a name with a runtime-only declaration, legacy and ``no_image`` builds expose the all-stage value through ``ARG`` during construction and apply the runtime default at startup. Explicit ``docker.env`` values continue to become persistent image environment variables.
+
 ``conda``
 ^^^^^^^^^
 

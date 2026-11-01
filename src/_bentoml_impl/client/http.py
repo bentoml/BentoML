@@ -17,6 +17,7 @@ from urllib.parse import urlparse
 
 import attr
 import httpx
+from starlette.concurrency import iterate_in_threadpool
 
 from _bentoml_sdk import IODescriptor
 from bentoml import __version__
@@ -250,6 +251,8 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                 else:
                     file_io, content_type = file[1:]
                     content = iter(lambda: file_io.read(4096), b"")
+                    if isinstance(self.client, httpx.AsyncClient):
+                        content = iterate_in_threadpool(content)
                     if content_type:
                         headers.update({"content-type": content_type})
             elif isinstance(value, (str, bytes)):

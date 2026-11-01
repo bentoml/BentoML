@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -175,3 +181,80 @@ def test_service_runtime_override_stays_out_of_image(
             rebuilt = stream.read()
         assert expected_arg in rebuilt
         assert "runtime-only" not in rebuilt
+
+
+@pytest.mark.parametrize("legacy", [True, False])
+@pytest.mark.parametrize("external_value", [None, "external", ""])
+@pytest.mark.parametrize("docker_env", [False, True])
+def test_legacy_entrypoint_restores_runtime_defaults(
+    tmp_path, monkeypatch, legacy, external_value, docker_env
+):
+    bash = shutil.which("bash")
+    if bash is None:
+        pytest.skip("bash is required to execute the container entrypoint")
+    module = f"runtime_defaults_{legacy}_{external_value is None}_{bool(external_value)}_{docker_env}"
+    service = (
+        'svc = bentoml.legacy.Service("runtime_defaults")\n'
+        if legacy
+        else "@bentoml.service\nclass RuntimeDefaults:\n    pass\n"
+    )
+    (tmp_path / f"{module}.py").write_text("import bentoml\n" + service)
+    value = "production 'quoted' $HOME $(touch injected) `touch injected`\n第二行"
+    config = BentoBuildConfig.load(
+        {
+            "service": f"{module}:{'svc' if legacy else 'RuntimeDefaults'}",
+            "envs": [
+                {"name": "BENTO_TEST_RUNTIME", "value": value, "stage": "runtime"},
+                {"name": "BENTO_TEST_DOCKER", "value": "default", "stage": "runtime"},
+                {"name": "BENTO_TEST_EMPTY", "value": "default", "stage": "runtime"},
+                {"name": "BENTO_TEST_BUILD", "value": "secret", "stage": "build"},
+                {"name": "BENTO_TEST_REQUIRED", "stage": "runtime"},
+            ],
+            "docker": {
+                "env": {"BENTO_TEST_DOCKER": "docker", "BENTO_TEST_EMPTY": ""}
+                if docker_env
+                else {}
+            },
+        }
+    )
+    monkeypatch.setattr(PythonOptions, "write_to_bento", lambda *args, **kwargs: None)
+    bento = Bento.create(config, build_ctx=str(tmp_path), enabled_features=["no_image"])
+    restored = Bento.from_path(bento.path)
+    assert restored.info.spec == 1
+    keys = [env.name for env in config.envs]
+    environment = {key: val for key, val in os.environ.items() if key not in keys}
+    # Docker supplies its ENV values before starting the packaged entrypoint.
+    environment.update(restored.info.docker.env or {})
+    if external_value is not None:
+        environment["BENTO_TEST_RUNTIME"] = external_value
+
+    def check_entrypoint(context):
+        environment["BENTO_PATH"] = Path(context).as_posix()
+        output = subprocess.check_output(
+            [
+                bash,
+                Path(context, "env/docker/entrypoint.sh").as_posix(),
+                Path(sys.executable).as_posix(),
+                "-c",
+                f"import json, os; print(json.dumps({{key: os.environ.get(key) for key in {keys!r}}}))",
+            ],
+            cwd=tmp_path,
+            env=environment,
+            text=True,
+        )
+        assert json.loads(output) == {
+            "BENTO_TEST_RUNTIME": value if external_value is None else external_value,
+            "BENTO_TEST_DOCKER": "docker" if docker_env else "default",
+            "BENTO_TEST_EMPTY": "" if docker_env else "default",
+            "BENTO_TEST_BUILD": None,
+            "BENTO_TEST_REQUIRED": None,
+        }
+        assert not (tmp_path / "injected").exists()
+
+    check_entrypoint(restored.path)
+    with construct_containerfile(restored) as (context, dockerfile):
+        content = Path(dockerfile).read_text()
+        assert "BENTO_TEST_RUNTIME" not in content
+        assert "BENTO_TEST_BUILD" not in content
+        assert value not in content
+        check_entrypoint(context)

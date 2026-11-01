@@ -232,7 +232,11 @@ class DockerOptions:
         return attr.evolve(self, **defaults)
 
     def write_to_bento(
-        self, bento_fs: Path, build_ctx: str, conda: CondaOptions
+        self,
+        bento_fs: Path,
+        build_ctx: str,
+        conda: CondaOptions,
+        envs: list[BentoEnvSchema] | None = None,
     ) -> None:
         docker_folder = bento_fs / "env/docker"
         docker_folder.mkdir(parents=True, exist_ok=True)
@@ -255,6 +259,21 @@ class DockerOptions:
             ),
             docker_folder,
         )
+        runtime_defaults = {
+            env.name: env.value for env in envs or [] if env.stage == "runtime"
+        }
+        if runtime_defaults:
+            # Apply defaults when the container starts, preserving inherited values.
+            with (docker_folder / "runtime-envs.sh").open(
+                "w", encoding="utf-8", newline="\n"
+            ) as stream:
+                for name, value in runtime_defaults.items():
+                    if value:
+                        stream.write(
+                            f"if ! printenv -- {shlex.quote(name)} >/dev/null; then\n"
+                            f"    export -- {shlex.quote(f'{name}={value}')}\n"
+                            "fi\n"
+                        )
 
         if self.setup_script:
             try:

@@ -349,7 +349,7 @@ class Bento(StoreItem):
                 )
                 build_config.conda.write_to_bento(bento_fs, build_ctx)
                 build_config.docker.write_to_bento(
-                    bento_fs, build_ctx, build_config.conda
+                    bento_fs, build_ctx, build_config.conda, build_config.envs
                 )
 
             # Create `readme.md` file

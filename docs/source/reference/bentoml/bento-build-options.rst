@@ -570,6 +570,8 @@ The specified environment variables will be injected into the Bento container. T
 
 When ``docker.env`` is also configured, variables from both settings are included in legacy and v2 image builds. For variables with the same name, the value in ``docker.env`` takes precedence in the image for non-build-only entries, preserving their stage. Build-only entries retain their secret values. Legacy Docker environments inherit defaults with ``stage: all``; build-only and runtime-only declarations remain in ``envs``. Deployment requirements and defaults continue to come from ``envs``; empty Docker defaults are kept in the image configuration.
 
+Legacy and ``no_image`` containers apply runtime-only defaults in their entrypoint before starting the service. Environment variables supplied by the container or by ``docker.env``, including empty strings, take precedence over these defaults.
+
 ``conda``
 ^^^^^^^^^
 

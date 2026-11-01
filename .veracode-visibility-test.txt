@@ -1,0 +1,1 @@
+Veracode SCA visibility test file. Safe to remove after verification.

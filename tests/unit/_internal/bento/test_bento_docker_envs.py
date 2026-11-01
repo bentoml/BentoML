@@ -140,6 +140,41 @@ def test_empty_docker_defaults_preserve_deployment_requirements(
     ) == sorted(config.with_defaults().get_image_envs(), key=lambda env: env.name)
 
 
+@pytest.mark.parametrize("docker_value", ["docker", ""])
+@pytest.mark.parametrize("service_value", [None, "service"])
+def test_v2_runtime_docker_override_is_rendered_in_image(
+    tmp_path, monkeypatch, docker_value, service_value
+) -> None:
+    module = f"runtime_docker_override_{service_value is None}_{bool(docker_value)}"
+    declaration = {"name": "TOKEN", "stage": "runtime"}
+    if service_value is not None:
+        declaration["value"] = service_value
+    (tmp_path / f"{module}.py").write_text(
+        "import bentoml\n"
+        f"@bentoml.service(envs=[{declaration!r}])\n"
+        "class EnvService:\n"
+        "    @bentoml.api\n"
+        "    def echo(self, text: str) -> str:\n"
+        "        return text\n"
+    )
+    config = BentoBuildConfig.load(
+        {"service": f"{module}:EnvService", "docker": {"env": {"TOKEN": docker_value}}}
+    )
+    monkeypatch.setattr(Image, "_freeze_python_requirements", lambda *args: "")
+    bento = Bento.create(config, build_ctx=str(tmp_path), enabled_features=[])
+    restored = Bento.from_path(bento.path)
+    assert restored.info.spec == 2
+    assert restored.info.envs == [
+        BentoEnvSchema(name="TOKEN", value=service_value or "", stage="runtime")
+    ]
+    expected = (
+        f"ARG TOKEN{'=' + docker_value if docker_value else ''}\nENV TOKEN=$TOKEN\n"
+    )
+    assert expected in Path(bento.path_of("env/docker/Dockerfile")).read_text()
+    with construct_containerfile(restored) as (_, dockerfile):
+        assert expected in Path(dockerfile).read_text()
+
+
 @pytest.mark.parametrize("docker_value", [None, "explicit-build", ""])
 @pytest.mark.parametrize("spec", [1, 2])
 def test_service_runtime_override_stays_out_of_image(

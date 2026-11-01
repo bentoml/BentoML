@@ -932,11 +932,11 @@ class BentoBuildConfig:
             else env
             for env in self.envs
         ]
-        runtime_names = {env.name for env in envs if env.stage != "build"}
+        image_names = {env.name for env in envs if env.stage == "all"}
         envs.extend(
             BentoEnvSchema(name=name, value=value)
             for name, value in docker_env.items()
-            if name not in runtime_names
+            if name not in image_names
         )
         return envs
 

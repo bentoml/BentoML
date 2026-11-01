@@ -91,6 +91,7 @@ def test_docker_env_merge_preserves_stage_and_build_secret_value() -> None:
         BentoEnvSchema(name="SHARED", value="secret", stage="build"),
         BentoEnvSchema(name="RUNTIME", value="override", stage="runtime"),
         BentoEnvSchema(name="SHARED", value="public"),
+        BentoEnvSchema(name="RUNTIME", value="override"),
     ]
     assert filled.docker.env == {"SHARED": "public", "RUNTIME": "override"}
     assert filled.with_defaults().envs == filled.envs

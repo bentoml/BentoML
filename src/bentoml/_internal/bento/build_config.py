@@ -225,7 +225,7 @@ class DockerOptions:
 
         if default_envs:
             defaults["env"] = {
-                e.name: e.value for e in default_envs if e.stage != "build"
+                e.name: e.value for e in default_envs if e.stage == "all"
             }
             defaults["env"].update(self.env or {})
 

@@ -35,6 +35,11 @@ def test_empty_docker_defaults_preserve_deployment_requirements(
                 {"name": "REQUIRED"},
                 {"name": "SHARED", "value": "default"},
                 {"name": "BUILD_TOKEN", "value": "secret", "stage": "build"},
+                {
+                    "name": "RUNTIME_TOKEN",
+                    "value": "runtime-default",
+                    "stage": "runtime",
+                },
             ],
             "docker": {"env": {"HTTP_PROXY": "", "SHARED": "", "EXTRA": "extra"}},
         }
@@ -65,6 +70,7 @@ def test_empty_docker_defaults_preserve_deployment_requirements(
             assert params.envs == [
                 {"name": "REQUIRED", "value": "provided"},
                 {"name": "SHARED", "value": "default"},
+                {"name": "RUNTIME_TOKEN", "value": "runtime-default"},
             ]
     with pytest.raises(BentoMLException, match=r"missing: \['REQUIRED'\]"):
         DeploymentConfigParameters(bento=str(bento.tag)).verify(_client=client)
@@ -74,6 +80,7 @@ def test_empty_docker_defaults_preserve_deployment_requirements(
         "REQUIRED",
         "SHARED",
         "BUILD_TOKEN",
+        "RUNTIME_TOKEN",
     ]
     dockerfile = bento.path_of("env/docker/Dockerfile")
     with open(dockerfile) as stream:
@@ -84,6 +91,8 @@ def test_empty_docker_defaults_preserve_deployment_requirements(
     assert "ARG EXTRA=extra\n" in content
     assert "ARG BUILD_TOKEN" not in content
     assert "ENV BUILD_TOKEN" not in content
+    assert "RUNTIME_TOKEN" not in content
+    assert "runtime-default" not in content
     if spec == 2:
         assert "--mount=type=secret,id=BUILD_TOKEN" in content
 
@@ -95,6 +104,8 @@ def test_empty_docker_defaults_preserve_deployment_requirements(
         assert "ARG EXTRA=extra\n" in rebuilt
         assert "ARG BUILD_TOKEN" not in rebuilt
         assert "ENV BUILD_TOKEN" not in rebuilt
+        assert "RUNTIME_TOKEN" not in rebuilt
+        assert "runtime-default" not in rebuilt
 
     # Re-reading the packaged config preserves both required declarations and defaults.
     rebuilt_config = BentoBuildConfig.from_file(bento.path_of("src/bentofile.yaml"))
@@ -105,10 +116,11 @@ def test_empty_docker_defaults_preserve_deployment_requirements(
 
 
 @pytest.mark.parametrize("docker_value", [None, "explicit-build", ""])
+@pytest.mark.parametrize("spec", [1, 2])
 def test_service_runtime_override_stays_out_of_image(
-    tmp_path, monkeypatch, docker_value
+    tmp_path, monkeypatch, docker_value, spec
 ):
-    module = f"staged_service_{docker_value is None}_{bool(docker_value)}"
+    module = f"staged_service_{spec}_{docker_value is None}_{bool(docker_value)}"
     (tmp_path / f"{module}.py").write_text(
         "import bentoml\n"
         '@bentoml.service(envs=[{"name": "SHARED", "value": "runtime-only", "stage": "runtime"}])\n'
@@ -125,24 +137,35 @@ def test_service_runtime_override_stays_out_of_image(
         }
     )
     monkeypatch.setattr(Image, "_freeze_python_requirements", lambda *args: "")
-    bento = Bento.create(config, build_ctx=str(tmp_path), enabled_features=[])
+    monkeypatch.setattr(PythonOptions, "write_to_bento", lambda *args, **kwargs: None)
+    bento = Bento.create(
+        config,
+        build_ctx=str(tmp_path),
+        enabled_features=["no_image"] if spec == 1 else [],
+    )
     restored = Bento.from_path(bento.path)
+    assert restored.info.spec == spec
     build_value = "build-default" if docker_value is None else docker_value
     assert restored.info.envs == [
         BentoEnvSchema(name="SHARED", value="build-default"),
         BentoEnvSchema(name="SHARED", value="runtime-only", stage="runtime"),
     ]
-    assert restored.info.image_envs == [
-        BentoEnvSchema(name="SHARED", value=build_value),
-        BentoEnvSchema(
-            name="SHARED",
-            value="runtime-only" if docker_value is None else docker_value,
-            stage="runtime",
-        ),
-    ]
+    if spec == 2:
+        assert restored.info.image_envs == [
+            BentoEnvSchema(name="SHARED", value=build_value),
+            BentoEnvSchema(
+                name="SHARED",
+                value="runtime-only" if docker_value is None else docker_value,
+                stage="runtime",
+            ),
+        ]
     packaged_config = BentoBuildConfig.from_file(bento.path_of("src/bentofile.yaml"))
-    assert packaged_config.get_image_envs() == restored.info.image_envs
-    expected_arg = f"ARG SHARED{'=' + build_value if build_value else ''}\n"
+    assert packaged_config.envs == restored.info.envs
+    if spec == 2:
+        assert packaged_config.get_image_envs() == restored.info.image_envs
+    expected_arg = (
+        f"ARG SHARED{'=' + build_value if build_value or spec == 1 else ''}\n"
+    )
     with open(bento.path_of("env/docker/Dockerfile")) as stream:
         generated = stream.read()
     assert expected_arg in generated

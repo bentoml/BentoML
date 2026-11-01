@@ -442,7 +442,7 @@ class PILImageContainer(DataContainer["ext.PILImage", "ext.PILImage"]):
     @classmethod
     def to_payload(cls, batch: ext.PILImage, batch_dim: int) -> Payload:
         buffer = io.BytesIO()
-        batch.save(buffer, format=batch.format)
+        batch.save(buffer, format=batch.format or "PNG")
         return cls.create_payload(buffer.getvalue(), batch_size=1)
 
     @classmethod

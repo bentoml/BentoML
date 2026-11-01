@@ -96,15 +96,14 @@ def parse_dotenv(content: str) -> dict[str, t.Any]:
 
             if quotemark != "'":
                 # Substitute variables in a value
-                for parts in variable_re.findall(value):
-                    if parts[0] == "\\":
+                def replace_variable(match: re.Match[str]) -> str:
+                    if match[1] == "\\":
                         # Variable is escaped, don't replace it
-                        replace = "".join(parts[1:-1])
-                    else:
-                        # Replace it with the value from the environment
-                        replace = env.get(parts[-1], os.environ.get(parts[-1], ""))
+                        return match[2] + match[3]
+                    # Replace it with the value from the environment
+                    return env.get(match[4], os.environ.get(match[4], ""))
 
-                    value = value.replace("".join(parts[0:-1]), replace)
+                value = variable_re.sub(replace_variable, value)
 
             env[key] = value
 

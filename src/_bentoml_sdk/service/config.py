@@ -153,6 +153,7 @@ class HTTPCorsSchema(TypedDict, total=False):
 class HTTPSchema(TypedDict, total=False):
     host: IPvAnyAddress
     port: int
+    proxy_host: str
     proxy_port: int
     cors: HTTPCorsSchema
     response: TypedDict("HTTPResponseSchema", {"trace_id": bool}, total=False)  # type: ignore

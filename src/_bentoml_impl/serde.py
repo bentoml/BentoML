@@ -193,6 +193,29 @@ class JSONSerde(GenericSerde, Serde):
         return json.loads(b"".join(payload.data) or b"{}")
 
 
+def _is_str_annotation(annotation: t.Any) -> bool:
+    """Return True when a field annotation accepts only strings (or None).
+
+    Multipart form values are always strings, so running them through
+    ``json.loads`` first would turn a ``str`` field's ``"123"`` into the int
+    ``123`` (which pydantic then rejects) and silently unquote ``'"quoted"'``.
+    Only a bare ``str`` or ``str`` combined with ``None`` (``Optional[str]``,
+    ``str | None``) qualifies; a union that also admits another type keeps
+    the existing JSON-parsing behaviour.
+    """
+    while t.get_origin(annotation) is t.Annotated:
+        args = get_args(annotation)
+        if not args:
+            return False
+        annotation = args[0]
+    if annotation is str:
+        return True
+    if is_union_type(annotation):
+        non_none = [a for a in get_args(annotation) if a is not type(None)]
+        return len(non_none) == 1 and _is_str_annotation(non_none[0])
+    return False
+
+
 class MultipartSerde(JSONSerde):
     media_type = "multipart/form-data"
 
@@ -237,10 +260,18 @@ class MultipartSerde(JSONSerde):
                 v = form[k]
                 if isinstance(v, UploadFile):
                     v = await v.read()
-                try:
-                    data[k] = json.loads(v)
-                except json.JSONDecodeError:
-                    data[k] = v
+                field = cls.model_fields.get(k)
+                if field is not None and _is_str_annotation(field.annotation):
+                    # Form values arrive as strings and the field wants a
+                    # string: keep the raw value verbatim instead of letting
+                    # json.loads turn "123"/"true"/"null" into non-strings
+                    # that pydantic rejects, or unquote '"quoted"'.
+                    data[k] = v.decode("utf-8") if isinstance(v, bytes) else v
+                else:
+                    try:
+                        data[k] = json.loads(v)
+                    except json.JSONDecodeError:
+                        data[k] = v
         return cls.model_validate(data)
 
 

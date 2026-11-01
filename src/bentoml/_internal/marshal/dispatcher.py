@@ -106,6 +106,12 @@ class Job(t.Generic[T_IN, T_OUT]):
     data: T_IN
     future: asyncio.Future[T_OUT | Exception]
     dispatch_time: float = 0
+    root_future: asyncio.Future[T_OUT | Exception] | None = None
+
+    def is_done(self) -> bool:
+        return self.future.done() or (
+            self.root_future is not None and self.root_future.done()
+        )
 
 
 class CorkDispatcher(t.Generic[T_IN, T_OUT]):
@@ -218,6 +224,9 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                 async with self._wake_event:  # block until there's any request in queue
                     await self._wake_event.wait_for(self._queue.__len__)
 
+                self._discard_done_jobs()
+                if not self._queue:
+                    continue
                 n = len(self._queue)
                 now = time.time()
                 # the wait time of the first request
@@ -242,10 +251,13 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                     await asyncio.sleep(self.TICKET_INTERVAL)
                     continue
 
-                req_count += 1
                 # call
                 self._sema.acquire()
                 inputs_info = tuple(self._get_inputs())
+                if not inputs_info:
+                    self._sema.release()
+                    continue
+                req_count += 1
                 self._loop.create_task(self.outbound_call(inputs_info, training=True))
         except Exception:
             logger.exception("Error in training optimizer")
@@ -288,6 +300,9 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                 async with self._wake_event:  # block until there's any request in queue
                     await self._wake_event.wait_for(self._queue.__len__)
 
+                self._discard_done_jobs()
+                if not self._queue:
+                    continue
                 n = len(self._queue)
                 dt = self.TICKET_INTERVAL
                 decay = 0.95  # the decay rate of wait time
@@ -320,6 +335,9 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                 # call
                 self._sema.acquire()
                 inputs_info = tuple(self._get_inputs())
+                if not inputs_info:
+                    self._sema.release()
+                    continue
                 self._loop.create_task(self.outbound_call(inputs_info))
             except Exception:
                 logger.exception("Error processing batch requests")
@@ -341,6 +359,9 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
         batch_size = len(inputs_info)
         logger.debug("Dynamic batching cork released, batch size: %d", batch_size)
         try:
+            inputs_info = tuple(job for job in inputs_info if not job.is_done())
+            if not inputs_info:
+                return
             outputs = await self.callback(
                 tuple(t.cast(t.Any, input_info.data) for input_info in inputs_info)
             )
@@ -370,6 +391,9 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                         fut.cancel()
             self._sema.release()
 
+    def _discard_done_jobs(self) -> None:
+        self._queue = collections.deque(job for job in self._queue if not job.is_done())
+
     def _get_inputs(
         self, num_batches: int | None = None
     ) -> t.Iterable[Job[T_IN, T_OUT]]:
@@ -377,6 +401,9 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
             num_batches = self.max_batch_size
         batch_size = 0
         while len(self._queue) > 0 and batch_size < num_batches:
+            if self._queue[0].is_done():
+                self._queue.popleft()
+                continue
             try:
                 next_batch_size = self.get_batch_size(self._queue[0].data)
             except Exception:
@@ -411,10 +438,16 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
         )
         assert len(split_batches) == 2
         first_child = attr.evolve(
-            job, data=split_batches[0], future=self._loop.create_future()
+            job,
+            data=split_batches[0],
+            future=self._loop.create_future(),
+            root_future=job.root_future if job.root_future is not None else job.future,
         )
         second_child = attr.evolve(
-            job, data=split_batches[1], future=self._loop.create_future()
+            job,
+            data=split_batches[1],
+            future=self._loop.create_future(),
+            root_future=job.root_future if job.root_future is not None else job.future,
         )
 
         def child_done_callback(fut: asyncio.Future[T_OUT | Exception]):
@@ -434,6 +467,11 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                 )
                 job.future.set_result(result)
 
+        def parent_done_callback(fut: asyncio.Future[T_OUT | Exception]):
+            first_child.future.cancel()
+            second_child.future.cancel()
+
+        job.future.add_done_callback(parent_done_callback)
         first_child.future.add_done_callback(child_done_callback)
         second_child.future.add_done_callback(child_done_callback)
         return first_child, second_child

@@ -537,3 +537,35 @@ def test_update_deployment_distributed(deployment_api: DeploymentAPI):
             deployment_strategy="RollingUpdate",
         ),
     }
+
+
+def test_build_requirements_txt_path_traversal(tmp_path: t.Any):
+    from pathlib import Path
+
+    from bentoml._internal.cloud.deployment import _build_requirements_txt
+    from bentoml.exceptions import BentoMLException
+
+    bento_dir = Path(tmp_path) / "bento"
+    bento_dir.mkdir()
+    (bento_dir / "bentofile.yaml").write_text(
+        "service: service.py\npython:\n  requirements_txt: ../../secret.txt\n"
+    )
+
+    with pytest.raises(BentoMLException, match="Path traversal detected"):
+        _build_requirements_txt(str(bento_dir), None)
+
+
+def test_build_post_setup_script_path_traversal(tmp_path: t.Any):
+    from pathlib import Path
+
+    from bentoml._internal.cloud.deployment import _build_post_setup_script
+    from bentoml.exceptions import BentoMLException
+
+    bento_dir = Path(tmp_path) / "bento"
+    bento_dir.mkdir()
+    (bento_dir / "bentofile.yaml").write_text(
+        "service: service.py\ndocker:\n  setup_script: ../../evil_setup.sh\n"
+    )
+
+    with pytest.raises(BentoMLException, match="Path traversal detected"):
+        _build_post_setup_script(str(bento_dir), None)

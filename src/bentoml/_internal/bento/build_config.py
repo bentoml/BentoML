@@ -223,13 +223,20 @@ class DockerOptions:
                 python_version = f"{version_info.major}.{version_info.minor}"
                 defaults["python_version"] = python_version
 
-        if self.env is None and default_envs:
-            defaults["env"] = {e.name: e.value for e in default_envs}
+        if default_envs:
+            defaults["env"] = {
+                e.name: e.value for e in default_envs if e.stage == "all"
+            }
+            defaults["env"].update(self.env or {})
 
         return attr.evolve(self, **defaults)
 
     def write_to_bento(
-        self, bento_fs: Path, build_ctx: str, conda: CondaOptions
+        self,
+        bento_fs: Path,
+        build_ctx: str,
+        conda: CondaOptions,
+        envs: list[BentoEnvSchema] | None = None,
     ) -> None:
         docker_folder = bento_fs / "env/docker"
         docker_folder.mkdir(parents=True, exist_ok=True)
@@ -239,7 +246,12 @@ class DockerOptions:
         # By default, BentoML containerization will use BuildKit. To opt-out specify DOCKER_BUILDKIT=0
         dockerfile_path.write_text(
             generate_containerfile(
-                self, build_ctx, conda=conda, bento_fs=bento_fs, enable_buildkit=False
+                self,
+                build_ctx,
+                conda=conda,
+                bento_fs=bento_fs,
+                enable_buildkit=False,
+                envs=envs,
             ),
         )
         shutil.copy2(
@@ -252,6 +264,21 @@ class DockerOptions:
             ),
             docker_folder,
         )
+        runtime_defaults = {
+            env.name: env.value for env in envs or [] if env.stage == "runtime"
+        }
+        if runtime_defaults:
+            # Apply defaults when the container starts, preserving inherited values.
+            with (docker_folder / "runtime-envs.sh").open(
+                "w", encoding="utf-8", newline="\n"
+            ) as stream:
+                for name, value in runtime_defaults.items():
+                    if value:
+                        stream.write(
+                            f"if ! printenv -- {shlex.quote(name)} >/dev/null; then\n"
+                            f"    export -- {shlex.quote(f'{name}={value}')}\n"
+                            "fi\n"
+                        )
 
         if self.setup_script:
             try:
@@ -871,7 +898,9 @@ class BentoBuildConfig:
             # and the command line args take precedence
             set_arguments(self.args, override=False)
 
-    def with_defaults(self) -> FilledBentoBuildConfig:
+    def with_defaults(
+        self, *, merge_docker_envs: bool = True
+    ) -> FilledBentoBuildConfig:
         """
         Convert from user provided options to actual build options with defaults
         values filled in.
@@ -886,13 +915,30 @@ class BentoBuildConfig:
             labels=self.labels,
             include=["*"] if self.include is None else self.include,
             exclude=[] if self.exclude is None else self.exclude,
-            docker=self.docker.with_defaults(self.envs),
+            docker=self.docker.with_defaults(self.envs if merge_docker_envs else None),
             python=self.python.with_defaults(),
             conda=self.conda.with_defaults(),
             models=self.models,
             envs=self.envs,
             args=self.args,
         )
+
+    def get_image_envs(self) -> list[BentoEnvSchema]:
+        """Merge image defaults while preserving deployment env declarations."""
+        docker_env = self.docker.env or {}
+        envs = [
+            attr.evolve(env, value=docker_env.get(env.name, env.value))
+            if env.stage != "build"
+            else env
+            for env in self.envs
+        ]
+        image_names = {env.name for env in envs if env.stage == "all"}
+        envs.extend(
+            BentoEnvSchema(name=name, value=value)
+            for name, value in docker_env.items()
+            if name not in image_names
+        )
+        return envs
 
     @property
     def model_aliases(self) -> t.Dict[str, str]:

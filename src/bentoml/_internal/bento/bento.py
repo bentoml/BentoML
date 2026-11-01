@@ -272,7 +272,8 @@ class Bento(StoreItem):
                 image = svc.image
         if not disable_image:
             image = populate_image_from_build_config(image, build_config, build_ctx)
-        build_config = build_config.with_defaults()
+        # Image generation needs explicit Docker values separate from staged defaults.
+        build_config = build_config.with_defaults(merge_docker_envs=False)
         tag = Tag(bento_name, version)
         if version is None:
             tag = tag.make_new_version()
@@ -347,7 +348,7 @@ class Bento(StoreItem):
                 )
                 build_config.conda.write_to_bento(bento_fs, build_ctx)
                 build_config.docker.write_to_bento(
-                    bento_fs, build_ctx, build_config.conda
+                    bento_fs, build_ctx, build_config.conda, build_config.envs
                 )
 
             # Create `readme.md` file
@@ -441,6 +442,7 @@ class Bento(StoreItem):
                 schema=svc.schema() if not is_legacy else {},
             )
         else:
+            image_envs = build_config.get_image_envs()
             bento_info = BentoInfoV2(
                 tag=tag,
                 service=svc,  # type: ignore # attrs converters do not typecheck
@@ -457,7 +459,8 @@ class Bento(StoreItem):
                 ),
                 envs=build_config.envs,
                 schema=svc.schema() if not is_legacy else {},
-                image=image.freeze(bento_fs, build_config.envs, platform),
+                image=image.freeze(bento_fs, image_envs, platform),
+                image_envs=image_envs,
             )
 
         res = cls(tag, bento_fs, bento_info)
@@ -877,6 +880,8 @@ class ImageInfo:
 class BentoInfoV2(BaseBentoInfo):
     spec: int = attr.field(default=2, init=False)
     image: ImageInfo = attr.field(factory=ImageInfo)
+    # Older Bentos use envs for both deployment declarations and image defaults.
+    image_envs: t.Optional[t.List[BentoEnvSchema]] = None
 
 
 bentoml_cattr.register_unstructure_hook(

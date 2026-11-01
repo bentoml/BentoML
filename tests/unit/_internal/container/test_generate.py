@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from io import StringIO
+
+from bentoml._internal.bento.build_config import BentoBuildConfig
 from bentoml._internal.bento.build_config import CondaOptions
 from bentoml._internal.bento.build_config import DockerOptions
 from bentoml._internal.container.generate import build_environment
@@ -66,6 +69,34 @@ def test_generate_containerfile_normalizes_custom_base_image(tmp_path) -> None:
     assert "\nRUN touch /tmp/pwned" not in dockerfile
 
 
+def test_generate_containerfile_merges_bento_and_docker_envs(tmp_path) -> None:
+    config = BentoBuildConfig.from_yaml(
+        StringIO(
+            """\
+service: service:TestService
+envs:
+  - name: TEST_ENV
+    value: test
+docker:
+  distro: debian
+  python_version: "3.10"
+  env:
+    TEST_ENV_2: test
+"""
+        )
+    ).with_defaults()
+
+    dockerfile = generate_containerfile(
+        config.docker,
+        str(tmp_path),
+        conda=config.conda,
+        bento_fs=tmp_path,
+    )
+
+    assert "ARG TEST_ENV=test\nENV TEST_ENV=$TEST_ENV\n" in dockerfile
+    assert "ARG TEST_ENV_2=test\nENV TEST_ENV_2=$TEST_ENV_2\n" in dockerfile
+
+
 def test_generate_containerfile_installs_hash_pinned_uv(tmp_path) -> None:
     dockerfile = generate_containerfile(
         DockerOptions(distro="debian", python_version="3.11"),
@@ -77,3 +108,93 @@ def test_generate_containerfile_installs_hash_pinned_uv(tmp_path) -> None:
     assert "pip install uv\n" not in dockerfile
     assert "uv==0.13.4" in dockerfile
     assert "pip install --no-cache-dir --require-hashes" in dockerfile
+
+
+def test_generate_containerfile_keeps_build_secrets_out_of_env(tmp_path) -> None:
+    config = BentoBuildConfig.load(
+        {
+            "service": "service:TestService",
+            "envs": [
+                {"name": "BUILD_TOKEN", "value": "synthetic-secret", "stage": "build"},
+                {"name": "PUBLIC", "value": "public"},
+            ],
+            "docker": {"env": {"DOCKER_ONLY": "docker"}},
+        }
+    ).with_defaults()
+
+    dockerfile = generate_containerfile(
+        config.docker, str(tmp_path), conda=config.conda, bento_fs=tmp_path
+    )
+
+    assert "BUILD_TOKEN" not in dockerfile
+    assert "synthetic-secret" not in dockerfile
+    assert "ARG PUBLIC=public" in dockerfile
+    assert "ARG DOCKER_ONLY=docker" in dockerfile
+
+
+def test_construct_containerfile_preserves_older_v2_envs(tmp_path) -> None:
+    import yaml
+
+    from bentoml import Tag
+    from bentoml._internal.bento import Bento
+    from bentoml._internal.bento.bento import BentoInfoV2
+    from bentoml._internal.bento.bento import ImageInfo
+    from bentoml._internal.bento.build_config import BentoEnvSchema
+    from bentoml._internal.container import construct_containerfile
+
+    bento = Bento(
+        Tag("older_envs", "v1"),
+        tmp_path,
+        BentoInfoV2(
+            tag=Tag("older_envs", "v1"),
+            service="service:TestService",
+            envs=[BentoEnvSchema(name="PUBLIC", value="public")],
+            image=ImageInfo(base_image="python:3.11-slim", python_version="3.11"),
+        ),
+    )
+    (tmp_path / "env/docker").mkdir(parents=True)
+    bento.flush_info()
+    info_path = tmp_path / "bento.yaml"
+    older_info = yaml.safe_load(info_path.read_text())
+    older_info.pop("image_envs", None)
+    info_path.write_text(yaml.safe_dump(older_info))
+
+    with construct_containerfile(Bento.from_path(tmp_path)) as (_, dockerfile):
+        with open(dockerfile) as stream:
+            assert "ARG PUBLIC=public\nENV PUBLIC=$PUBLIC\n" in stream.read()
+
+
+def test_image_freeze_merges_docker_envs_and_preserves_stages(
+    tmp_path, monkeypatch
+) -> None:
+    from _bentoml_sdk.images import Image
+    from _bentoml_sdk.images import populate_image_from_build_config
+
+    config = BentoBuildConfig.load(
+        {
+            "service": "service:TestService",
+            "envs": [
+                {"name": "BUILD_TOKEN", "value": "synthetic-secret", "stage": "build"},
+                {"name": "PUBLIC", "value": "public"},
+                {"name": "SHARED", "value": "default"},
+                {"name": "RUNTIME_ONLY", "value": "runtime", "stage": "runtime"},
+            ],
+            "docker": {"env": {"DOCKER_ONLY": "docker", "SHARED": ""}},
+        }
+    )
+    image = populate_image_from_build_config(None, config, str(tmp_path))
+    assert image is not None
+    monkeypatch.setattr(Image, "_freeze_python_requirements", lambda *args: "")
+
+    image.freeze(tmp_path, config.with_defaults().get_image_envs())
+    dockerfile = (tmp_path / "env/docker/Dockerfile").read_text()
+
+    assert "ARG PUBLIC=public" in dockerfile
+    assert "ARG DOCKER_ONLY=docker" in dockerfile
+    assert "ARG SHARED\n" in dockerfile
+    assert "ARG SHARED=default" not in dockerfile
+    assert "ARG RUNTIME_ONLY" not in dockerfile
+    assert "--mount=type=secret,id=BUILD_TOKEN" in dockerfile
+    assert "ARG BUILD_TOKEN" not in dockerfile
+    assert "ENV BUILD_TOKEN" not in dockerfile
+    assert "synthetic-secret" not in dockerfile

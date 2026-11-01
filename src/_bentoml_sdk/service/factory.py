@@ -422,6 +422,8 @@ class Service(t.Generic[T_co]):
         return generate_spec(self)
 
     def inject_config(self) -> None:
+        from copy import deepcopy
+
         from bentoml._internal.configuration import load_config
         from bentoml._internal.configuration.containers import BentoMLContainer
         from bentoml._internal.utils import deep_merge
@@ -453,7 +455,7 @@ class Service(t.Generic[T_co]):
         rest_config = {
             k: main_config[k] for k in main_config if k not in api_server_keys
         }
-        existing = t.cast(t.Dict[str, t.Any], BentoMLContainer.config.get())
+        existing = deepcopy(t.cast(t.Dict[str, t.Any], BentoMLContainer.config.get()))
         deep_merge(existing, {"api_server": api_server_config, **rest_config})
         BentoMLContainer.config.set(existing)  # type: ignore
 

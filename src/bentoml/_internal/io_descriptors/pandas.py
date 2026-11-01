@@ -414,7 +414,6 @@ class PandasDataFrame(
                                 "xlsx": "read_excel",
                                 "hdf5": "read_hdf",
                                 "parquet": "read_parquet",
-                                "pickle": "read_pickle",
                                 "sql": "read_sql",
                             }[ext],
                         )(sample)

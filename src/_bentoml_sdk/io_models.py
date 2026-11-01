@@ -14,6 +14,8 @@ from pydantic import Field
 from pydantic import TypeAdapter
 from pydantic import create_model
 from pydantic._internal._typing_extra import is_annotated
+from pydantic_core import PydanticUndefined
+from pydantic_core import PydanticUndefinedType
 from starlette.responses import Response
 from typing_extensions import get_args
 
@@ -457,8 +459,13 @@ RootModelRootType = t.TypeVar("RootModelRootType")
 class IORootModel(IODescriptor, t.Generic[RootModelRootType]):
     root: RootModelRootType
 
-    def __init__(self, root: RootModelRootType) -> None:
-        super().__init__(root=root)  # type: ignore
+    def __init__(
+        self, root: RootModelRootType | PydanticUndefinedType = PydanticUndefined
+    ) -> None:
+        if root is PydanticUndefined:
+            super().__init__()
+        else:
+            super().__init__(root=root)  # type: ignore
 
     def model_dump(self, **kwargs: t.Any) -> dict[str, t.Any]:
         return super().model_dump(**kwargs)["root"]

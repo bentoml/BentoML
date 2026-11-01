@@ -56,10 +56,18 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
     data is logged as a JSON array.
     """
 
-    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_TID) = (
+    PRESERVED_COLUMNS = (
+        COLUMN_TIME,
+        COLUMN_RID,
+        COLUMN_TID,
+        COLUMN_SID,
+        COLUMN_SVC,
+    ) = (
         "timestamp",
         "request_id",
         "trace_id",
+        "span_id",
+        "service_name",
     )
 
     def __init__(
@@ -144,6 +152,8 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
             self.COLUMN_TIME: datetime.datetime.now().isoformat(),
             self.COLUMN_RID: str(trace_context.request_id),
             self.COLUMN_TID: str(trace_context.trace_id),
+            self.COLUMN_SID: str(trace_context.span_id),
+            self.COLUMN_SVC: str(trace_context.service_name),
         }
         while True:
             try:

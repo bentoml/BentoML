@@ -4,10 +4,12 @@ import collections
 import datetime
 import logging
 import logging.config
+import re
 import typing as t
 from pathlib import Path
 
 import yaml
+from yaml.tokens import ScalarToken
 
 from ..context import server_context
 from ..context import trace_context
@@ -47,6 +49,64 @@ formatters:
     format: "()"
     validate: false
 """
+
+_FALLBACK_TOKEN = re.compile(
+    r"(?P<wrapped>{{{(?P<wrapped_name>"
+    r"schema_filename|data_filename|worker_id|monitor_name)}}})|"
+    r"(?P<escaped>{{|}})|"
+    r"{(?P<name>schema_filename|data_filename|worker_id|monitor_name)}"
+)
+_KNOWN_BRACED_VALUE = re.compile(
+    r"(?P<open>{+)(?P<name>schema_filename|data_filename|worker_id|monitor_name)"
+    r"(?=}|!|:|\.|\[)"
+    r"(?P<suffix>[^}]*)}(?P<close>}*)"
+)
+
+
+def _format_fallback_tokens(value: str, parameters: dict[str, t.Any]) -> str:
+    for match in _KNOWN_BRACED_VALUE.finditer(value):
+        if len(match.group("open")) % 2 and match.group("suffix"):
+            raise ValueError(
+                "Logging config fallback only supports bare BentoML placeholders; "
+                f"unsupported placeholder: {match.group(0)!r}"
+            )
+
+    try:
+        scalar_ranges = [
+            (token.start_mark.index, token.end_mark.index)
+            for token in yaml.scan(value)
+            if isinstance(token, ScalarToken)
+        ]
+    except yaml.YAMLError:
+        scalar_ranges = []
+
+    escaped_opens: dict[tuple[int, int], int] = {}
+
+    def replace(match: re.Match[str]) -> str:
+        if match.group("wrapped") is not None:
+            return f"{{{parameters[match.group('wrapped_name')]}}}"
+        if match.group("escaped") is not None:
+            scalar_range = next(
+                (
+                    (start, end)
+                    for start, end in scalar_ranges
+                    if start <= match.start() < end
+                ),
+                None,
+            )
+            # Adjacent braces outside scalar values can be JSON/YAML structure.
+            if scalar_range is None:
+                return match.group(0)
+            if match.group(0) == "{{":
+                escaped_opens[scalar_range] = escaped_opens.get(scalar_range, 0) + 1
+                return match.group(0)[0]
+            if escaped_opens.get(scalar_range, 0):
+                escaped_opens[scalar_range] -= 1
+                return match.group(0)[0]
+            return match.group(0)
+        return str(parameters[match.group("name")])
+
+    return _FALLBACK_TOKEN.sub(replace, value)
 
 
 class DefaultMonitor(MonitorBase["JSONSerializable"]):
@@ -93,12 +153,22 @@ class DefaultMonitor(MonitorBase["JSONSerializable"]):
         schema_path.parent.mkdir(parents=True, exist_ok=True)
         data_path.parent.mkdir(parents=True, exist_ok=True)
 
-        logging_config_yaml = logging_config_yaml.format(
+        parameters = dict(
             schema_filename=str(schema_path.absolute()),
             data_filename=str(data_path.absolute()),
             worker_id=worker_id,
             monitor_name=self.name,
         )
+
+        try:
+            logging_config_yaml = logging_config_yaml.format(**parameters)
+        except (AttributeError, IndexError, KeyError, ValueError) as format_error:
+            try:
+                logging_config_yaml = _format_fallback_tokens(
+                    logging_config_yaml, parameters
+                )
+            except ValueError as e:
+                raise e from format_error
 
         try:
             logging_config = yaml.safe_load(logging_config_yaml)

@@ -7,7 +7,6 @@ import threading
 import typing as t
 import warnings
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import httpx
@@ -24,6 +23,7 @@ from ..models import ModelStore
 from ..models import copy_model
 from ..tag import Tag
 from ..utils.filesystem import calc_dir_size
+from ..utils.filesystem import safe_extract_tarfile
 from .base import FILE_CHUNK_SIZE
 from .base import CallbackIOWrapper
 from .base import Spinner
@@ -528,16 +528,11 @@ class YataiClient:
                 tar_file.seek(0, 0)
                 tar = tarfile.open(fileobj=tar_file, mode="r")
                 with self.spinner.spin(text=f'Extracting bento "{_tag}" tar file'):
-                    with fs.open_fs("temp://") as temp_fs:
-                        for member in tar.getmembers():
-                            f = tar.extractfile(member)
-                            if f is None:
-                                continue
-                            p = Path(member.name)
-                            if p.parent != Path("."):
-                                temp_fs.makedirs(str(p.parent), recreate=True)
-                            temp_fs.writebytes(member.name, f.read())
-                        bento = Bento._from_fs(temp_fs)
+                    with tempfile.TemporaryDirectory(
+                        prefix="bentoml-bento-"
+                    ) as temp_dir:
+                        safe_extract_tarfile(tar, temp_dir)
+                        bento = Bento.from_path(temp_dir)
                         for model_tag in remote_bento.manifest.models:
                             with self.spinner.spin(
                                 text=f'Copying model "{model_tag}" to model store'
@@ -963,15 +958,8 @@ class YataiClient:
             tar_file.seek(0, 0)
             tar = tarfile.open(fileobj=tar_file, mode="r")
             with self.spinner.spin(text=f'Extracting model "{_tag}" tar file'):
-                with fs.open_fs("temp://") as temp_fs:
-                    for member in tar.getmembers():
-                        f = tar.extractfile(member)
-                        if f is None:
-                            continue
-                        p = Path(member.name)
-                        if p.parent != Path("."):
-                            temp_fs.makedirs(str(p.parent), recreate=True)
-                        temp_fs.writebytes(member.name, f.read())
-                    model = Model._from_fs(temp_fs).save(model_store)
+                with tempfile.TemporaryDirectory(prefix="bentoml-model-") as temp_dir:
+                    safe_extract_tarfile(tar, temp_dir)
+                    model = Model.from_path(temp_dir).save(model_store)
                     self.spinner.log(f'[bold green]Successfully pulled model "{_tag}"')
                     return model

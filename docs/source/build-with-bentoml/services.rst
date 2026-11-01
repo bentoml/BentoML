@@ -326,22 +326,34 @@ In some cases, you may want your Service to start using a custom process (for ex
             "uvicorn",
             "myapp:app",
             "--host",
-            "$BENTOML_HOST",
+            "127.0.0.1",
             "--port",
-            "$PORT",
-        ]
+            "8000",  # must match http.proxy_port (default 8000)
+        ],
+        workers=1,
     )
     class ExternalServer:
         pass
+
+.. important::
+
+   The custom command must listen on ``http.proxy_port`` (``8000`` by default), because that is
+   where BentoML proxies requests. ``$VAR`` references in ``cmd`` are expanded from the process
+   environment, and BentoML does not define ``PORT`` or ``BENTOML_HOST`` itself — using them
+   without setting them (for example through ``envs``) fails at startup with
+   ``KeyError: 'PORT'``.
+
+   Set ``workers=1`` unless the command can share a port. A Service with a custom command
+   defaults to ``min(16, cpu_count/2)`` workers, and only the first one starts the process.
 
 Alternatively, compute the command at runtime:
 
 .. code-block:: python
 
-    @bentoml.service
+    @bentoml.service(workers=1)
     class ExternalServer:
         def __command__(self) -> list[str]:
-            return ["myserver", "--port", "$PORT"]
+            return ["myserver", "--port", "8000", "--model", self.model_path]
 
 Use this method when there are parameters whose values can only be determined at runtime.
 
@@ -349,7 +361,7 @@ BentoML operates by establishing a proxy service that directs all requests to th
 
 .. code-block:: python
 
-    @bentoml.service(cmd=["myserver", "--port", "$PORT"], http={"proxy_port": 9000})
+    @bentoml.service(cmd=["myserver", "--port", "9000"], http={"proxy_port": 9000}, workers=1)
     class ExternalServer:
         pass
 
@@ -361,7 +373,7 @@ To achieve this, you can implement the ``__metrics__`` method in your Service cl
 
 .. code-block:: python
 
-    @bentoml.service(cmd=["myserver", "--port", "$PORT"])
+    @bentoml.service(cmd=["myserver", "--port", "8000"], workers=1)
     class ExternalServer:
         def __metrics__(self, original_metrics: str) -> str:
             # Modify the original metrics as needed

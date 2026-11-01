@@ -882,6 +882,23 @@ class BentoBuildConfig:
         Returns:
             BentoBuildConfig: a new copy of self, with default values filled
         """
+        return FilledBentoBuildConfig(
+            service=self.service,
+            name=self.name,
+            description=self.description,
+            labels=self.labels,
+            include=["*"] if self.include is None else self.include,
+            exclude=[] if self.exclude is None else self.exclude,
+            docker=self.docker.with_defaults(self.envs),
+            python=self.python.with_defaults(),
+            conda=self.conda.with_defaults(),
+            models=self.models,
+            envs=self.envs,
+            args=self.args,
+        )
+
+    def get_image_envs(self) -> list[BentoEnvSchema]:
+        """Merge image defaults while preserving deployment env declarations."""
         docker_env = self.docker.env or {}
         envs = [
             attr.evolve(env, value=docker_env.get(env.name, env.value))
@@ -895,20 +912,7 @@ class BentoBuildConfig:
             for name, value in docker_env.items()
             if name not in runtime_names
         )
-        return FilledBentoBuildConfig(
-            service=self.service,
-            name=self.name,
-            description=self.description,
-            labels=self.labels,
-            include=["*"] if self.include is None else self.include,
-            exclude=[] if self.exclude is None else self.exclude,
-            docker=self.docker.with_defaults(self.envs),
-            python=self.python.with_defaults(),
-            conda=self.conda.with_defaults(),
-            models=self.models,
-            envs=envs,
-            args=self.args,
-        )
+        return envs
 
     @property
     def model_aliases(self) -> t.Dict[str, str]:

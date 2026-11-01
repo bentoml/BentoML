@@ -568,7 +568,7 @@ You set environment variables under the ``envs`` key in ``bentofile.yaml``. Each
 
 The specified environment variables will be injected into the Bento container. To set or override a value when you run the container, use the ``-e`` flag of ``docker run``, for example, ``docker run -e API_KEY=<value>``.
 
-When ``docker.env`` is also configured, variables from both settings are included in legacy and v2 builds. For variables with the same name, the value in ``docker.env`` takes precedence for non-build-only entries, preserving their stage. Build-only entries retain their secret values and are excluded from the legacy Docker environment.
+When ``docker.env`` is also configured, variables from both settings are included in legacy and v2 image builds. For variables with the same name, the value in ``docker.env`` takes precedence in the image for non-build-only entries, preserving their stage. Build-only entries retain their secret values and are excluded from the legacy Docker environment. Deployment requirements and defaults continue to come from ``envs``; empty Docker defaults are kept in the image configuration.
 
 ``conda``
 ^^^^^^^^^

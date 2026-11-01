@@ -132,6 +132,38 @@ def test_generate_containerfile_keeps_build_secrets_out_of_env(tmp_path) -> None
     assert "ARG DOCKER_ONLY=docker" in dockerfile
 
 
+def test_construct_containerfile_preserves_older_v2_envs(tmp_path) -> None:
+    import yaml
+
+    from bentoml import Tag
+    from bentoml._internal.bento import Bento
+    from bentoml._internal.bento.bento import BentoInfoV2
+    from bentoml._internal.bento.bento import ImageInfo
+    from bentoml._internal.bento.build_config import BentoEnvSchema
+    from bentoml._internal.container import construct_containerfile
+
+    bento = Bento(
+        Tag("older_envs", "v1"),
+        tmp_path,
+        BentoInfoV2(
+            tag=Tag("older_envs", "v1"),
+            service="service:TestService",
+            envs=[BentoEnvSchema(name="PUBLIC", value="public")],
+            image=ImageInfo(base_image="python:3.11-slim", python_version="3.11"),
+        ),
+    )
+    (tmp_path / "env/docker").mkdir(parents=True)
+    bento.flush_info()
+    info_path = tmp_path / "bento.yaml"
+    older_info = yaml.safe_load(info_path.read_text())
+    older_info.pop("image_envs", None)
+    info_path.write_text(yaml.safe_dump(older_info))
+
+    with construct_containerfile(Bento.from_path(tmp_path)) as (_, dockerfile):
+        with open(dockerfile) as stream:
+            assert "ARG PUBLIC=public\nENV PUBLIC=$PUBLIC\n" in stream.read()
+
+
 def test_image_freeze_merges_docker_envs_and_preserves_stages(
     tmp_path, monkeypatch
 ) -> None:
@@ -154,7 +186,7 @@ def test_image_freeze_merges_docker_envs_and_preserves_stages(
     assert image is not None
     monkeypatch.setattr(Image, "_freeze_python_requirements", lambda *args: "")
 
-    image.freeze(tmp_path, config.with_defaults().envs)
+    image.freeze(tmp_path, config.with_defaults().get_image_envs())
     dockerfile = (tmp_path / "env/docker/Dockerfile").read_text()
 
     assert "ARG PUBLIC=public" in dockerfile

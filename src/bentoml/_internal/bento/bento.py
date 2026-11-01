@@ -441,6 +441,7 @@ class Bento(StoreItem):
                 schema=svc.schema() if not is_legacy else {},
             )
         else:
+            image_envs = build_config.get_image_envs()
             bento_info = BentoInfoV2(
                 tag=tag,
                 service=svc,  # type: ignore # attrs converters do not typecheck
@@ -457,7 +458,8 @@ class Bento(StoreItem):
                 ),
                 envs=build_config.envs,
                 schema=svc.schema() if not is_legacy else {},
-                image=image.freeze(bento_fs, build_config.envs, platform),
+                image=image.freeze(bento_fs, image_envs, platform),
+                image_envs=image_envs,
             )
 
         res = cls(tag, bento_fs, bento_info)
@@ -877,6 +879,8 @@ class ImageInfo:
 class BentoInfoV2(BaseBentoInfo):
     spec: int = attr.field(default=2, init=False)
     image: ImageInfo = attr.field(factory=ImageInfo)
+    # Older Bentos use envs for both deployment declarations and image defaults.
+    image_envs: t.Optional[t.List[BentoEnvSchema]] = None
 
 
 bentoml_cattr.register_unstructure_hook(

@@ -33,7 +33,7 @@ class CustomDescriptor(IODescriptor[str]):
                 f"'{self.__class__.__name__}' is not designed to take any args or kwargs during initialization."
             ) from None
 
-    def input_type(self) -> t.Type[str]:
+    def input_type(self) -> type[str]:
         return str
 
     def _from_sample(self, sample: str | bytes) -> str:

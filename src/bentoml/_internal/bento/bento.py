@@ -56,7 +56,7 @@ if TYPE_CHECKING:
     from ..service import Service
     from ..service.inference_api import InferenceAPI
 else:
-    ServiceConfig = t.Dict[str, t.Any]
+    ServiceConfig = dict[str, t.Any]
 
 logger = logging.getLogger(__name__)
 
@@ -217,9 +217,9 @@ class Bento(StoreItem):
     def create(
         cls,
         build_config: BentoBuildConfig,
-        version: t.Optional[str] = None,
-        build_ctx: t.Optional[str] = None,
-        platform: t.Optional[str] = None,
+        version: str | None = None,
+        build_ctx: str | None = None,
+        platform: str | None = None,
         bare: bool = False,
         reload: bool = False,
         enabled_features: list[str] = Provide[BentoMLContainer.enabled_features],
@@ -404,7 +404,6 @@ class Bento(StoreItem):
                     logger.warning(
                         "'paths' not found in generated schemas. Please report this issue upstream at https://github.com/bentoml/BentoML/issues"
                     )
-                    pass
 
                 if openai_endpoint is not None:
                     build_config.labels["openai_endpoint"] = openai_endpoint
@@ -496,13 +495,13 @@ class Bento(StoreItem):
     def export(
         self,
         path: str,
-        output_format: t.Optional[str] = None,
+        output_format: str | None = None,
         *,
-        protocol: t.Optional[str] = None,
-        user: t.Optional[str] = None,
-        passwd: t.Optional[str] = None,
-        params: t.Optional[t.Dict[str, str]] = None,
-        subpath: t.Optional[str] = None,
+        protocol: str | None = None,
+        user: str | None = None,
+        passwd: str | None = None,
+        params: dict[str, str] | None = None,
+        subpath: str | None = None,
     ) -> str:
         from _bentoml_sdk.models import BentoModel
 
@@ -579,9 +578,9 @@ class Bento(StoreItem):
     @inject
     def save(
         self,
-        bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ) -> "Bento":
+        bento_store: BentoStore = Provide[BentoMLContainer.bento_store],
+        model_store: ModelStore = Provide[BentoMLContainer.model_store],
+    ) -> Bento:
         try:
             self.validate()
         except BentoMLException as e:
@@ -638,8 +637,8 @@ class BentoRunnerInfo:
     name: str
     runnable_type: str
     embedded: bool = attr.field(default=False)
-    models: t.List[str] = attr.field(factory=list)
-    resource_config: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    models: list[str] = attr.field(factory=list)
+    resource_config: dict[str, t.Any] | None = attr.field(default=None)
 
     @classmethod
     def from_runner(cls, r: Runner) -> BentoRunnerInfo:
@@ -670,13 +669,13 @@ class BentoApiInfo:
 @attr.frozen
 class BentoModelInfo:
     tag: Tag = attr.field(converter=Tag.from_taglike)
-    module: t.Optional[str] = attr.field(default=None, eq=False)
+    module: str | None = attr.field(default=None, eq=False)
     creation_time: datetime = attr.field(
         factory=lambda: datetime.now(timezone.utc), eq=False
     )
-    alias: t.Optional[str] = attr.field(default=None, eq=False)
+    alias: str | None = attr.field(default=None, eq=False)
     registry: str = attr.field(default="bentoml", eq=False)
-    metadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None, eq=False)
+    metadata: dict[str, t.Any] | None = attr.field(default=None, eq=False)
 
     @classmethod
     def from_bento_model(
@@ -703,10 +702,10 @@ class BentoModelInfo:
 
 @attr.frozen
 class BentoDependencyInfo:
-    service: t.Optional[str] = None
-    deployment: t.Optional[str] = None
-    cluster: t.Optional[str] = None
-    url: t.Optional[str] = None
+    service: str | None = None
+    deployment: str | None = None
+    cluster: str | None = None
+    url: str | None = None
 
     @classmethod
     def from_dependency(cls, d: Dependency[t.Any]) -> BentoDependencyInfo:
@@ -722,8 +721,8 @@ class BentoDependencyInfo:
 class BentoServiceInfo:
     name: str
     service: str
-    models: t.List[BentoModelInfo] = attr.field(factory=list, eq=False)
-    dependencies: t.List[BentoDependencyInfo] = attr.field(factory=list, eq=False)
+    models: list[BentoModelInfo] = attr.field(factory=list, eq=False)
+    dependencies: list[BentoDependencyInfo] = attr.field(factory=list, eq=False)
     config: ServiceConfig = attr.field(factory=dict, eq=False)
 
     @classmethod
@@ -765,19 +764,19 @@ class BaseBentoInfo:
     bentoml_version: str = attr.field(factory=lambda: BENTOML_VERSION)
     creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
 
-    labels: t.Dict[str, t.Any] = attr.field(
+    labels: dict[str, t.Any] = attr.field(
         factory=dict, converter=normalize_labels_value
     )
-    models: t.List[BentoModelInfo] = attr.field(factory=list)
+    models: list[BentoModelInfo] = attr.field(factory=list)
     # for BentoML 1.2+ SDK
     entry_service: str = ""
-    services: t.List[BentoServiceInfo] = attr.field(factory=list)
-    envs: t.List[BentoEnvSchema] = attr.field(factory=list)
-    schema: t.Dict[str, t.Any] = attr.field(factory=dict)
-    args: t.Dict[str, t.Any] = attr.field(factory=BentoMLContainer.bento_arguments.get)
+    services: list[BentoServiceInfo] = attr.field(factory=list)
+    envs: list[BentoEnvSchema] = attr.field(factory=list)
+    schema: dict[str, t.Any] = attr.field(factory=dict)
+    args: dict[str, t.Any] = attr.field(factory=BentoMLContainer.bento_arguments.get)
 
     @property
-    def all_models(self) -> t.List[BentoModelInfo]:
+    def all_models(self) -> list[BentoModelInfo]:
         model_map = {model.tag: model for model in self.models}
         for service in self.services:
             for model in service.models:
@@ -794,7 +793,7 @@ class BaseBentoInfo:
         except BentoMLException as e:
             raise BentoMLException(f"Failed to initialize {self!s}: {e}") from None
 
-    def to_dict(self) -> t.Dict[str, t.Any]:
+    def to_dict(self) -> dict[str, t.Any]:
         return bentoml_cattr.unstructure(self)
 
     def dump(self, stream: t.IO[t.Any]) -> None:
@@ -856,8 +855,8 @@ class BaseBentoInfo:
 @attr.frozen(repr=False)
 class BentoInfo(BaseBentoInfo):
     spec: int = attr.field(default=1, init=False)
-    runners: t.List[BentoRunnerInfo] = attr.field(factory=list)
-    apis: t.List[BentoApiInfo] = attr.field(factory=list)
+    runners: list[BentoRunnerInfo] = attr.field(factory=list)
+    apis: list[BentoApiInfo] = attr.field(factory=list)
     docker: DockerOptions = attr.field(factory=lambda: DockerOptions().with_defaults())
     python: PythonOptions = attr.field(factory=lambda: PythonOptions().with_defaults())
     conda: CondaOptions = attr.field(factory=lambda: CondaOptions().with_defaults())
@@ -867,10 +866,10 @@ class BentoInfo(BaseBentoInfo):
 class ImageInfo:
     base_image: str = ""
     python_version: str = ""
-    commands: t.List[str] = attr.field(factory=list)
+    commands: list[str] = attr.field(factory=list)
     python_requirements: str = ""
-    post_commands: t.List[str] = attr.field(factory=list)
-    build_include: t.List[str] = attr.field(factory=list)
+    post_commands: list[str] = attr.field(factory=list)
+    build_include: list[str] = attr.field(factory=list)
 
 
 @attr.frozen(repr=False)

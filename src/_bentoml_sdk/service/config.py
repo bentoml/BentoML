@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+from typing import Annotated
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Sequence
+from typing import Literal
 from typing import Union
 
 from annotated_types import Ge
@@ -11,8 +11,6 @@ from annotated_types import Gt
 from annotated_types import Le
 from pydantic import IPvAnyAddress
 from pydantic import TypeAdapter
-from typing_extensions import Annotated
-from typing_extensions import Literal
 from typing_extensions import TypedDict
 
 Posint = Annotated[int, Gt(0)]
@@ -77,7 +75,7 @@ class ResourceSchema(TypedDict, total=False):
             '2'     -> 2 cores
     """
 
-    cpu: Union[str, Posint, Posfloat]
+    cpu: str | Posint | Posfloat
     """
     memory: Union[str, Posint, Posfloat]
         Memory resource requirement.
@@ -90,7 +88,7 @@ class ResourceSchema(TypedDict, total=False):
         '512Mi' -> 512 Mebibytes
         '2Gi'   -> 2 Gibibytes
     """
-    memory: Union[str, Posint, Posfloat]
+    memory: str | Posint | Posfloat
     gpu: Posfloat
     """
     gpu type defined here is only a annotation, it will use as an recommendation choice of instance type when deploying this service to bentocloud
@@ -104,7 +102,7 @@ WorkerSchema = Union[Posint, Literal["cpu_count"]]
 
 
 class MetricDuration(TypedDict, total=False):
-    buckets: List[float]
+    buckets: list[float]
     min: Annotated[float, Gt(0)]
     max: Annotated[float, Gt(0)]
     factor: Annotated[float, Gt(1.0)]
@@ -118,7 +116,7 @@ class MetricSchema(TypedDict, total=False):
 
 class AccessLoggingSchema(TypedDict, total=False):
     enabled: bool
-    skip_paths: List[str]
+    skip_paths: list[str]
     request_content_length: bool
     request_content_type: bool
     response_content_length: bool
@@ -141,13 +139,13 @@ class SSLSchema(TypedDict, total=False):
 
 class HTTPCorsSchema(TypedDict, total=False):
     enabled: bool
-    access_control_allow_origins: Union[str, List[str]]
+    access_control_allow_origins: str | list[str]
     access_control_allow_credentials: bool
-    access_control_allow_methods: Union[str, List[str]]
-    access_control_allow_headers: Union[str, List[str]]
+    access_control_allow_methods: str | list[str]
+    access_control_allow_headers: str | list[str]
     access_control_allow_origin_regex: str
     access_control_max_age: int
-    access_control_expose_headers: Union[str, List[str]]
+    access_control_expose_headers: str | list[str]
 
 
 class HTTPSchema(TypedDict, total=False):
@@ -187,13 +185,13 @@ class RunnerProbeSchema(TypedDict, total=False):
 class MonitoringSchema(TypedDict, total=False):
     enabled: bool
     type: str
-    options: Dict[str, Any]
+    options: dict[str, Any]
 
 
 class ZipkinSchema(TypedDict, total=False):
     endpoint: str
-    local_node_ipv4: Union[IPvAnyAddress, int]
-    local_node_ipv6: Union[IPvAnyAddress, int]
+    local_node_ipv4: IPvAnyAddress | int
+    local_node_ipv6: IPvAnyAddress | int
     local_node_port: Posint
 
 
@@ -218,7 +216,7 @@ class OTLPSchema(TypedDict, total=False):
     compression: Literal["gzip", "none", "deflate"]
     http: TypedDict(
         "OTLPHTTPSchema",
-        {"headers": Dict[str, str], "certificate_file": str},
+        {"headers": dict[str, str], "certificate_file": str},
         total=False,
     )  # type: ignore
     grpc: TypedDict(
@@ -238,7 +236,7 @@ class TracingSchema(TypedDict, total=False):
     sample_rate: Annotated[float, Ge(0.0), Le(1.0)]
     timeout: Posint
     max_tag_value_length: Posint
-    excluded_urls: Union[str, List[str]]
+    excluded_urls: str | list[str]
     zipkin: ZipkinSchema
     jaeger: JaegerSchema
     otlp: OTLPSchema

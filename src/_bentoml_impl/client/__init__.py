@@ -9,13 +9,13 @@ from .task import AsyncTask
 from .task import Task
 
 __all__ = [
-    "AsyncHTTPClient",
-    "SyncHTTPClient",
-    "HTTPClient",
     "AbstractClient",
-    "RemoteProxy",
-    "Task",
+    "AsyncHTTPClient",
     "AsyncTask",
+    "HTTPClient",
+    "RemoteProxy",
+    "SyncHTTPClient",
+    "Task",
 ]
 
 

@@ -80,11 +80,11 @@ def list_command(
             )
         rich.print(table)
     elif output == "json":
-        res: t.List[dict[str, t.Any]] = [s.to_dict() for s in secrets]
+        res: list[dict[str, t.Any]] = [s.to_dict() for s in secrets]
         info = json.dumps(res, indent=2, default=str)
         rich.print(info)
     elif output == "yaml":
-        res: t.List[dict[str, t.Any]] = [s.to_dict() for s in secrets]
+        res: list[dict[str, t.Any]] = [s.to_dict() for s in secrets]
         info = yaml.dump(res, indent=2, sort_keys=False)
         rich.print(Syntax(info, "yaml", background_color="default"))
 
@@ -93,11 +93,11 @@ def parse_kvs_argument_callback(
     ctx: Context,
     params: Parameter,
     value: tuple[str, ...],  # pylint: disable=unused-argument
-) -> t.List[tuple[str, str]]:
+) -> list[tuple[str, str]]:
     """
     split "key1=value1 key2=value2" into [("key1", "value1"), ("key2", "value2")],
     """
-    key_vals: t.List[tuple[str, str]] = []
+    key_vals: list[tuple[str, str]] = []
     for key_val in value:
         key, val = key_val.split("=", maxsplit=1)
         if not key or not val:
@@ -117,7 +117,7 @@ def read_dotenv_callback(
     ctx: Context,
     params: Parameter,
     value: tuple[str, ...],  # pylint: disable=unused-argument
-) -> t.List[tuple[str, str]]:
+) -> list[tuple[str, str]]:
     from bentoml._internal.utils.dotenv import parse_dotenv
 
     env_map: dict[str, str] = {}
@@ -215,9 +215,9 @@ def create(
     type: t.Literal["env", "mountfile"],
     cluster: str | None,
     path: str | None,
-    key_vals: t.List[tuple[str, str]],
+    key_vals: list[tuple[str, str]],
     from_literal: bool,
-    from_file: t.List[tuple[str, str]],
+    from_file: list[tuple[str, str]],
     stage: t.Literal["build", "runtime", "all"],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):
@@ -348,9 +348,9 @@ def apply(
     cluster: str | None,
     type: t.Literal["env", "mountfile"],
     path: str | None,
-    key_vals: t.List[t.Tuple[str, str]],
+    key_vals: list[tuple[str, str]],
     from_literal: bool,
-    from_file: t.List[t.Tuple[str, str]],
+    from_file: list[tuple[str, str]],
     stage: t.Literal["build", "runtime", "all"],
     _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ):

@@ -123,7 +123,7 @@ class RunnerAppFactory(BaseAppFactory):
         return on_shutdown
 
     @property
-    def routes(self) -> t.List[BaseRoute]:
+    def routes(self) -> list[BaseRoute]:
         """
         Setup routes for Runner server, including:
 

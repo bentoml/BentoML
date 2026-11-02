@@ -35,7 +35,6 @@ class Reader:
 
             download_enabled (bool): Enabled downloading of model data via HTTP (default).
         """
-        ...
 
     def readtext(
         self,

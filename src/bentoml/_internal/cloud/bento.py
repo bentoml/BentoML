@@ -214,21 +214,23 @@ class BentoAPI:
         )
         tar_io = os.fdopen(fd, "wb+")
         try:
-            with self.spinner.spin(
-                text=f'Creating tar archive for bento "{bento.tag}"..'
+            with (
+                self.spinner.spin(
+                    text=f'Creating tar archive for bento "{bento.tag}"..'
+                ),
+                tarfile.open(fileobj=tar_io, mode="w:") as tar,
             ):
-                with tarfile.open(fileobj=tar_io, mode="w:") as tar:
 
-                    def filter_(
-                        tar_info: tarfile.TarInfo,
-                    ) -> t.Optional[tarfile.TarInfo]:
-                        if tar_info.path == "./models" or tar_info.path.startswith(
-                            "./models/"
-                        ):
-                            return None
-                        return tar_info
+                def filter_(
+                    tar_info: tarfile.TarInfo,
+                ) -> tarfile.TarInfo | None:
+                    if tar_info.path == "./models" or tar_info.path.startswith(
+                        "./models/"
+                    ):
+                        return None
+                    return tar_info
 
-                    tar.add(bento.path, arcname="./", filter=filter_)
+                tar.add(bento.path, arcname="./", filter=filter_)
 
             with self.spinner.spin(text=f'Start uploading bento "{bento.tag}"..'):
                 rest_client.v1.start_upload_bento(

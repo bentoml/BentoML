@@ -125,7 +125,7 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
         max_latency_in_ms: int,
         max_batch_size: int,
         *,
-        shared_sema: t.Optional[NonBlockSema] = None,
+        shared_sema: NonBlockSema | None = None,
         fallback: t.Callable[[], T_OUT],
         get_batch_size: t.Callable[[T_IN], int] = lambda x: x.sample.batch_size,
         batch_dim: tuple[int, int] = (0, 0),
@@ -201,8 +201,7 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
         num_reqs_to_train: int,
         training_batch_size: int,
     ):
-        if self.max_batch_size < training_batch_size:
-            training_batch_size = self.max_batch_size
+        training_batch_size = min(training_batch_size, self.max_batch_size)
 
         wait = 0.0
         if training_batch_size > 1:

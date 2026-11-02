@@ -243,7 +243,6 @@ class RestApiClientV1(BaseRestApiClient):
             ),
         )
         self._check_resp(resp)
-        return None
 
     @contextlib.contextmanager
     def download_bento(
@@ -362,7 +361,6 @@ class RestApiClientV1(BaseRestApiClient):
             ),
         )
         self._check_resp(resp)
-        return None
 
     @contextlib.contextmanager
     def download_model(

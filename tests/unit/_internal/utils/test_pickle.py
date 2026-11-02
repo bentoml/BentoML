@@ -24,7 +24,7 @@ def test_pep574_restore() -> None:
     indices: list[int]
     bs, concat_buffer_bs, indices = pep574_dumps(lst)
     restored = t.cast(
-        t.List["ext.NpNDArray"], pep574_loads(bs, concat_buffer_bs, indices)
+        list["ext.NpNDArray"], pep574_loads(bs, concat_buffer_bs, indices)
     )
     for idx, arr in enumerate(lst):
         assert np.isclose(arr, restored[idx]).all()
@@ -32,7 +32,7 @@ def test_pep574_restore() -> None:
     dic: dict[str, ext.NpNDArray] = dict(a=arr1, b=arr2, c=arr3)
     bs, concat_buffer_bs, indices = pep574_dumps(dic)
     restored = t.cast(
-        t.Dict[str, "ext.NpNDArray"], pep574_loads(bs, concat_buffer_bs, indices)
+        dict[str, "ext.NpNDArray"], pep574_loads(bs, concat_buffer_bs, indices)
     )
     for key, arr in dic.items():
         assert np.isclose(arr, restored[key]).all()
@@ -45,7 +45,7 @@ def test_pep574_restore() -> None:
 
     bs, concat_buffer_bs, indices = pep574_dumps(df_lst)
     restored = t.cast(
-        t.List["ext.PdDataFrame"], pep574_loads(bs, concat_buffer_bs, indices)
+        list["ext.PdDataFrame"], pep574_loads(bs, concat_buffer_bs, indices)
     )
     for idx, df in enumerate(df_lst):
         assert np.isclose(df.to_numpy(), restored[idx].to_numpy()).all()
@@ -53,7 +53,7 @@ def test_pep574_restore() -> None:
     df_dic: dict[str, ext.PdDataFrame] = dict(a=df1, b=df2, c=df3)
     bs, concat_buffer_bs, indices = pep574_dumps(df_dic)
     restored = t.cast(
-        t.Dict[str, "ext.PdDataFrame"], pep574_loads(bs, concat_buffer_bs, indices)
+        dict[str, "ext.PdDataFrame"], pep574_loads(bs, concat_buffer_bs, indices)
     )
     for key, df in df_dic.items():
         assert np.isclose(df.to_numpy(), restored[key].to_numpy()).all()

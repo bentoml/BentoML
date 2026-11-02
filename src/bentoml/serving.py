@@ -347,9 +347,9 @@ def serve_http_production(
     svc = load(bento_identifier, working_dir=working_dir)
     working_dir = os.path.realpath(os.path.expanduser(working_dir))
 
-    watchers: t.List[Watcher] = []
-    circus_socket_map: t.Dict[str, CircusSocket] = {}
-    runner_bind_map: t.Dict[str, str] = {}
+    watchers: list[Watcher] = []
+    circus_socket_map: dict[str, CircusSocket] = {}
+    runner_bind_map: dict[str, str] = {}
     uds_path = None
     timeout_args = ["--timeout", str(timeout)] if timeout else []
 

@@ -34,7 +34,7 @@ else:
 @dataclass
 class ExampleDataclass:
     name: str
-    endpoints: t.List[str]
+    endpoints: list[str]
 
 
 class ExampleGeneric(str, np.generic):
@@ -44,12 +44,12 @@ class ExampleGeneric(str, np.generic):
 @attr.define
 class ExampleAttrsClass:
     name: str
-    endpoints: t.List[str]
+    endpoints: list[str]
 
 
 class BaseSchema(pydantic.BaseModel):
     name: str
-    endpoints: t.List[str]
+    endpoints: list[str]
 
 
 def test_json_description_to_http_response():

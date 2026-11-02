@@ -701,7 +701,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
         await self._setup()
         return self
 
-    async def __aexit__(self, *args: t.Any) -> None:
+    async def __aexit__(self, *args: object) -> None:
         return await self.close()
 
     async def request(self, method: str, url: str, **kwargs: t.Any) -> httpx.Response:

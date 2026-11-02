@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["ENV", "health", "construct_build_args", "BUILDKIT_SUPPORT", "find_binary"]
+__all__ = ["BUILDKIT_SUPPORT", "ENV", "construct_build_args", "find_binary", "health"]
 
 BUILDKIT_SUPPORT = False
 

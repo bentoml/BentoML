@@ -166,7 +166,7 @@ class AsyncHTTPClient(AsyncClient):
         )
         if resp.status_code != 200:
             raise BentoMLException(
-                f"Error making request: {resp.status_code}: {str(await resp.aread())}"
+                f"Error making request: {resp.status_code}: {await resp.aread()!s}"
             )
 
         fake_req = starlette.requests.Request(scope={"type": "http"})
@@ -321,7 +321,7 @@ class SyncHTTPClient(SyncClient):
         )
         if resp.status_code != 200:
             raise BentoMLException(
-                f"Error making request: {resp.status_code}: {str(resp.content)}"
+                f"Error making request: {resp.status_code}: {resp.content!s}"
             )
 
         fake_req = starlette.requests.Request(scope={"type": "http"})

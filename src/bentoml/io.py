@@ -1,5 +1,3 @@
-# ruff: noqa: E402
-
 from __future__ import annotations
 
 from bentoml._internal.utils import warn_deprecated
@@ -22,15 +20,15 @@ from ._internal.io_descriptors.text import Text
 from ._internal.io_descriptors.utils import SSE
 
 __all__ = [
-    "File",
-    "Image",
-    "IODescriptor",
     "JSON",
+    "SSE",
+    "File",
+    "IODescriptor",
+    "Image",
     "Multipart",
     "NumpyNdarray",
     "PandasDataFrame",
     "PandasSeries",
     "Text",
     "from_spec",
-    "SSE",
 ]

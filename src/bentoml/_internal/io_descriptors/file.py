@@ -175,7 +175,7 @@ class File(
             raise InvalidArgument(f"Missing args key in File spec: {spec}")
         return cls(**spec["args"])
 
-    def input_type(self) -> t.Type[t.Any]:
+    def input_type(self) -> type[t.Any]:
         return FileLike[bytes]
 
     def openapi_schema(self) -> Schema:
@@ -292,8 +292,8 @@ class BytesIOFile(File, descriptor_id=None):
         content_type, _ = parse_options_header(request.headers["content-type"])
         if content_type.decode("utf-8") == "multipart/form-data":
             form = await request.form()
-            found_mimes: t.List[str] = []
-            val: t.Union[str, UploadFile]
+            found_mimes: list[str] = []
+            val: str | UploadFile
             for val in form.values():  # type: ignore
                 if isinstance(val, UploadFile):
                     found_mimes.append(val.content_type)  # type: ignore (bad starlette types)

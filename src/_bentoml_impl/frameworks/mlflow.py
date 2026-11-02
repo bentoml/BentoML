@@ -65,7 +65,7 @@ def load_model(
         import bentoml
         pyfunc_model = bentoml.mlflow.load_model('my_model:latest')
         pyfunc_model.predict( input_df )
-    """  # noqa
+    """
     if not isinstance(bento_model, bentoml.Model):
         bento_model = bentoml.models.get(bento_model)
 
@@ -84,7 +84,7 @@ def import_model(
     signatures: dict[str, ModelSignature] | dict[str, ModelSignatureDict] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
     # ...
 ) -> bentoml.Model:
@@ -213,7 +213,7 @@ def import_model(
 
 
 @deprecated(suggestion="Use `get_service` instead.")
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """

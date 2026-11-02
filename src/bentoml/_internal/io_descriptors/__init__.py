@@ -14,10 +14,10 @@ from .text import Text
 
 __all__ = [
     "IO_DESCRIPTOR_REGISTRY",
-    "File",
-    "Image",
-    "IODescriptor",
     "JSON",
+    "File",
+    "IODescriptor",
+    "Image",
     "Multipart",
     "NumpyNdarray",
     "PandasDataFrame",

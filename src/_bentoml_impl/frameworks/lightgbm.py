@@ -57,7 +57,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> lgb.basic.Booster:  # 
 
         import bentoml
         gbm = bentoml.lightgbm.load("my_lightgbm_model:latest")
-    """  # noqa
+    """
     if not isinstance(bento_model, bentoml.Model):
         bento_model = bentoml.models.get(bento_model)
         assert isinstance(bento_model, bentoml.Model)
@@ -79,7 +79,7 @@ def save_model(
     signatures: dict[str, ModelSignatureDict] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
@@ -204,7 +204,7 @@ def save_model(
 
 
 @deprecated(suggestion="Use `get_service` instead.")
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
@@ -279,7 +279,7 @@ def get_service(model_name: str, **config: Unpack[ServiceConfig]) -> Service[t.A
             self,
             data: np.ndarray,
             start_iteration: int = 0,
-            num_iteration: t.Optional[int] = None,
+            num_iteration: int | None = None,
             raw_score: bool = False,
             pred_leaf: bool = False,
             pred_contrib: bool = False,

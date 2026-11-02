@@ -1,6 +1,6 @@
+from collections.abc import Generator
 from typing import Any
 from typing import ClassVar
-from typing import Generator
 from typing import Literal
 from typing import TypedDict
 from typing import overload
@@ -14,7 +14,7 @@ class InfoDict(TypedDict):
 
 class AbstractFileSystem:
     cachable = True
-    blocksize = 2**22
+    blocksize = ...
     sep = "/"
     protocol: ClassVar[str | tuple[str, ...]] = "abstract"
     async_impl = False
@@ -37,7 +37,7 @@ class AbstractFileSystem:
         topdown: bool = True,
         on_error: str = "omit",
         **kwargs: Any,
-    ) -> Generator[tuple[str, list[str], list[str]], None, None]: ...
+    ) -> Generator[tuple[str, list[str], list[str]]]: ...
     @overload
     def find(
         self,

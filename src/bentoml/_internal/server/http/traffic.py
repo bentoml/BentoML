@@ -37,6 +37,10 @@ class TimeoutMiddleware:
 
         try:
             await waiter
+        except asyncio.CancelledError:
+            fut.cancel()
+            await asyncio.gather(fut, return_exceptions=True)
+            raise
         except asyncio.TimeoutError:
             if fut.cancel():
                 resp = JSONResponse(

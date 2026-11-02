@@ -26,7 +26,7 @@ class TimeoutMiddleware:
             return await self.app(scope, receive, send)
         loop = asyncio.get_running_loop()
         waiter = loop.create_future()
-        loop.call_later(self.timeout, self._set_timer_out, waiter)
+        timer = loop.call_later(self.timeout, self._set_timer_out, waiter)
 
         async def _send(message: ext.ASGIMessage) -> None:
             if not waiter.done():
@@ -48,6 +48,10 @@ class TimeoutMiddleware:
                 await resp(scope, receive, send)
         else:
             await fut  # wait for the future to finish
+        finally:
+            # a pending timer keeps the waiter and the request's context alive
+            # until it expires, so release it as soon as the request is done
+            timer.cancel()
 
 
 class MaxConcurrencyMiddleware:

@@ -35,7 +35,7 @@ else:
 
 
 class Multipart(
-    IODescriptor[t.Dict[str, t.Any]],
+    IODescriptor[dict[str, t.Any]],
     descriptor_id="bentoml.io.Multipart",
     proto_fields=("multipart",),
 ):
@@ -183,8 +183,8 @@ class Multipart(
 
     def input_type(
         self,
-    ) -> dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]]:
-        res: dict[str, t.Type[t.Any] | UnionType | LazyType[t.Any]] = {}
+    ) -> dict[str, type[t.Any] | UnionType | LazyType[t.Any]]:
+        res: dict[str, type[t.Any] | UnionType | LazyType[t.Any]] = {}
         for k, v in self._inputs.items():
             inp_type = v.input_type()
             if isinstance(inp_type, dict):

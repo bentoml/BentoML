@@ -1,14 +1,11 @@
-from __future__ import annotations
-
+from collections.abc import Callable
+from collections.abc import Collection
+from collections.abc import Iterable
+from collections.abc import Iterator
 from os import PathLike
 from typing import Any
 from typing import AnyStr
-from typing import Callable
-from typing import Collection
-from typing import Iterable
-from typing import Iterator
 from typing import NoReturn
-from typing import Text
 
 from .pattern import Pattern
 from .util import TreeEntry
@@ -22,36 +19,36 @@ class PathSpec:
     @classmethod
     def from_lines(
         cls,
-        pattern_factory: Text | Callable[[AnyStr], Pattern],
+        pattern_factory: str | Callable[[AnyStr], Pattern],
         lines: Iterable[AnyStr],
     ) -> PathSpec: ...
     def match_file(
         self,
-        file: Text | PathLike[Any],
-        separators: Collection[Text] | None = ...,
+        file: str | PathLike[Any],
+        separators: Collection[str] | None = ...,
     ) -> bool: ...
     def match_entries(
-        self, entries: Iterable[TreeEntry], separators: Collection[Text] | None = ...
+        self, entries: Iterable[TreeEntry], separators: Collection[str] | None = ...
     ) -> Iterator[TreeEntry]: ...
     def match_files(
         self,
-        files: Iterable[Text | PathLike[str]],
-        separators: Collection[Text] | None = ...,
-    ) -> Iterator[Text | PathLike[str]]: ...
+        files: Iterable[str | PathLike[str]],
+        separators: Collection[str] | None = ...,
+    ) -> Iterator[str | PathLike[str]]: ...
     def match_tree_entries(
         self,
-        root: Text,
+        root: str,
         on_error: Callable[[type[Exception]], NoReturn] | None = ...,
         follow_links: bool | None = ...,
     ) -> Iterator[TreeEntry]: ...
     def match_tree_files(
         self,
-        root: Text,
+        root: str,
         on_error: Callable[[type[Exception]], NoReturn] | None = ...,
         follow_links: bool | None = ...,
-    ) -> Iterator[Text]: ...
+    ) -> Iterator[str]: ...
 
     match_tree: Callable[
-        [Text, Callable[[type[Exception]], NoReturn] | None, bool | None],
-        Iterator[Text],
+        [str, Callable[[type[Exception]], NoReturn] | None, bool | None],
+        Iterator[str],
     ] = ...

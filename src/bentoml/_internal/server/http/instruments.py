@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import contextvars
 import logging
+from collections.abc import Sequence
 from timeit import default_timer
 from typing import TYPE_CHECKING
-from typing import Sequence
 
 from simple_di import Provide
 from simple_di import inject
@@ -101,7 +101,7 @@ class HTTPTrafficMetricsMiddleware:
             ).set_to_current_time()
         START_TIME_VAR.set(default_timer())
 
-        async def wrapped_send(message: "ext.ASGIMessage") -> None:
+        async def wrapped_send(message: ext.ASGIMessage) -> None:
             if message["type"] == "http.response.start":
                 STATUS_VAR.set(message["status"])
             elif message["type"] == "http.response.body":
@@ -142,7 +142,7 @@ class HTTPTrafficMetricsMiddleware:
 class RunnerTrafficMetricsMiddleware:
     def __init__(
         self,
-        app: "ext.ASGIApp",
+        app: ext.ASGIApp,
         namespace: str = "bentoml_runner",
         skip_paths: Sequence[str] = ("/metrics", "/healthz", "/livez", "/readyz"),
     ):
@@ -154,7 +154,7 @@ class RunnerTrafficMetricsMiddleware:
     @inject
     def _setup(
         self,
-        metrics_client: "PrometheusClient" = Provide[BentoMLContainer.metrics_client],
+        metrics_client: PrometheusClient = Provide[BentoMLContainer.metrics_client],
         duration_buckets: tuple[float, ...] = Provide[
             BentoMLContainer.duration_buckets
         ],
@@ -239,9 +239,9 @@ class RunnerTrafficMetricsMiddleware:
 
     async def __call__(
         self,
-        scope: "ext.ASGIScope",
-        receive: "ext.ASGIReceive",
-        send: "ext.ASGISend",
+        scope: ext.ASGIScope,
+        receive: ext.ASGIReceive,
+        send: ext.ASGISend,
     ) -> None:
         if not self._is_setup:
             self._setup()
@@ -263,7 +263,7 @@ class RunnerTrafficMetricsMiddleware:
         start_time = default_timer()
         status_code = 0
 
-        async def wrapped_receive() -> "ext.ASGIMessage":
+        async def wrapped_receive() -> ext.ASGIMessage:
             message = await receive()
             if message["type"] == "websocket.disconnect":
                 self.metrics_websocket_connections.labels(
@@ -285,7 +285,7 @@ class RunnerTrafficMetricsMiddleware:
                 ).observe(data_len)
             return message
 
-        async def wrapped_send(message: "ext.ASGIMessage") -> None:
+        async def wrapped_send(message: ext.ASGIMessage) -> None:
             nonlocal status_code
             if message["type"] == "http.response.start":
                 status_code = message["status"]

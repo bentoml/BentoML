@@ -12,25 +12,25 @@ time_format = "%Y-%m-%d %H:%M:%S.%f"
 T = t.TypeVar("T")
 
 
-def datetime_encoder(time_obj: t.Optional[datetime]) -> t.Optional[str]:
+def datetime_encoder(time_obj: datetime | None) -> str | None:
     if not time_obj:
         return None
     return time_obj.strftime(time_format)
 
 
-def datetime_decoder(datetime_str: t.Optional[str], _: t.Any) -> t.Optional[datetime]:
+def datetime_decoder(datetime_str: str | None, _: t.Any) -> datetime | None:
     if not datetime_str:
         return None
     return parse(datetime_str)
 
 
-def tag_encoder(tag_obj: t.Optional[Tag]) -> t.Optional[str]:
+def tag_encoder(tag_obj: Tag | None) -> str | None:
     if not tag_obj:
         return None
     return str(tag_obj)
 
 
-def tag_decoder(tag_str: t.Optional[str], _: t.Any) -> t.Optional[Tag]:
+def tag_decoder(tag_str: str | None, _: t.Any) -> Tag | None:
     if not tag_str:
         return None
     return Tag.from_str(tag_str)
@@ -61,5 +61,5 @@ def schema_to_object(obj: t.Any) -> t.Any:
     return cloud_converter.unstructure(obj, obj.__class__)
 
 
-def schema_from_object(obj: t.Any, cls: t.Type[T]) -> T:
+def schema_from_object(obj: t.Any, cls: type[T]) -> T:
     return cloud_converter.structure(obj, cls)

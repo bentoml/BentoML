@@ -129,10 +129,10 @@ def validate_otlp_protocol(protocol: str) -> bool:
     return protocol in ["grpc", "http"]
 
 
-def ensure_larger_than(target: int | float) -> t.Callable[[int | float], bool]:
+def ensure_larger_than(target: float) -> t.Callable[[int | float], bool]:
     """Ensure that given value is (lower, inf]"""
 
-    def v(value: int | float) -> bool:
+    def v(value: float) -> bool:
         return value > target
 
     return v
@@ -141,12 +141,10 @@ def ensure_larger_than(target: int | float) -> t.Callable[[int | float], bool]:
 ensure_larger_than_zero = ensure_larger_than(0)
 
 
-def ensure_range(
-    lower: int | float, upper: int | float
-) -> t.Callable[[int | float], bool]:
+def ensure_range(lower: float, upper: float) -> t.Callable[[int | float], bool]:
     """Ensure that given value is within the range of [lower, upper]."""
 
-    def v(value: int | float) -> bool:
+    def v(value: float) -> bool:
         return lower <= value <= upper
 
     return v

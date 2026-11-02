@@ -60,17 +60,17 @@ class BentoApiSchema:
 
 @attr.define
 class BentoRunnerResourceSchema:
-    cpu: t.Optional[t.Any]
-    nvidia_gpu: t.Optional[t.Any]
-    custom_resources: t.Optional[t.Any]
+    cpu: t.Any | None
+    nvidia_gpu: t.Any | None
+    custom_resources: t.Any | None
 
 
 @attr.define
 class BentoRunnerSchema:
     name: str
-    runnable_type: t.Optional[str]
-    models: t.Optional[t.List[str]]
-    resource_config: t.Optional[BentoRunnerResourceSchema]
+    runnable_type: str | None
+    models: list[str] | None
+    resource_config: BentoRunnerResourceSchema | None
 
 
 @attr.define
@@ -79,16 +79,16 @@ class BentoManifestSchema:
     bentoml_version: str = attr.field(eq=False)
     size_bytes: int = attr.field(eq=False)
     entry_service: str = ""
-    name: t.Optional[str] = None
-    apis: t.Dict[str, BentoApiSchema] = attr.field(factory=dict)
-    models: t.List[str] = attr.field(factory=list, eq=False)
-    runners: t.Optional[t.List[BentoRunnerSchema]] = attr.field(factory=list)
-    services: t.List[BentoServiceInfo] = attr.field(factory=list)
-    envs: t.List[BentoEnvSchema] = attr.field(factory=list)
-    schema: t.Dict[str, t.Any] = attr.field(factory=dict)
-    version: t.Optional[str] = attr.field(default=None, eq=False)
+    name: str | None = None
+    apis: dict[str, BentoApiSchema] = attr.field(factory=dict)
+    models: list[str] = attr.field(factory=list, eq=False)
+    runners: list[BentoRunnerSchema] | None = attr.field(factory=list)
+    services: list[BentoServiceInfo] = attr.field(factory=list)
+    envs: list[BentoEnvSchema] = attr.field(factory=list)
+    schema: dict[str, t.Any] = attr.field(factory=dict)
+    version: str | None = attr.field(default=None, eq=False)
     dev: bool = attr.field(default=False, eq=False)
-    image: t.Optional[ImageInfo] = attr.field(default=None, eq=False)
+    image: ImageInfo | None = attr.field(default=None, eq=False)
     spec: int = attr.field(default=1)
 
     @property
@@ -108,9 +108,9 @@ class ModelManifestSchema:
     api_version: str
     bentoml_version: str
     size_bytes: int
-    metadata: t.Dict[str, t.Any] = attr.field(factory=dict)
-    context: t.Dict[str, t.Any] = attr.field(factory=dict)
-    options: t.Dict[str, t.Any] = attr.field(factory=dict)
+    metadata: dict[str, t.Any] = attr.field(factory=dict)
+    context: dict[str, t.Any] = attr.field(factory=dict)
+    options: dict[str, t.Any] = attr.field(factory=dict)
 
 
 @attr.define
@@ -128,36 +128,36 @@ class DeploymentTargetCanaryRule:
 class ApiServerBentoDeploymentOverrides:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    monitorExporter: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
-    extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
-    extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    monitorExporter: dict[str, t.Any] | None = attr.field(default=None)
+    extraPodMetadata: dict[str, t.Any] | None = attr.field(default=None)
+    extraPodSpec: dict[str, t.Any] | None = attr.field(default=None)
 
 
 @attr.define
 class ApiServerBentoFunctionOverrides:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    annotations: t.Optional[t.Dict[str, str]] = attr.field(default=None)
-    monitorExporter: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
-    extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
-    extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    annotations: dict[str, str] | None = attr.field(default=None)
+    monitorExporter: dict[str, t.Any] | None = attr.field(default=None)
+    extraPodMetadata: dict[str, t.Any] | None = attr.field(default=None)
+    extraPodSpec: dict[str, t.Any] | None = attr.field(default=None)
 
 
 @attr.define
 class RunnerBentoFunctionOverrides:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    annotations: t.Optional[t.Dict[str, str]] = attr.field(default=None)
-    extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
-    extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    annotations: dict[str, str] | None = attr.field(default=None)
+    extraPodMetadata: dict[str, t.Any] | None = attr.field(default=None)
+    extraPodSpec: dict[str, t.Any] | None = attr.field(default=None)
 
 
 @attr.define
 class RunnerBentoDeploymentOverrides:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    extraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
-    extraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
+    extraPodMetadata: dict[str, t.Any] | None = attr.field(default=None)
+    extraPodSpec: dict[str, t.Any] | None = attr.field(default=None)
 
 
 @attr.define
@@ -165,20 +165,14 @@ class BentoRequestOverrides:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
     imageBuildTimeout: int = attr.field(default=None)
-    imageBuilderExtraPodMetadata: t.Optional[t.Dict[str, t.Any]] = attr.field(
+    imageBuilderExtraPodMetadata: dict[str, t.Any] | None = attr.field(default=None)
+    imageBuilderExtraPodSpec: dict[str, t.Any] | None = attr.field(default=None)
+    imageBuilderExtraContainerEnv: list[dict[str, t.Any]] | None = attr.field(
         default=None
     )
-    imageBuilderExtraPodSpec: t.Optional[t.Dict[str, t.Any]] = attr.field(default=None)
-    imageBuilderExtraContainerEnv: t.Optional[t.List[t.Dict[str, t.Any]]] = attr.field(
-        default=None
-    )
-    imageBuilderContainerResources: t.Optional[t.Dict[str, t.Any]] = attr.field(
-        default=None
-    )
-    dockerConfigJsonSecretName: t.Optional[str] = attr.field(default=None)
-    downloaderContainerEnvFrom: t.Optional[t.Dict[str, t.Any]] = attr.field(
-        default=None
-    )
+    imageBuilderContainerResources: dict[str, t.Any] | None = attr.field(default=None)
+    dockerConfigJsonSecretName: str | None = attr.field(default=None)
+    downloaderContainerEnvFrom: dict[str, t.Any] | None = attr.field(default=None)
 
 
 @attr.define
@@ -205,54 +199,54 @@ class HPAMetric:
 class HPAPolicy:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    metrics: t.Optional[t.List[HPAMetric]] = attr.field(default=None)
-    scale_down_behavior: t.Optional[str] = attr.field(default=None)
-    scale_up_behavior: t.Optional[str] = attr.field(default=None)
-    scale_down_stabilization_window: t.Optional[int] = attr.field(default=None)
-    scale_up_stabilization_window: t.Optional[int] = attr.field(default=None)
+    metrics: list[HPAMetric] | None = attr.field(default=None)
+    scale_down_behavior: str | None = attr.field(default=None)
+    scale_up_behavior: str | None = attr.field(default=None)
+    scale_down_stabilization_window: int | None = attr.field(default=None)
+    scale_up_stabilization_window: int | None = attr.field(default=None)
 
 
 @attr.define
 class DeploymentTargetHPAConf:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    min_replicas: t.Optional[int] = attr.field(default=None)
-    max_replicas: t.Optional[int] = attr.field(default=None)
-    policy: t.Optional[HPAPolicy] = attr.field(default=None)
+    min_replicas: int | None = attr.field(default=None)
+    max_replicas: int | None = attr.field(default=None)
+    policy: HPAPolicy | None = attr.field(default=None)
 
 
 @attr.define
 class DeploymentTargetResourceItem:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    cpu: t.Optional[str] = attr.field(default=None)
-    memory: t.Optional[str] = attr.field(default=None)
-    gpu: t.Optional[str] = attr.field(default=None)
-    custom: t.Optional[t.Dict[str, str]] = attr.field(default=None)
+    cpu: str | None = attr.field(default=None)
+    memory: str | None = attr.field(default=None)
+    gpu: str | None = attr.field(default=None)
+    custom: dict[str, str] | None = attr.field(default=None)
 
 
 @attr.define
 class DeploymentTargetResources:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    requests: t.Optional[DeploymentTargetResourceItem] = attr.field(default=None)
-    limits: t.Optional[DeploymentTargetResourceItem] = attr.field(default=None)
+    requests: DeploymentTargetResourceItem | None = attr.field(default=None)
+    limits: DeploymentTargetResourceItem | None = attr.field(default=None)
 
 
 @attr.define
 class RequestQueueConfig:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    enabled: t.Optional[bool] = attr.field(default=None)
-    max_consume_concurrency: t.Optional[int] = attr.field(default=None)
+    enabled: bool | None = attr.field(default=None)
+    max_consume_concurrency: int | None = attr.field(default=None)
 
 
 @attr.define
 class TrafficControlConfig:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    timeout: t.Optional[str] = attr.field(default=None)
-    request_queue: t.Optional[RequestQueueConfig] = attr.field(default=None)
+    timeout: str | None = attr.field(default=None)
+    request_queue: RequestQueueConfig | None = attr.field(default=None)
 
 
 class DeploymentStrategy(Enum):
@@ -266,85 +260,77 @@ class DeploymentStrategy(Enum):
 class DeploymentTargetRunnerConfig:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    resource_instance: t.Optional[str] = attr.field(default=None)
-    resources: t.Optional[DeploymentTargetResources] = attr.field(default=None)
-    hpa_conf: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
-    envs: t.Optional[t.List[t.Optional[LabelItemSchema]]] = attr.field(default=None)
-    enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(default=None)
-    enable_debug_mode: t.Optional[bool] = attr.field(default=None)
-    enable_debug_pod_receive_production_traffic: t.Optional[bool] = attr.field(
+    resource_instance: str | None = attr.field(default=None)
+    resources: DeploymentTargetResources | None = attr.field(default=None)
+    hpa_conf: DeploymentTargetHPAConf | None = attr.field(default=None)
+    envs: list[LabelItemSchema | None] | None = attr.field(default=None)
+    enable_stealing_traffic_debug_mode: bool | None = attr.field(default=None)
+    enable_debug_mode: bool | None = attr.field(default=None)
+    enable_debug_pod_receive_production_traffic: bool | None = attr.field(default=None)
+    deployment_strategy: str | None = attr.field(default=None)
+    bento_deployment_overrides: RunnerBentoDeploymentOverrides | None = attr.field(
         default=None
     )
-    deployment_strategy: t.Optional[str] = attr.field(default=None)
-    bento_deployment_overrides: t.Optional[RunnerBentoDeploymentOverrides] = attr.field(
+    bento_function_overrides: RunnerBentoFunctionOverrides | None = attr.field(
         default=None
     )
-    bento_function_overrides: t.Optional[RunnerBentoFunctionOverrides] = attr.field(
-        default=None
-    )
-    traffic_control: t.Optional[TrafficControlConfig] = attr.field(default=None)
-    deployment_cold_start_wait_timeout: t.Optional[int] = attr.field(default=None)
+    traffic_control: TrafficControlConfig | None = attr.field(default=None)
+    deployment_cold_start_wait_timeout: int | None = attr.field(default=None)
 
 
 @attr.define
 class DeploymentTargetConfig:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    resources: t.Optional[DeploymentTargetResources] = attr.field(
+    resources: DeploymentTargetResources | None = attr.field(
         default=None, converter=dict_options_converter(DeploymentTargetResources)
     )
     kubeResourceUid: str = attr.field(default="")  # empty str
     kubeResourceVersion: str = attr.field(default="")
-    resource_instance: t.Optional[str] = attr.field(default=None)
-    hpa_conf: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
-    envs: t.Optional[t.List[t.Optional[LabelItemSchema]]] = attr.field(default=None)
-    runners: t.Optional[t.Dict[str, DeploymentTargetRunnerConfig]] = attr.field(
+    resource_instance: str | None = attr.field(default=None)
+    hpa_conf: DeploymentTargetHPAConf | None = attr.field(default=None)
+    envs: list[LabelItemSchema | None] | None = attr.field(default=None)
+    runners: dict[str, DeploymentTargetRunnerConfig] | None = attr.field(default=None)
+    access_control: str | None = attr.field(default=None)
+    enable_ingress: bool | None = attr.field(default=None)  # false for enables
+    enable_stealing_traffic_debug_mode: bool | None = attr.field(default=None)
+    enable_debug_mode: bool | None = attr.field(default=None)
+    enable_debug_pod_receive_production_traffic: bool | None = attr.field(default=None)
+    deployment_strategy: str | None = attr.field(default=None)  # Specific
+    bento_deployment_overrides: ApiServerBentoDeploymentOverrides | None = attr.field(
         default=None
     )
-    access_control: t.Optional[str] = attr.field(default=None)
-    enable_ingress: t.Optional[bool] = attr.field(default=None)  # false for enables
-    enable_stealing_traffic_debug_mode: t.Optional[bool] = attr.field(default=None)
-    enable_debug_mode: t.Optional[bool] = attr.field(default=None)
-    enable_debug_pod_receive_production_traffic: t.Optional[bool] = attr.field(
-        default=None
-    )
-    deployment_strategy: t.Optional[str] = attr.field(default=None)  # Specific
-    bento_deployment_overrides: t.Optional[ApiServerBentoDeploymentOverrides] = (
-        attr.field(default=None)
-    )
-    bento_request_overrides: t.Optional[BentoRequestOverrides] = attr.field(
+    bento_request_overrides: BentoRequestOverrides | None = attr.field(
         default=None
     )  # Put into image builder
-    bento_function_overrides: t.Optional[ApiServerBentoFunctionOverrides] = attr.field(
+    bento_function_overrides: ApiServerBentoFunctionOverrides | None = attr.field(
         default=None
     )
-    traffic_control: t.Optional[TrafficControlConfig] = attr.field(default=None)
-    deployment_cold_start_wait_timeout: t.Optional[int] = attr.field(default=None)
+    traffic_control: TrafficControlConfig | None = attr.field(default=None)
+    deployment_cold_start_wait_timeout: int | None = attr.field(default=None)
 
 
 @attr.define
 class ExtraDeploymentOverrides:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    bento_function_overrides: t.Optional[ApiServerBentoFunctionOverrides] = attr.field(
+    bento_function_overrides: ApiServerBentoFunctionOverrides | None = attr.field(
         default=None
     )
-    bento_request_overrides: t.Optional[BentoRequestOverrides] = attr.field(
-        default=None
-    )
+    bento_request_overrides: BentoRequestOverrides | None = attr.field(default=None)
 
 
 @attr.define
 class DeploymentServiceConfig:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    instance_type: t.Optional[str] = attr.field(default=None)
-    scaling: t.Optional[DeploymentTargetHPAConf] = attr.field(default=None)
-    envs: t.Optional[t.List[t.Optional[EnvItemSchema]]] = attr.field(default=None)
-    deployment_strategy: t.Optional[str] = attr.field(default=None)
-    extras: t.Optional[ExtraDeploymentOverrides] = attr.field(default=None)
-    cold_start_timeout: t.Optional[int] = attr.field(default=None)
-    config_overrides: t.Optional[t.Dict[str, t.Any]] = attr.field(factory=dict)
+    instance_type: str | None = attr.field(default=None)
+    scaling: DeploymentTargetHPAConf | None = attr.field(default=None)
+    envs: list[EnvItemSchema | None] | None = attr.field(default=None)
+    deployment_strategy: str | None = attr.field(default=None)
+    extras: ExtraDeploymentOverrides | None = attr.field(default=None)
+    cold_start_timeout: int | None = attr.field(default=None)
+    config_overrides: dict[str, t.Any] | None = attr.field(factory=dict)
 
 
 class DeploymentStatus(Enum):
@@ -367,8 +353,8 @@ class ResourceInstanceConfigSchema:
     group: str
     resources: DeploymentTargetResources
     price: str
-    node_selectors: t.Optional[t.Dict[str, str]] = attr.field(factory=dict)
-    gpu_config: t.Optional[ResourceInstanceGPUConfigSchema] = attr.field(default=None)
+    node_selectors: dict[str, str] | None = attr.field(factory=dict)
+    gpu_config: ResourceInstanceGPUConfigSchema | None = attr.field(default=None)
 
 
 @attr.define

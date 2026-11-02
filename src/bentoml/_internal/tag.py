@@ -4,7 +4,6 @@ import base64
 import logging
 import posixpath
 import re
-import typing as t
 import uuid
 
 import attr
@@ -61,9 +60,9 @@ def validate_tag_str(value: str):
 @attr.define(slots=True)
 class Tag:
     name: str
-    version: t.Optional[str]
+    version: str | None
 
-    def __init__(self, name: str, version: t.Optional[str] = None):
+    def __init__(self, name: str, version: str | None = None):
         lname = name.lower()
         if name != lname:
             logger.warning("[bentoml] Converting '%s' to lowercase: '%s'.", name, lname)
@@ -90,7 +89,9 @@ class Tag:
             return f"{self.name}:{self.version}"
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(name={repr(self.name)}, version={repr(self.version)})"
+        return (
+            f"{self.__class__.__name__}(name={self.name!r}, version={self.version!r})"
+        )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Tag):
@@ -112,13 +113,13 @@ class Tag:
         return hash((self.name, self.version))
 
     @classmethod
-    def from_taglike(cls, taglike: t.Union["Tag", str]) -> "Tag":
+    def from_taglike(cls, taglike: Tag | str) -> Tag:
         if isinstance(taglike, Tag):
             return taglike
         return cls.from_str(taglike)
 
     @classmethod
-    def from_str(cls, tag_str: str) -> "Tag":
+    def from_str(cls, tag_str: str) -> Tag:
         if ":" not in tag_str:
             return cls(tag_str, None)
         try:
@@ -132,7 +133,7 @@ class Tag:
         except ValueError:
             raise BentoMLException(f"Invalid {cls.__name__} {tag_str}")
 
-    def make_new_version(self) -> "Tag":
+    def make_new_version(self) -> Tag:
         if self.version is not None:
             raise ValueError(
                 "tried to run 'make_new_version' on a Tag that already has a version"

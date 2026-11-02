@@ -27,7 +27,7 @@ class CloudClientContext:
     name: str
     endpoint: str
     api_token: str
-    email: t.Optional[str] = attr.field(default=None)
+    email: str | None = attr.field(default=None)
 
     def get_rest_api_client(self) -> RestApiClient:
         return RestApiClient(self.endpoint, self.api_token)
@@ -64,10 +64,10 @@ DEFAULT_ENDPOINT = "https://cloud.bentoml.com"
 
 @attr.define
 class CloudClientConfig:
-    contexts: t.List[CloudClientContext] = attr.field(factory=list)
+    contexts: list[CloudClientContext] = attr.field(factory=list)
     current_context_name: str = attr.field(default=default_context_name)
 
-    def get_context(self, context: t.Optional[str] = None) -> CloudClientContext:
+    def get_context(self, context: str | None = None) -> CloudClientContext:
         from os import environ
 
         if "BENTO_CLOUD_API_KEY" in environ:

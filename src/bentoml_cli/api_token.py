@@ -72,16 +72,16 @@ def list_api_tokens(
             )
         rich.print(table)
     elif output == "json":
-        res: t.List[dict[str, t.Any]] = [t.to_dict() for t in tokens]
+        res: list[dict[str, t.Any]] = [t.to_dict() for t in tokens]
         info = json_mod.dumps(res, indent=2, default=str)
         rich.print(info)
     elif output == "yaml":
-        res: t.List[dict[str, t.Any]] = [t.to_dict() for t in tokens]
+        res: list[dict[str, t.Any]] = [t.to_dict() for t in tokens]
         info = yaml.dump(res, indent=2, sort_keys=False)
         rich.print(Syntax(info, "yaml", background_color="default"))
 
 
-def _parse_expiration(expires_str: str | None) -> "t.Any":
+def _parse_expiration(expires_str: str | None) -> t.Any:
     """Parse expiration string into datetime."""
     from datetime import datetime
     from datetime import timedelta
@@ -298,7 +298,7 @@ def delete_api_token(token_uid: str) -> None:
         _raise_api_token_error(e, "delete")
 
 
-def _raise_api_token_error(err: "BentoMLException", action: str) -> "t.NoReturn":
+def _raise_api_token_error(err: BentoMLException, action: str) -> t.NoReturn:
     from http import HTTPStatus
 
     if err.error_code == HTTPStatus.UNAUTHORIZED:

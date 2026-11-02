@@ -32,14 +32,14 @@ if TYPE_CHECKING:
 
 try:
     import torch
-    import torch.nn as nn
+    from torch import nn
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "fastai requires 'torch' as a dependency. Please follow PyTorch instruction at https://pytorch.org/get-started/locally/ in order to use 'fastai'."
     )
 
 try:
-    import fastai.learner as learner
+    from fastai import learner
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "'fastai' is required in order to use module 'bentoml.fastai'. Install fastai with 'pip install fastai'. For more information, refer to https://docs.fast.ai/#Installing."
@@ -51,7 +51,7 @@ except ImportError:  # pragma: no cover
     raise MissingDependencyException("BentoML only supports fastai v2 onwards.")
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get", "PyTorchTensorContainer"]
+__all__ = ["PyTorchTensorContainer", "get", "get_runnable", "load_model", "save_model"]
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -101,7 +101,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> learner.Learner:
 
        model = bentoml.fastai.load_model("fai_learner")
        results = model.predict("some input")
-    """  # noqa
+    """
 
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
@@ -123,7 +123,7 @@ def save_model(
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
@@ -224,7 +224,7 @@ def save_model(
         return bento_model
 
 
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """

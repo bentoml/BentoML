@@ -300,7 +300,7 @@ else:
     del _LazyLoader, FrameworkImporter
 
     def __getattr__(name: str) -> Any:
-        import bentoml.legacy as legacy
+        from bentoml import legacy
 
         if name in MODULE_ATTRS:
             from importlib import import_module

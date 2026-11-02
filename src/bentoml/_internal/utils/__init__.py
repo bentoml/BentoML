@@ -115,7 +115,7 @@ def normalize_labels_value(label: dict[str, t.Any] | None) -> dict[str, str] | N
     return {k: str(v) for k, v in label.items()}
 
 
-def human_readable_size(size: t.Union[int, float], decimal_places: int = 2) -> str:
+def human_readable_size(size: float, decimal_places: int = 2) -> str:
     for unit in ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]:
         if size < 1024.0 or unit == "PiB":
             break
@@ -140,10 +140,7 @@ def split_with_quotes(
         assert "(" not in sep and ")" not in sep, (
             "sep cannot contain '(' or ')' when using regex"
         )
-        reg = "({quote}[^{quote}]*{quote})|({sep})".format(
-            quote=quote,
-            sep=sep,
-        )
+        reg = f"({quote}[^{quote}]*{quote})|({sep})"
     else:
         reg = "({quote}[^{quote}]*{quote})|({sep})".format(
             quote=re.escape(quote),
@@ -167,7 +164,7 @@ def split_with_quotes(
 def reserve_free_port(
     host: str = "localhost",
     port: int | None = None,
-    prefix: t.Optional[str] = None,
+    prefix: str | None = None,
     max_retry: int = 50,
     enable_so_reuseport: bool = False,
 ) -> t.Iterator[int]:
@@ -255,7 +252,7 @@ def _validate_metadata_entry(entry: MetadataType) -> MetadataType:
         for i, val in enumerate(entry):
             entry[i] = _validate_metadata_entry(val)
     elif isinstance(entry, tuple):
-        entry = tuple((_validate_metadata_entry(x) for x in entry))
+        entry = tuple(_validate_metadata_entry(x) for x in entry)
 
     elif LazyType("numpy", "ndarray").isinstance(entry):
         entry = entry.tolist()  # type: ignore (LazyType)
@@ -315,18 +312,18 @@ class cached_contextmanager:
             container.stop()
     """
 
-    def __init__(self, cache_key_template: t.Optional[str] = None):
+    def __init__(self, cache_key_template: str | None = None):
         self._cache_key_template = cache_key_template
-        self._cache: t.Dict[t.Any, t.Any] = {}
+        self._cache: dict[t.Any, t.Any] = {}
 
     def __call__(
-        self, func: "t.Callable[P, t.Generator[VT, None, None]]"
-    ) -> "t.Callable[P, t.ContextManager[VT]]":
+        self, func: t.Callable[P, t.Generator[VT, None, None]]
+    ) -> t.Callable[P, t.ContextManager[VT]]:
         func_m = contextlib.contextmanager(func)
 
         @contextlib.contextmanager
         @functools.wraps(func)
-        def _func(*args: "P.args", **kwargs: "P.kwargs") -> t.Any:
+        def _func(*args: P.args, **kwargs: P.kwargs) -> t.Any:
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             bound_args.apply_defaults()
             if self._cache_key_template:

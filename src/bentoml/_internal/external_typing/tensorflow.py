@@ -49,13 +49,13 @@ except ImportError:
 class SignatureMap(t.Mapping[str, t.Any], Trackable):
     """A collection of SavedModel signatures."""
 
-    _signatures: t.Dict[str, t.Union[ConcreteFunction, RestoredFunction, Function]]
+    _signatures: dict[str, ConcreteFunction | RestoredFunction | Function]
 
     def __init__(self) -> None: ...
 
     def __getitem__(
         self, key: str
-    ) -> t.Union[ConcreteFunction, RestoredFunction, Function]: ...
+    ) -> ConcreteFunction | RestoredFunction | Function: ...
 
     def __iter__(self) -> t.Iterator[str]: ...
 
@@ -80,28 +80,28 @@ UnionTensorSpec = t.Union[
 ]
 
 # TODO(aarnphm): Specify types instead of t.Any
-TensorSignature = t.Tuple[TensorSpec, bool, t.Optional[t.Any]]
-InputSignature = t.Tuple[TensorSignature, t.Dict[str, TypeSpec]]
+TensorSignature = tuple[TensorSpec, bool, t.Any | None]
+InputSignature = tuple[TensorSignature, dict[str, TypeSpec]]
 
 # This denotes all Keras Model API
 KerasModel = t.Union[Model, Sequential]
 
 __all__ = [
-    "EagerTensor",
-    "CastableTensorType",
-    "TensorLike",
-    "InputSignature",
-    "TensorSignature",
-    "UnionTensorSpec",
-    "Trackable",
     "AutoTrackable",
+    "CastableTensorType",
     "ConcreteFunction",
-    "RestoredFunction",
+    "EagerTensor",
     "FunctionSpec",
-    "SignatureMap",
+    "InputSignature",
+    "KerasModel",
     "Module",
-    "TypeSpec",
+    "RestoredFunction",
     "SaveOptions",
     "Session",
-    "KerasModel",
+    "SignatureMap",
+    "TensorLike",
+    "TensorSignature",
+    "Trackable",
+    "TypeSpec",
+    "UnionTensorSpec",
 ]

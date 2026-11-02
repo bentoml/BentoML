@@ -48,7 +48,7 @@ def main(
     bento_identifier: str,
     runner_name: str,
     fd: int,
-    working_dir: t.Optional[str],
+    working_dir: str | None,
     no_access_log: bool,
     worker_id: int,
     timeout: int | None,
@@ -74,7 +74,7 @@ def main(
         env_map: dict[str, dict[str, t.Any]] = json.loads(worker_env_map)
         worker_key = str(worker_id - 1)  # the worker ID is 1-based
         assert worker_key in env_map, (
-            f"worker_id {repr(worker_key)} not found in worker_env_map: {worker_env_map}"
+            f"worker_id {worker_key!r} not found in worker_env_map: {worker_env_map}"
         )
         os.environ.update(env_map[worker_key])
 

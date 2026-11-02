@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import datetime
 import shutil
 import typing as t
@@ -62,12 +63,12 @@ class Store(t.Generic[Item]):
 
     """
 
-    _item_type: t.Type[Item]
+    _item_type: type[Item]
 
     def __init__(self, base_path: PathType):
         self._path = Path(base_path)
 
-    def list(self, tag: Tag | str | None = None) -> t.List[Item]:
+    def list(self, tag: Tag | str | None = None) -> builtins.list[Item]:
         if not tag:
             # Return all items in the store
             return [

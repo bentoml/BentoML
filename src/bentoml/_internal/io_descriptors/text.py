@@ -114,7 +114,7 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
             sample = sample.decode("utf-8")
         return sample
 
-    def input_type(self) -> t.Type[str]:
+    def input_type(self) -> type[str]:
         return str
 
     def to_spec(self) -> dict[str, t.Any]:

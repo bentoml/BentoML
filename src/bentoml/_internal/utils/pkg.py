@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.metadata
 import importlib.util
 import subprocess
+from functools import cache
 from functools import lru_cache
 from importlib.metadata import PackageNotFoundError
 from pathlib import Path
@@ -13,17 +14,17 @@ from packaging.version import Version
 
 __all__ = [
     "PackageNotFoundError",
-    "pkg_version_info",
-    "get_pkg_version",
-    "source_locations",
     "find_spec",
+    "get_pkg_version",
+    "pkg_version_info",
+    "source_locations",
 ]
 
 get_pkg_version = importlib.metadata.version
 find_spec = importlib.util.find_spec
 
 
-@lru_cache(maxsize=None)
+@cache
 def pkg_version_info(pkg_name: str | ModuleType) -> tuple[int, int, int]:
     if isinstance(pkg_name, ModuleType):
         pkg_name = pkg_name.__name__

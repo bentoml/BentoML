@@ -9,8 +9,8 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 from packaging import version
+from torch import nn
 
 logger = logging.getLogger(__name__)
 

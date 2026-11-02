@@ -8,6 +8,7 @@ import pathlib
 import sys
 import typing as t
 from typing import ClassVar
+from typing import get_args
 
 from pydantic import BaseModel
 from pydantic import Field
@@ -15,7 +16,6 @@ from pydantic import TypeAdapter
 from pydantic import create_model
 from pydantic._internal._typing_extra import is_annotated
 from starlette.responses import Response
-from typing_extensions import get_args
 
 from bentoml._internal.service.openapi.specification import Schema
 
@@ -61,10 +61,10 @@ class IterableResponse(Response):
     def __init__(
         self,
         content: t.Iterable[memoryview | bytes],
-        headers: t.Optional[t.Mapping[str, str]] = None,
+        headers: t.Mapping[str, str] | None = None,
         media_type: str | None = None,
         status_code: int = 200,
-        background: t.Optional[BackgroundTask] = None,
+        background: BackgroundTask | None = None,
     ) -> None:
         self.status_code = status_code
         if media_type is not None:
@@ -90,8 +90,8 @@ class IterableResponse(Response):
 
 
 class IOMixin:
-    multipart_fields: ClassVar[t.List[str]]
-    media_type: ClassVar[t.Optional[str]] = None
+    multipart_fields: ClassVar[list[str]]
+    media_type: ClassVar[str | None] = None
 
     @classmethod
     def model_json_schema(cls, *args: t.Any, **kwargs: t.Any) -> dict[str, t.Any]:
@@ -210,7 +210,7 @@ class IOMixin:
     @classmethod
     async def from_http_request(cls, request: Request, serde: Serde) -> IODescriptor:
         """Parse a input model from HTTP request"""
-        return await serde.parse_request(request, t.cast(t.Type[IODescriptor], cls))
+        return await serde.parse_request(request, t.cast(type[IODescriptor], cls))
 
     @classmethod
     async def to_http_response(cls, obj: t.Any, serde: Serde) -> Response:
@@ -376,10 +376,10 @@ class IODescriptor(IOMixin, BaseModel):
                 )
             if param.kind == param.VAR_KEYWORD:
                 name = KWARGS
-                annotation = t.Dict[str, t.Any]
+                annotation = dict[str, t.Any]
             elif param.kind == param.VAR_POSITIONAL:
                 name = ARGS
-                annotation = t.List[annotation]
+                annotation = list[annotation]
             default = param.default
             if default is param.empty:
                 default = Field()
@@ -404,7 +404,7 @@ class IODescriptor(IOMixin, BaseModel):
                 typ_.media_type = content_type.content_type if content_type else None
                 return typ_
             return t.cast(
-                t.Type[IODescriptor],
+                type[IODescriptor],
                 create_model(
                     "Input", __module__=func.__module__, __base__=IODescriptor, **fields
                 ),  # type: ignore
@@ -504,7 +504,7 @@ def ensure_io_descriptor(
     if inspect.isclass(typ_) and lenient_issubclass(typ_, BaseModel):
         if not issubclass(typ_, IOMixin):
             return t.cast(
-                t.Type[IODescriptor],
+                type[IODescriptor],
                 create_model(f"{type_name}IODescriptor", __base__=(IOMixin, typ_)),
             )
         return typ_
@@ -515,6 +515,6 @@ def ensure_io_descriptor(
         extras = {"root": (typ_, root_default)}
 
     return t.cast(
-        t.Type[IODescriptor],
+        type[IODescriptor],
         create_model(f"{type_name}IODescriptor", __base__=IORootModel[typ_], **extras),
     )

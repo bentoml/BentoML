@@ -8,8 +8,8 @@ from bentoml._internal.server.runner_app import stream_encoder
 from bentoml.io import SSE
 
 if TYPE_CHECKING:
-    from typing import AsyncGenerator
-    from typing import AsyncIterator
+    from collections.abc import AsyncGenerator
+    from collections.abc import AsyncIterator
 
 
 async def reverse_proxy(

@@ -102,7 +102,7 @@ if t.TYPE_CHECKING:
     )
 
 
-__all__ = ["load_model", "import_model", "save_model", "get_runnable", "get"]
+__all__ = ["get", "get_runnable", "import_model", "load_model", "save_model"]
 
 _object_setattr = object.__setattr__
 
@@ -193,7 +193,7 @@ class ModelOptions(BaseModelOptions):
         validator=attr.validators.optional(_validate_pipeline_type),
         default=None,
     )
-    kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
+    kwargs: dict[str, t.Any] = attr.field(factory=dict)
 
     @staticmethod
     def process_task_mapping(
@@ -626,7 +626,7 @@ def import_model(
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
     **extra_hf_hub_kwargs: dict[str, t.Any],
 ) -> bentoml.Model:
@@ -716,7 +716,7 @@ def import_model(
 
     if sync_with_hub_version:
         if tag.version is not None:
-            logger.warn(
+            logger.warning(
                 f"sync_with_hub_version is True, user provided version {tag.version} may be overridden by huggingface hub's commit hash"
             )
 
@@ -931,7 +931,7 @@ def save_model(
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
     **save_kwargs: t.Any,
 ) -> bentoml.Model:
@@ -994,7 +994,7 @@ def save_model(
         model = AutoModelForCausalLM.from_pretrained("distilgpt2")
         generator = pipeline(task="text-generation", model=model, tokenizer=tokenizer)
         bento_model = bentoml.transformers.save_model("text-generation-pipeline", generator)
-    """  # noqa
+    """
     # backward compatibility
     if pipeline is not None:
         warnings.warn(

@@ -231,12 +231,12 @@ class AsyncGrpcClient(AsyncClient):
     @cached_property
     def _rpc_methods(
         self,
-    ) -> dict[str, t.Callable[..., t.Awaitable["Response"]]]:
+    ) -> dict[str, t.Callable[..., t.Awaitable[Response]]]:
         def make_async_fn(
             method_name: str,
             input_type: t.Any,
             output_type: t.Any,
-        ) -> t.Callable[..., t.Awaitable["Response"]]:
+        ) -> t.Callable[..., t.Awaitable[Response]]:
             rpc = self.channel.unary_unary(
                 method_name,
                 request_serializer=input_type.SerializeToString,
@@ -244,9 +244,9 @@ class AsyncGrpcClient(AsyncClient):
             )
 
             def fn(
-                channel_kwargs: t.Dict[str, t.Any],
-                method_kwargs: t.Dict[str, t.Any],
-            ) -> t.Awaitable["Response"]:
+                channel_kwargs: dict[str, t.Any],
+                method_kwargs: dict[str, t.Any],
+            ) -> t.Awaitable[Response]:
                 return t.cast(
                     t.Awaitable["Response"],
                     rpc(input_type(**method_kwargs), **channel_kwargs),
@@ -272,7 +272,7 @@ class AsyncGrpcClient(AsyncClient):
     @staticmethod
     def _split_channel_args(
         **kwargs: t.Any,
-    ) -> tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+    ) -> tuple[dict[str, t.Any], dict[str, t.Any]]:
         channel_kwarg_names = (
             "timeout",
             "metadata",
@@ -280,8 +280,8 @@ class AsyncGrpcClient(AsyncClient):
             "wait_for_ready",
             "compression",
         )
-        channel_kwargs: t.Dict[str, t.Any] = {}
-        other_kwargs: t.Dict[str, t.Any] = {}
+        channel_kwargs: dict[str, t.Any] = {}
+        other_kwargs: dict[str, t.Any] = {}
         for k, v in kwargs.items():
             if k in channel_kwarg_names:
                 channel_kwargs[k] = v
@@ -588,12 +588,12 @@ class SyncGrpcClient(SyncClient):
         }
 
     @cached_property
-    def _rpc_methods(self) -> dict[str, t.Callable[..., "Response"]]:
+    def _rpc_methods(self) -> dict[str, t.Callable[..., Response]]:
         def make_sync_fn(
             method_name: str,
             input_type: t.Any,
             output_type: t.Any,
-        ) -> t.Callable[..., "Response"]:
+        ) -> t.Callable[..., Response]:
             rpc = self.channel.unary_unary(
                 method_name,
                 request_serializer=input_type.SerializeToString,
@@ -601,8 +601,8 @@ class SyncGrpcClient(SyncClient):
             )
 
             def fn(
-                channel_kwargs: t.Dict[str, t.Any],
-                method_kwargs: t.Dict[str, t.Any],
+                channel_kwargs: dict[str, t.Any],
+                method_kwargs: dict[str, t.Any],
             ) -> Response:
                 return t.cast(
                     "Response",
@@ -629,7 +629,7 @@ class SyncGrpcClient(SyncClient):
     @staticmethod
     def _split_channel_args(
         **kwargs: t.Any,
-    ) -> tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+    ) -> tuple[dict[str, t.Any], dict[str, t.Any]]:
         channel_kwarg_names = (
             "timeout",
             "metadata",
@@ -637,8 +637,8 @@ class SyncGrpcClient(SyncClient):
             "wait_for_ready",
             "compression",
         )
-        channel_kwargs: t.Dict[str, t.Any] = {}
-        other_kwargs: t.Dict[str, t.Any] = {}
+        channel_kwargs: dict[str, t.Any] = {}
+        other_kwargs: dict[str, t.Any] = {}
         for k, v in kwargs.items():
             if k in channel_kwarg_names:
                 channel_kwargs[k] = v

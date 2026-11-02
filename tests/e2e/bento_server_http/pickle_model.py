@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class PickleModel:
-    def predict_file(self, input_files: t.List[FileLike[bytes]]) -> t.List[bytes]:
+    def predict_file(self, input_files: list[FileLike[bytes]]) -> list[bytes]:
         return [f.read() for f in input_files]
 
     @classmethod

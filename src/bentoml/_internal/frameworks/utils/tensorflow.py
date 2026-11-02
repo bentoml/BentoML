@@ -40,10 +40,10 @@ TENSOR_CLASS_NAMES = (
 
 __all__ = [
     "get_tf_version",
-    "tf_function_wrapper",
-    "pretty_format_restored_model",
-    "is_gpu_available",
     "hook_loaded_model",
+    "is_gpu_available",
+    "pretty_format_restored_model",
+    "tf_function_wrapper",
 ]
 
 TF_FUNCTION_WARNING = "Due to TensorFlow's internal mechanism, only methods wrapped under '@tf.function' decorator and the Keras default function '__call__(inputs, training=False)' can be restored after a save & load. You can test the restored model object via 'bentoml.tensorflow.load_model(tag)'."
@@ -103,9 +103,9 @@ def get_tf_version() -> str:
 
 
 def check_tensor_spec(
-    tensor: "tf_ext.TensorLike",
-    tensor_spec: t.Union[str, t.Tuple[str, ...], t.List[str], "tf_ext.UnionTensorSpec"],
-    class_name: t.Optional[str] = None,
+    tensor: tf_ext.TensorLike,
+    tensor_spec: str | tuple[str, ...] | list[str] | tf_ext.UnionTensorSpec,
+    class_name: str | None = None,
 ) -> bool:
     """
     :code:`isinstance` wrapper to check spec for a given tensor.
@@ -137,7 +137,7 @@ def check_tensor_spec(
         return LazyType["tf_ext.TensorSpec"](class_name).isinstance(tensor)
 
 
-def normalize_spec(value: t.Any) -> "tf_ext.TypeSpec":
+def normalize_spec(value: t.Any) -> tf_ext.TypeSpec:
     """normalize tensor spec"""
     if not check_tensor_spec(value, TENSOR_CLASS_NAMES):
         return value
@@ -184,7 +184,7 @@ def cast_py_args_to_tf_function_args(
             f"Expected {len(signature)} arguments, got {len(bound_args.arguments)}"
         )
 
-    trans_args: t.Tuple[t.Any, ...] = tuple(
+    trans_args: tuple[t.Any, ...] = tuple(
         cast_tensor_by_spec(arg, spec)
         for arg, spec in zip(bound_args.arguments.values(), signature)
     )
@@ -230,33 +230,29 @@ def get_input_signatures(
     func: tf_ext.DecoratedFunction,
 ) -> list[tuple[tf_ext.InputSignature, ...]]:
     if hasattr(func, "function_spec"):  # RestoredFunction
-        func_spec: "tf_ext.FunctionSpec" = getattr(func, "function_spec")
-        input_spec: "tf_ext.TensorSignature" = getattr(func_spec, "input_signature")
+        func_spec: tf_ext.FunctionSpec = func.function_spec
+        input_spec: tf_ext.TensorSignature = func_spec.input_signature
         if input_spec is not None:
             return ((input_spec, {}),)
         else:
-            concrete_func: t.List["tf_ext.ConcreteFunction"] = getattr(
-                func, "concrete_functions"
-            )
+            concrete_func: list[tf_ext.ConcreteFunction] = func.concrete_functions
             return tuple(
                 s for conc in concrete_func for s in get_input_signatures(conc)
             )
     else:
-        sis: "tf_ext.InputSignature" = getattr(func, "structured_input_signature")
+        sis: tf_ext.InputSignature = func.structured_input_signature
         if sis is not None:
             return (sis,)
         # NOTE: we can use internal `_arg_keywords` here.
         # Seems that this is a attributes of all ConcreteFunction and
         # does seem safe to access and use externally.
-        if getattr(func, "_arg_keywords") is not None:
+        if func._arg_keywords is not None:
             return (
                 (
                     tuple(),
                     {
                         k: normalize_spec(v)
-                        for k, v in zip(
-                            getattr(func, "_arg_keywords"), getattr(func, "inputs")
-                        )
+                        for k, v in zip(func._arg_keywords, func.inputs)
                     },
                 ),
             )
@@ -265,33 +261,31 @@ def get_input_signatures(
 
 def get_output_signature(
     func: tf_ext.DecoratedFunction,
-) -> tf_ext.ConcreteFunction | t.Tuple[t.Any, ...] | dict[str, tf_ext.TypeSpec]:
+) -> tf_ext.ConcreteFunction | tuple[t.Any, ...] | dict[str, tf_ext.TypeSpec]:
     if hasattr(func, "function_spec"):  # for RestoredFunction
         # assume all concrete functions have same signature
-        concrete_function_wrapper: "tf_ext.ConcreteFunction" = getattr(
-            func, "concrete_functions"
-        )[0]
+        concrete_function_wrapper: tf_ext.ConcreteFunction = func.concrete_functions[0]
         return get_output_signature(concrete_function_wrapper)
 
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
-        if getattr(func, "structured_outputs") is not None:
-            outputs = getattr(func, "structured_outputs")
-            if LazyType[t.Dict[str, "tf_ext.TensorSpec"]](dict).isinstance(outputs):
+        if func.structured_outputs is not None:
+            outputs = func.structured_outputs
+            if LazyType[dict[str, "tf_ext.TensorSpec"]](dict).isinstance(outputs):
                 return {k: normalize_spec(v) for k, v in outputs.items()}
             return outputs
         else:
-            outputs: t.Tuple["tf_ext.TensorSpec"] = getattr(func, "outputs")
+            outputs: tuple[tf_ext.TensorSpec] = func.outputs
             return tuple(normalize_spec(v) for v in outputs)
 
     return tuple()
 
 
-def get_arg_names(func: "tf_ext.DecoratedFunction") -> t.Optional[t.List[str]]:
+def get_arg_names(func: tf_ext.DecoratedFunction) -> list[str] | None:
     if hasattr(func, "function_spec"):  # for RestoredFunction
-        func_spec: "tf_ext.FunctionSpec" = getattr(func, "function_spec")
-        return getattr(func_spec, "arg_names")
+        func_spec: tf_ext.FunctionSpec = func.function_spec
+        return func_spec.arg_names
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
-        return getattr(func, "_arg_keywords")
+        return func._arg_keywords
     return list()
 
 
@@ -306,10 +300,10 @@ def get_restorable_functions(
     }
 
 
-def get_serving_default_function(m: "tf_ext.Trackable") -> "tf_ext.ConcreteFunction":
+def get_serving_default_function(m: tf_ext.Trackable) -> tf_ext.ConcreteFunction:
     if not hasattr(m, "signatures"):
-        raise EnvironmentError(f"{type(m)} is not a valid SavedModel format.")
-    signatures: "tf_ext.SignatureMap" = getattr(m, "signatures")
+        raise OSError(f"{type(m)} is not a valid SavedModel format.")
+    signatures: tf_ext.SignatureMap = m.signatures
     func = signatures.get(tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)  # type: ignore
     if func is not None:
         return func
@@ -320,7 +314,7 @@ def get_serving_default_function(m: "tf_ext.Trackable") -> "tf_ext.ConcreteFunct
     )
 
 
-def _pretty_format_function_call(base: str, name: str, arg_names: t.Tuple[t.Any]):
+def _pretty_format_function_call(base: str, name: str, arg_names: tuple[t.Any]):
     if arg_names:
         part_sigs = ", ".join(f"{k}" for k in arg_names)
     else:
@@ -331,9 +325,9 @@ def _pretty_format_function_call(base: str, name: str, arg_names: t.Tuple[t.Any]
     return f"{base}.{name}({part_sigs})"
 
 
-def _pretty_format_positional(positional: t.Optional["tf_ext.TensorSignature"]) -> str:
+def _pretty_format_positional(positional: tf_ext.TensorSignature | None) -> str:
     if positional is not None:
-        return f"Positional arguments ({len(positional)} total):\n    {'    * '.join(str(a) for a in positional)}"  # noqa
+        return f"Positional arguments ({len(positional)} total):\n    {'    * '.join(str(a) for a in positional)}"
     return "No positional arguments.\n"
 
 
@@ -348,9 +342,9 @@ def pretty_format_function(
     arg_names = get_arg_names(function)
 
     if hasattr(function, "function_spec"):
-        arg_names = getattr(function, "function_spec").arg_names
+        arg_names = function.function_spec.arg_names
     else:
-        arg_names = getattr(function, "_arg_keywords")
+        arg_names = function._arg_keywords
 
     ret += _pretty_format_function_call(obj, name, arg_names)
     ret += "\n------------\n"
@@ -368,7 +362,7 @@ def pretty_format_function(
     return ret
 
 
-def pretty_format_restored_model(model: "tf_ext.AutoTrackable") -> str:
+def pretty_format_restored_model(model: tf_ext.AutoTrackable) -> str:
     part_functions = ""
 
     restored_functions = get_restorable_functions(model)
@@ -425,9 +419,9 @@ class tf_function_wrapper:  # pragma: no cover
     def __init__(
         self,
         origin_func: t.Callable[..., t.Any],
-        arg_names: t.Optional[t.List[str]] = None,
-        arg_specs: t.Optional[t.Tuple["tf_ext.TensorSpec"]] = None,
-        kwarg_specs: t.Optional[t.Dict[str, "tf_ext.TensorSpec"]] = None,
+        arg_names: list[str] | None = None,
+        arg_specs: tuple[tf_ext.TensorSpec] | None = None,
+        kwarg_specs: dict[str, tf_ext.TensorSpec] | None = None,
     ) -> None:
         self.origin_func = origin_func
         self.arg_names = arg_names
@@ -435,9 +429,7 @@ class tf_function_wrapper:  # pragma: no cover
         self.kwarg_specs = {k: v for k, v in zip(arg_names or [], arg_specs or [])}
         self.kwarg_specs.update(kwarg_specs or {})
 
-    def __call__(
-        self, *args: "tf_ext.TensorLike", **kwargs: "tf_ext.TensorLike"
-    ) -> t.Any:
+    def __call__(self, *args: tf_ext.TensorLike, **kwargs: tf_ext.TensorLike) -> t.Any:
         if self.arg_specs is None and self.kwarg_specs is None:
             return self.origin_func(*args, **kwargs)
 
@@ -453,7 +445,7 @@ class tf_function_wrapper:  # pragma: no cover
         # INFO:
         # how signature with kwargs works?
         # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
-        transformed_args: t.Tuple[t.Any, ...] = tuple(
+        transformed_args: tuple[t.Any, ...] = tuple(
             cast_tensor_by_spec(arg, spec)
             for arg, spec in zip(args, self.arg_specs)  # type: ignore[arg-type]
         )

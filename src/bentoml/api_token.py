@@ -4,6 +4,7 @@ User facing python APIs for API token management
 
 from __future__ import annotations
 
+import builtins
 import typing as t
 from datetime import datetime
 
@@ -20,8 +21,8 @@ if t.TYPE_CHECKING:
 @inject
 def list(
     search: str | None = None,
-    _cloud_client: "BentoCloudClient" = Provide[BentoMLContainer.bentocloud_client],
-) -> t.List[ApiToken]:
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
+) -> builtins.list[ApiToken]:
     """List all API tokens.
 
     Args:
@@ -43,9 +44,9 @@ def list(
 def create(
     name: str,
     description: str | None = None,
-    scopes: t.List[str] | None = None,
+    scopes: builtins.list[str] | None = None,
     expired_at: datetime | None = None,
-    _cloud_client: "BentoCloudClient" = Provide[BentoMLContainer.bentocloud_client],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> ApiToken:
     """Create a new API token.
 
@@ -85,7 +86,7 @@ def create(
 @inject
 def get(
     token_uid: str,
-    _cloud_client: "BentoCloudClient" = Provide[BentoMLContainer.bentocloud_client],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> ApiToken | None:
     """Get an API token by UID.
 
@@ -107,7 +108,7 @@ def get(
 @inject
 def delete(
     token_uid: str,
-    _cloud_client: "BentoCloudClient" = Provide[BentoMLContainer.bentocloud_client],
+    _cloud_client: BentoCloudClient = Provide[BentoMLContainer.bentocloud_client],
 ) -> None:
     """Delete an API token.
 
@@ -121,4 +122,4 @@ def delete(
     _cloud_client.api_token.delete(token_uid=token_uid)
 
 
-__all__ = ["create", "get", "list", "delete"]
+__all__ = ["create", "delete", "get", "list"]

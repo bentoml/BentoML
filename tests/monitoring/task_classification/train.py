@@ -5,7 +5,7 @@ from sklearn import svm
 
 import bentoml
 
-logging.basicConfig(level=logging.WARN)
+logging.basicConfig(level=logging.WARNING)
 
 if __name__ == "__main__":
     # Load training data

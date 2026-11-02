@@ -79,6 +79,19 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
         schema_inputs, ref_template=REF_TEMPLATE
     )
     definitions = definitions.get("$defs", {})
+    mounted_schemas = schema_components.get("schemas", {})
+    if definitions.keys() & mounted_schemas.keys():
+        # Mounted applications generate schemas independently. Keep their names intact.
+        prefix = "BentoML__"
+        while any(name.startswith(prefix) for name in mounted_schemas):
+            prefix = "_" + prefix
+        io_schemas, json_schema = TypeAdapter.json_schemas(
+            schema_inputs, ref_template=REF_TEMPLATE.format(model=prefix + "{model}")
+        )
+        definitions = {
+            prefix + name: schema
+            for name, schema in json_schema.get("$defs", {}).items()
+        }
     deep_merge(schema_components, generate_service_components(definitions))
 
     return OpenAPISpecification(

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pydantic
 import pytest
+from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 import bentoml
@@ -155,3 +156,55 @@ def test_root_request_and_response_schemas_remain_unwrapped():
     assert request["root_input"] is True
     assert response["type"] == "array"
     assert response["items"]["type"] == "integer"
+
+
+class Input(pydantic.BaseModel):
+    fastapi_value: str
+
+
+mounted_app = FastAPI()
+
+
+@mounted_app.post("/echo")
+def mounted_echo(value: Input) -> Input:
+    return value
+
+
+@bentoml.service(metrics={"enabled": False})
+@bentoml.asgi_app(mounted_app, path="/mounted")
+class MountedPredictionService:
+    @bentoml.api
+    def predict(self, score: int) -> SharedPredictions:
+        return SharedPredictions(prediction=SharedPrediction(score=score))
+
+
+def test_mounted_application_components_are_not_overwritten():
+    with TestClient(MountedPredictionService.to_asgi()) as client:
+        response = client.post("/mounted/echo", json={"fastapi_value": "hello"})
+        assert response.status_code == 200
+        assert response.json() == {"fastapi_value": "hello"}
+        response = client.post("/predict", json={"score": 3})
+        assert response.status_code == 200
+        assert response.json() == {"prediction": {"score": "3%", "label": "positive"}}
+        schema_response = client.get("/docs.json")
+        assert schema_response.status_code == 200
+        schema = schema_response.json()
+
+    mounted_operation = schema["paths"]["/mounted/echo"]["post"]
+    request_schema = mounted_operation["requestBody"]["content"]["application/json"][
+        "schema"
+    ]
+    component = schema["components"]["schemas"][
+        request_schema["$ref"].rsplit("/", 1)[1]
+    ]
+    assert component["properties"]["fastapi_value"]["type"] == "string"
+    operation = schema["paths"]["/predict"]["post"]
+    request_schema = operation["requestBody"]["content"]["application/json"]["schema"]
+    assert request_schema["properties"]["score"]["type"] == "integer"
+    response_schema = operation["responses"]["200"]["content"]["application/json"][
+        "schema"
+    ]
+    output_ref = response_schema["properties"]["prediction"]["$ref"]
+    output = schema["components"]["schemas"][output_ref.rsplit("/", 1)[1]]
+    assert output["properties"]["score"]["type"] == "string"
+    assert output["properties"]["label"]["readOnly"] is True

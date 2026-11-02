@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import typing as t
+from copy import deepcopy
 from http import HTTPStatus
 
 import pydantic
+from attrs import fields_dict
+from pydantic import TypeAdapter
 
 from bentoml._internal.service.openapi import APP_TAG
 from bentoml._internal.service.openapi import INFRA_TAG
@@ -28,7 +31,9 @@ from bentoml.exceptions import NotFound
 
 if t.TYPE_CHECKING:
     import fastapi as fastapi
+    from pydantic.json_schema import JsonSchemaMode
 
+    from ..io_models import IODescriptor
     from .factory import Service
 
 REF_TEMPLATE = "#/components/schemas/{model}"
@@ -60,7 +65,34 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
             if "components" in openapi:
                 deep_merge(schema_components, openapi["components"])
 
-    deep_merge(schema_components, generate_service_components(svc))
+    schema_inputs: list[
+        tuple[type[IODescriptor], JsonSchemaMode, TypeAdapter[t.Any]]
+    ] = []
+    for api in svc.apis.values():
+        schema_inputs.extend(
+            [
+                (api.input_spec, "validation", api.input_spec.schema_adapter()),
+                (api.output_spec, "serialization", api.output_spec.schema_adapter()),
+            ]
+        )
+    io_schemas, definitions = TypeAdapter.json_schemas(
+        schema_inputs, ref_template=REF_TEMPLATE
+    )
+    definitions = definitions.get("$defs", {})
+    mounted_schemas = schema_components.get("schemas", {})
+    if definitions.keys() & mounted_schemas.keys():
+        # Mounted applications generate schemas independently. Keep their names intact.
+        prefix = "BentoML__"
+        while any(name.startswith(prefix) for name in mounted_schemas):
+            prefix = "_" + prefix
+        io_schemas, json_schema = TypeAdapter.json_schemas(
+            schema_inputs, ref_template=REF_TEMPLATE.format(model=prefix + "{model}")
+        )
+        definitions = {
+            prefix + name: schema
+            for name, schema in json_schema.get("$defs", {}).items()
+        }
+    deep_merge(schema_components, generate_service_components(definitions))
 
     return OpenAPISpecification(
         openapi=openapi_version,
@@ -77,7 +109,7 @@ def generate_spec(svc: Service[t.Any], *, openapi_version: str = "3.0.2"):
             # setup infra endpoints
             **make_infra_endpoints(),
             # setup inference endpoints
-            **_get_api_routes(svc),
+            **_get_api_routes(svc, io_schemas, definitions),
             **mounted_app_paths,
         },
     )
@@ -114,19 +146,29 @@ error_responses = {
 }
 
 
-def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
+def _get_api_routes(
+    svc: Service[t.Any],
+    io_schemas: dict[tuple[type[IODescriptor], JsonSchemaMode], dict[str, t.Any]],
+    definitions: dict[str, t.Any],
+) -> dict[str, PathItem]:
     routes: dict[str, PathItem] = {}
     for api in svc.apis.values():
+        input_schema = io_schemas[(api.input_spec, "validation")]
+        output_schema = io_schemas[(api.output_spec, "serialization")]
+        if "$ref" in input_schema:
+            input_schema = definitions[input_schema["$ref"].rsplit("/", 1)[1]]
+        if "$ref" in output_schema:
+            output_schema = definitions[output_schema["$ref"].rsplit("/", 1)[1]]
         routes[api.route] = PathItem(
             post={
                 "responses": {
-                    HTTPStatus.OK.value: api.openapi_response(),
+                    HTTPStatus.OK.value: api.openapi_response(deepcopy(output_schema)),
                     **error_responses,
                 },
                 "tags": [APP_TAG.name],
                 "x-bentoml-name": api.name,
                 "description": api.doc or "",
-                "requestBody": api.openapi_request(),
+                "requestBody": api.openapi_request(deepcopy(input_schema)),
                 "operationId": f"{svc.name}__{api.name}",
             },
         )
@@ -154,7 +196,9 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
             routes[f"{api.route}/get"] = PathItem(
                 get={
                     "responses": {
-                        HTTPStatus.OK.value: api.openapi_response(),
+                        HTTPStatus.OK.value: api.openapi_response(
+                            deepcopy(output_schema)
+                        ),
                         **error_responses,
                     },
                     "tags": [APP_TAG.name],
@@ -181,7 +225,7 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
                     "x-bentoml-name": f"{api.name}_submit",
                     "description": f"Submit a new task of {api.name}",
                     "operationId": f"{svc.name}__{api.name}_submit",
-                    "requestBody": api.openapi_request(),
+                    "requestBody": api.openapi_request(deepcopy(input_schema)),
                 }
             )
             routes[f"{api.route}/retry"] = PathItem(
@@ -227,14 +271,16 @@ def _get_api_routes(svc: Service[t.Any]) -> dict[str, PathItem]:
     return routes
 
 
-def generate_service_components(svc: Service[t.Any]) -> dict[str, t.Any]:
-    components: dict[str, Schema] = {}
-    for name, api in svc.apis.items():
-        input_components = api.input_spec.openapi_components(name)
-        components.update(input_components)
-        output_components = api.output_spec.openapi_components(name)
-        components.update(output_components)
-
+def generate_service_components(
+    definitions: dict[str, t.Any],
+) -> dict[str, t.Any]:
+    schema_fields = fields_dict(Schema)
+    components = {
+        name: Schema(
+            **{key: value for key, value in schema.items() if key in schema_fields}
+        )
+        for name, schema in definitions.items()
+    }
     components["TaskStatusResponse"] = task_status_schema
     # merge exception at last
     components.update(exception_components_schema())

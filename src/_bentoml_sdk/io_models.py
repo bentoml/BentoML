@@ -105,7 +105,9 @@ class IOMixin:
         from .service.openapi import REF_TEMPLATE
 
         assert issubclass(cls, BaseModel)
-        json_schema = cls.model_json_schema(ref_template=REF_TEMPLATE)
+        json_schema = cls.model_json_schema(
+            ref_template=REF_TEMPLATE, mode="serialization"
+        )
         defs = json_schema.pop("$defs", None)
         components: dict[str, Schema] = {}
         if not issubclass(cls, IORootModel):

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
+import httpx
 import pydantic
+import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -132,3 +135,38 @@ def test_service_with_path_prefix():
 
         assert resp.status_code == 200
         assert resp.text == "pong"
+
+
+@pytest.mark.asyncio
+async def test_cancelled_request_cleans_up_api():
+    entered = asyncio.Event()
+    release = asyncio.Event()
+    cleaned = asyncio.Event()
+
+    @bentoml.service(metrics={"enabled": False}, traffic={"timeout": 60})
+    class SlowService:
+        @bentoml.api
+        async def wait(self) -> str:
+            entered.set()
+            try:
+                await release.wait()
+                return "done"
+            finally:
+                await asyncio.sleep(0)
+                cleaned.set()
+
+    app = SlowService.to_asgi()
+    async with app.router.lifespan_context(app):
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app), base_url="http://test"
+        ) as client:
+            request = asyncio.create_task(client.post("/wait", json={}))
+            try:
+                await asyncio.wait_for(entered.wait(), 2)
+                request.cancel()
+                with pytest.raises(asyncio.CancelledError):
+                    await request
+                assert cleaned.is_set()
+            finally:
+                release.set()
+                await asyncio.wait_for(cleaned.wait(), 2)

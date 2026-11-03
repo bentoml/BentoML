@@ -431,15 +431,25 @@ class IODescriptor(IOMixin, BaseModel):
                 signature.return_annotation, global_ns, None
             )
         media_type: str | None = None
-        if is_iterator_type(return_annotation):
-            return_annotation = get_args(return_annotation)[0]
-        elif is_annotated(return_annotation):
+
+        def _content_type_of(annotation: t.Any) -> str | None:
+            if not is_annotated(annotation):
+                return None
             content_type = next(
-                (a for a in get_args(return_annotation) if isinstance(a, ContentType)),
+                (a for a in get_args(annotation) if isinstance(a, ContentType)),
                 None,
             )
-            if content_type is not None:
-                media_type = content_type.content_type
+            return content_type.content_type if content_type is not None else None
+
+        # Annotated[Iterator[T], ContentType(...)]
+        if is_annotated(return_annotation):
+            media_type = _content_type_of(return_annotation)
+            if is_iterator_type(get_args(return_annotation)[0]):
+                return_annotation = get_args(return_annotation)[0]
+        # Iterator[Annotated[T, ContentType(...)]]
+        if is_iterator_type(return_annotation):
+            return_annotation = get_args(return_annotation)[0]
+            media_type = media_type or _content_type_of(return_annotation)
         try:
             output = ensure_io_descriptor(return_annotation)
             output.media_type = media_type

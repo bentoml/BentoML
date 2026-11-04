@@ -94,12 +94,14 @@ class GenericSerde:
             ]
             if len(non_null_branches) == 1:
                 branch = non_null_branches[0]
-                if (
-                    isinstance(self, JSONSerde)
-                    and branch.get("type") == "tensor"
-                    and isinstance(obj, list)
-                ):
-                    return t.cast("list[t.Any]", obj)
+                if isinstance(self, JSONSerde) and branch.get("type") == "tensor":
+                    try:
+                        json.dumps(obj)
+                    except TypeError:
+                        pass
+                    else:
+                        # Leave JSON input validation to the server's ML framework.
+                        return obj
                 return self._encode(obj, branch)
         mode = "json" if isinstance(self, JSONSerde) else "python"
         info = SerializationInfo(mode=mode)

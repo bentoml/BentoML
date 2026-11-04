@@ -22,11 +22,54 @@ async def test_nullable_tensor_json_client_without_framework(
     framework: str, null_first: bool, value: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     local_name = "tf" if framework == "tensorflow" else "torch"
+    await assert_nullable_json_client_without_framework(
+        framework,
+        local_name,
+        {"type": "tensor", "format": f"{local_name}-tensor"},
+        null_first,
+        value,
+        monkeypatch,
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("null_first", [False, True])
+@pytest.mark.parametrize(
+    ("orient", "value"),
+    [
+        ("records", [{"a": 1}, {"a": 2}]),
+        ("records", []),
+        ("columns", {"a": [1, 2]}),
+        ("columns", {}),
+        ("records", None),
+    ],
+)
+async def test_nullable_dataframe_json_client_without_pandas(
+    orient: str, value: Any, null_first: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    await assert_nullable_json_client_without_framework(
+        "pandas",
+        "pd",
+        {"type": "dataframe", "orient": orient},
+        null_first,
+        value,
+        monkeypatch,
+    )
+
+
+async def assert_nullable_json_client_without_framework(
+    framework: str,
+    local_name: str,
+    schema_branch: dict[str, str],
+    null_first: bool,
+    value: Any,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setitem(sys.modules, framework, None)
     loader = LazyLoader(local_name, {}, framework)
     monkeypatch.setattr(validators, local_name, loader)
     branches = [
-        {"type": "tensor", "format": f"{local_name}-tensor"},
+        schema_branch,
         {"type": "null"},
     ]
     if null_first:
@@ -99,3 +142,15 @@ def test_required_tensor_encoding_unchanged() -> None:
         {"type": "tensor", "format": "numpy-array", "shape": [2, 1]},
     )
     assert JSONSerde().deserialize_value(payload) == [[1.0], [2.0]]
+
+
+@pytest.mark.parametrize("orient", ["records", "columns"])
+def test_nullable_dataframe_encoding(orient: str) -> None:
+    import pandas as pd
+
+    frame = pd.DataFrame({"a": [1, 2]})
+    payload = JSONSerde().serialize(
+        frame, {"anyOf": [{"type": "dataframe", "orient": orient}, {"type": "null"}]}
+    )
+    expected = [{"a": 1}, {"a": 2}] if orient == "records" else {"a": [1, 2]}
+    assert JSONSerde().deserialize_value(payload) == expected

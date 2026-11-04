@@ -1,13 +1,22 @@
+import sys
 from typing import Generator
+from typing import Optional
+from typing import Union
+from typing import cast
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pytest
+from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from starlette.routing import Route
 from starlette.testclient import TestClient
 from typing_extensions import Annotated
 
 import bentoml
+from _bentoml_impl.client.http import AsyncHTTPClient
 from _bentoml_sdk.validators import TensorSchema
 from bentoml.validators import DataframeSchema
 from bentoml.validators import DType
@@ -173,3 +182,88 @@ def test_api_root_input_illegal():
         @bentoml.api
         def root_input(_, name: str, /, age: int) -> str:
             return name
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "value", "expected"),
+    [
+        ("nullable", np.array([1.0, 2.0]), 3.0),
+        ("nullable", None, -1.0),
+        ("nullable", [1.0, 2.0], 3.0),
+        ("required", np.array([1.0, 2.0]), 3.0),
+    ],
+)
+async def test_root_tensor_input_schema_client(
+    method: str,
+    value: Optional[Union[npt.NDArray[np.float64], list[float]]],
+    expected: float,
+) -> None:
+    @bentoml.service(metrics={"enabled": False})
+    class TestService:
+        @bentoml.api
+        def nullable(
+            self, values: Optional[npt.NDArray[np.float64]] = None, /
+        ) -> float:
+            return -1.0 if values is None else float(values.sum())
+
+        @bentoml.api
+        def required(self, values: npt.NDArray[np.float64], /) -> float:
+            return float(values.sum())
+
+    app = cast(Starlette, TestService.to_asgi())
+    async with app.router.lifespan_context(app):
+        async with AsyncHTTPClient("http://test", app=app) as client:
+            assert await getattr(client, method)(value) == expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("tensor_format", "framework"),
+    [("torch-tensor", "torch"), ("tf-tensor", "tensorflow")],
+)
+async def test_root_tensor_json_list_without_framework(
+    tensor_format: str, framework: str
+) -> None:
+    calls: list[tuple[str, str, Optional[list[float]]]] = []
+    schema = {
+        "routes": [
+            {
+                "name": "nullable",
+                "route": "/nullable",
+                "input": {
+                    "root_input": True,
+                    "anyOf": [
+                        {"type": "tensor", "format": tensor_format, "dtype": "float32"},
+                        {"type": "null"},
+                    ],
+                },
+                "output": {"type": "number"},
+            }
+        ]
+    }
+
+    async def serve_schema(request: Request) -> JSONResponse:
+        calls.append((request.method, request.url.path, None))
+        return JSONResponse(schema)
+
+    async def receive_input(request: Request) -> JSONResponse:
+        calls.append((request.method, request.url.path, await request.json()))
+        return JSONResponse(3.0)
+
+    app = Starlette(
+        routes=[
+            Route("/schema.json", serve_schema),
+            Route("/nullable", receive_input, methods=["POST"]),
+        ]
+    )
+    modules_before = set(sys.modules)
+    async with app.router.lifespan_context(app):
+        async with AsyncHTTPClient("http://test", app=app) as client:
+            assert await getattr(client, "nullable")([1.0, 2.0]) == 3.0
+
+    assert calls == [("GET", "/schema.json", None), ("POST", "/nullable", [1.0, 2.0])]
+    assert not any(
+        name == framework or name.startswith(framework + ".")
+        for name in set(sys.modules) - modules_before
+    )

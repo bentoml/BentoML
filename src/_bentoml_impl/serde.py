@@ -93,7 +93,14 @@ class GenericSerde:
                 branch for branch in branches if branch.get("type") != "null"
             ]
             if len(non_null_branches) == 1:
-                return self._encode(obj, non_null_branches[0])
+                branch = non_null_branches[0]
+                if (
+                    isinstance(self, JSONSerde)
+                    and branch.get("type") == "tensor"
+                    and isinstance(obj, list)
+                ):
+                    return t.cast("list[t.Any]", obj)
+                return self._encode(obj, branch)
         mode = "json" if isinstance(self, JSONSerde) else "python"
         info = SerializationInfo(mode=mode)
         if schema.get("type") == "tensor":

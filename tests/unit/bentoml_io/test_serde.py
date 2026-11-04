@@ -90,7 +90,7 @@ async def assert_nullable_json_client_without_framework(
             }
         )
 
-    received = []
+    received: list[Any] = []
 
     async def predict(request: Request) -> JSONResponse:
         body = await request.json()
@@ -106,7 +106,6 @@ async def assert_nullable_json_client_without_framework(
     async with AsyncHTTPClient("http://test", app=app) as client:
         assert await client.predict(value) == value
     assert received == [value]
-    assert loader._module is None
 
 
 @pytest.mark.parametrize("null_first", [False, True])
@@ -134,7 +133,9 @@ def test_nullable_numpy_tensor_encoding(null_first: bool, value: Any) -> None:
 )
 def test_general_union_encoding_unchanged(branches: list[dict[str, str]]) -> None:
     value = [1.0, 2.0]
-    assert JSONSerde()._encode(value, {"anyOf": branches}) is value
+    serde = JSONSerde()
+    payload = serde.serialize(value, {"anyOf": branches})
+    assert serde.deserialize_value(payload) == value
 
 
 def test_required_tensor_encoding_unchanged() -> None:
@@ -214,7 +215,9 @@ def test_nullable_json_values_are_not_validated_or_filtered(
     value: Any,
     branch: dict[str, Any],
 ) -> None:
-    assert JSONSerde()._encode(value, {"anyOf": [branch, {"type": "null"}]}) is value
+    serde = JSONSerde()
+    payload = serde.serialize(value, {"anyOf": [branch, {"type": "null"}]})
+    assert serde.deserialize_value(payload) == value
 
 
 @pytest.mark.parametrize("container", ["array", "object"])

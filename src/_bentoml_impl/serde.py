@@ -94,16 +94,13 @@ class GenericSerde:
             ]
             if len(non_null_branches) == 1:
                 branch = non_null_branches[0]
-                if isinstance(self, JSONSerde) and branch.get("type") in {
-                    "tensor",
-                    "dataframe",
-                }:
+                if isinstance(self, JSONSerde):
                     try:
                         json.dumps(obj)
                     except TypeError:
                         pass
                     else:
-                        # Leave JSON input validation to the server's optional dependencies.
+                        # Preserve JSON inputs for server-side validation before recursing.
                         return obj
                 return self._encode(obj, branch)
         mode = "json" if isinstance(self, JSONSerde) else "python"

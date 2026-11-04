@@ -10,6 +10,7 @@ from starlette.routing import Route
 
 from _bentoml_impl.client.http import AsyncHTTPClient
 from _bentoml_impl.serde import JSONSerde
+from _bentoml_impl.serde import PickleSerde
 from _bentoml_sdk import validators
 from bentoml._internal.utils.lazy_loader import LazyLoader
 
@@ -60,7 +61,7 @@ async def test_nullable_dataframe_json_client_without_pandas(
 async def assert_nullable_json_client_without_framework(
     framework: str,
     local_name: str,
-    schema_branch: dict[str, str],
+    schema_branch: dict[str, Any],
     null_first: bool,
     value: Any,
     monkeypatch: pytest.MonkeyPatch,
@@ -154,3 +155,85 @@ def test_nullable_dataframe_encoding(orient: str) -> None:
     )
     expected = [{"a": 1}, {"a": 2}] if orient == "records" else {"a": [1, 2]}
     assert JSONSerde().deserialize_value(payload) == expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("framework", ["torch", "tensorflow", "pandas"])
+@pytest.mark.parametrize("null_first", [False, True])
+@pytest.mark.parametrize(
+    "containers",
+    [
+        ("array",),
+        ("object",),
+        ("array", "object"),
+        ("object", "array"),
+        ("array", "object", "array"),
+    ],
+)
+async def test_nullable_container_json_client_without_framework(
+    framework: str,
+    null_first: bool,
+    containers: tuple[str, ...],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    local_name = {"torch": "torch", "tensorflow": "tf", "pandas": "pd"}[framework]
+    branch: dict[str, Any]
+    value: Any
+    if framework == "pandas":
+        branch = {"type": "dataframe", "orient": "records"}
+        value = [{"a": 1}, {"a": 2}]
+    else:
+        branch = {"type": "tensor", "format": f"{local_name}-tensor"}
+        value = [1.0, 2.0]
+    for container in containers:
+        if container == "array":
+            branch = {"type": "array", "items": branch}
+            value = [value]
+        else:
+            branch = {"type": "object", "properties": {"values": branch}}
+            value = {"values": value, "extra": "preserve for server validation"}
+    await assert_nullable_json_client_without_framework(
+        framework,
+        local_name,
+        branch,
+        null_first,
+        value,
+        monkeypatch,
+    )
+
+
+@pytest.mark.parametrize("value", [None, True, 1.0, "text", [], {}, {"extra": [1, 2]}])
+@pytest.mark.parametrize(
+    "branch",
+    [
+        {"type": "array", "items": {"type": "integer"}},
+        {"type": "object", "properties": {"known": {"type": "string"}}},
+    ],
+)
+def test_nullable_json_values_are_not_validated_or_filtered(
+    value: Any,
+    branch: dict[str, Any],
+) -> None:
+    assert JSONSerde()._encode(value, {"anyOf": [branch, {"type": "null"}]}) is value
+
+
+@pytest.mark.parametrize("container", ["array", "object"])
+def test_nullable_container_native_numpy_encoding(container: str) -> None:
+    branch: dict[str, Any] = {"type": "tensor", "format": "numpy-array"}
+    value: Any = np.array([1.0, 2.0])
+    expected: Any = [1.0, 2.0]
+    if container == "array":
+        branch = {"type": "array", "items": branch}
+        value, expected = [value], [expected]
+    else:
+        branch = {"type": "object", "properties": {"values": branch}}
+        value, expected = {"values": value}, {"values": expected}
+    payload = JSONSerde().serialize(value, {"anyOf": [branch, {"type": "null"}]})
+    assert JSONSerde().deserialize_value(payload) == expected
+
+
+def test_nullable_pickle_tensor_conversion_unchanged() -> None:
+    branch = {"type": "tensor", "format": "numpy-array", "shape": [2, 1]}
+    serde = PickleSerde()
+    payload = serde.serialize([1.0, 2.0], {"anyOf": [branch, {"type": "null"}]})
+    np.testing.assert_array_equal(serde.deserialize_value(payload), [[1.0], [2.0]])

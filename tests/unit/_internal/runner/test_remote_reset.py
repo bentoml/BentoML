@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import typing as t
 
 import pytest
@@ -89,3 +90,68 @@ async def test_reset_before_first_request(
     await client._reset_client()
     assert await client.is_ready(timeout=1)
     assert len(connections) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("warm_replacement", [False, True])
+async def test_reset_preserves_replacement_created_during_shutdown(
+    remote_client: tuple[RemoteRunnerClient, list[object]],
+    monkeypatch: pytest.MonkeyPatch,
+    warm_replacement: bool,
+) -> None:
+    client, connections = remote_client
+    assert await client.is_ready(timeout=1)
+    old_session = client._client
+    old_connector = old_session.connector
+    assert old_connector is not None
+    close_connector = old_connector.close
+    closed = asyncio.Event()
+    resume = asyncio.Event()
+
+    async def paused_close() -> None:
+        await close_connector()
+        # Keep close pending after the real connector has marked itself closed,
+        # allowing another caller to create replacement resources during reset.
+        closed.set()
+        await resume.wait()
+
+    monkeypatch.setattr(old_connector, "close", paused_close)
+    replacement_session = None
+    replacement_connector = None
+    reset = asyncio.create_task(client._reset_client())
+    try:
+        await asyncio.wait_for(closed.wait(), timeout=5)
+        assert old_session.closed
+        assert old_connector.closed
+        replacement_session = client._client
+        replacement_connector = replacement_session.connector
+        assert replacement_connector is not None
+        assert replacement_session is not old_session
+        assert replacement_connector is not old_connector
+        if warm_replacement:
+            assert await client.is_ready(timeout=1)
+
+        resume.set()
+        await asyncio.wait_for(reset, timeout=5)
+
+        assert client._client_cache is replacement_session
+        assert client._conn is replacement_connector
+        assert not replacement_session.closed
+        assert not replacement_connector.closed
+        assert await client.is_ready(timeout=1)
+        if warm_replacement:
+            assert connections[-1] is connections[1]
+
+        await client._reset_client()
+        assert replacement_session.closed
+        assert replacement_connector.closed
+        assert client._client_cache is None
+        assert client._conn is None
+    finally:
+        resume.set()
+        await asyncio.wait_for(reset, timeout=5)
+        # Also clean up replacements if a broken reset loses its cache entries.
+        if replacement_session is not None:
+            await replacement_session.close()
+        if replacement_connector is not None:
+            await replacement_connector.close()

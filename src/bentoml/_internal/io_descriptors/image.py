@@ -254,7 +254,7 @@ class Image(
             try:
                 with open(p, "rb") as f:
                     sample = PIL.Image.open(f)
-            except PIL.UnidentifiedImageError as err:
+            except (PIL.UnidentifiedImageError, OSError) as err:
                 raise BadInput(f"Failed to parse sample image file: {err}") from None
         self._mime_type = img_type.mime
         return sample
@@ -307,7 +307,12 @@ class Image(
 
     async def from_http_request(self, request: Request) -> ImageType:
         content_type, _ = parse_options_header(request.headers["content-type"])
-        mime_type = content_type.decode().lower()
+        try:
+            mime_type = content_type.decode().lower()
+        except UnicodeDecodeError as e:
+            raise BadInput(
+                f"Invalid Content-Type header: not valid UTF-8: {e}"
+            ) from None
 
         bytes_: bytes | str | None = None
 
@@ -366,7 +371,7 @@ class Image(
 
         try:
             return PIL.Image.open(io.BytesIO(bytes_))
-        except PIL.UnidentifiedImageError as err:
+        except (PIL.UnidentifiedImageError, OSError) as err:
             raise BadInput(f"Failed to parse uploaded image file: {err}") from None
 
     async def to_http_response(
@@ -432,7 +437,10 @@ class Image(
                     ) from None
             if not field.content:
                 raise BadInput("Content is empty!") from None
-            return PIL.Image.open(io.BytesIO(field.content))
+            try:
+                return PIL.Image.open(io.BytesIO(field.content))
+            except (PIL.UnidentifiedImageError, OSError) as err:
+                raise BadInput(f"Failed to parse uploaded image file: {err}") from None
         else:
             assert isinstance(field, pb.File)
             if field.kind and field.kind != self._mime_type:
@@ -443,7 +451,10 @@ class Image(
             if not content:
                 raise BadInput("Content is empty!") from None
 
-        return PIL.Image.open(io.BytesIO(content))
+        try:
+            return PIL.Image.open(io.BytesIO(content))
+        except (PIL.UnidentifiedImageError, OSError) as err:
+            raise BadInput(f"Failed to parse uploaded image file: {err}") from None
 
     async def to_proto_v1alpha1(self, obj: ImageType) -> pb_v1alpha1.File:
         from .file import mimetype_to_filetype_pb_map

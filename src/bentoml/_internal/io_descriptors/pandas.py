@@ -532,17 +532,22 @@ class PandasDataFrame(
 
         obj = await request.body()
         dtype = self._dtype if self._enforce_dtype else None
-        if serialization_format is SerializationFormat.JSON:
-            if dtype is None:
-                dtype = True  # infer dtype automatically
-            res = pd.read_json(io.BytesIO(obj), dtype=dtype, orient=self._orient)
-        elif serialization_format is SerializationFormat.PARQUET:
-            res = pd.read_parquet(io.BytesIO(obj), engine=get_parquet_engine())
-        elif serialization_format is SerializationFormat.CSV:
-            res: ext.PdDataFrame = pd.read_csv(io.BytesIO(obj), dtype=dtype)
-        else:
-            raise InvalidArgument(
-                f"Unknown serialization format ({serialization_format})."
+        try:
+            if serialization_format is SerializationFormat.JSON:
+                if dtype is None:
+                    dtype = True  # infer dtype automatically
+                res = pd.read_json(io.BytesIO(obj), dtype=dtype, orient=self._orient)
+            elif serialization_format is SerializationFormat.PARQUET:
+                res = pd.read_parquet(io.BytesIO(obj), engine=get_parquet_engine())
+            elif serialization_format is SerializationFormat.CSV:
+                res: ext.PdDataFrame = pd.read_csv(io.BytesIO(obj), dtype=dtype)
+            else:
+                raise InvalidArgument(
+                    f"Unknown serialization format ({serialization_format})."
+                ) from None
+        except (ValueError, UnicodeDecodeError, OSError) as e:
+            raise BadInput(
+                f"Invalid PandasDataFrame input received: failed to parse request body as {serialization_format}: {e}"
             ) from None
 
         assert isinstance(res, pd.DataFrame)
@@ -1023,12 +1028,17 @@ class PandasSeries(
             a ``pd.Series`` object. This can then be used inside users defined logics.
         """
         obj = await request.body()
-        res: ext.PdSeries = pd.read_json(
-            io.BytesIO(obj),
-            typ="series",
-            orient=self._orient,
-            dtype=self._dtype if self._enforce_dtype else True,
-        )
+        try:
+            res: ext.PdSeries = pd.read_json(
+                io.BytesIO(obj),
+                typ="series",
+                orient=self._orient,
+                dtype=self._dtype if self._enforce_dtype else True,
+            )
+        except (ValueError, UnicodeDecodeError, OSError) as e:
+            raise BadInput(
+                f"Invalid PandasSeries input received: failed to parse request body: {e}"
+            ) from None
         return self.validate_series(res)
 
     async def to_http_response(

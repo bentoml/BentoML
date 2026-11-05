@@ -62,6 +62,12 @@ def test_CpuResource():
     with pytest.raises(TypeError):
         CpuResource.from_spec((1, 2, 3))
 
+    # Trailing characters after the milli-cpu suffix are not a cpu spec.
+    # NvidiaGpuResource.from_spec already rejects these.
+    for spec in ("100mb", "100mi", "10m5", "1m 2"):
+        with pytest.raises(BentoMLConfigException):
+            CpuResource.from_spec(spec)
+
 
 def test_NvidiaGpuResource():
     assert len(NvidiaGpuResource.from_system()) >= 0  # TODO: real from_system tests

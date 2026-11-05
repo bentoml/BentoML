@@ -154,7 +154,9 @@ class RemoteRunnerClient(RunnerHandle):
         return self._client_cache
 
     async def _reset_client(self):
-        self._close_conn()
+        if self._conn is not None:
+            await self._conn.close()
+            self._conn = None
         if self._client_cache is not None:
             await self._client_cache.close()
             self._client_cache = None

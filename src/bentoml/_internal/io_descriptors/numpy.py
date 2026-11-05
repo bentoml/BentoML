@@ -392,9 +392,18 @@ class NumpyNdarray(
             a ``numpy.ndarray`` object. This can then be used
              inside users defined logics.
         """
-        obj = await request.json()
+        try:
+            obj = await request.json()
+        except (ValueError, UnicodeDecodeError) as e:
+            raise BadInput(f"Invalid JSON input received: {e}") from None
         try:
             res = np.array(obj, dtype=self._dtype)
+        except OverflowError as e:
+            # NumPy 2 raises OverflowError (rather than wrapping, as NumPy 1
+            # did) when a value does not fit the requested dtype.
+            raise BadInput(
+                f"Invalid NumpyNdarray input received: value out of range for dtype '{self._dtype}': {e}"
+            ) from None
         except ValueError:
             res = np.array(obj)
 
@@ -526,7 +535,12 @@ class NumpyNdarray(
                 ) from None
 
             dtype: ext.NpDTypeLike = self._dtype
-            array = np.frombuffer(field, dtype=self._dtype)
+            try:
+                array = np.frombuffer(field, dtype=self._dtype)
+            except ValueError as e:
+                raise BadInput(
+                    f"Invalid NumpyNdarray input received: buffer length is not a multiple of the dtype size: {e}"
+                ) from None
         else:
             if isinstance(field, pb_v1alpha1.NDArray):
                 version = "v1alpha1"
@@ -572,6 +586,10 @@ class NumpyNdarray(
                 values_array = getattr(field, fieldpb[0])
             try:
                 array = np.array(values_array, dtype=dtype)
+            except OverflowError as e:
+                raise BadInput(
+                    f"Invalid NumpyNdarray input received: value out of range for dtype '{dtype}': {e}"
+                ) from None
             except ValueError:
                 array = np.array(values_array)
 

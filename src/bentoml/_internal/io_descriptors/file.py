@@ -290,7 +290,13 @@ class BytesIOFile(File, descriptor_id=None):
 
     async def from_http_request(self, request: Request) -> FileLike[bytes]:
         content_type, _ = parse_options_header(request.headers["content-type"])
-        if content_type.decode("utf-8") == "multipart/form-data":
+        try:
+            content_type_str = content_type.decode("utf-8")
+        except UnicodeDecodeError as e:
+            raise BadInput(
+                f"Invalid Content-Type header: not valid UTF-8: {e}"
+            ) from None
+        if content_type_str == "multipart/form-data":
             form = await request.form()
             found_mimes: t.List[str] = []
             val: t.Union[str, UploadFile]
@@ -308,11 +314,11 @@ class BytesIOFile(File, descriptor_id=None):
                         f"The File IO descriptor requires input to be of Content-Type '{self._mime_type}', got files with content types {', '.join(found_mimes)}"
                     )
             return res  # type: ignore
-        if self.mime_type is None or content_type.decode("utf-8") == self._mime_type:
+        if self.mime_type is None or content_type_str == self._mime_type:
             body = await request.body()
             return FileLike[bytes](io.BytesIO(body), "<request body>")
         raise BentoMLException(
-            f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type} instead"
+            f"File should have Content-Type '{self._mime_type}' or 'multipart/form-data', got {content_type_str} instead"
         )
 
     async def from_proto(

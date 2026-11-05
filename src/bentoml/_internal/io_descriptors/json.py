@@ -265,7 +265,7 @@ class JSON(
         elif isinstance(sample, bytes):
             try:
                 sample = json.loads(sample.decode())
-            except json.JSONDecodeError as e:
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
                 raise BadInput(
                     f"Unable to parse JSON bytes. Please make sure the input is a valid JSON bytes: {e}"
                 ) from None
@@ -381,7 +381,7 @@ class JSON(
         json_str = await request.body()
         try:
             json_obj = json.loads(json_str)
-        except json.JSONDecodeError as e:
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
             raise BadInput(f"Invalid JSON input received: {e}") from None
 
         if self._pydantic_model:
@@ -442,11 +442,11 @@ class JSON(
                         return self._pydantic_model.model_validate_json(content)
                     else:
                         return self._pydantic_model.parse_raw(content)
-                except pydantic.ValidationError as e:
+                except (pydantic.ValidationError, UnicodeDecodeError) as e:
                     raise BadInput(f"Invalid JSON input received: {e}") from None
             try:
                 parsed = json.loads(content)
-            except json.JSONDecodeError as e:
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
                 raise BadInput(f"Invalid JSON input received: {e}") from None
         else:
             assert isinstance(field, struct_pb2.Value)

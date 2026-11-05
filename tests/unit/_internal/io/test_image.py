@@ -4,6 +4,7 @@ import io
 from typing import TYPE_CHECKING
 
 import pytest
+from starlette.requests import Request
 
 from bentoml._internal.utils.lazy_loader import LazyLoader
 from bentoml.exceptions import BadInput
@@ -87,6 +88,49 @@ async def test_exception_to_proto():
     with pytest.raises(BadInput) as exc_info:
         await Image().to_proto(io.BytesIO(b"asdf"))  # type: ignore (testing exception)
     assert "Unsupported Image type received:" in str(exc_info.value)
+
+
+def _truncated_png() -> bytes:
+    buf = io.BytesIO()
+    PILImage.new("RGB", (10, 10), color="red").save(buf, format="PNG")
+    # Cut inside the IHDR chunk: PIL raises OSError ("Truncated File Read").
+    return buf.getvalue()[:20]
+
+
+def _make_request(body: bytes, content_type: str) -> Request:
+    async def receive():
+        nonlocal sent
+        if not sent:
+            sent = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    sent = False
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "headers": [(b"content-type", content_type.encode("latin-1"))],
+        "path": "/",
+        "query_string": b"",
+        "server": ("testserver", 80),
+        "scheme": "http",
+        "client": ("testclient", 50000),
+    }
+    return Request(scope, receive=receive)
+
+
+@pytest.mark.asyncio
+async def test_from_http_request_truncated_image_raises_bad_input():
+    # bentoml/BentoML#5781: PIL raises OSError for a truncated image, which
+    # was not caught next to UnidentifiedImageError, so it became a 500.
+    with pytest.raises(BadInput):
+        await Image().from_http_request(_make_request(_truncated_png(), "image/png"))
+
+
+@pytest.mark.asyncio
+async def test_from_proto_truncated_image_raises_bad_input():
+    with pytest.raises(BadInput):
+        await Image().from_proto(_truncated_png())
 
 
 @pytest.mark.asyncio

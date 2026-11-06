@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import io
+import os
+import tempfile
 import typing as t
 from pathlib import Path
 
@@ -21,22 +23,63 @@ class NamedBytesIO(io.BytesIO):
     name = "data.txt"
 
 
-@pytest.fixture(params=["bytesio", "named-bytesio", "buffered-file"])
+class PathNamedBytesIO(io.BytesIO):
+    name = Path("data.txt")
+
+
+@pytest.fixture(
+    params=[
+        "bytesio",
+        "named-bytesio",
+        "path-named-bytesio",
+        "buffered-file",
+        "temporary-file",
+        "spooled-file",
+        "rolled-spooled-file",
+        "descriptor-file",
+    ]
+)
 def binary_stream(
     request: pytest.FixtureRequest, tmp_path: Path
 ) -> t.Iterator[tuple[t.BinaryIO, str, str | None]]:
-    filename = "upload-file" if request.param == "bytesio" else "data.txt"
-    content_type = None if request.param == "bytesio" else "text/plain"
+    filename = "data.txt"
+    content_type = "text/plain"
     if request.param == "buffered-file":
         path = tmp_path / filename
         path.write_bytes(CONTENT)
         stream = path.open("rb")
+    elif request.param in ("spooled-file", "rolled-spooled-file", "temporary-file"):
+        if request.param == "temporary-file":
+            stream = tempfile.TemporaryFile(mode="w+b")
+        else:
+            stream = tempfile.SpooledTemporaryFile(mode="w+b")
+            if request.param == "rolled-spooled-file":
+                stream.rollover()
+        stream.write(CONTENT)
+        stream.seek(0)
+        name = getattr(stream, "name", None)
+        if isinstance(name, str):
+            filename = Path(name).name
+            content_type = None
+        else:
+            filename, content_type = "upload-file", None
+    elif request.param == "descriptor-file":
+        path = tmp_path / "data.txt"
+        path.write_bytes(CONTENT)
+        stream = os.fdopen(
+            os.open(path, os.O_RDONLY | getattr(os, "O_BINARY", 0)), "rb"
+        )
+        filename, content_type = "upload-file", None
     else:
         stream = (
             NamedBytesIO(CONTENT)
             if request.param == "named-bytesio"
+            else PathNamedBytesIO(CONTENT)
+            if request.param == "path-named-bytesio"
             else io.BytesIO(CONTENT)
         )
+        if request.param == "bytesio":
+            filename, content_type = "upload-file", None
     try:
         yield stream, filename, content_type
     finally:
@@ -108,6 +151,8 @@ async def test_binary_stream_multipart_upload(
     binary_stream: tuple[t.BinaryIO, str, str | None], backend: str, upload_server: str
 ) -> None:
     stream, filename, content_type = binary_stream
+    if backend == "aiohttp" and os.name == "nt" and not isinstance(stream, io.IOBase):
+        pytest.skip("aiohttp does not support Windows TemporaryFile wrappers")
     if backend == "sync-httpx":
 
         def upload_sync() -> t.Any:

@@ -4,6 +4,7 @@ import abc
 import functools
 import io
 import mimetypes
+import os
 import pathlib
 import typing as t
 from http import HTTPStatus
@@ -127,7 +128,12 @@ class ClientFileManager:
             return value
         else:
             assert is_file_like(value)
-            filename = pathlib.Path(getattr(value, "name", "upload-file")).name
+            name = getattr(value, "name", None)
+            filename = (
+                pathlib.Path(name).name
+                if isinstance(name, (str, os.PathLike))
+                else "upload-file"
+            )
             content_type = mimetypes.guess_type(filename)[0]
             return (filename, value, content_type)
 

@@ -12,6 +12,7 @@ import attrs
 import httpx
 
 from _bentoml_sdk import IODescriptor
+from _bentoml_sdk.typing_utils import is_file_like
 from _bentoml_sdk.typing_utils import is_image_type
 from bentoml._internal.utils.uri import is_http_url
 from bentoml.exceptions import BentoMLException
@@ -125,7 +126,7 @@ class ClientFileManager:
         elif isinstance(value, str):
             return value
         else:
-            assert isinstance(value, t.BinaryIO)
+            assert is_file_like(value)
             filename = pathlib.Path(getattr(value, "name", "upload-file")).name
             content_type = mimetypes.guess_type(filename)[0]
             return (filename, value, content_type)

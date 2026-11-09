@@ -373,10 +373,10 @@ CONTROL_CODES = re.compile(
     \r|                    # CARRIAGE_RETURN
     \x1b\[H|               # HOME
     \x1b\[2J|              # CLEAR
-    \x1b\[?1049h|          # ENABLE_ALT_SCREEN
-    \x1b\[?1049l|          # DISABLE_ALT_SCREEN
-    \x1b\[?25h|            # SHOW_CURSOR
-    \x1b\[?25l|            # HIDE_CURSOR
+    \x1b\[\?1049h|        # ENABLE_ALT_SCREEN
+    \x1b\[\?1049l|        # DISABLE_ALT_SCREEN
+    \x1b\[\?25h|          # SHOW_CURSOR
+    \x1b\[\?25l|          # HIDE_CURSOR
     \x1b\[\d+A|            # CURSOR_UP
     \x1b\[\d+B|            # CURSOR_DOWN
     \x1b\[\d+C|            # CURSOR_FORWARD

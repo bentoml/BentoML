@@ -48,7 +48,7 @@ def validate_tag_str(value: str):
     errors: list[str] = []
     if len(value) > tag_max_length:
         errors.append(tag_max_length_error_msg)
-    if tag_regex.match(value) is None:
+    if tag_regex.fullmatch(value) is None:
         errors.append(tag_invalid_error_msg)
 
     if errors:

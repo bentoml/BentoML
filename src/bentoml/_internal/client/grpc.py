@@ -414,7 +414,7 @@ if __name__ == '__main__':
                     doc=api.docs,
                 )
             except BentoMLException as e:
-                logger.error("Failed to instantiate client for API %s: ", api.name, e)
+                logger.error("Failed to instantiate client for API %s: %s", api.name, e)
 
         return cls(server_url, dummy_service, **kwargs)
 
@@ -767,7 +767,7 @@ if __name__ == '__main__':
                     doc=api.docs,
                 )
             except BentoMLException as e:
-                logger.error("Failed to instantiate client for API %s: ", api.name, e)
+                logger.error("Failed to instantiate client for API %s: %s", api.name, e)
 
         return cls(server_url, dummy_service, **kwargs)
 

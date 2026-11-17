@@ -228,7 +228,7 @@ class MultipartSerde(JSONSerde):
                 field_annotation = cls.model_fields[k].annotation
                 if is_union_type(field_annotation):
                     args = get_args(field_annotation)
-                    field_annotation = args[0]
+                    field_annotation = next(a for a in args if a is not type(None))
                 if is_list_type(field_annotation):
                     data[k] = value
                 elif len(value) >= 1:

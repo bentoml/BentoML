@@ -7,12 +7,14 @@ import typing as t
 
 import attrs
 import pydantic
+from starlette.requests import Request
 
 from bentoml._internal.service.openapi import SUCCESS_DESCRIPTION
 from bentoml._internal.service.openapi.specification import Encoding
 from bentoml._internal.service.openapi.specification import MediaType
 from bentoml._internal.service.openapi.specification import Schema
 from bentoml._internal.utils import dict_filter_none
+from bentoml._internal.utils import is_async_callable
 
 from .io_models import IODescriptor
 from .io_models import IOMixin
@@ -27,6 +29,15 @@ else:
 
 
 DEFAULT_STREAM_MEDIA_TYPE = "text/event-stream"
+DEFAULT_MAX_LATENCY_MS = 60_000
+LatencyResolver = t.Callable[[Request], int]
+MaxLatency = t.Union[int, LatencyResolver]
+
+
+def validate_max_latency_value(value: t.Any) -> int:
+    if type(value) is not int or value <= 0:
+        raise ValueError("max_latency_ms must resolve to a positive integer")
+    return value
 
 
 def _only_include(data: dict[str, t.Any], fields: t.Container[str]) -> dict[str, t.Any]:
@@ -62,7 +73,7 @@ class APIMethod(t.Generic[P, R]):
         default=(0, 0), converter=lambda x: (x, x) if not isinstance(x, tuple) else x
     )
     max_batch_size: int = attrs.field(default=100, validator=attrs.validators.gt(1))
-    max_latency_ms: int = 60000
+    max_latency_ms: MaxLatency = DEFAULT_MAX_LATENCY_MS
     is_stream: bool = attrs.field(init=False)
     doc: str | None = attrs.field(init=False)
     ctx_param: str | None = attrs.field(init=False)
@@ -134,6 +145,26 @@ class APIMethod(t.Generic[P, R]):
     def __attrs_post_init__(self) -> None:
         if self.is_stream and not self.output_spec.media_type:
             self.output_spec.media_type = DEFAULT_STREAM_MEDIA_TYPE
+
+        configured = self.max_latency_ms
+        if type(configured) is int:
+            try:
+                validate_max_latency_value(configured)
+            except ValueError as exc:
+                raise ValueError(
+                    "max_latency_ms must be a positive integer or a synchronous callable"
+                ) from exc
+            return
+        if not callable(configured):
+            raise ValueError(
+                "max_latency_ms must be a positive integer or a synchronous callable"
+            )
+        if self.is_task:
+            raise ValueError("callable max_latency_ms is not supported for tasks")
+        if not self.batchable:
+            raise ValueError("callable max_latency_ms requires batchable=True")
+        if is_async_callable(configured):
+            raise ValueError("max_latency_ms resolver must be synchronous")
 
     @t.overload
     def __get__(self: T, instance: None, owner: type) -> T: ...

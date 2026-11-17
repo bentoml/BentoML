@@ -96,6 +96,10 @@ class Optimizer:
         )
 
 
+class _JobDropped(Exception):
+    """The dispatcher cancelled a job: load shedding, shutdown or an aborted batch."""
+
+
 T_IN = t.TypeVar("T_IN")
 T_OUT = t.TypeVar("T_OUT")
 
@@ -187,7 +191,7 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                 self._controller = self._loop.create_task(self.controller())
             try:
                 r = await self.inbound_call(data)
-            except asyncio.CancelledError:
+            except _JobDropped:
                 return self.fallback()
             if isinstance(r, Exception):
                 raise r
@@ -329,9 +333,17 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
         future: asyncio.Future[T_OUT | Exception] = self._loop.create_future()
         input_info = Job(now, data, future)
         self._queue.append(input_info)
-        async with self._wake_event:
-            self._wake_event.notify_all()
-        return await future
+        try:
+            async with self._wake_event:
+                self._wake_event.notify_all()
+            # Shield the future so that cancelling the caller leaves it alone.
+            # If it is cancelled anyway, the dispatcher dropped the job.
+            return await asyncio.shield(future)
+        except asyncio.CancelledError:
+            if future.cancelled():
+                raise _JobDropped from None
+            future.cancel()  # the caller gave up, so drop its job too
+            raise
 
     async def outbound_call(
         self, inputs_info: tuple[Job[T_IN, T_OUT], ...], training: bool = False

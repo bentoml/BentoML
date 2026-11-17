@@ -89,10 +89,14 @@ def make_pytorch_runnable_method(
         params = Params(*args, **kwargs)
 
         def _mapping(item: T) -> torch.Tensor | T:
+            # ``torch.Tensor(...)`` (the type constructor) ignores the input
+            # dtype and produces ``float32``. Use ``torch.from_numpy`` instead
+            # so an ``np.float16``/``np.int64``/``np.bool_`` array is handed to
+            # the model with a matching torch dtype (see #4266).
             if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
-                return torch.Tensor(item, device=self.device_id)
+                return torch.from_numpy(item).to(self.device_id)
             if LazyType["ext.PdDataFrame"]("pandas.DataFrame").isinstance(item):
-                return torch.Tensor(item.to_numpy(), device=self.device_id)
+                return torch.from_numpy(item.to_numpy()).to(self.device_id)
             if LazyType["torch.Tensor"]("torch.Tensor").isinstance(item):
                 return item.to(self.device_id)
             else:

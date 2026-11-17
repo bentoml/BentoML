@@ -304,8 +304,12 @@ def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
                 )
 
             def mapping(item: ext.NpNDArray | torch.Tensor) -> t.Any:
+                # Mirror the fix from common/pytorch.py: ``torch.Tensor(arr)``
+                # silently upcasts every input to ``float32``, breaking models
+                # whose weights are ``float16``/``int64``/``bool``. Use
+                # ``torch.from_numpy`` to preserve the numpy dtype (#4266).
                 if LazyType["ext.NpNDArray"]("numpy.ndarray").isinstance(item):
-                    return torch.Tensor(item, device=self.device_id)
+                    return torch.from_numpy(item).to(self.device_id)
                 elif isinstance(item, torch.Tensor):
                     return item.to(self.device_id)
                 else:

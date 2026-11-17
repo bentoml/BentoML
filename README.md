@@ -13,6 +13,8 @@
 [![CI](https://github.com/bentoml/bentoml/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bentoml/BentoML/actions/workflows/ci.yml?query=branch%3Amain)
 [![Twitter](https://badgen.net/badge/icon/@bentomlai/1DA1F2?icon=twitter&label=Follow)](https://twitter.com/bentomlai)
 
+[ English | [简体中文](https://github.com/bentoml/BentoML/blob/main/README.zh.md) ]
+
 ## What is BentoML?
 
 BentoML is a Python library for building online serving systems optimized for AI apps and model inference.

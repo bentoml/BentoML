@@ -87,6 +87,22 @@ class Serde(abc.ABC):
 
 class GenericSerde:
     def _encode(self, obj: t.Any, schema: dict[str, t.Any]) -> t.Any:
+        branches = schema.get("anyOf", [])
+        if obj is not None and len(branches) == 2:
+            non_null_branches = [
+                branch for branch in branches if branch.get("type") != "null"
+            ]
+            if len(non_null_branches) == 1:
+                branch = non_null_branches[0]
+                if isinstance(self, JSONSerde):
+                    try:
+                        json.dumps(obj)
+                    except TypeError:
+                        pass
+                    else:
+                        # Preserve JSON inputs for server-side validation before recursing.
+                        return obj
+                return self._encode(obj, branch)
         mode = "json" if isinstance(self, JSONSerde) else "python"
         info = SerializationInfo(mode=mode)
         if schema.get("type") == "tensor":

@@ -44,8 +44,8 @@ RUN groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID 
 {% block SETUP_BENTO_ENVARS %}
 {% if __options__env is not none %}
 {% for key, value in __options__env.items() -%}
-ARG {{ key }}={{ value }}
-ENV {{ key }}=${{ key }}
+ARG {{ key|normalize_line }}={{ value|normalize_line|bash_quote }}
+ENV {{ key|normalize_line }}=${{ key|normalize_line }}
 {% endfor -%}
 {% endif -%}
 

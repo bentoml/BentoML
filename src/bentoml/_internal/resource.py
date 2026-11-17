@@ -164,7 +164,18 @@ def query_cgroup_cpu_count() -> float:
     elif quota == 0:
         quota = 1
 
-    os_cpu_count = float(os.cpu_count() or 1.0)
+    # Honour a restricted CPU affinity mask (taskset, docker run --cpuset-cpus,
+    # or a cpuset pinned by a Kubernetes static CPU policy) where the OS exposes
+    # one, so a process pinned to a subset of the host's cores is not told it may
+    # use all of them. Falls back to the host count off Linux or if unavailable.
+    if hasattr(os, "sched_getaffinity"):
+        try:
+            available_cpus = len(os.sched_getaffinity(0))
+        except OSError:
+            available_cpus = 0
+    else:
+        available_cpus = 0
+    os_cpu_count = float(available_cpus or os.cpu_count() or 1.0)
 
     limit_count = math.inf
 

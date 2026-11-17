@@ -104,3 +104,63 @@ def test_NvidiaGpuResource():
 
     with pytest.raises(TypeError):
         NvidiaGpuResource.from_spec(1.5)
+
+
+def test_query_cgroup_cpu_count_respects_affinity(monkeypatch):
+    # A process pinned to a subset of the host's cores (taskset,
+    # docker --cpuset-cpus, a cpuset) must not be reported the host count.
+    from bentoml._internal import resource
+
+    resource.query_cgroup_cpu_count.cache_clear()
+    monkeypatch.setattr(
+        resource.os, "sched_getaffinity", lambda pid: {0, 1}, raising=False
+    )
+    # No cgroup quota, so only the available-CPU count caps the result.
+    monkeypatch.setattr(resource.os.path, "exists", lambda p: False)
+    monkeypatch.setattr(resource.os, "cpu_count", lambda: 64)
+    try:
+        assert resource.query_cgroup_cpu_count() == 2.0
+    finally:
+        resource.query_cgroup_cpu_count.cache_clear()
+
+
+def test_query_cgroup_cpu_count_falls_back_without_affinity(monkeypatch):
+    # Where the affinity mask is unavailable (non-Linux), fall back to the
+    # host CPU count, preserving the previous behaviour.
+    from bentoml._internal import resource
+
+    resource.query_cgroup_cpu_count.cache_clear()
+    monkeypatch.delattr(resource.os, "sched_getaffinity", raising=False)
+    monkeypatch.setattr(resource.os.path, "exists", lambda p: False)
+    monkeypatch.setattr(resource.os, "cpu_count", lambda: 8)
+    try:
+        assert resource.query_cgroup_cpu_count() == 8.0
+    finally:
+        resource.query_cgroup_cpu_count.cache_clear()
+
+
+def test_query_cgroup_cpu_count_quota_caps_affinity(monkeypatch):
+    # A cgroup v2 CPU quota (docker --cpus) still caps below the affinity count.
+    import io
+
+    from bentoml._internal import resource
+
+    resource.query_cgroup_cpu_count.cache_clear()
+    monkeypatch.setattr(
+        resource.os, "sched_getaffinity", lambda pid: set(range(8)), raising=False
+    )
+    monkeypatch.setattr(resource.os.path, "exists", lambda p: p.endswith("cpu.max"))
+    real_open = open
+    monkeypatch.setattr(
+        "builtins.open",
+        lambda p, *a, **k: (
+            io.StringIO("200000 100000\n")
+            if str(p).endswith("cpu.max")
+            else real_open(p, *a, **k)
+        ),
+    )
+    monkeypatch.setattr(resource.os, "cpu_count", lambda: 64)
+    try:
+        assert resource.query_cgroup_cpu_count() == 2.0
+    finally:
+        resource.query_cgroup_cpu_count.cache_clear()

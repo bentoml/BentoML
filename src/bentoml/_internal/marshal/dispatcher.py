@@ -428,11 +428,23 @@ class CorkDispatcher(t.Generic[T_IN, T_OUT]):
                 job.future.set_result(result)
                 return
             if first_child.future.done() and second_child.future.done():
-                result, _ = AutoContainer.batches_to_batch(
-                    [first_child.future.result(), second_child.future.result()],
-                    self.batch_dim[1],
-                )
-                job.future.set_result(result)
+                # Both children may finish before either callback runs.
+                if first_child.future.cancelled() or second_child.future.cancelled():
+                    job.future.cancel()
+                    return
+                results = [first_child.future.result(), second_child.future.result()]
+                for result in results:
+                    if isinstance(result, Exception):
+                        job.future.set_result(result)
+                        return
+                try:
+                    result, _ = AutoContainer.batches_to_batch(
+                        results, self.batch_dim[1]
+                    )
+                except Exception as exc:  # pylint: disable=broad-except
+                    job.future.set_result(exc)
+                else:
+                    job.future.set_result(result)
 
         first_child.future.add_done_callback(child_done_callback)
         second_child.future.add_done_callback(child_done_callback)

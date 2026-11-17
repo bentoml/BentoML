@@ -94,10 +94,19 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
 
     """
 
-    PRESERVED_COLUMNS = (COLUMN_TIME, COLUMN_RID, COLUMN_TID, COLUMN_META) = (
+    PRESERVED_COLUMNS = (
+        COLUMN_TIME,
+        COLUMN_RID,
+        COLUMN_TID,
+        COLUMN_SID,
+        COLUMN_SVC,
+        COLUMN_META,
+    ) = (
         "timestamp",
         "request_id",
         "trace_id",
+        "span_id",
+        "service_name",
         "bento_meta",
     )
 
@@ -245,6 +254,8 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
             self.COLUMN_TIME: datetime.datetime.now().timestamp(),
             self.COLUMN_RID: str(trace_context.request_id),
             self.COLUMN_TID: str(trace_context.trace_id),
+            self.COLUMN_SID: str(trace_context.span_id),
+            self.COLUMN_SVC: str(trace_context.service_name),
         }
 
         if self._will_export_schema or random.random() < self.meta_sample_rate:

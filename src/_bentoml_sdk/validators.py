@@ -230,6 +230,7 @@ class TensorSchema:
             numpy_array = arr.numpy()
         else:
             assert isinstance(arr, torch.Tensor)
+            arr = arr.detach()
             if arr.device.type != "cpu":
                 numpy_array = arr.cpu().numpy()
             else:

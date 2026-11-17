@@ -229,7 +229,6 @@ class JSON(
                         @svc.api(input=input_spec, output=NumpyNdarray())
                         async def predict(input: NDArray[np.int16]) -> NDArray[Any]:
                             return await runner.async_run(input)
-            json_encoder: Optional JSON encoder.
 
         Returns:
             :class:`~bentoml._internal.io_descriptors.json.JSON`: IODescriptor from given users inputs.

@@ -47,12 +47,10 @@ def load_model(
     Load a model from BentoML local modelstore with given name.
 
     Args:
-        tag (:code:`Union[str, Tag]`):
+        bentoml_model (:code:`Union[str, Tag]`):
             Tag of a saved model in BentoML local modelstore.
         device_id (:code:`str`, `optional`):
             Optional devices to put the given model on. Refer to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`torch.ScriptModule`: an instance of :obj:`torch.ScriptModule` from BentoML modelstore.
@@ -104,8 +102,6 @@ def save_model(
             e.g. a tokenizer module, preprocessor module, model configuration module
         metadata (:code:`Dict[str, Any]`, `optional`, default to :code:`None`):
             Custom metadata for given model.
-        model_store (:mod:`~bentoml._internal.models.store.ModelStore`, default to :mod:`BentoMLContainer.model_store`):
-            BentoML modelstore, provided by DI Container.
 
     Returns:
         :obj:`~bentoml.Tag`: A :obj:`tag` with a format `name:version` where `name` is the user-defined model's name, and a generated `version` by BentoML.

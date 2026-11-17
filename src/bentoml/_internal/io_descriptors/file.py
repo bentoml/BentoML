@@ -129,9 +129,6 @@ class File(
 
         Args:
             sample: Given File-like object, or a path to a file.
-            kind: The kind of file-like object to be used. Currently, the only accepted value is ``binaryio``.
-            mime_type: Optional MIME type for the descriptor. If not provided, ``from_sample``
-                       will try to infer the MIME type from the file extension.
 
         Returns:
             :class:`~bentoml._internal.io_descriptors.file.File`: IODescriptor from given users inputs.

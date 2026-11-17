@@ -469,8 +469,10 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
                 self._readyz_endpoint, timeout=timeout or httpx.USE_CLIENT_DEFAULT
             )
             return resp.status_code == 200
-        except httpx.TimeoutException:
-            logger.warning("Timed out waiting for runner to be ready")
+        except (httpx.TimeoutException, httpx.ConnectError):
+            logger.warning(
+                "Timed out or could not connect while waiting for runner to be ready"
+            )
             return False
 
     def close(self) -> None:
@@ -675,8 +677,10 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
             status = resp.status_code
             await resp.aclose()
             return status == 200
-        except httpx.TimeoutException:
-            logger.warning("Timed out waiting for runner to be ready")
+        except (httpx.TimeoutException, httpx.ConnectError):
+            logger.warning(
+                "Timed out or could not connect while waiting for runner to be ready"
+            )
             return False
 
     async def _get_stream(

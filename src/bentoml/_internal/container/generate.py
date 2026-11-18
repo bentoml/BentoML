@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     P = t.ParamSpec("P")
 
+    from ..bento.build_config import BentoEnvSchema
     from ..bento.build_config import CondaOptions
     from ..bento.build_config import DockerOptions
 
@@ -141,6 +142,7 @@ def generate_containerfile(
     conda: CondaOptions,
     bento_fs: Path,
     frontend: str = "dockerfile",
+    envs: list[BentoEnvSchema] | None = None,
     **override_bento_env: t.Any,
 ) -> str:
     """
@@ -220,15 +222,23 @@ def generate_containerfile(
     else:
         python_packages = {}
 
+    # An all-stage default shadowed at runtime is an ARG during construction.
+    # The entrypoint supplies its runtime value; explicit Docker overrides stay ENV.
+    runtime_overrides = {
+        env.name
+        for env in envs or []
+        if env.stage == "runtime" and env.name not in (docker.env or {})
+    }
     return template.render(
+        bento__runtime_overrides=runtime_overrides,
         **get_templates_variables(
-            docker,
+            docker.with_defaults(envs),
             conda,
             bento_fs,
             python_packages=python_packages,
             _is_cuda=release_type == "cuda",
             **override_bento_env,
-        )
+        ),
     )
 
 

@@ -210,6 +210,7 @@ def construct_containerfile(
                 bento_fs=Path(tempdir),
                 enable_buildkit=enable_buildkit,
                 add_header=add_header,
+                envs=options.envs,
             )
             instruction.append(dockerfile)
             if features is not None:
@@ -231,7 +232,9 @@ def construct_containerfile(
             from _bentoml_impl.docker import generate_dockerfile
 
             assert isinstance(options, BentoInfoV2)
-            runtime_envs, build_env = split_envs_by_stage(options.envs)
+            runtime_envs, build_env = split_envs_by_stage(
+                options.image_envs if options.image_envs is not None else options.envs
+            )
             if build_env and not enable_buildkit:
                 raise BentoMLException(
                     "stage='build' environment variables require BuildKit. "

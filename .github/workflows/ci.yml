@@ -33,7 +33,7 @@ jobs:
     # setup-python has no 3.9 build for ubuntu-latest (26.04); keep 3.9 on 24.04.
     runs-on: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == 3.9 && 'ubuntu-24.04' || matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Install the latest version of uv
@@ -84,7 +84,7 @@ jobs:
           - framework: detectron # NOTE: tested locally and the latest PyPI are to obsolete.
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Install the latest version of uv
@@ -119,7 +119,7 @@ jobs:
     env:
       BENTOML_BUNDLE_LOCAL_BUILD: True
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Set up QEMU
@@ -169,7 +169,7 @@ jobs:
     env:
       BENTOML_BUNDLE_LOCAL_BUILD: True
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # fetch all tags and branches
       - name: Set up QEMU
@@ -212,7 +212,7 @@ jobs:
       - integrations
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up Python

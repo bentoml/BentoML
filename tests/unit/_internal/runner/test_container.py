@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 import typing as t
 
 import numpy as np
@@ -109,3 +111,39 @@ def test_pandas_container(batch_dim_exc: t.Type[Exception], wrong_batch_dim: int
         c.PandasDataFrameContainer.batch_to_batches(
             batch, indices, batch_dim=wrong_batch_dim
         )
+
+
+TORCH_BATCH_SCRIPT = """
+import sys
+import torch
+from bentoml._internal.runner.container import AutoContainer
+
+batch_dim = int(sys.argv[1])
+batches = [torch.ones(int(r), int(c)) for r, c in (s.split("x") for s in sys.argv[2:])]
+batch, indices = AutoContainer.batches_to_batch(batches, batch_dim)
+restored = AutoContainer.batch_to_batches(batch, indices, batch_dim)
+print(type(batch).__name__, AutoContainer.get_batch_size(batches[0], batch_dim))
+print([tuple(r.shape) for r in restored] == [tuple(b.shape) for b in batches])
+"""
+
+
+@pytest.mark.parametrize(
+    "batch_dim, shapes, expected",
+    [
+        (0, ["2x2", "1x2"], ["Tensor", "2", "True"]),
+        (1, ["2x3", "2x1"], ["Tensor", "3", "True"]),
+    ],
+)
+def test_torch_tensor_batches_without_framework_import(
+    batch_dim: int, shapes: list[str], expected: list[str]
+):
+    # New-style services batch torch.Tensor inputs without ever importing
+    # bentoml.pytorch; run in a fresh interpreter so nothing has imported it.
+    pytest.importorskip("torch")
+    result = subprocess.run(
+        [sys.executable, "-c", TORCH_BATCH_SCRIPT, str(batch_dim), *shapes],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.split() == expected

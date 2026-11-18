@@ -134,6 +134,10 @@ class PyTorchTensorContainer(DataContainer[torch.Tensor, torch.Tensor]):
         return output
 
     @classmethod
+    def get_batch_size(cls, batch: torch.Tensor, batch_dim: int) -> int:
+        return batch.shape[batch_dim]
+
+    @classmethod
     @inject
     def to_payload(  # pylint: disable=arguments-differ
         cls,

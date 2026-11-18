@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import abc
 import base64
+import importlib
 import io
 import itertools
 import pickle
+import sys
 import typing as t
 from typing import Any
 
@@ -691,6 +693,23 @@ def register_builtin_containers():
 register_builtin_containers()
 
 
+# Framework containers register themselves when their module is imported
+# (e.g. by ``bentoml.pytorch``). New-style services never import those modules,
+# so batching loads them on first sight of a value from that framework.
+_FRAMEWORK_CONTAINER_MODULES = {"torch": "bentoml._internal.frameworks.common.pytorch"}
+
+
+def _find_batch_container(type_: t.Any) -> t.Type[DataContainer[t.Any, t.Any]]:
+    container_cls = DataContainerRegistry.find_by_batch_type(type_)
+    if container_cls is DefaultContainer:
+        framework = LazyType.from_type(type_).module.partition(".")[0]
+        target = _FRAMEWORK_CONTAINER_MODULES.get(framework)
+        if target is not None and target not in sys.modules:
+            importlib.import_module(target)
+            container_cls = DataContainerRegistry.find_by_batch_type(type_)
+    return container_cls
+
+
 class AutoContainer(DataContainer[t.Any, t.Any]):
     @classmethod
     def to_payload(cls, batch: t.Any, batch_dim: int) -> Payload:
@@ -701,9 +720,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
 
     @classmethod
     def get_batch_size(cls, batch: Any, batch_dim: int) -> int:
-        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
-            DataContainerRegistry.find_by_batch_type(type(batch))
-        )
+        container_cls = _find_batch_container(type(batch))
         return container_cls.get_batch_size(batch, batch_dim)
 
     @classmethod
@@ -752,18 +769,14 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     def batches_to_batch(
         cls, batches: t.Sequence[BatchType], batch_dim: int = 0
     ) -> tuple[BatchType, list[int]]:
-        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
-            DataContainerRegistry.find_by_batch_type(type(batches[0]))
-        )
+        container_cls = _find_batch_container(type(batches[0]))
         return container_cls.batches_to_batch(batches, batch_dim)
 
     @classmethod
     def batch_to_batches(
         cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int = 0
     ) -> list[BatchType]:
-        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
-            DataContainerRegistry.find_by_batch_type(type(batch))
-        )
+        container_cls = _find_batch_container(type(batch))
         return container_cls.batch_to_batches(batch, indices, batch_dim)
 
     @classmethod

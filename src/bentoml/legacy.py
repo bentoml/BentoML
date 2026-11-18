@@ -14,13 +14,13 @@ MODULE_ATTRS = {
 }
 
 __all__ = [
+    "GrpcServer",
+    "HTTPServer",
     "Resource",
     "Runnable",
     "Runner",
-    "Strategy",
     "Service",
-    "HTTPServer",
-    "GrpcServer",
+    "Strategy",
 ]
 
 if TYPE_CHECKING:

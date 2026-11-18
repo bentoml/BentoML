@@ -199,9 +199,9 @@ CUSTOM_PREPARE_METHODS = [
 SUPPORTED_CONTAINER_TYPES = [
     t.Union,
     list,
-    t.List,
+    list,
     dict,
-    t.Dict,
+    dict,
     t.AsyncGenerator,
     t.AsyncIterable,
     t.AsyncIterator,

@@ -160,11 +160,13 @@ class ModelAPI:
         )
         tar_io = os.fdopen(fd, "wb+")
         try:
-            with self.spinner.spin(
-                text=f'Creating tar archive for model "{model.tag}"..'
+            with (
+                self.spinner.spin(
+                    text=f'Creating tar archive for model "{model.tag}"..'
+                ),
+                tarfile.open(fileobj=tar_io, mode="w:") as tar,
             ):
-                with tarfile.open(fileobj=tar_io, mode="w:") as tar:
-                    tar.add(model.stored.path, arcname="./")
+                tar.add(model.stored.path, arcname="./")
             with self.spinner.spin(text=f'Start uploading model "{model.tag}"..'):
                 rest_client.v1.start_upload_model(
                     model_repository_name=model_repository.name, version=version

@@ -29,7 +29,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from ..external_typing import tensorflow as tf_ext
     from ..models.model import ModelSignatureDict
 
-    KerasArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
+    KerasArgType = t.Union[list[int | float], ext.NpNDArray, tf_ext.Tensor]
 
 try:
     import keras
@@ -79,7 +79,7 @@ def get(tag_like: str | Tag) -> bentoml.Model:
 def load_model(
     bento_model: str | Tag | bentoml.Model,
     device_name: str = "/device:CPU:0",
-) -> "tf_ext.KerasModel":
+) -> tf_ext.KerasModel:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -103,7 +103,7 @@ def load_model(
         # load a model back into memory:
         loaded = bentoml.keras.load_model("keras_model")
 
-    """  # noqa
+    """
 
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
@@ -132,18 +132,18 @@ def load_model(
 
 def save_model(
     name: Tag | str,
-    model: "tf_ext.KerasModel",
+    model: tf_ext.KerasModel,
     *,
-    tf_signatures: "tf_ext.ConcreteFunction" | None = None,
-    tf_save_options: "tf_ext.SaveOptions" | None = None,
+    tf_signatures: tf_ext.ConcreteFunction | None = None,
+    tf_save_options: tf_ext.SaveOptions | None = None,
     include_optimizer: bool = False,
     signatures: (
-        t.Dict[str, ModelSignature] | t.Dict[str, ModelSignatureDict] | None
+        dict[str, ModelSignature] | dict[str, ModelSignatureDict] | None
     ) = None,
-    labels: t.Optional[t.Dict[str, str]] = None,
-    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-    external_modules: t.Optional[t.List[ModuleType]] = None,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: list[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
@@ -227,8 +227,8 @@ def save_model(
     if not isinstance(
         model,
         (
-            t.cast("t.Type[keras.Model]", LazyType("keras.Model")),
-            t.cast("t.Type[keras.Sequential]", LazyType("keras.Sequential")),
+            t.cast("type[keras.Model]", LazyType("keras.Model")),
+            t.cast("type[keras.Sequential]", LazyType("keras.Sequential")),
         ),
     ):
         raise TypeError(
@@ -290,7 +290,7 @@ def get_runnable(
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
+    partial_kwargs: dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
 
     class KerasRunnable(Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
@@ -307,7 +307,7 @@ def get_runnable(
                 self.device_name = "/device:CPU:0"
 
             self.model = load_model(bento_model, device_name=self.device_name)
-            self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}
+            self.methods_cache: dict[str, t.Callable[..., t.Any]] = {}
 
     def _gen_run_method(runnable_self: KerasRunnable, method_name: str):
         raw_method = getattr(runnable_self.model, method_name)
@@ -315,15 +315,15 @@ def get_runnable(
         if method_partial_kwargs:
             raw_method = functools.partial(raw_method, **method_partial_kwargs)
 
-        def _mapping(item: "KerasArgType") -> "tf_ext.TensorLike":
+        def _mapping(item: KerasArgType) -> tf_ext.TensorLike:
             if not LazyType["tf_ext.TensorLike"]("tensorflow.Tensor").isinstance(item):
                 return t.cast("tf_ext.TensorLike", tf.convert_to_tensor(item))
             else:
                 return item
 
         def _run_method(
-            runnable_self: KerasRunnable, *args: "KerasArgType"
-        ) -> "ext.NpNDArray" | t.Tuple["ext.NpNDArray", ...]:
+            runnable_self: KerasRunnable, *args: KerasArgType
+        ) -> ext.NpNDArray | tuple[ext.NpNDArray, ...]:
             params = Params["KerasArgType"](*args)
 
             with tf.device(runnable_self.device_name):
@@ -333,7 +333,7 @@ def get_runnable(
                 else:
                     arg = params.args
 
-                res: "tf_ext.EagerTensor" | "ext.NpNDArray" = raw_method(arg)
+                res: tf_ext.EagerTensor | ext.NpNDArray = raw_method(arg)
 
                 if LazyType["tf_ext.EagerTensor"](
                     "tensorflow.python.framework.ops._EagerTensorBase"

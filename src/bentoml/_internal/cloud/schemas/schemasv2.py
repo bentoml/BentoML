@@ -17,34 +17,34 @@ from .modelschemas import LabelItemSchema
 
 @attr.define
 class DeploymentTargetSchema(ResourceSchema):
-    creator: t.Optional[UserSchema]
-    config: t.Optional[DeploymentConfigSchema]
-    bento: t.Optional[BentoWithRepositorySchema]
-    kube_resource_uid: t.Optional[str] = attr.field(default=None)
-    kube_resource_version: t.Optional[str] = attr.field(default=None)
+    creator: UserSchema | None
+    config: DeploymentConfigSchema | None
+    bento: BentoWithRepositorySchema | None
+    kube_resource_uid: str | None = attr.field(default=None)
+    kube_resource_version: str | None = attr.field(default=None)
 
 
 @attr.define
 class DeploymentTargetsSchema:
     main: DeploymentTargetSchema
-    canary: t.Optional[DeploymentCanarySchema] = attr.field(default=None)
+    canary: DeploymentCanarySchema | None = attr.field(default=None)
 
 
 @attr.define
 class DeploymentTargetListSchema(BaseListSchema):
-    items: t.List[t.Optional[DeploymentTargetSchema]]
+    items: list[DeploymentTargetSchema | None]
 
 
 @attr.define
 class DeploymentRevisionSchema(ResourceSchema):
-    creator: t.Optional[UserSchema]
+    creator: UserSchema | None
     status: str
-    targets: t.List[t.Optional[DeploymentTargetSchema]]
+    targets: list[DeploymentTargetSchema | None]
 
 
 @attr.define
 class DeploymentRevisionListSchema(BaseListSchema):
-    items: t.List[t.Optional[DeploymentRevisionSchema]]
+    items: list[DeploymentRevisionSchema | None]
 
 
 @attr.define
@@ -52,47 +52,43 @@ class DeploymentConfigSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
     access_authorization: bool = attr.field(default=False)
-    envs: t.Optional[t.List[EnvItemSchema]] = attr.field(default=None)
-    labels: t.Optional[t.List[LabelItemSchema]] = attr.field(default=None)
-    secrets: t.Optional[t.List[str]] = attr.field(default=None)
-    services: t.Dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
-    canary: t.Optional[DeploymentCanarySchema] = attr.field(default=None)
+    envs: list[EnvItemSchema] | None = attr.field(default=None)
+    labels: list[LabelItemSchema] | None = attr.field(default=None)
+    secrets: list[str] | None = attr.field(default=None)
+    services: dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
+    canary: DeploymentCanarySchema | None = attr.field(default=None)
 
 
 @attr.define
 class DeploymentCanaryTargetSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    envs: t.Optional[t.List[EnvItemSchema]] = attr.field(default=None)
-    secrets: t.Optional[t.List[str]] = attr.field(default=None)
-    services: t.Dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
+    envs: list[EnvItemSchema] | None = attr.field(default=None)
+    secrets: list[str] | None = attr.field(default=None)
+    services: dict[str, DeploymentServiceConfig] = attr.field(factory=dict)
 
 
 @attr.define
 class DeploymentVersionSchema(DeploymentCanaryTargetSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    bento: t.Optional[str] = attr.field(default=None)
-    weight: t.Optional[int] = attr.field(default=None)
+    bento: str | None = attr.field(default=None)
+    weight: int | None = attr.field(default=None)
 
 
 @attr.define
 class DeploymentRoutingSchema:
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    route_type: t.Optional[t.Literal["random", "header", "query"]] = attr.field(
-        default=None
-    )
-    route_by: t.Optional[str] = attr.field(default=None)
+    route_type: t.Literal["random", "header", "query"] | None = attr.field(default=None)
+    route_by: str | None = attr.field(default=None)
 
 
 @attr.define
 class DeploymentCanarySchema(DeploymentRoutingSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    versions: t.Optional[t.Dict[str, DeploymentVersionSchema]] = attr.field(
-        default=None
-    )
+    versions: dict[str, DeploymentVersionSchema] | None = attr.field(default=None)
 
 
 @attr.define(kw_only=True)
@@ -106,7 +102,7 @@ class UpdateDeploymentSchema(DeploymentConfigSchema):
 class CreateDeploymentSchema(UpdateDeploymentSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    name: t.Optional[str] = None
+    name: str | None = None
     dev: bool = False
 
 
@@ -114,14 +110,14 @@ class CreateDeploymentSchema(UpdateDeploymentSchema):
 class DeploymentRoutingManifestSchema(DeploymentRoutingSchema):
     __forbid_extra_keys__ = False
     __omit_if_default__ = True
-    weights: t.Optional[t.Dict[str, int]] = None
+    weights: dict[str, int] | None = None
 
 
 @attr.define
 class DeploymentManifestSchema:
     __forbid_extra_keys__ = False
     dev: bool = False
-    routing: t.Optional[DeploymentRoutingManifestSchema] = None
+    routing: DeploymentRoutingManifestSchema | None = None
 
 
 @attr.define
@@ -132,20 +128,20 @@ class DeploymentSchema(ResourceSchema):
     kube_namespace: str
     creator: UserSchema
     cluster: ClusterSchema
-    latest_revision: t.Optional[DeploymentRevisionSchema]
-    manifest: t.Optional[DeploymentManifestSchema] = None
+    latest_revision: DeploymentRevisionSchema | None
+    manifest: DeploymentManifestSchema | None = None
 
 
 @attr.define
 class DeploymentFullSchema(DeploymentSchema):
-    urls: t.List[str] = attr.field(factory=list)
+    urls: list[str] = attr.field(factory=list)
 
 
 @attr.define
 class DeploymentListSchema(BaseListSchema):
     __omit_if_default__ = True
     __forbid_extra_keys__ = False
-    items: t.List[DeploymentSchema]
+    items: list[DeploymentSchema]
 
 
 @attr.define
@@ -167,7 +163,7 @@ class KubePodSchema:
     __forbid_extra_keys__ = False
     name: str
     namespace: str
-    labels: t.Dict[str, str]
+    labels: dict[str, str]
     pod_status: KubePodStatusSchema
     status: PodStatusSchema
     runner_name: str
@@ -176,16 +172,16 @@ class KubePodSchema:
 @attr.define
 class LogSchema:
     __forbid_extra_keys__ = False
-    items: t.List[str] = attr.field(factory=list)
+    items: list[str] = attr.field(factory=list)
     type: str = "append"
 
 
 @attr.define
 class LogWSResponseSchema:
     __forbid_extra_keys__ = False
-    message: t.Optional[str]
+    message: str | None
     type: str
-    payload: t.Optional[LogSchema]
+    payload: LogSchema | None
 
 
 @attr.define
@@ -193,7 +189,7 @@ class KubePodWSResponseSchema:
     __forbid_extra_keys__ = False
     message: str
     type: str
-    payload: t.Optional[t.List[KubePodSchema]]
+    payload: list[KubePodSchema] | None
 
 
 @attr.define
@@ -206,13 +202,13 @@ class UploadDeploymentFileSchema:
 @attr.define
 class UploadDeploymentFilesSchema:
     __forbid_extra_keys__ = False
-    files: t.List[UploadDeploymentFileSchema]
+    files: list[UploadDeploymentFileSchema]
 
 
 @attr.define
 class DeleteDeploymentFilesSchema:
     __forbid_extra_keys__ = False
-    paths: t.List[str]
+    paths: list[str]
 
 
 @attr.define
@@ -226,4 +222,4 @@ class DeploymentFileSchema:
 @attr.define
 class DeploymentFileListSchema:
     __forbid_extra_keys__ = False
-    files: t.List[DeploymentFileSchema]
+    files: list[DeploymentFileSchema]

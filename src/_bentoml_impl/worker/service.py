@@ -175,7 +175,7 @@ def main(
     configure_server_logging()
     if runner_map:
         BentoMLContainer.remote_runner_mapping.set(
-            t.cast(t.Dict[str, str], json.loads(runner_map))
+            t.cast(dict[str, str], json.loads(runner_map))
         )
 
     if worker_id is not None:

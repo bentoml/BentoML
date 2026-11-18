@@ -32,7 +32,7 @@ def _fresh_bentoml_metrics_module():
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
-        import bentoml.metrics as m  # noqa: PLC0415
+        import bentoml.metrics as m
 
     return m
 
@@ -50,7 +50,7 @@ def test_bentoml_metrics_does_not_import_prometheus_client_eagerly():
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
-        import bentoml.metrics  # noqa: F401, PLC0415
+        import bentoml.metrics  # noqa: F401
 
     assert "prometheus_client" not in sys.modules, (
         "prometheus_client must not be imported at bentoml.metrics import time; "
@@ -79,7 +79,7 @@ def test_multiple_histograms_all_collected_in_multiprocess_mode():
             warnings.simplefilter("ignore", DeprecationWarning)
             # First attribute access — prometheus_client is imported HERE,
             # after the env var is already set.
-            Histogram = m.Histogram  # noqa: N806
+            Histogram = m.Histogram
 
         h1 = Histogram("test_latency_seconds", "Request latency")
         h2 = Histogram("test_image_width_pixels", "Image width")
@@ -89,8 +89,8 @@ def test_multiple_histograms_all_collected_in_multiprocess_mode():
         h2.observe(640.0)
         h3.observe(480.0)
 
-        import prometheus_client  # noqa: PLC0415
-        import prometheus_client.multiprocess  # noqa: PLC0415
+        import prometheus_client
+        import prometheus_client.multiprocess
 
         registry = prometheus_client.CollectorRegistry()
         prometheus_client.multiprocess.MultiProcessCollector(registry)
@@ -110,7 +110,7 @@ def test_multiple_histograms_all_collected_in_multiprocess_mode():
         if old_env is not None:
             os.environ["PROMETHEUS_MULTIPROC_DIR"] = old_env
         # Clean up multiprocess DB files.
-        import shutil  # noqa: PLC0415
+        import shutil
 
         shutil.rmtree(tmp, ignore_errors=True)
         # Remove prometheus_client from sys.modules so other tests start clean.

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from watchfiles.main import FileChange
 
 
-def requires_watchfiles(test_case: t.Type[TestCase]) -> t.Callable[..., t.Any]:
+def requires_watchfiles(test_case: type[TestCase]) -> t.Callable[..., t.Any]:
     return skipUnless(
         source_locations("watchfiles") is not None,
         "Requires 'watchfiles' to be installed.",
@@ -72,7 +72,7 @@ class TestServiceReloaderPlugin(TestCircus):
         )
         patcher.start()
         self.addCleanup(patcher.stop)
-        import bentoml._internal.log as log
+        from bentoml._internal import log
 
         log.configure_server_logging = lambda: None
 

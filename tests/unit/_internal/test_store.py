@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import time
-import typing as t
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -25,7 +24,7 @@ class DummyItem(StoreItem):
     _tag: Tag
     _path: Path
     _creation_time: datetime
-    store: "DummyStore" = attr.field(init=False)
+    store: DummyStore = attr.field(init=False)
 
     @staticmethod
     def _export_ext() -> str:
@@ -40,14 +39,14 @@ class DummyItem(StoreItem):
         return self._creation_time
 
     @staticmethod
-    def create(tag: t.Union[str, Tag], creation_time: t.Optional[datetime] = None):
+    def create(tag: str | Tag, creation_time: datetime | None = None):
         creation_time = datetime.now() if creation_time is None else creation_time
         with DummyItem.store.register(tag) as path:
             Path(path, "tag").write_text(str(tag))
             Path(path, "ctime").write_text(creation_time.isoformat())
 
     @classmethod
-    def from_path(cls, path: PathType) -> "DummyItem":
+    def from_path(cls, path: PathType) -> DummyItem:
         path = Path(path)
         return DummyItem(
             Tag.from_str(path.joinpath("tag").read_text().strip()),
@@ -60,7 +59,7 @@ class DummyStore(Store[DummyItem]):
     _item_type = DummyItem
 
 
-def test_store(tmpdir: "Path"):
+def test_store(tmpdir: Path):
     store = DummyStore(tmpdir)
 
     open(os.path.join(tmpdir, ".DS_store"), "a", encoding="utf-8")

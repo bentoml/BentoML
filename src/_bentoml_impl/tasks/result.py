@@ -70,7 +70,7 @@ class ResultStore(abc.ABC, t.Generic[Ti, To]):
     async def get(self, task_id: str) -> CompletedResultRow[Ti, To]:
         raise NotImplementedError
 
-    async def get_or_none(self, task_id: str) -> t.Optional[ResultRow[Ti, To]]:
+    async def get_or_none(self, task_id: str) -> ResultRow[Ti, To] | None:
         try:
             return await self.get(task_id)
         except (KeyError, RuntimeError):
@@ -109,12 +109,12 @@ class Sqlite3Store(ResultStore[Request, Response]):
             timeout=30.0,
         )
 
-    async def __aenter__(self) -> "t.Self":
+    async def __aenter__(self) -> t.Self:
         self._conn = await self._conn
         await self._conn.execute("PRAGMA busy_timeout=5000")
         return self
 
-    async def __aexit__(self, *_: t.Any) -> None:
+    async def __aexit__(self, *_: object) -> None:
         await self._conn.close()
 
     @classmethod

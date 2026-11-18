@@ -178,7 +178,7 @@ def build_test_bento() -> Bento:
 
 
 @pytest.mark.usefixtures("change_test_dir")
-def test_bento_export(tmp_path: "Path", model_store: "ModelStore"):
+def test_bento_export(tmp_path: Path, model_store: ModelStore):
     working_dir = os.getcwd()
 
     testbento = build_test_bento()
@@ -320,7 +320,7 @@ def test_bento_export(tmp_path: "Path", model_store: "ModelStore"):
 
 
 @pytest.mark.usefixtures("change_test_dir")
-def test_export_bento_with_models(model_store: ModelStore, tmp_path: "Path"):
+def test_export_bento_with_models(model_store: ModelStore, tmp_path: Path):
     working_dir = os.getcwd()
     bento = build_test_bento()
     os.chdir(working_dir)

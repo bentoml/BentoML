@@ -57,7 +57,7 @@ class ClientInfo:
 @lru_cache(maxsize=1)
 def get_client_info(
     bentoml_home: str = Provide[BentoMLContainer.bentoml_home],
-) -> t.Optional[ClientInfo]:
+) -> ClientInfo | None:
     CLIENT_INFO_FILE_PATH = os.path.join(bentoml_home, "client_id")
 
     if os.path.exists(CLIENT_INFO_FILE_PATH):
@@ -111,17 +111,17 @@ class CommonProperties:
 
     # client related
     client: ClientInfo = attr.field(factory=get_client_info)
-    yatai_user_email: t.Optional[str] = attr.field(factory=get_yatai_user_email)
-    yatai_version: t.Optional[str] = attr.field(
+    yatai_user_email: str | None = attr.field(factory=get_yatai_user_email)
+    yatai_version: str | None = attr.field(
         default=os.environ.get(ENV_YATAI_VERSION, None)
     )
-    yatai_org_uid: t.Optional[str] = attr.field(
+    yatai_org_uid: str | None = attr.field(
         default=os.environ.get(ENV_YATAI_ORG_UID, None)
     )
-    yatai_cluster_uid: t.Optional[str] = attr.field(
+    yatai_cluster_uid: str | None = attr.field(
         default=os.environ.get(ENV_YATAI_CLUSTER_UID, None)
     )
-    yatai_deployment_uid: t.Optional[str] = attr.field(
+    yatai_deployment_uid: str | None = attr.field(
         default=os.environ.get(ENV_YATAI_DEPLOYMENT_UID, None)
     )
 
@@ -139,8 +139,7 @@ class EventMeta(ABC):
         event_name = re.sub(r"(?<!^)(?=[A-Z])", "_", self.__class__.__name__).lower()
         # remove "_event" suffix
         suffix_to_remove = "_event"
-        if event_name.endswith(suffix_to_remove):
-            event_name = event_name[: -len(suffix_to_remove)]
+        event_name = event_name.removesuffix(suffix_to_remove)
         return event_name
 
 
@@ -149,20 +148,20 @@ class CliEvent(EventMeta):
     cmd_group: str
     cmd_name: str
     duration_in_ms: float = attr.field(default=0)
-    error_type: t.Optional[str] = attr.field(default=None)
-    return_code: t.Optional[int] = attr.field(default=None)
+    error_type: str | None = attr.field(default=None)
+    return_code: int | None = attr.field(default=None)
 
 
 @attr.define
 class BentoBuildEvent(CliEvent):
     bentoml_version: str = BENTOML_VERSION
-    bento_creation_timestamp: t.Optional[datetime] = attr.field(default=None)
+    bento_creation_timestamp: datetime | None = attr.field(default=None)
     bento_size_in_kb: float = attr.field(default=0)
     model_size_in_kb: float = attr.field(default=0)
 
     num_of_models: int = attr.field(default=0)
     num_of_runners: int = attr.field(default=0)
-    model_types: t.List[str] = attr.field(factory=list)
+    model_types: list[str] = attr.field(factory=list)
 
 
 @attr.define
@@ -184,15 +183,15 @@ class ServeInitEvent(EventMeta):
     serve_from_bento: bool
     serve_from_server_api: bool
 
-    bento_creation_timestamp: t.Optional[datetime]
+    bento_creation_timestamp: datetime | None
     serve_kind: str = attr.field(validator=attr.validators.in_(SERVE_KIND))
     num_of_models: int = attr.field(default=0)
     num_of_runners: int = attr.field(default=0)
     num_of_apis: int = attr.field(default=0)
-    model_types: t.List[str] = attr.field(factory=list)
-    runnable_types: t.List[str] = attr.field(factory=list)
-    api_input_types: t.List[str] = attr.field(factory=list)
-    api_output_types: t.List[str] = attr.field(factory=list)
+    model_types: list[str] = attr.field(factory=list)
+    runnable_types: list[str] = attr.field(factory=list)
+    api_input_types: list[str] = attr.field(factory=list)
+    api_output_types: list[str] = attr.field(factory=list)
 
 
 @attr.define
@@ -208,7 +207,7 @@ class ServeUpdateEvent(EventMeta):
             attr.validators.instance_of(str), attr.validators.in_(COMPONENT_KIND)
         )
     )
-    metrics: t.List[t.Any] = attr.field(factory=list)
+    metrics: list[t.Any] = attr.field(factory=list)
 
 
 ALL_EVENT_TYPES = t.Union[

@@ -172,7 +172,7 @@ def test_log_load_model(caplog: pytest.LogCaptureFixture):
 
 
 def test_model_options():
-    unstructured_options: t.Dict[str, t.Any] = {
+    unstructured_options: dict[str, t.Any] = {
         "task": "sentiment-analysis",
         "tf": (),
         "pt": (),

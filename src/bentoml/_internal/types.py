@@ -17,12 +17,12 @@ from typing import get_origin
 from starlette.applications import Starlette
 
 __all__ = [
-    "MetadataType",
-    "MetadataDict",
+    "FileLike",
     "JSONSerializable",
     "LazyType",
+    "MetadataDict",
+    "MetadataType",
     "is_compatible_type",
-    "FileLike",
 ]
 
 logger = logging.getLogger(__name__)
@@ -35,28 +35,28 @@ HEADER_CHARSET = "latin1"
 
 JSON_CHARSET = "utf-8"
 
-MetadataType: t.TypeAlias = t.Union[
-    str,
-    bytes,
-    bool,
-    int,
-    float,
-    complex,
-    datetime,
-    date,
-    time,
-    timedelta,
-    t.List["MetadataType"],
-    t.Tuple["MetadataType"],
-    t.Dict[str, "MetadataType"],
-]
+MetadataType: t.TypeAlias = (
+    str
+    | bytes
+    | bool
+    | int
+    | float
+    | complex
+    | datetime
+    | date
+    | time
+    | timedelta
+    | list["MetadataType"]
+    | tuple["MetadataType"]
+    | dict[str, "MetadataType"]
+)
 
 
 class ModelSignatureDict(t.TypedDict, total=False):
     batchable: bool
-    batch_dim: t.Union[t.Tuple[int, int], int]
-    input_spec: t.Optional[t.Union[t.Tuple[AnyType], AnyType]]
-    output_spec: t.Optional[AnyType]
+    batch_dim: tuple[int, int] | int
+    input_spec: tuple[AnyType] | AnyType | None
+    output_spec: AnyType | None
 
 
 if t.TYPE_CHECKING:
@@ -70,14 +70,14 @@ if t.TYPE_CHECKING:
         | list["JSONSerializable"]
         | dict[str, "JSONSerializable"]
     )
-    MetadataDict = t.Dict[str, MetadataType]
+    MetadataDict = dict[str, MetadataType]
 else:
     PathType = t.Union[str, os.PathLike]
     JSONSerializable = t.NewType("JSONSerializable", object)
     # NOTE: remove this when registering hook for MetadataType
     MetadataDict = dict
 
-LifecycleHook = t.Callable[[Starlette], t.Union[None, t.Coroutine[t.Any, t.Any, None]]]
+LifecycleHook = t.Callable[[Starlette], None | t.Coroutine[t.Any, t.Any, None]]
 
 T = t.TypeVar("T")
 
@@ -126,7 +126,7 @@ class LazyType(t.Generic[T]):
         """LazyType("numpy", "ndarray")"""
 
     @t.overload
-    def __init__(self, module_or_cls: t.Type[T]) -> None:
+    def __init__(self, module_or_cls: type[T]) -> None:
         """LazyType(numpy.ndarray)"""
 
     @t.overload
@@ -135,7 +135,7 @@ class LazyType(t.Generic[T]):
 
     def __init__(
         self,
-        module_or_cls: str | t.Type[T],
+        module_or_cls: str | type[T],
         qualname: str | None = None,
     ) -> None:
         if isinstance(module_or_cls, str):
@@ -152,15 +152,15 @@ class LazyType(t.Generic[T]):
             self._runtime_class = module_or_cls
             self.module = module_or_cls.__module__
             if hasattr(module_or_cls, "__qualname__"):
-                self.qualname: str = getattr(module_or_cls, "__qualname__")
+                self.qualname: str = module_or_cls.__qualname__
             else:
-                self.qualname: str = getattr(module_or_cls, "__name__")
+                self.qualname: str = module_or_cls.__name__
 
     def __instancecheck__(self, obj: object) -> t.TypeGuard[T]:
         return self.isinstance(obj)
 
     @classmethod
-    def from_type(cls, typ_: t.Union[LazyType[T], t.Type[T]]) -> LazyType[T]:
+    def from_type(cls, typ_: LazyType[T] | type[T]) -> LazyType[T]:
         if isinstance(typ_, LazyType):
             return typ_
         return cls(typ_)
@@ -183,7 +183,7 @@ class LazyType(t.Generic[T]):
     def __repr__(self) -> str:
         return f'LazyType("{self.module}", "{self.qualname}")'
 
-    def get_class(self, import_module: bool = True) -> t.Type[T]:
+    def get_class(self, import_module: bool = True) -> type[T]:
         if self._runtime_class is None:
             try:
                 m = sys.modules[self.module]
@@ -195,7 +195,7 @@ class LazyType(t.Generic[T]):
                 else:
                     raise ValueError(f"Module {self.module} not imported")
 
-            self._runtime_class = t.cast("t.Type[T]", getattr(m, self.qualname))
+            self._runtime_class = t.cast("type[T]", getattr(m, self.qualname))
 
         return self._runtime_class
 
@@ -215,7 +215,7 @@ class LazyType(t.Generic[T]):
 if t.TYPE_CHECKING:
     from types import UnionType
 
-    AnyType: t.TypeAlias = t.Type[t.Any] | UnionType | LazyType[t.Any]
+    AnyType: t.TypeAlias = type[t.Any] | UnionType | LazyType[t.Any]
 else:
     AnyType = t.Any
 
@@ -229,10 +229,10 @@ def is_compatible_type(t1: AnyType, t2: AnyType) -> bool:
     peformance-critical contexts.
     """
     if get_origin(t1) is t.Union:
-        return any((is_compatible_type(t2, arg_type) for arg_type in get_args(t1)))
+        return any(is_compatible_type(t2, arg_type) for arg_type in get_args(t1))
 
     if get_origin(t2) is t.Union:
-        return any((is_compatible_type(t1, arg_type) for arg_type in get_args(t2)))
+        return any(is_compatible_type(t1, arg_type) for arg_type in get_args(t2))
 
     if isinstance(t1, LazyType):
         t1 = t1.get_class()
@@ -289,7 +289,7 @@ class FileLike(t.Generic[t.AnyStr], io.IOBase):
     def readline(self, size: int = -1) -> t.AnyStr:  # type: ignore (python IO types)
         return self._wrapped.readline(size)
 
-    def readlines(self, size: int = -1) -> t.List[t.AnyStr]:  # type: ignore (python IO types)
+    def readlines(self, size: int = -1) -> list[t.AnyStr]:  # type: ignore (python IO types)
         return self._wrapped.readlines(size)
 
     def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
@@ -301,7 +301,7 @@ class FileLike(t.Generic[t.AnyStr], io.IOBase):
     def tell(self) -> int:
         return self._wrapped.tell()
 
-    def truncate(self, size: t.Optional[int] = None) -> int:
+    def truncate(self, size: int | None = None) -> int:
         return self._wrapped.truncate(size)
 
     def writable(self) -> bool:
@@ -324,7 +324,7 @@ class FileLike(t.Generic[t.AnyStr], io.IOBase):
 
     def __exit__(  # type: ignore (override python IO types)
         self,
-        typ: t.Type[BaseException] | None,
+        typ: type[BaseException] | None,
         value: BaseException | None,
         traceback: TracebackType | None,
     ) -> bool | None:

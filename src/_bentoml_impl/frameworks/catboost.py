@@ -75,7 +75,7 @@ def load_model(bento_model: str | Tag | bentoml.Model) -> cb.CatBoost:
 
     model_file = bento_model.path_of(MODEL_FILENAME)
     cb_class_name: str = bento_model.info.options.training_class_name  # type: ignore
-    cb_class: t.Type[cb.CatBoost] = getattr(cb, cb_class_name)
+    cb_class: type[cb.CatBoost] = getattr(cb, cb_class_name)
     if not issubclass(cb_class, cb.CatBoost):
         raise BentoMLException(f"{cb_class_name} is not a valid CatBoost class.")
     cb_instance = cb_class()
@@ -95,7 +95,7 @@ def save_model(
     signatures: dict[str, ModelSignatureDict] | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
@@ -200,7 +200,7 @@ def save_model(
 
 
 @deprecated(suggestion="Use `get_service` instead.")
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
     """
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
@@ -209,7 +209,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
         SUPPORTS_CPU_MULTI_THREADING = True
 
-        predict_params: t.Dict[str, t.Any]
+        predict_params: dict[str, t.Any]
 
         def __init__(self):
             super().__init__()

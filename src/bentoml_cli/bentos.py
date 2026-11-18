@@ -112,7 +112,6 @@ def bento_management_commands() -> click.Group:
     @click.group(cls=BentoMLCommandGroup)
     def bentos():
         """Commands for managing Bento bundles."""
-        pass
 
     @bentos.command()
     @click.argument("bento_tag", type=click.STRING)

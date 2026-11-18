@@ -48,6 +48,6 @@ def make_fastapi_class_views(cls: type[Any], app: FastAPI) -> None:
             for param in parameters[1:]
         ]
         new_signature = signature.replace(parameters=new_params)
-        setattr(route.endpoint, "__signature__", new_signature)
+        route.endpoint.__signature__ = new_signature
         new_router.routes.append(route)
     app.include_router(new_router)

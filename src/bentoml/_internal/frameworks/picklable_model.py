@@ -56,7 +56,7 @@ def load_model(bento_model: str | Tag | Model) -> ModelType:
         import bentoml
 
         picklable_model = bentoml.picklable_model.load_model('my_model:latest')
-    """  # noqa
+    """
     if not isinstance(bento_model, Model):
         bento_model = get(bento_model)
 
@@ -78,10 +78,10 @@ def save_model(
     model: ModelType,
     *,
     signatures: dict[str, ModelSignature] | None = None,
-    labels: t.Dict[str, str] | None = None,
-    custom_objects: t.Dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
-    metadata: t.Dict[str, t.Any] | None = None,
+    labels: dict[str, str] | None = None,
+    custom_objects: dict[str, t.Any] | None = None,
+    external_modules: list[ModuleType] | None = None,
+    metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
     Save a model instance to BentoML modelstore.
@@ -109,7 +109,7 @@ def save_model(
         import bentoml
 
         bento_model = bentoml.picklable.save_model('picklable_pyobj', model)
-    """  # noqa
+    """
     context = ModelContext(
         framework_name="cloudpickle",
         framework_versions={"cloudpickle": cloudpickle.__version__},
@@ -146,7 +146,7 @@ def get_runnable(bento_model: Model):
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
+    partial_kwargs: dict[str, t.Any] = bento_model.info.options.partial_kwargs  # type: ignore
 
     class PicklableRunnable(bentoml.legacy.Runnable):
         SUPPORTED_RESOURCES = ("cpu",)
@@ -156,7 +156,7 @@ def get_runnable(bento_model: Model):
             super().__init__()
             self.model = load_model(bento_model)
 
-    def _get_run(method_name: str, partial_kwargs: t.Dict[str, t.Any] | None = None):
+    def _get_run(method_name: str, partial_kwargs: dict[str, t.Any] | None = None):
         if partial_kwargs is None:
             partial_kwargs = {}
 

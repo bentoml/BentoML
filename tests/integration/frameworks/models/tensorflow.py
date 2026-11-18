@@ -120,7 +120,7 @@ input_tensor = tf.constant(input_data, dtype=tf.float64)
 input_tensor_f32 = tf.constant(input_data, dtype=tf.float32)
 
 ragged_data = [[15], [7, 8], [1, 2, 3, 4, 5]]
-ragged_tensor: "tf_ext.TensorLike" = tf.ragged.constant(ragged_data, dtype=tf.float64)
+ragged_tensor: tf_ext.TensorLike = tf.ragged.constant(ragged_data, dtype=tf.float64)
 
 
 native_multi_input_model = FrameworkTestModel(

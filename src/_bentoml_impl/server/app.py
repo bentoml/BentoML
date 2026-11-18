@@ -468,7 +468,7 @@ class ServiceAppFactory(BaseAppFactory):
         metrics_client = BentoMLContainer.metrics_client.get()
         metrics_content = await anyio.to_thread.run_sync(metrics_client.generate_latest)
         if hasattr(self.service.inner, "__metrics__"):
-            func = getattr(self._service_instance, "__metrics__")
+            func = self._service_instance.__metrics__
             if not is_async_callable(func):
                 func = functools.partial(anyio.to_thread.run_sync, func)
             metrics_content = (await func(metrics_content.decode("utf-8"))).encode(
@@ -787,7 +787,7 @@ class ServiceAppFactory(BaseAppFactory):
         call_kwargs: dict[str, t.Any] = {}
         if getattr(method.input_spec, "__root_input__", False):
             if isinstance(input_data, IORootModel):
-                call_args = t.cast(t.Tuple[t.Any], (input_data.root,))
+                call_args = t.cast(tuple[t.Any], (input_data.root,))
             else:
                 call_args = (input_data,)
         else:

@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING
 from bentoml._internal.utils import warn_deprecated
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from importlib.machinery import ModuleSpec
     from types import ModuleType
-    from typing import Sequence
 
 
 class FrameworkImporter(MetaPathFinder):

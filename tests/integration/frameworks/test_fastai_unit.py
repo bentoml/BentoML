@@ -7,7 +7,6 @@ import typing as t
 import numpy as np
 import pytest
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from fastai.data.block import DataBlock
 from fastai.data.core import DataLoaders
@@ -18,6 +17,7 @@ from fastai.data.transforms import Transform
 from fastai.learner import Learner
 from fastai.test_utils import synth_learner
 from fastcore.foundation import L
+from torch import nn
 
 import bentoml
 from bentoml.exceptions import BentoMLException

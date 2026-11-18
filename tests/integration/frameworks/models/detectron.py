@@ -19,8 +19,8 @@ from . import FrameworkTestModelConfiguration as Config
 from . import FrameworkTestModelInput as Input
 
 if t.TYPE_CHECKING:
-    import torch.nn as nn
     from numpy.typing import NDArray
+    from torch import nn
 
 framework = bentoml.detectron
 backward_compatible = False

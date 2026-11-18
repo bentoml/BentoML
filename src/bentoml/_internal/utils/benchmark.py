@@ -389,7 +389,7 @@ class BenchmarkClient:
 
     async def _start_output(self):
         while self.status in {self.STATUS_SPAWNING, self.STATUS_SPAWNED}:
-            print("")
+            print()
             self.stat.print_step()
             await asyncio.sleep(2)
 

@@ -8,7 +8,6 @@ def raise_error(msg: str) -> t.NoReturn:
     """
     Raise error with the provided message
     """
-    ...
 
 def serialized_byte_size(tensor_value: NDArray[t.Any]) -> int:
     """
@@ -24,7 +23,6 @@ def serialized_byte_size(tensor_value: NDArray[t.Any]) -> int:
     int
         Number of bytes present in this tensor
     """
-    ...
 
 class InferenceServerException(Exception):
     """Exception indicating non-Success status.
@@ -45,7 +43,6 @@ class InferenceServerException(Exception):
     def __init__(
         self, msg: str, status: str = ..., debug_details: str = ...
     ) -> None: ...
-    def __str__(self) -> str: ...
     def message(self) -> str:
         """Get the exception message.
 
@@ -55,7 +52,6 @@ class InferenceServerException(Exception):
             The message associated with this exception, or None if no message.
 
         """
-        ...
 
     def status(self) -> str:
         """Get the status of the exception.
@@ -66,7 +62,6 @@ class InferenceServerException(Exception):
             Returns the status of the exception
 
         """
-        ...
 
     def debug_details(self) -> str:
         """Get the detailed information about the exception
@@ -78,7 +73,6 @@ class InferenceServerException(Exception):
             Returns the exception details
 
         """
-        ...
 
 def np_to_triton_dtype(np_dtype: DTypeLike) -> str: ...
 def triton_to_np_dtype(dtype: str) -> DTypeLike: ...
@@ -104,7 +98,6 @@ def serialize_byte_tensor(input_tensor: NDArray[t.Any]) -> NDArray[np.uint8]:
     InferenceServerException
         If unable to serialize the given tensor.
     """
-    ...
 
 def deserialize_bytes_tensor(encoded_tensor: bytes) -> NDArray[t.Any]:
     """
@@ -124,7 +117,6 @@ def deserialize_bytes_tensor(encoded_tensor: bytes) -> NDArray[t.Any]:
         deserialized bytes in row-major form.
 
     """
-    ...
 
 def serialize_bf16_tensor(input_tensor: NDArray[np.float32]) -> NDArray[np.uint8]:
     """
@@ -146,7 +138,6 @@ def serialize_bf16_tensor(input_tensor: NDArray[np.float32]) -> NDArray[np.uint8
     InferenceServerException
         If unable to serialize the given tensor.
     """
-    ...
 
 def deserialize_bf16_tensor(encoded_tensor: bytes) -> NDArray[np.float32]:
     """
@@ -165,4 +156,3 @@ def deserialize_bf16_tensor(encoded_tensor: bytes) -> NDArray[np.float32]:
         deserialized bytes in row-major form.
 
     """
-    ...

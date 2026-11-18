@@ -28,7 +28,7 @@ if t.TYPE_CHECKING:
     from types import UnionType
 
     import pydantic
-    import pydantic.schema as schema
+    from pydantic import schema
 
     if pkg_version_info("pydantic")[0] >= 2:
         import pydantic.json_schema as jschema
@@ -52,7 +52,7 @@ else:
     np = LazyLoader("np", globals(), "numpy")
 
 
-JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel", None]
+JSONType = t.Union[str, dict[str, t.Any], "pydantic.BaseModel", None]
 
 logger = logging.getLogger(__name__)
 

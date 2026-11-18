@@ -5,7 +5,6 @@ import asyncio
 import contextlib
 import itertools
 import os
-import socket
 import subprocess
 import sys
 import time
@@ -117,11 +116,7 @@ async def server_warmup(
                     return True
                 else:
                     await asyncio.sleep(check_interval)
-            except (
-                ConnectionError,
-                urllib.error.URLError,
-                socket.timeout,
-            ) as e:
+            except (TimeoutError, ConnectionError, urllib.error.URLError) as e:
                 print(f"[{e}] Retrying to connect to the host {host_url}...")
                 await asyncio.sleep(check_interval)
     print(f"Timed out waiting {timeout} seconds for Server {host_url} to be ready.")
@@ -139,7 +134,7 @@ def build(project_path: str, cleanup: bool = True) -> t.Generator[Bento, None, N
     bento = bentos.build_bentofile(build_ctx=project_path)
     yield bento
     if cleanup:
-        print(f"Deleting bento: {str(bento.tag)}")
+        print(f"Deleting bento: {bento.tag!s}")
         bentos.delete(bento.tag)
 
 

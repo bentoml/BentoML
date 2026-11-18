@@ -9,7 +9,7 @@ from enum import Enum
 from tempfile import SpooledTemporaryFile
 from urllib.parse import unquote_plus
 
-import python_multipart.multipart as multipart
+from python_multipart import multipart
 from starlette.datastructures import FormData
 from starlette.datastructures import Headers
 from starlette.datastructures import MutableHeaders
@@ -134,8 +134,8 @@ class MultiPartParser:
         headers: Headers,
         stream: t.AsyncGenerator[bytes, None],
         *,
-        max_files: int | float = 1000,
-        max_fields: int | float = 1000,
+        max_files: float = 1000,
+        max_fields: float = 1000,
     ) -> None:
         assert multipart is not None, (
             "The `python-multipart` library must be installed to use form parsing."
@@ -297,7 +297,7 @@ def file_body_to_message(f: UploadFile):
     return res
 
 
-async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
+async def populate_multipart_requests(request: Request) -> dict[str, Request]:
     content_type_header = request.headers.get("Content-Type")
     content_type, _ = multipart.parse_options_header(content_type_header)
     assert content_type in (b"multipart/form-data", b"multipart/mixed")
@@ -313,7 +313,7 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
         scope = dict(request.scope)
         if isinstance(data, UploadFile):
             ori_headers = dict(scope.get("headers", dict()))
-            ori_headers = t.cast(t.Dict[bytes, bytes], ori_headers)
+            ori_headers = t.cast(dict[bytes, bytes], ori_headers)
             ori_headers.update(dict(data.headers))
             scope["headers"] = list(ori_headers.items())
         if "headers" not in scope:
@@ -331,7 +331,7 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     return reqs
 
 
-def _get_disp_filename(headers: MutableHeaders) -> t.Optional[bytes]:
+def _get_disp_filename(headers: MutableHeaders) -> bytes | None:
     if "content-disposition" in headers:
         _, options = multipart.parse_options_header(headers["content-disposition"])
         if b"filename" in options:

@@ -425,13 +425,13 @@ class Exportable(ABC):
     def export(
         self,
         path: str,
-        output_format: t.Optional[str] = None,
+        output_format: str | None = None,
         *,
-        protocol: t.Optional[str] = None,
-        user: t.Optional[str] = None,
-        passwd: t.Optional[str] = None,
-        params: t.Optional[t.Dict[str, str]] = None,
-        subpath: t.Optional[str] = None,
+        protocol: str | None = None,
+        user: str | None = None,
+        passwd: str | None = None,
+        params: dict[str, str] | None = None,
+        subpath: str | None = None,
     ) -> str:
         is_url = "://" in path
         if is_url and any(

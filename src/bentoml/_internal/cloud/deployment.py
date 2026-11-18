@@ -73,9 +73,9 @@ class DeploymentConfigParameters:
     scaling_max: int | None = None
     instance_type: str | None = None
     strategy: str | None = None
-    labels: t.List[dict[str, str]] | None = None
-    envs: t.List[dict[str, t.Any]] | None = None
-    secrets: t.List[str] | None = None
+    labels: list[dict[str, str]] | None = None
+    envs: list[dict[str, t.Any]] | None = None
+    secrets: list[str] | None = None
     extras: dict[str, t.Any] | None = None
     config_dict: dict[str, t.Any] | None = None
     config_file: str | t.TextIO | None = None
@@ -457,7 +457,7 @@ class Deployment:
     cluster: str
     _client: RestApiClient = attr.field(alias="_client", repr=False)
     _schema: DeploymentSchema = attr.field(alias="_schema", repr=False)
-    _urls: t.Optional[list[str]] = attr.field(alias="_urls", default=None, repr=False)
+    _urls: list[str] | None = attr.field(alias="_urls", default=None, repr=False)
 
     @property
     def is_dev(self) -> bool:
@@ -512,7 +512,7 @@ class Deployment:
 
         main_target: DeploymentTargetSchema | None = None
         canary: DeploymentCanarySchema | None = None
-        weights: t.Dict[str, int] | None = None
+        weights: dict[str, int] | None = None
 
         if (
             self._schema.manifest is not None
@@ -1257,7 +1257,7 @@ class DeploymentAPI:
 
         main_target: DeploymentTargetSchema | None = None
         canary: DeploymentCanarySchema | None = None
-        weights: t.Dict[str, int] | None = None
+        weights: dict[str, int] | None = None
 
         if _schema.manifest is not None and _schema.manifest.routing is not None:
             canary = DeploymentCanarySchema(
@@ -1594,13 +1594,13 @@ class DeploymentAPI:
 
 @attr.define
 class InstanceTypeInfo:
-    name: t.Optional[str] = None
-    price: t.Optional[str] = None
-    description: t.Optional[str] = None
-    cpu: t.Optional[str] = None
-    memory: t.Optional[str] = None
-    gpu: t.Optional[str] = None
-    gpu_type: t.Optional[str] = None
+    name: str | None = None
+    price: str | None = None
+    description: str | None = None
+    cpu: str | None = None
+    memory: str | None = None
+    gpu: str | None = None
+    gpu_type: str | None = None
 
     def to_dict(self):
         return {k: v for k, v in attr.asdict(self).items() if v is not None and v != ""}
@@ -1638,7 +1638,7 @@ def _build_requirements_txt(bento_dir: str, image: Image | None) -> bytes:
     bentoml_requirement = get_bentoml_requirement()
     if bentoml_requirement is None:
         bentoml_requirement = f"-e ./{EDITABLE_BENTOML_DIR}"
-    content += f"{bentoml_requirement}\n".encode("utf8")
+    content += f"{bentoml_requirement}\n".encode()
     return content
 
 

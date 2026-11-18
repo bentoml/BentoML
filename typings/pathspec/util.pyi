@@ -1,13 +1,10 @@
-from __future__ import annotations
-
 import os
-from typing import Text
 
 class TreeEntry:
     __slots__: tuple[str, ...] = ...
 
     def __init__(
-        self, name: Text, path: Text, lstat: os.stat_result, stat: os.stat_result
+        self, name: str, path: str, lstat: os.stat_result, stat: os.stat_result
     ) -> None: ...
     def is_dir(self, follow_links: bool | None = ...) -> bool: ...
     def is_file(self, follow_links: bool | None = ...) -> bool: ...

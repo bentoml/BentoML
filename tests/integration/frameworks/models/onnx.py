@@ -10,7 +10,6 @@ import onnx
 import onnxruntime as ort
 import sklearn
 import torch
-import torch.nn as nn
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx.common.data_types import Int64TensorType
@@ -19,6 +18,7 @@ from sklearn.datasets import load_iris
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from torch import nn
 
 import bentoml
 
@@ -88,7 +88,7 @@ class PyTorchModel(nn.Module):
         In the constructor we instantiate two nn.Linear modules and assign them as
         member variables.
         """
-        super(PyTorchModel, self).__init__()
+        super().__init__()
         self.linear1 = nn.Linear(D_in, H)
         self.linear2 = nn.Linear(H, D_out)
 

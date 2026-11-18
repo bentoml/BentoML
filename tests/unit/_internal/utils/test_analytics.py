@@ -344,16 +344,18 @@ def test_track_serve(
     monkeypatch.setenv("__BENTOML_DEBUG_USAGE", "True")
     analytics.usage_stats.SERVE_USAGE_TRACKING_INTERVAL_SECONDS = 1
 
-    with caplog.at_level(logging.INFO):
-        with analytics.track_serve(
+    with (
+        caplog.at_level(logging.INFO),
+        analytics.track_serve(
             simple_service,
             production=False,
             metrics_client=mock_prometheus_client,
             serve_info=analytics.usage_stats.get_serve_info(),
-        ):
-            import time
+        ),
+    ):
+        import time
 
-            time.sleep(2)
+        time.sleep(2)
 
     assert not mock_post.called
     assert mock_do_not_track.called

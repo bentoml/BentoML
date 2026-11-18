@@ -10,16 +10,16 @@ from .factory import service
 
 __all__ = [
     "Service",
-    "service",
-    "runner_service",
-    "depends",
     "ServiceConfig",
+    "depends",
     "get_current_service",
+    "runner_service",
+    "service",
     "set_current_service",
 ]
 
 
-_current_service: t.Optional[t.Any] = None
+_current_service: t.Any | None = None
 
 
 def get_current_service() -> t.Any:

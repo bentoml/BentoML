@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import typing as t
 
 import attr
@@ -49,7 +50,7 @@ class Secret(SecretSchema):
 class SecretAPI:
     _client: RestApiClient
 
-    def list(self, search: str | None = None) -> t.List[Secret]:
+    def list(self, search: str | None = None) -> builtins.list[Secret]:
         """
         List all secrets.
 
@@ -69,7 +70,7 @@ class SecretAPI:
         cluster: str | None = None,
         description: str | None = None,
         path: str | None = None,
-        key_vals: t.List[t.Tuple[str, str]] = [],
+        key_vals: builtins.list[tuple[str, str]] = [],
         stage: str | None = None,
     ) -> Secret:
         """
@@ -122,7 +123,7 @@ class SecretAPI:
         cluster: str | None = None,
         description: str | None = None,
         path: str | None = None,
-        key_vals: t.List[t.Tuple[str, str]] = [],
+        key_vals: builtins.list[tuple[str, str]] = [],
         stage: str | None = None,
     ) -> Secret:
         """

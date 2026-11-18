@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 else:
     np = LazyLoader("numpy", globals(), "numpy")
 
-__all__ = ["jax", "jnp", "jaxlib", "JaxArrayContainer"]
+__all__ = ["JaxArrayContainer", "jax", "jaxlib", "jnp"]
 
 
 class JaxArrayContainer(DataContainer[jax.Array, jax.Array]):
@@ -88,7 +88,7 @@ class JaxArrayContainer(DataContainer[jax.Array, jax.Array]):
         batch: jax.Array,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-    ) -> t.List[Payload]:
+    ) -> list[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
         payloads = [cls.to_payload(subbatch, batch_dim) for subbatch in batches]
         return payloads

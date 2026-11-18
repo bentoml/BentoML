@@ -8,6 +8,7 @@ import threading
 import typing as t
 from datetime import datetime
 from datetime import timezone
+from functools import cache
 from functools import lru_cache
 from functools import wraps
 from reprlib import recursive_repr as _recursive_repr
@@ -45,11 +46,11 @@ logger = logging.getLogger(__name__)
 BENTOML_DO_NOT_TRACK = "BENTOML_DO_NOT_TRACK"
 BENTOML_SERVE_FROM_SERVER_API = "__BENTOML_SERVE_FROM_SERVER_API"
 USAGE_TRACKING_URL = "https://t.bentoml.com"
-SERVE_USAGE_TRACKING_INTERVAL_SECONDS = int(12 * 60 * 60)  # every 12 hours
+SERVE_USAGE_TRACKING_INTERVAL_SECONDS = 12 * 60 * 60  # every 12 hours
 USAGE_REQUEST_TIMEOUT_SECONDS = 1
 
 
-@lru_cache(maxsize=None)
+@cache
 def _bentoml_serve_from_server_api() -> bool:
     return os.environ.get(BENTOML_SERVE_FROM_SERVER_API, "False").lower() == "true"
 
@@ -105,7 +106,7 @@ def get_serve_info() -> ServeInfo:  # pragma: no cover
 def get_payload(
     event_properties: EventMeta,
     session_id: str = Provide[BentoMLContainer.session_id],
-) -> t.Dict[str, t.Any]:
+) -> dict[str, t.Any]:
     return TrackingPayload(
         session_id=session_id,
         common_properties=CommonProperties(),

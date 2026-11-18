@@ -1,6 +1,6 @@
+from collections.abc import Iterable
 from types import TracebackType
 from typing import Any
-from typing import Iterable
 from typing import Protocol
 from typing import Self
 from typing import TypeVar

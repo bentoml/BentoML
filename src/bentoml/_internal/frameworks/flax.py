@@ -61,7 +61,7 @@ API_VERSION = "v1"
 logger = logging.getLogger(__name__)
 
 
-__all__ = ["load_model", "save_model", "get_runnable", "get", "JaxArrayContainer"]
+__all__ = ["JaxArrayContainer", "get", "get_runnable", "load_model", "save_model"]
 
 
 def get(tag_like: str | Tag) -> bentoml.Model:
@@ -166,7 +166,7 @@ def save_model(
     signatures: ModelSignaturesType | None = None,
     labels: dict[str, str] | None = None,
     custom_objects: dict[str, t.Any] | None = None,
-    external_modules: t.List[ModuleType] | None = None,
+    external_modules: list[ModuleType] | None = None,
     metadata: dict[str, t.Any] | None = None,
 ) -> bentoml.Model:
     """
@@ -257,7 +257,7 @@ def save_model(
         return bento_model
 
 
-def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
+def get_runnable(bento_model: bentoml.Model) -> type[bentoml.legacy.Runnable]:
     """Private API: use :obj:`~bentoml.Model.to_runnable` instead."""
     partial_kwargs: dict[str, t.Any] = bento_model.info.options.partial_kwargs
 
@@ -271,7 +271,7 @@ def get_runnable(bento_model: bentoml.Model) -> t.Type[bentoml.legacy.Runnable]:
 
             self.model, self.state_dict = load_model(bento_model, device=self.device)
             self.params = self.state_dict["params"]
-            self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}
+            self.methods_cache: dict[str, t.Callable[..., t.Any]] = {}
 
     def gen_run_method(self: FlaxRunnable, method_name: str):
         method = getattr(self.model, method_name)

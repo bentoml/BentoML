@@ -45,14 +45,14 @@ class Model(abc.ABC, t.Generic[T]):
         """Return the create model schema object."""
 
     @abc.abstractmethod
-    def resolve(self, base_path: t.Union[PathType, None] = None) -> T:
+    def resolve(self, base_path: PathType | None = None) -> T:
         """Get the actual object of the model."""
 
     @t.overload
-    def __get__(self, instance: None, owner: t.Type[t.Any]) -> t.Self: ...
+    def __get__(self, instance: None, owner: type[t.Any]) -> t.Self: ...
 
     @t.overload
-    def __get__(self, instance: t.Any, owner: t.Type[t.Any]) -> T: ...
+    def __get__(self, instance: t.Any, owner: type[t.Any]) -> T: ...
 
     def __get__(self, instance: t.Any, owner: type) -> T | t.Self:
         if instance is None:
@@ -122,7 +122,7 @@ class BentoModel(Model[StoredModel]):
     @inject
     def resolve(
         self,
-        base_path: t.Union[PathType, None] = None,
+        base_path: PathType | None = None,
         global_model_store: ModelStore = Provide[BentoMLContainer.model_store],
     ) -> StoredModel:
         stored = self.stored

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from timeit import default_timer
 from typing import TYPE_CHECKING
-from typing import Sequence
 
 if TYPE_CHECKING:
     from ... import external_typing as ext
@@ -71,7 +71,7 @@ class AccessLogMiddleware:
                 elif key == CONTENT_TYPE:
                     request_content_type = value
 
-        async def wrapped_receive() -> "ext.ASGIMessage":
+        async def wrapped_receive() -> ext.ASGIMessage:
             message = await receive()
             if message["type"] == "websocket.connect":
                 self.logger.info(
@@ -86,7 +86,7 @@ class AccessLogMiddleware:
                 )
             return message
 
-        async def wrapped_send(message: "ext.ASGIMessage") -> None:
+        async def wrapped_send(message: ext.ASGIMessage) -> None:
             nonlocal \
                 status, \
                 request_content_length, \
@@ -115,7 +115,7 @@ class AccessLogMiddleware:
                 )
 
             elif message["type"] == "http.response.body":
-                if "more_body" in message and message["more_body"]:
+                if message.get("more_body"):
                     await send(message)
                     return
                 request = [f"scheme={scheme}", f"method={method}", f"path={path}"]

@@ -10,14 +10,14 @@ from .usage_stats import track
 from .usage_stats import track_serve
 
 __all__ = [
-    "track",
-    "track_serve",
-    "get_serve_info",
-    "ServeInfo",
     "BENTOML_DO_NOT_TRACK",
+    "BentoBuildEvent",
     "CliEvent",
     "ModelSaveEvent",
-    "BentoBuildEvent",
+    "ServeInfo",
     "ServeUpdateEvent",
     "cli_events_map",
+    "get_serve_info",
+    "track",
+    "track_serve",
 ]

@@ -315,7 +315,7 @@ class NdarrayContainer(DataContainer["ext.NpNDArray", "ext.NpNDArray"]):
         if payload.meta["with_buffer"]:
             bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
             bs = base64.b64decode(bs_str)
-            indices = t.cast(t.List[int], payload.meta["indices"])
+            indices = t.cast(list[int], payload.meta["indices"])
             return t.cast("ext.NpNDArray", pep574_loads(bs, payload.data, indices))
         else:
             return t.cast("ext.NpNDArray", pep574_loads(payload.data, b"", []))
@@ -418,7 +418,7 @@ class PandasDataFrameContainer(
         if payload.meta["with_buffer"]:
             bs_str = t.cast(str, payload.meta["pickle_bytes_str"])
             bs = base64.b64decode(bs_str)
-            indices = t.cast(t.List[int], payload.meta["indices"])
+            indices = t.cast(list[int], payload.meta["indices"])
             return pep574_loads(bs, payload.data, indices)
         else:
             return pep574_loads(payload.data, b"", [])
@@ -540,7 +540,7 @@ class PayloadContainer(DataContainer[Payload, Payload]):
         return batch.batch_size
 
 
-class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
+class DefaultContainer(DataContainer[t.Any, list[t.Any]]):
     @classmethod
     def batches_to_batch(
         cls, batches: t.Sequence[list[t.Any]], batch_dim: int = 0
@@ -572,7 +572,7 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
         data = pickle.dumps(batch)
 
         if isinstance(batch, list):
-            batch_size = len(t.cast(t.List[t.Any], batch))
+            batch_size = len(t.cast(list[t.Any], batch))
         else:
             batch_size = 1
 
@@ -581,7 +581,7 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     @classmethod
     def get_batch_size(cls, batch: t.Any, batch_dim: int) -> int:
         if isinstance(batch, list):
-            return len(t.cast(t.List[t.Any], batch))
+            return len(t.cast(list[t.Any], batch))
         return 1
 
     @classmethod
@@ -590,10 +590,10 @@ class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
 
 
 class DataContainerRegistry:
-    CONTAINER_SINGLE_TYPE_MAP: t.Dict[
-        LazyType[t.Any], t.Type[DataContainer[t.Any, t.Any]]
+    CONTAINER_SINGLE_TYPE_MAP: dict[
+        LazyType[t.Any], type[DataContainer[t.Any, t.Any]]
     ] = dict()
-    CONTAINER_BATCH_TYPE_MAP: t.Dict[
+    CONTAINER_BATCH_TYPE_MAP: dict[
         LazyType[t.Any], type[DataContainer[t.Any, t.Any]]
     ] = dict()
 
@@ -602,7 +602,7 @@ class DataContainerRegistry:
         cls,
         single_type: LazyType[t.Any] | type,
         batch_type: LazyType[t.Any] | type,
-        container_cls: t.Type[DataContainer[t.Any, t.Any]],
+        container_cls: type[DataContainer[t.Any, t.Any]],
     ):
         single_type = LazyType.from_type(single_type)
         batch_type = LazyType.from_type(batch_type)
@@ -612,8 +612,8 @@ class DataContainerRegistry:
 
     @classmethod
     def find_by_single_type(
-        cls, type_: t.Type[SingleType] | LazyType[SingleType]
-    ) -> t.Type[DataContainer[SingleType, t.Any]]:
+        cls, type_: type[SingleType] | LazyType[SingleType]
+    ) -> type[DataContainer[SingleType, t.Any]]:
         typeref = LazyType.from_type(type_)
         if typeref in cls.CONTAINER_SINGLE_TYPE_MAP:
             return cls.CONTAINER_SINGLE_TYPE_MAP[typeref]
@@ -624,8 +624,8 @@ class DataContainerRegistry:
 
     @classmethod
     def find_by_batch_type(
-        cls, type_: t.Type[BatchType] | LazyType[BatchType]
-    ) -> t.Type[DataContainer[t.Any, BatchType]]:
+        cls, type_: type[BatchType] | LazyType[BatchType]
+    ) -> type[DataContainer[t.Any, BatchType]]:
         typeref = LazyType.from_type(type_)
         if typeref in cls.CONTAINER_BATCH_TYPE_MAP:
             return cls.CONTAINER_BATCH_TYPE_MAP[typeref]
@@ -635,7 +635,7 @@ class DataContainerRegistry:
         return DefaultContainer
 
     @classmethod
-    def find_by_name(cls, name: str) -> t.Type[DataContainer[t.Any, t.Any]]:
+    def find_by_name(cls, name: str) -> type[DataContainer[t.Any, t.Any]]:
         for container_cls in cls.CONTAINER_BATCH_TYPE_MAP.values():
             if container_cls.__name__ == name:
                 return container_cls
@@ -694,14 +694,14 @@ register_builtin_containers()
 class AutoContainer(DataContainer[t.Any, t.Any]):
     @classmethod
     def to_payload(cls, batch: t.Any, batch_dim: int) -> Payload:
-        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+        container_cls: type[DataContainer[t.Any, t.Any]] = (
             DataContainerRegistry.find_by_batch_type(type(batch))
         )
         return container_cls.to_payload(batch, batch_dim)
 
     @classmethod
     def get_batch_size(cls, batch: Any, batch_dim: int) -> int:
-        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+        container_cls: type[DataContainer[t.Any, t.Any]] = (
             DataContainerRegistry.find_by_batch_type(type(batch))
         )
         return container_cls.get_batch_size(batch, batch_dim)
@@ -752,7 +752,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     def batches_to_batch(
         cls, batches: t.Sequence[BatchType], batch_dim: int = 0
     ) -> tuple[BatchType, list[int]]:
-        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+        container_cls: type[DataContainer[t.Any, t.Any]] = (
             DataContainerRegistry.find_by_batch_type(type(batches[0]))
         )
         return container_cls.batches_to_batch(batches, batch_dim)
@@ -761,7 +761,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
     def batch_to_batches(
         cls, batch: BatchType, indices: t.Sequence[int], batch_dim: int = 0
     ) -> list[BatchType]:
-        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+        container_cls: type[DataContainer[t.Any, t.Any]] = (
             DataContainerRegistry.find_by_batch_type(type(batch))
         )
         return container_cls.batch_to_batches(batch, indices, batch_dim)
@@ -773,7 +773,7 @@ class AutoContainer(DataContainer[t.Any, t.Any]):
         indices: t.Sequence[int],
         batch_dim: int = 0,
     ) -> list[Payload]:
-        container_cls: t.Type[DataContainer[t.Any, t.Any]] = (
+        container_cls: type[DataContainer[t.Any, t.Any]] = (
             DataContainerRegistry.find_by_batch_type(type(batch))
         )
         return container_cls.batch_to_payloads(batch, indices, batch_dim)

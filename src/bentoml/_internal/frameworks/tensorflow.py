@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from ..external_typing import tensorflow as tf_ext
     from ..models.model import ModelSignatureDict
 
-    TFArgType = t.Union[t.List[t.Union[int, float]], ext.NpNDArray, tf_ext.Tensor]
+    TFArgType = t.Union[list[int | float], ext.NpNDArray, tf_ext.Tensor]
     TFModelOutputType = tf_ext.EagerTensor | tuple[tf_ext.EagerTensor]
     TFRunnableOutputType = ext.NpNDArray | tuple[ext.NpNDArray]
 
@@ -84,7 +84,7 @@ def load_model(
         # load a model back into memory
         model = bentoml.tensorflow.load_model("my_tensorflow_model")
 
-    """  # noqa
+    """
     if not isinstance(bento_model, bentoml.Model):
         bento_model = get(bento_model)
 
@@ -174,7 +174,7 @@ def save_model(
        :code:`bentoml.tensorflow.save_model` API also support saving `RaggedTensor <https://www.tensorflow.org/guide/ragged_tensor>`_ model and Keras model. If you choose to save a Keras model
        with :code:`bentoml.tensorflow.save_model`, then the model will be saved under a :obj:`SavedModel` format instead of :obj:`.h5`.
 
-    """  # noqa
+    """
     context = ModelContext(
         framework_name="tensorflow",
         framework_versions={"tensorflow": get_tf_version()},
@@ -226,7 +226,7 @@ def get_runnable(
     Private API: use :obj:`~bentoml.Model.to_runnable` instead.
     """
 
-    partial_kwargs: t.Dict[str, t.Any] = bento_model.info.options.partial_kwargs
+    partial_kwargs: dict[str, t.Any] = bento_model.info.options.partial_kwargs
 
     class TensorflowRunnable(Runnable):
         SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
@@ -243,7 +243,7 @@ def get_runnable(
                 self.device_name = "/device:CPU:0"
 
             self.model = load_model(bento_model, device_name=self.device_name)
-            self.methods_cache: t.Dict[str, t.Callable[..., t.Any]] = {}
+            self.methods_cache: dict[str, t.Callable[..., t.Any]] = {}
             self.session_stack = contextlib.ExitStack()
             self.session_stack.enter_context(tf.device(self.device_name))
 
@@ -352,7 +352,7 @@ class TensorflowTensorContainer(
     @classmethod
     def batches_to_batch(
         cls, batches: t.Sequence[tf_ext.EagerTensor], batch_dim: int = 0
-    ) -> t.Tuple[tf_ext.EagerTensor, list[int]]:
+    ) -> tuple[tf_ext.EagerTensor, list[int]]:
         batch: tf_ext.EagerTensor = tf.concat(batches, axis=batch_dim)
         # TODO: fix typing mismatch @larme
         indices: list[int] = list(
@@ -364,7 +364,7 @@ class TensorflowTensorContainer(
     @classmethod
     def batch_to_batches(
         cls, batch: tf_ext.EagerTensor, indices: t.Sequence[int], batch_dim: int = 0
-    ) -> t.List[tf_ext.EagerTensor]:
+    ) -> list[tf_ext.EagerTensor]:
         size_splits = [indices[i + 1] - indices[i] for i in range(len(indices) - 1)]
         return tf.split(batch, size_splits, axis=batch_dim)  # type: ignore
 
@@ -392,7 +392,7 @@ class TensorflowTensorContainer(
         batch: tf_ext.EagerTensor,
         indices: t.Sequence[int],
         batch_dim: int = 0,
-    ) -> t.List[Payload]:
+    ) -> list[Payload]:
         batches = cls.batch_to_batches(batch, indices, batch_dim)
 
         payloads = [cls.to_payload(subbatch) for subbatch in batches]
@@ -403,7 +403,7 @@ class TensorflowTensorContainer(
         cls,
         payloads: t.Sequence[Payload],
         batch_dim: int = 0,
-    ) -> t.Tuple[tf_ext.EagerTensor, t.List[int]]:
+    ) -> tuple[tf_ext.EagerTensor, list[int]]:
         batches = [cls.from_payload(payload) for payload in payloads]
         return cls.batches_to_batch(batches, batch_dim)
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import typing as t
 from datetime import datetime
 
 import attr
@@ -45,7 +44,7 @@ from bentoml._internal.cloud.schemas.schemasv2 import (
 
 @attr.define
 class DummyUpdateSchema(UpdateDeploymentSchemaV2):
-    urls: t.List[str] = attr.Factory(
+    urls: list[str] = attr.Factory(
         list
     )  # place holder for urls that's assigned to deployment._urls
 

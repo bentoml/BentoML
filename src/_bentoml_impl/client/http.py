@@ -268,6 +268,10 @@ class HTTPClient(AbstractClient, t.Generic[C]):
                     "POST", endpoint.route, content=content, headers=headers
                 )
 
+        if len(args) > len(endpoint.input["properties"]):
+            raise TypeError(
+                f"Too many positional arguments for endpoint {endpoint.name}"
+            )
         for name, value in zip(endpoint.input["properties"], args):
             if name in kwargs:
                 raise TypeError(f"Duplicate argument {name}")

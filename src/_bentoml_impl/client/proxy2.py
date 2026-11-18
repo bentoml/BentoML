@@ -432,6 +432,10 @@ class AsyncClient(AbstractClient):
             if not passthrough:
                 return content
 
+        if len(args) > len(endpoint.input["properties"]):
+            raise TypeError(
+                f"Too many positional arguments for endpoint {endpoint.name}"
+            )
         for name, value in zip(endpoint.input["properties"], args):
             if name in kwargs:
                 raise TypeError(f"Duplicate argument {name}")

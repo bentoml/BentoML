@@ -34,6 +34,47 @@ TEST_MODEL_CONTEXT = ModelContext(
 )
 
 
+@pytest.mark.parametrize("existing", [False, True])
+@pytest.mark.parametrize("trailing_separator", [False, True])
+def test_model_folder_export(
+    tmp_path: "Path", existing: bool, trailing_separator: bool
+):
+    store = ModelStore(tmp_path / "models")
+    with bentoml.models.create(
+        "folder-model:v1", metadata={"score": 0.5}, _model_store=store
+    ) as model:
+        os.makedirs(model.path_of("nested/empty"))
+        with open(model.path_of("nested/weights.bin"), "wb") as f:
+            f.write(b"model weights")
+
+    export_dir = tmp_path / "exported"
+    if existing:
+        export_dir.mkdir()
+    export_path = str(export_dir) + (os.sep if trailing_separator else "")
+
+    for iteration in range(2):
+        if export_dir.exists():
+            export_dir.joinpath("unrelated.txt").write_text("keep me")
+
+        exported = bentoml.models.export_model(
+            model.tag, export_path, "folder", _model_store=store
+        )
+        imported = bentoml.models.import_model(
+            exported,
+            "folder",
+            _model_store=ModelStore(tmp_path / f"imported-{iteration}"),
+        )
+
+        assert imported.info == model.info
+        assert (
+            export_dir.joinpath("nested/weights.bin").read_bytes() == b"model weights"
+        )
+        assert export_dir.joinpath("nested/empty").is_dir()
+        assert not export_dir.joinpath("v1").exists()
+        if existing or iteration:
+            assert export_dir.joinpath("unrelated.txt").read_text() == "keep me"
+
+
 def test_models(tmpdir: "Path"):
     os.makedirs(os.path.join(tmpdir, "models"))
     store = ModelStore(os.path.join(tmpdir, "models"))

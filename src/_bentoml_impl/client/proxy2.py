@@ -493,13 +493,20 @@ class AsyncClient(AbstractClient):
             for v in value:
                 file = self._file_manager.get_file(v)
                 if isinstance(file, str):
-                    data[name] = file
+                    # A list field can resolve to several plain values, e.g. URLs that
+                    # are forwarded as-is. Collect them so each one is sent as its own
+                    # part, instead of overwriting the previous value.
+                    data.setdefault(name, []).append(file)
                 else:
                     files.append((name, file))
         headers.pop("content-type", None)
         payload = aiohttp.FormData()
         for key, val in data.items():
-            payload.add_field(key, val)
+            if isinstance(val, list):
+                for item in val:
+                    payload.add_field(key, item)
+            else:
+                payload.add_field(key, val)
         for key, (filename, fileobj, content_type) in files:
             payload.add_field(
                 key,

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from typing import overload
 
 import attr
+from typing_extensions import Concatenate
 
 from ...exceptions import BentoMLException
 from ..types import LazyType
@@ -56,7 +57,7 @@ class Runnable:
     @classmethod
     def add_method(
         cls: t.Type[T],
-        method: t.Callable[t.Concatenate[T, P], t.Any],
+        method: t.Callable[Concatenate[T, P], t.Any],
         name: str,
         *,
         batchable: bool = False,
@@ -77,7 +78,7 @@ class Runnable:
     @overload
     @staticmethod
     def method(
-        meth: t.Callable[t.Concatenate[T, P], R],
+        meth: t.Callable[Concatenate[T, P], R],
         *,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
@@ -94,22 +95,22 @@ class Runnable:
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
         output_spec: AnyType | None = None,
-    ) -> t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]: ...
+    ) -> t.Callable[[t.Callable[Concatenate[T, P], R]], RunnableMethod[T, P, R]]: ...
 
     @staticmethod
     def method(
-        meth: t.Callable[t.Concatenate[T, P], R] | None = None,
+        meth: t.Callable[Concatenate[T, P], R] | None = None,
         *,
         batchable: bool = False,
         batch_dim: tuple[int, int] | int = 0,
         input_spec: AnyType | tuple[AnyType, ...] | None = None,
         output_spec: AnyType | None = None,
     ) -> (
-        t.Callable[[t.Callable[t.Concatenate[T, P], R]], RunnableMethod[T, P, R]]
+        t.Callable[[t.Callable[Concatenate[T, P], R]], RunnableMethod[T, P, R]]
         | RunnableMethod[T, P, R]
     ):
         def method_decorator(
-            meth: t.Callable[t.Concatenate[T, P], R],
+            meth: t.Callable[Concatenate[T, P], R],
         ) -> RunnableMethod[T, P, R]:
             return RunnableMethod(
                 meth,
@@ -134,7 +135,7 @@ class Runnable:
 
 @attr.define
 class RunnableMethod(t.Generic[T, P, R]):
-    func: t.Callable[t.Concatenate[T, P], R]
+    func: t.Callable[Concatenate[T, P], R]
     config: RunnableMethodConfig
     _bentoml_runnable_method: None = None
 

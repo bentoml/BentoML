@@ -17,6 +17,7 @@ import attrs
 from simple_di import Provide
 from simple_di import inject
 from starlette.applications import Starlette
+from typing_extensions import Concatenate
 from typing_extensions import Unpack
 
 from bentoml._internal.bento.bento import Bento
@@ -68,8 +69,8 @@ class ServiceEnvConfig(t.TypedDict, total=False):
 
 
 def with_config(
-    func: t.Callable[t.Concatenate["Service[t.Any]", P], R],
-) -> t.Callable[t.Concatenate["Service[t.Any]", P], R]:
+    func: t.Callable[Concatenate["Service[t.Any]", P], R],
+) -> t.Callable[Concatenate["Service[t.Any]", P], R]:
     def wrapper(self: Service[t.Any], *args: P.args, **kwargs: P.kwargs) -> R:
         self.inject_config()
         return func(self, *args, **kwargs)

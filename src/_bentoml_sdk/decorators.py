@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import typing as t
 
+from typing_extensions import Concatenate
+
 from bentoml._internal.types import LazyType
 
 from .io_models import IODescriptor
@@ -40,7 +42,7 @@ def on_deployment(func: t.Callable[P, R] | staticmethod[P, R]) -> staticmethod[P
 
 
 @t.overload
-def api(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]: ...
+def api(func: t.Callable[Concatenate[t.Any, P], R]) -> APIMethod[P, R]: ...
 
 
 @t.overload
@@ -54,11 +56,11 @@ def api(
     batch_dim: int | tuple[int, int] = ...,
     max_batch_size: int = ...,
     max_latency_ms: int = ...,
-) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]: ...
+) -> t.Callable[[t.Callable[Concatenate[t.Any, P], R]], APIMethod[P, R]]: ...
 
 
 def api(
-    func: t.Callable[t.Concatenate[t.Any, P], R] | None = None,
+    func: t.Callable[Concatenate[t.Any, P], R] | None = None,
     *,
     route: str | None = None,
     name: str | None = None,
@@ -70,7 +72,7 @@ def api(
     max_latency_ms: int = 60000,
 ) -> (
     APIMethod[P, R]
-    | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]
+    | t.Callable[[t.Callable[Concatenate[t.Any, P], R]], APIMethod[P, R]]
 ):
     """Make a BentoML API method.
     This decorator can be used either with or without arguments.
@@ -87,7 +89,7 @@ def api(
         max_latency_ms: The maximum latency of the API.
     """
 
-    def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
+    def wrapper(func: t.Callable[Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
         if func.__name__.startswith("__"):
             raise ValueError("API methods cannot start with '__'")
         params: dict[str, t.Any] = {
@@ -142,7 +144,7 @@ def asgi_app(
 
 
 @t.overload
-def task(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]: ...
+def task(func: t.Callable[Concatenate[t.Any, P], R]) -> APIMethod[P, R]: ...
 
 
 @t.overload
@@ -156,11 +158,11 @@ def task(
     batch_dim: int | tuple[int, int] = ...,
     max_batch_size: int = ...,
     max_latency_ms: int = ...,
-) -> t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]: ...
+) -> t.Callable[[t.Callable[Concatenate[t.Any, P], R]], APIMethod[P, R]]: ...
 
 
 def task(
-    func: t.Callable[t.Concatenate[t.Any, P], R] | None = None,
+    func: t.Callable[Concatenate[t.Any, P], R] | None = None,
     *,
     route: str | None = None,
     name: str | None = None,
@@ -172,7 +174,7 @@ def task(
     max_latency_ms: int = 60000,
 ) -> (
     APIMethod[P, R]
-    | t.Callable[[t.Callable[t.Concatenate[t.Any, P], R]], APIMethod[P, R]]
+    | t.Callable[[t.Callable[Concatenate[t.Any, P], R]], APIMethod[P, R]]
 ):
     """Mark a method as a BentoML async task.
     This decorator can be used either with or without arguments.
@@ -189,7 +191,7 @@ def task(
         max_latency_ms: The maximum latency of the API.
     """
 
-    def wrapper(func: t.Callable[t.Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
+    def wrapper(func: t.Callable[Concatenate[t.Any, P], R]) -> APIMethod[P, R]:
         if func.__name__.startswith("__"):
             raise ValueError("API methods cannot start with '__'")
         params: dict[str, t.Any] = {

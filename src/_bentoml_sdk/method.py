@@ -7,6 +7,7 @@ import typing as t
 
 import attrs
 import pydantic
+from typing_extensions import Concatenate
 
 from bentoml._internal.service.openapi import SUCCESS_DESCRIPTION
 from bentoml._internal.service.openapi.specification import Encoding
@@ -52,7 +53,7 @@ def _starts_with_slash(
 
 @attrs.define
 class APIMethod(t.Generic[P, R]):
-    func: t.Callable[t.Concatenate[t.Any, P], R]
+    func: t.Callable[Concatenate[t.Any, P], R]
     route: str = attrs.field(validator=_starts_with_slash)
     name: str = attrs.field(init=False)
     input_spec: type[IODescriptor] = attrs.field(converter=_io_descriptor_converter)

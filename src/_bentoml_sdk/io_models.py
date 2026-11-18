@@ -432,7 +432,9 @@ class IODescriptor(IOMixin, BaseModel):
             )
         media_type: str | None = None
         if is_iterator_type(return_annotation):
-            return_annotation = get_args(return_annotation)[0]
+            # bare Iterator/Generator annotations carry no item type
+            iterator_args = get_args(return_annotation)
+            return_annotation = iterator_args[0] if iterator_args else t.Any
         elif is_annotated(return_annotation):
             content_type = next(
                 (a for a in get_args(return_annotation) if isinstance(a, ContentType)),

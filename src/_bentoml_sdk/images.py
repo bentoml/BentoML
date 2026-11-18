@@ -75,6 +75,31 @@ class Image:
                 0, CONTAINER_METADATA[self.distro]["default_install_command"]
             )
 
+    def _evolve(self, **changes: t.Any) -> t.Self:
+        """Copy the image with ``changes`` applied.
+
+        ``attrs.evolve`` alone re-runs ``__attrs_post_init__``, which inserts the
+        default install command a second time, and it resets the ``init=False``
+        fields, losing ``run_script()``, ``uv_lock()`` and the pip-install position.
+        """
+        commands = list(self.commands)
+        default_install = CONTAINER_METADATA.get(self.distro, {}).get(
+            "default_install_command"
+        )
+        if commands and commands[0] == default_install:
+            del commands[0]
+        new = attrs.evolve(
+            self,
+            commands=commands,
+            post_commands=list(self.post_commands),
+            build_include_paths=list(self.build_include_paths),
+            **changes,
+        )
+        new.scripts = dict(self.scripts)
+        new._after_pip_install = self._after_pip_install
+        new._uv_lock = self._uv_lock
+        return new
+
     def system_packages(self, *packages: str) -> t.Self:
         if self.distro not in CONTAINER_METADATA:
             raise BentoMLConfigException(
@@ -388,9 +413,7 @@ def populate_image_from_build_config(
         image_params["lock_python_packages"] = python_options.lock_packages
     if python_options.pack_git_packages is not None:
         image_params["pack_git_packages"] = python_options.pack_git_packages
-    image = (
-        Image(**image_params) if image is None else attrs.evolve(image, **image_params)
-    )
+    image = Image(**image_params) if image is None else image._evolve(**image_params)
     if docker_options.system_packages:
         image.system_packages(*docker_options.system_packages)
     if python_options.index_url:

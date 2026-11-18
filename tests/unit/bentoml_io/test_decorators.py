@@ -1,4 +1,6 @@
+from typing import AsyncIterator
 from typing import Generator
+from typing import Iterator
 
 import numpy as np
 import numpy.typing as npt
@@ -9,6 +11,7 @@ from typing_extensions import Annotated
 
 import bentoml
 from _bentoml_sdk.validators import TensorSchema
+from bentoml.validators import ContentType
 from bentoml.validators import DataframeSchema
 from bentoml.validators import DType
 from bentoml.validators import Shape
@@ -148,6 +151,24 @@ def test_api_decorator_pandas():
         DataframeSchema(orient="columns", columns=("a", "b"))
         in pandas_func.output_spec.model_fields["root"].metadata
     )
+
+
+def test_api_stream_content_type_on_item():
+    @bentoml.api
+    async def stream(_) -> AsyncIterator[Annotated[bytes, ContentType("audio/mpeg")]]:
+        yield b"audio"
+
+    assert stream.output_spec.mime_type() == "audio/mpeg"
+    assert "audio/mpeg" in stream.openapi_response()["content"]
+
+
+def test_api_stream_content_type_on_iterator():
+    @bentoml.api
+    def stream(_) -> Annotated[Iterator[str], ContentType("text/event-stream")]:
+        yield "data: hello\n\n"
+
+    assert stream.output_spec.mime_type() == "text/event-stream"
+    assert "text/event-stream" in stream.openapi_response()["content"]
 
 
 def test_api_root_input():

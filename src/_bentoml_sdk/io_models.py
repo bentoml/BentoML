@@ -430,18 +430,26 @@ class IODescriptor(IOMixin, BaseModel):
             return_annotation = eval_type_lenient(
                 signature.return_annotation, global_ns, None
             )
+        unwrapped = (
+            get_args(return_annotation)[0]
+            if is_annotated(return_annotation)
+            else return_annotation
+        )
+        output_annotation = (
+            get_args(unwrapped)[0] if is_iterator_type(unwrapped) else return_annotation
+        )
         media_type: str | None = None
-        if is_iterator_type(return_annotation):
-            return_annotation = get_args(return_annotation)[0]
-        elif is_annotated(return_annotation):
-            content_type = next(
-                (a for a in get_args(return_annotation) if isinstance(a, ContentType)),
-                None,
-            )
-            if content_type is not None:
-                media_type = content_type.content_type
+        for annotation in (return_annotation, output_annotation):
+            if is_annotated(annotation):
+                content_type = next(
+                    (a for a in get_args(annotation) if isinstance(a, ContentType)),
+                    None,
+                )
+                if content_type is not None:
+                    media_type = content_type.content_type
+                    break
         try:
-            output = ensure_io_descriptor(return_annotation)
+            output = ensure_io_descriptor(output_annotation)
             output.media_type = media_type
             return output
         except (ValueError, TypeError) as e:

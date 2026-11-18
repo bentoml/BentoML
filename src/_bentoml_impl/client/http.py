@@ -611,6 +611,7 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
                     resp.charset_encoding or "utf-8",
                     errors="ignore",
                 )
+                filename = pathlib.PureWindowsPath(filename).name
 
         with tempfile.NamedTemporaryFile(
             "wb", suffix=filename, dir=self._temp_dir.name, delete=False
@@ -835,6 +836,7 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
                     resp.charset_encoding or "utf-8",
                     errors="ignore",
                 )
+                filename = pathlib.PureWindowsPath(filename).name
 
         with tempfile.NamedTemporaryFile(
             "wb", suffix=filename, dir=self._temp_dir.name, delete=False

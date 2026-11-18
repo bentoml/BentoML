@@ -736,7 +736,7 @@ class ServiceAppFactory(BaseAppFactory):
                     "error": "An unexpected error has occurred, please check the server log."
                 }
             else:
-                detail = ({"error": str(exc)},)
+                detail = {"error": str(exc)}
             resp = JSONResponse(detail, status_code=status)
         except Exception:
             log_exception(request)

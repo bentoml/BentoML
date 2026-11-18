@@ -3,9 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+from starlette.requests import Request
 
 from bentoml._internal.utils.lazy_loader import LazyLoader
+from bentoml.exceptions import BadInput
 from bentoml.grpc.utils import import_generated_stubs
+from bentoml.io import Multipart
 from bentoml.io import Text
 
 if TYPE_CHECKING:
@@ -60,3 +63,54 @@ async def test_exception_from_proto():
 async def test_to_proto() -> None:
     res = await Text().to_proto("asdf")
     assert res.value == "asdf"
+
+
+def _make_request(body: bytes, content_type: str) -> Request:
+    async def receive():
+        nonlocal sent
+        if not sent:
+            sent = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    sent = False
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "headers": [(b"content-type", content_type.encode("latin-1"))],
+        "path": "/",
+        "query_string": b"",
+        "server": ("testserver", 80),
+        "scheme": "http",
+        "client": ("testclient", 50000),
+    }
+    return Request(scope, receive=receive)
+
+
+@pytest.mark.asyncio
+async def test_from_http_request_non_utf8_raises_bad_input():
+    # bentoml/BentoML#5781: a body that is not UTF-8 must be a 400, not a 500.
+    with pytest.raises(BadInput):
+        await Text().from_http_request(_make_request(b"\xa9", "text/plain"))
+
+
+@pytest.mark.asyncio
+async def test_from_proto_non_utf8_raises_bad_input():
+    with pytest.raises(BadInput):
+        await Text().from_proto(b"\xa9")
+
+
+@pytest.mark.asyncio
+async def test_multipart_non_utf8_file_part_raises_bad_input():
+    # The same non-UTF-8 body reached through Multipart must also be a 400.
+    boundary = "----testboundary"
+    body = (
+        f"--{boundary}\r\n"
+        'Content-Disposition: form-data; name="text"; filename="t.txt"\r\n'
+        "Content-Type: text/plain\r\n\r\n".encode("latin-1")
+        + b"\xa9"
+        + f"\r\n--{boundary}--\r\n".encode("latin-1")
+    )
+    request = _make_request(body, f"multipart/form-data; boundary={boundary}")
+    with pytest.raises(BadInput):
+        await Multipart(text=Text()).from_http_request(request)

@@ -7,10 +7,12 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
+from starlette.requests import Request
 
 from bentoml._internal.service.openapi.specification import Schema
 from bentoml.exceptions import BadInput
 from bentoml.exceptions import BentoMLException
+from bentoml.grpc.utils import grpc_status_code
 from bentoml.grpc.utils import import_generated_stubs
 from bentoml.io import NumpyNdarray
 
@@ -204,6 +206,58 @@ async def test_exception_to_proto():
         )
     with pytest.raises(BadInput):
         await NumpyNdarray(dtype=np.dtype(np.void)).to_proto(np.array("asdf"))
+
+
+def _make_request(body: bytes, content_type: str = "application/json") -> Request:
+    async def receive():
+        nonlocal sent
+        if not sent:
+            sent = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    sent = False
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "headers": [(b"content-type", content_type.encode("latin-1"))],
+        "path": "/",
+        "query_string": b"",
+        "server": ("testserver", 80),
+        "scheme": "http",
+        "client": ("testclient", 50000),
+    }
+    return Request(scope, receive=receive)
+
+
+@pytest.mark.asyncio
+async def test_from_http_request_overflow_raises_bad_input():
+    # bentoml/BentoML#5781: on NumPy 2, np.array with an out-of-range value
+    # for the dtype raises OverflowError, which escaped as a 500.
+    with pytest.raises(BadInput):
+        await NumpyNdarray(dtype="uint8").from_http_request(_make_request(b"[-992]"))
+    # Valid input is unchanged.
+    res = await NumpyNdarray(dtype="uint8").from_http_request(_make_request(b"[1, 2]"))
+    np.testing.assert_array_equal(res, np.array([1, 2], dtype="uint8"))
+
+
+@pytest.mark.asyncio
+async def test_from_http_request_invalid_json_raises_bad_input():
+    with pytest.raises(BadInput):
+        await NumpyNdarray(dtype="uint8").from_http_request(_make_request(b"not json"))
+
+
+@pytest.mark.asyncio
+async def test_from_proto_misaligned_buffer_raises_bad_input():
+    # bentoml/BentoML#5781: np.frombuffer raises ValueError when the buffer
+    # length is not a multiple of the dtype size; over gRPC that must be
+    # INVALID_ARGUMENT, not INTERNAL.
+    with pytest.raises(BadInput) as exc_info:
+        await NumpyNdarray(dtype="float64").from_proto(b"abc")
+    assert "not a multiple of the dtype size" in str(exc_info.value)
+    import grpc
+
+    assert grpc_status_code(exc_info.value) == grpc.StatusCode.INVALID_ARGUMENT
 
 
 @pytest.mark.asyncio

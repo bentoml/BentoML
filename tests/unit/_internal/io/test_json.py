@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import pydantic
 import pytest
+from starlette.requests import Request
 
 from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
 from bentoml._internal.utils.lazy_loader import LazyLoader
@@ -258,6 +259,42 @@ async def test_exception_from_proto():
 async def test_exception_to_proto():
     with pytest.raises(TypeError):
         await JSON().to_proto(b"asdf")  # type: ignore (testing exception)
+
+
+def _make_request(body: bytes, content_type: str) -> Request:
+    async def receive():
+        nonlocal sent
+        if not sent:
+            sent = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    sent = False
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "headers": [(b"content-type", content_type.encode("latin-1"))],
+        "path": "/",
+        "query_string": b"",
+        "server": ("testserver", 80),
+        "scheme": "http",
+        "client": ("testclient", 50000),
+    }
+    return Request(scope, receive=receive)
+
+
+@pytest.mark.asyncio
+async def test_from_http_request_non_utf8_raises_bad_input():
+    # bentoml/BentoML#5781: json.loads on bytes raises UnicodeDecodeError,
+    # which was not caught next to JSONDecodeError, so it became a 500.
+    with pytest.raises(BadInput):
+        await JSON().from_http_request(_make_request(b"\xa9", "application/json"))
+
+
+@pytest.mark.asyncio
+async def test_from_proto_non_utf8_raises_bad_input():
+    with pytest.raises(BadInput):
+        await JSON().from_proto(b"\xa9")
 
 
 @pytest.mark.asyncio

@@ -4,6 +4,7 @@ import io
 from typing import TYPE_CHECKING
 
 import pytest
+from starlette.requests import Request
 
 from bentoml.exceptions import BadInput
 from bentoml.grpc.utils import import_generated_stubs
@@ -60,6 +61,31 @@ async def test_exception_from_proto():
     with pytest.raises(BadInput) as exc_info:
         await File(mime_type="image/jpeg").from_proto(pb.File(kind="image/jpeg"))
     assert "Content is empty!" == str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_from_http_request_non_utf8_content_type_raises_bad_input():
+    # bentoml/BentoML#5781: a Content-Type header that is not UTF-8 raised
+    # UnicodeDecodeError from the .decode("utf-8") call, becoming a 500.
+    # Headers arrive as raw bytes in the ASGI scope and are latin-1 decoded
+    # by Starlette, then re-encoded to latin-1 by parse_options_header, so
+    # the non-UTF-8 bytes survive to the decode call.
+    async def receive():
+        return {"type": "http.request", "body": b"hello", "more_body": False}
+
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "headers": [(b"content-type", b"\xff\xfe")],
+        "path": "/",
+        "query_string": b"",
+        "server": ("testserver", 80),
+        "scheme": "http",
+        "client": ("testclient", 50000),
+    }
+    request = Request(scope, receive=receive)
+    with pytest.raises(BadInput):
+        await File().from_http_request(request)
 
 
 @pytest.mark.asyncio

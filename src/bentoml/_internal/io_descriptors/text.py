@@ -5,6 +5,7 @@ import typing as t
 from starlette.requests import Request
 from starlette.responses import StreamingResponse
 
+from ...exceptions import BadInput
 from ..service.openapi import SUCCESS_DESCRIPTION
 from ..service.openapi.specification import MediaType
 from ..service.openapi.specification import Schema
@@ -111,7 +112,10 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
            def predict(inputs: str) -> str: ...
         """
         if isinstance(sample, bytes):
-            sample = sample.decode("utf-8")
+            try:
+                sample = sample.decode("utf-8")
+            except UnicodeDecodeError as e:
+                raise BadInput(f"Unable to decode sample text as UTF-8: {e}") from None
         return sample
 
     def input_type(self) -> t.Type[str]:
@@ -157,7 +161,12 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
 
     async def from_http_request(self, request: Request) -> str:
         obj = await request.body()
-        return str(obj.decode("utf-8"))
+        try:
+            return str(obj.decode("utf-8"))
+        except UnicodeDecodeError as e:
+            raise BadInput(
+                f"Invalid text input received: body is not valid UTF-8: {e}"
+            ) from None
 
     async def to_http_response(
         self, obj: str | t.AsyncGenerator[str, None], ctx: Context | None = None
@@ -178,7 +187,12 @@ class Text(IODescriptor[str], descriptor_id="bentoml.io.Text", proto_fields=("te
 
     async def from_proto(self, field: wrappers_pb2.StringValue | bytes) -> str:
         if isinstance(field, bytes):
-            return field.decode("utf-8")
+            try:
+                return field.decode("utf-8")
+            except UnicodeDecodeError as e:
+                raise BadInput(
+                    f"Invalid text input received: body is not valid UTF-8: {e}"
+                ) from None
         else:
             assert isinstance(field, wrappers_pb2.StringValue)
             return field.value

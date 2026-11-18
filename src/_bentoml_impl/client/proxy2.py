@@ -100,6 +100,7 @@ class SessionManager:
             base_url = "http://127.0.0.1:3000"
         elif self._parsed_url.scheme == "tcp":
             base_url = f"http://{self._parsed_url.netloc}"
+            connector = aiohttp.TCPConnector(keepalive_timeout=4.0)
         else:
             base_url = self._parsed_url.geturl()
 
@@ -353,7 +354,14 @@ class AsyncClient(AbstractClient):
         try:
             headers = CIMultiDict({"Content-Type": self.media_type, **(headers or {})})
             body = self._build_payload(endpoint, args, kwargs, headers)
-            resp = await client.post(endpoint.route, data=body, headers=headers)
+            try:
+                resp = await client.post(endpoint.route, data=body, headers=headers)
+            except (aiohttp.ClientConnectionError, aiohttp.ServerDisconnectedError):
+                client = await self._session_manager.get_session()
+                retry_body = self._build_payload(endpoint, args, kwargs, headers)
+                resp = await client.post(
+                    endpoint.route, data=retry_body, headers=headers
+                )
             if not resp.ok:
                 raise await map_exception(resp)
             if endpoint.stream_output:

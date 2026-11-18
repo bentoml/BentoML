@@ -43,6 +43,141 @@ if t.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def find_workspace_root(start_dir: str) -> str | None:
+    current = os.path.abspath(start_dir)
+    while True:
+        pyproject_path = os.path.join(current, "pyproject.toml")
+        if os.path.isfile(pyproject_path):
+            try:
+                with open(pyproject_path, "rb") as f:
+                    if sys.version_info >= (3, 11):
+                        import tomllib
+                    else:
+                        import tomli as tomllib
+                    data = tomllib.load(f)
+                    if (
+                        "tool" in data
+                        and "uv" in data["tool"]
+                        and "workspace" in data["tool"]["uv"]
+                    ):
+                        return current
+            except Exception:  # noqa: BLE001,S110
+                pass
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    return None
+
+
+def get_workspace_members(workspace_root: str) -> dict[str, str]:
+    import sys
+
+    if sys.version_info >= (3, 11):
+        import tomllib
+    else:
+        import tomli as tomllib
+
+    members_map: dict[str, str] = {}
+    pyproject_path = os.path.join(workspace_root, "pyproject.toml")
+    try:
+        with open(pyproject_path, "rb") as f:
+            data = tomllib.load(f)
+
+        # Check root itself
+        root_name = data.get("project", {}).get("name")
+        if root_name:
+            members_map[root_name] = os.path.abspath(workspace_root)
+
+        members_patterns = (
+            data.get("tool", {}).get("uv", {}).get("workspace", {}).get("members", [])
+        )
+        exclude_patterns = (
+            data.get("tool", {}).get("uv", {}).get("workspace", {}).get("exclude", [])
+        )
+
+        from pathlib import Path
+
+        root_path = Path(workspace_root)
+
+        excluded_paths: set[Path] = set()
+        for pattern in exclude_patterns:
+            for p in root_path.glob(pattern):
+                if p.is_dir():
+                    excluded_paths.add(p.resolve())
+
+        def is_excluded(p: Path) -> bool:
+            curr = p.resolve()
+            while curr != root_path.resolve():
+                if curr in excluded_paths:
+                    return True
+                parent = curr.parent
+                if parent == curr:
+                    break
+                curr = parent
+            return False
+
+        for pattern in members_patterns:
+            for p in root_path.glob(pattern):
+                if p.is_dir() and p.joinpath("pyproject.toml").is_file():
+                    if is_excluded(p):
+                        continue
+                    abs_path_str = str(p.resolve())
+                    try:
+                        with open(p.joinpath("pyproject.toml"), "rb") as mf:
+                            mdata = tomllib.load(mf)
+                        name = mdata.get("project", {}).get("name")
+                        if name:
+                            members_map[name] = abs_path_str
+                    except Exception:  # noqa: BLE001,S110
+                        pass
+    except Exception:  # noqa: BLE001,S110
+        pass
+    return members_map
+
+
+def rewrite_if_workspace_member(pkg: str, members_map: dict[str, str]) -> str:
+    from packaging.requirements import Requirement
+
+    try:
+        req = Requirement(pkg)
+        normalized_name = req.name.lower().replace("_", "-")
+        normalized_members = {
+            k.lower().replace("_", "-"): v for k, v in members_map.items()
+        }
+        if normalized_name in normalized_members:
+            path = normalized_members[normalized_name]
+            extras_str = ""
+            if req.extras:
+                extras_str = f"[{','.join(req.extras)}]"
+            marker_str = ""
+            if req.marker:
+                marker_str = f" ; {req.marker}"
+            return f"{path}{extras_str}{marker_str}"
+    except Exception:  # noqa: BLE001,S110
+        pass
+    return pkg
+
+
+def get_local_path_from_link(link: t.Any, requirements_txt_dir: str) -> str | None:
+    import urllib.parse
+    import urllib.request
+
+    url: str | None = getattr(link, "url", None)
+    if not url:
+        return None
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme and parsed.scheme != "file":
+        return None
+    path = urllib.request.url2pathname(parsed.path)
+    if os.path.exists(path):
+        return path
+    rel_path = os.path.join(requirements_txt_dir, path)
+    if os.path.exists(rel_path):
+        return os.path.abspath(rel_path)
+    return None
+
+
 # Docker defaults
 DEFAULT_CUDA_VERSION = "12.8.1"
 DEFAULT_CONTAINER_DISTRO = "debian"
@@ -77,8 +212,8 @@ def _convert_python_version(py_version: str | None) -> str | None:
 
 
 def _convert_cuda_version(
-    cuda_version: t.Optional[t.Union[str, int]],
-) -> t.Optional[str]:
+    cuda_version: str | int | None,
+) -> str | None:
     if cuda_version is None or cuda_version == "" or cuda_version == "None":
         return None
 
@@ -151,30 +286,30 @@ class DockerOptions:
     # always omit config values in case of default values got changed in future BentoML releases
     __omit_if_default__ = False
 
-    distro: t.Optional[str] = attr.field(
+    distro: str | None = attr.field(
         default=None,
         validator=attr.validators.optional(
             attr.validators.in_(CONTAINER_SUPPORTED_DISTROS)
         ),
     )
-    python_version: t.Optional[str] = attr.field(
+    python_version: str | None = attr.field(
         converter=_convert_python_version, default=None
     )
-    cuda_version: t.Optional[str] = attr.field(
+    cuda_version: str | None = attr.field(
         default=None,
         converter=_convert_cuda_version,
         validator=attr.validators.optional(
             attr.validators.in_(ALLOWED_CUDA_VERSION_ARGS)
         ),
     )
-    env: t.Optional[t.Union[str, t.List[str], t.Dict[str, str]]] = attr.field(
+    env: str | list[str] | dict[str, str] | None = attr.field(
         default=None,
         converter=_convert_env,
     )
-    system_packages: t.Optional[t.List[str]] = None
-    setup_script: t.Optional[str] = None
-    base_image: t.Optional[str] = None
-    dockerfile_template: t.Optional[str] = None
+    system_packages: list[str] | None = None
+    setup_script: str | None = None
+    base_image: str | None = None
+    dockerfile_template: str | None = None
 
     def __attrs_post_init__(self):
         if self.base_image is not None:
@@ -214,7 +349,7 @@ class DockerOptions:
         self, default_envs: list[BentoEnvSchema] | None = None
     ) -> DockerOptions:
         # Convert from user provided options to actual build options with default values
-        defaults: t.Dict[str, t.Any] = {}
+        defaults: dict[str, t.Any] = {}
 
         if self.base_image is None:
             if self.distro is None:
@@ -302,12 +437,10 @@ def conda_dependencies_validator(
                 )
             pip_list: list[str] = conda_pip[0]["pip"]
             if not all(isinstance(x, str) for x in pip_list):
-                not_type_string = list(
-                    map(
-                        lambda x: str(type(x)),
-                        filter(lambda x: not isinstance(x, str), pip_list),
-                    )
-                )
+                not_type_string = [
+                    str(type(x))
+                    for x in filter(lambda x: not isinstance(x, str), pip_list)
+                ]
                 raise InvalidArgument(
                     f"Expected 'conda.pip' values to be strings, got {not_type_string}"
                 )
@@ -327,15 +460,15 @@ class CondaOptions:
     # no need to omit since BentoML has already handled the default values.
     __omit_if_default__ = False
 
-    environment_yml: t.Optional[str] = None
-    channels: t.Optional[t.List[str]] = attr.field(
+    environment_yml: str | None = None
+    channels: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    dependencies: t.Optional[DependencyType] = attr.field(
+    dependencies: DependencyType | None = attr.field(
         default=None, validator=attr.validators.optional(conda_dependencies_validator)
     )
-    pip: t.Optional[t.List[str]] = attr.field(
+    pip: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
@@ -439,45 +572,45 @@ class PythonOptions:
     # no need to omit since BentoML has already handled the default values.
     __omit_if_default__ = False
 
-    requirements_txt: t.Optional[str] = attr.field(
+    requirements_txt: str | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
     )
-    packages: t.Optional[t.List[str]] = attr.field(
+    packages: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    lock_packages: t.Optional[bool] = None
-    pack_git_packages: t.Optional[bool] = None
-    index_url: t.Optional[str] = attr.field(
+    lock_packages: bool | None = None
+    pack_git_packages: bool | None = None
+    index_url: str | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
     )
-    no_index: t.Optional[bool] = attr.field(
+    no_index: bool | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(bool)),
     )
-    trusted_host: t.Optional[t.List[str]] = attr.field(
+    trusted_host: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    find_links: t.Optional[t.List[str]] = attr.field(
+    find_links: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    extra_index_url: t.Optional[t.List[str]] = attr.field(
+    extra_index_url: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    pip_args: t.Optional[str] = attr.field(
+    pip_args: str | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
     )
-    wheels: t.Optional[t.List[str]] = attr.field(
+    wheels: list[str] | None = attr.field(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(ListStr)),
     )
-    is_src_layout: t.Optional[bool] = None
+    is_src_layout: bool | None = None
 
     def __attrs_post_init__(self):
         if self.requirements_txt and self.packages:
@@ -564,6 +697,9 @@ class PythonOptions:
                 )
             )
 
+        workspace_root = find_workspace_root(build_ctx)
+        members_map = get_workspace_members(workspace_root) if workspace_root else {}
+
         with py_folder.joinpath("requirements.txt").open("w") as f:
             has_bentoml_req = False
 
@@ -588,14 +724,34 @@ class PythonOptions:
                 ):
                     has_bentoml_req = True
 
-                f.write(requirements_txt.dumps(preserve_one_empty_line=True))
+                dumped_lines = requirements_txt.dumps(
+                    preserve_one_empty_line=True
+                ).splitlines()
+                rewritten_lines = []
+                for line in dumped_lines:
+                    if line.strip() and not line.strip().startswith("#"):
+                        if line.strip().startswith("-"):
+                            rewritten_lines.append(line)
+                        else:
+                            rewritten_lines.append(
+                                rewrite_if_workspace_member(line, members_map)
+                            )
+                    else:
+                        rewritten_lines.append(line)
+                f.write("\n".join(rewritten_lines) + "\n")
             elif self.packages is not None:
                 bentoml_req_regex = re.compile(
                     r"^bentoml(?:\[[^\]]+\])?\s*@", re.IGNORECASE
                 )
                 if any(bentoml_req_regex.match(pkg) for pkg in self.packages):
                     has_bentoml_req = True
-                f.write("\n".join(self.packages) + "\n")
+
+                rewritten_packages = []
+                for pkg in self.packages:
+                    rewritten_packages.append(
+                        rewrite_if_workspace_member(pkg, members_map)
+                    )
+                f.write("\n".join(rewritten_packages) + "\n")
 
             if not has_bentoml_req:
                 # Add the pinned BentoML requirement first if it's not a local version
@@ -657,13 +813,19 @@ class PythonOptions:
             except subprocess.CalledProcessError as e:
                 raise BentoMLException(f"Failed to lock PyPI packages: {e}") from None
             self.fix_dep_urls(
-                pip_compile_out, str(wheels_folder), self.pack_git_packages
+                pip_compile_out,
+                str(wheels_folder),
+                pack_git_packages=self.pack_git_packages,
+                workspace_root=workspace_root,
             )
         else:
             requirements_txt = str(py_folder / "requirements.txt")
             if os.path.exists(requirements_txt):
                 self.fix_dep_urls(
-                    requirements_txt, str(wheels_folder), self.pack_git_packages
+                    requirements_txt,
+                    str(wheels_folder),
+                    pack_git_packages=self.pack_git_packages,
+                    workspace_root=workspace_root,
                 )
 
     def with_defaults(self) -> PythonOptions:
@@ -679,7 +841,10 @@ class PythonOptions:
 
     @staticmethod
     def fix_dep_urls(
-        requirements_txt: str, wheels_folder: str, pack_git_packages: bool = True
+        requirements_txt: str,
+        wheels_folder: str,
+        pack_git_packages: bool | None = True,
+        workspace_root: str | None = None,
     ) -> None:
         """Replace the git dependencies in the requirements.lock file with the
         paths to the local copy.
@@ -705,6 +870,40 @@ class PythonOptions:
                 filename = build_git_repo(
                     url, ref, link.subdirectory_fragment, wheels_folder
                 )
+            elif local_path := get_local_path_from_link(
+                link, os.path.dirname(requirements_txt)
+            ):
+                if not workspace_root:
+                    continue
+
+                real_local = os.path.realpath(local_path)
+                real_workspace = os.path.realpath(workspace_root)
+                try:
+                    common = os.path.commonpath([real_local, real_workspace])
+                    if common != real_workspace:
+                        raise BentoMLException(
+                            f"Security violation: Local dependency '{local_path}' lies outside the workspace root '{workspace_root}'."
+                        )
+                except Exception as e:
+                    if isinstance(e, BentoMLException):
+                        raise
+                    raise BentoMLException(
+                        f"Security check failed for local dependency '{local_path}': {e}"
+                    ) from e
+
+                abs_local = os.path.abspath(local_path)
+                filename = os.path.basename(local_path)
+                abs_dest = os.path.abspath(os.path.join(wheels_folder, filename))
+
+                if abs_local == abs_dest:
+                    pass
+                else:
+                    if os.path.isdir(real_local):
+                        from .bentoml_builder import build_local_dep
+
+                        filename = build_local_dep(real_local, wheels_folder)
+                    else:
+                        shutil.copy2(real_local, abs_dest)
             else:
                 continue
             parsed_parts = parse_reqparts_from_string(f"./wheels/{filename}")
@@ -716,7 +915,7 @@ class PythonOptions:
             f.write(parsed_requirements.dumps(preserve_one_empty_line=True))
 
 
-def _python_options_structure_hook(d: t.Any, _: t.Type[PythonOptions]) -> PythonOptions:
+def _python_options_structure_hook(d: t.Any, _: type[PythonOptions]) -> PythonOptions:
     # Allow bentofile yaml to have either a str or list of str for these options
     for field in ["trusted_host", "find_links", "extra_index_url"]:
         if field in d and isinstance(d[field], str):
@@ -733,7 +932,7 @@ if t.TYPE_CHECKING:
 
 
 def dict_options_converter(
-    options_type: t.Type[OptionsCls],
+    options_type: type[OptionsCls],
 ) -> t.Callable[[OptionsCls | dict[str, t.Any] | None], OptionsCls]:
     def _converter(value: OptionsCls | dict[str, t.Any] | None) -> OptionsCls:
         if value is None:
@@ -748,8 +947,8 @@ def dict_options_converter(
 @attr.frozen
 class ModelSpec:
     tag: str
-    filter: t.Optional[str] = None
-    alias: t.Optional[str] = None
+    filter: str | None = None
+    alias: str | None = None
 
     @classmethod
     def from_item(cls, item: str | dict[str, t.Any] | ModelSpec) -> ModelSpec:
@@ -769,7 +968,7 @@ def convert_models_config(
 
 
 def _model_spec_structure_hook(
-    d: str | dict[str, t.Any], cls: t.Type[ModelSpec]
+    d: str | dict[str, t.Any], cls: type[ModelSpec]
 ) -> ModelSpec:
     return cls.from_item(d)
 
@@ -807,11 +1006,11 @@ class BentoBuildConfig:
     __omit_if_default__ = False
 
     service: str = ""
-    name: t.Optional[str] = None
-    description: t.Optional[str] = None
-    labels: t.Dict[str, str] = attr.field(factory=dict)
-    include: t.Optional[t.List[str]] = None
-    exclude: t.Optional[t.List[str]] = None
+    name: str | None = None
+    description: str | None = None
+    labels: dict[str, str] = attr.field(factory=dict)
+    include: list[str] | None = None
+    exclude: list[str] | None = None
     docker: DockerOptions = attr.field(
         default=None,
         converter=dict_options_converter(DockerOptions),
@@ -824,11 +1023,9 @@ class BentoBuildConfig:
         default=None,
         converter=dict_options_converter(CondaOptions),
     )
-    models: t.List[ModelSpec] = attr.field(
-        factory=list, converter=convert_models_config
-    )
-    envs: t.List[BentoEnvSchema] = attr.field(factory=list)
-    args: t.Dict[str, t.Any] = attr.field(factory=dict)
+    models: list[ModelSpec] = attr.field(factory=list, converter=convert_models_config)
+    envs: list[BentoEnvSchema] = attr.field(factory=list)
+    args: dict[str, t.Any] = attr.field(factory=dict)
 
     def __attrs_post_init__(self) -> None:
         use_conda = not self.conda.is_empty()
@@ -895,7 +1092,7 @@ class BentoBuildConfig:
         )
 
     @property
-    def model_aliases(self) -> t.Dict[str, str]:
+    def model_aliases(self) -> dict[str, str]:
         return {model.alias: model.tag for model in self.models if model.alias}
 
     @classmethod
@@ -924,10 +1121,13 @@ class BentoBuildConfig:
         python_packages = build_config.python.packages or []
         python_packages.extend(dependencies)
         object.__setattr__(build_config.python, "packages", python_packages)
-        if build_config.python.is_src_layout is None:
+        if (
+            build_config.python.is_src_layout is None
+            and base_dir
+            and os.path.isdir(os.path.join(base_dir, "src"))
+        ):
             # Default auto-discovery: if src/ exists in the same directory as pyproject.toml
-            if base_dir and os.path.isdir(os.path.join(base_dir, "src")):
-                object.__setattr__(build_config.python, "is_src_layout", True)
+            object.__setattr__(build_config.python, "is_src_layout", True)
         return build_config
 
     @classmethod
@@ -1014,13 +1214,13 @@ class BentoPathSpec:
 
 class FilledBentoBuildConfig(BentoBuildConfig):
     service: str
-    name: t.Optional[str]
-    description: t.Optional[str]
-    labels: t.Dict[str, str]
-    include: t.List[str]
-    exclude: t.List[str]
+    name: str | None
+    description: str | None
+    labels: dict[str, str]
+    include: list[str]
+    exclude: list[str]
     docker: DockerOptions
     python: PythonOptions
     conda: CondaOptions
-    models: t.List[ModelSpec]
-    envs: t.List[BentoEnvSchema]
+    models: list[ModelSpec]
+    envs: list[BentoEnvSchema]

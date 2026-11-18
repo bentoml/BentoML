@@ -33,6 +33,16 @@ def _only_include(data: dict[str, t.Any], fields: t.Container[str]) -> dict[str,
     return {k: v for k, v in data.items() if k in fields}
 
 
+def _schema_from_dict(data: dict[str, t.Any]) -> Schema:
+    # A top-level "$ref" (e.g. an ``Optional``/``Union`` of models that has been
+    # collapsed by ``_flatten_field``) must be passed through the renamed ``ref``
+    # field; ``Schema(**{"$ref": ...})`` would fail since ``$ref`` is not a valid
+    # keyword argument.
+    if "$ref" in data:
+        data = {("ref" if k == "$ref" else k): v for k, v in data.items()}
+    return Schema(**data)
+
+
 def _io_descriptor_converter(it: t.Any) -> type[IODescriptor]:
     if not inspect.isclass(it):
         raise ValueError(f"{it} must be a class type")
@@ -222,7 +232,7 @@ class APIMethod(t.Generic[P, R]):
         return {
             "content": {
                 self.input_spec.mime_type(): MediaType(
-                    schema=Schema(**input), encoding=encoding or None
+                    schema=_schema_from_dict(input), encoding=encoding or None
                 )
             },
         }
@@ -244,7 +254,9 @@ class APIMethod(t.Generic[P, R]):
         return {
             "description": SUCCESS_DESCRIPTION,
             "content": {
-                self.output_spec.mime_type(): MediaType(schema=Schema(**output))
+                self.output_spec.mime_type(): MediaType(
+                    schema=_schema_from_dict(output)
+                )
             },
         }
 
@@ -262,8 +274,14 @@ def _flatten_field(
     if max_depth is not None and _depth >= max_depth:
         return schema
     if "$ref" in schema:
-        ref = schema.pop("$ref")[len("#/$defs/") :]
-        schema.update(_flatten_field(defs[ref], defs, max_depth, _depth=_depth + 1))
+        ref = schema["$ref"].rsplit("/", 1)[-1]
+        if ref in defs:
+            # A local definition ("#/$defs/<name>"): inline it.
+            schema.pop("$ref")
+            schema.update(_flatten_field(defs[ref], defs, max_depth, _depth=_depth + 1))
+        # Otherwise the reference points at a registered component schema
+        # (e.g. "#/components/schemas/<name>"). Leave it untouched so it keeps
+        # resolving against components/schemas instead of crashing here.
     elif schema.get("type") == "object" and "properties" in schema:
         for k, v in schema["properties"].items():
             schema["properties"][k] = _flatten_field(

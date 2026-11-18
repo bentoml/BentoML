@@ -73,8 +73,13 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 COPY --chown={{ bento__user }}:{{ bento__user }} ./env/python ./env/python/
 {% set __install_python_scripts__ = expands_bento_path("env", "python", "install.sh", bento_path=bento__path) %}
+{% if _has_pylock %}
+# sync python packages directly from pylock.toml
+{% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} uv pip sync {{ expands_bento_path("env", "python", "pylock.toml", bento_path=bento_path) }}
+{% else %}
 # install python packages with install.sh
 {% call common.RUN(__enable_buildkit__) -%} {{ __pip_cache__ }} {% endcall -%} bash -euxo pipefail {{ __install_python_scripts__ }}
+{% endif %}
 COPY --chown={{ bento__user }}:{{ bento__user }} . ./
 {% if __options__setup_script is not none %}
 {% set __setup_script__ = expands_bento_path("env", "docker", "setup_script", bento_path=bento__path) %}

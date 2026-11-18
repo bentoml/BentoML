@@ -1,12 +1,48 @@
 from __future__ import annotations
 
+import io
 import typing as t
 
 import numpy as np
 import pandas as pd
 import pytest
+from PIL import Image
 
 import bentoml._internal.runner.container as c
+
+
+@pytest.mark.parametrize("mode", ["L", "RGB", "RGBA"])
+@pytest.mark.parametrize("image_format", [None, ""])
+def test_pil_image_container_without_format(
+    mode: t.Literal["L", "RGB", "RGBA"], image_format: str | None
+):
+    image = Image.frombytes(mode, (3, 2), bytes(range(6 * len(mode))))
+    image.format = image_format
+
+    payload = c.AutoContainer.to_payload(image, batch_dim=0)
+    restored = c.AutoContainer.from_payload(payload)
+
+    assert payload.container == "PILImageContainer"
+    assert payload.batch_size == 1
+    assert restored.format == "PNG"
+    assert restored.mode == image.mode
+    assert restored.size == image.size
+    assert restored.tobytes() == image.tobytes()
+    assert image.format == image_format
+
+
+@pytest.mark.parametrize("image_format", ["PNG", "BMP"])
+def test_pil_image_container_preserves_existing_format(image_format: str):
+    buffer = io.BytesIO()
+    Image.new("RGB", (3, 2), color=(12, 34, 56)).save(buffer, format=image_format)
+    buffer.seek(0)
+    image = Image.open(buffer)
+
+    payload = c.AutoContainer.to_payload(image, batch_dim=0)
+    restored = c.AutoContainer.from_payload(payload)
+
+    assert restored.format == image_format
+    assert restored.tobytes() == image.tobytes()
 
 
 @pytest.mark.parametrize("batch_dim_exc", [AssertionError])

@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import typing as t
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from simple_di import Provide
@@ -129,29 +130,22 @@ def _do_import(
         )
 
     if os.path.isfile(import_path):
-        import_path = os.path.realpath(import_path)
-        # Importing from a module file path:
-        if not import_path.startswith(working_dir):
+        try:
+            rel_path = (
+                Path(import_path).resolve().relative_to(Path(working_dir).resolve())
+            )
+        except ValueError:
             raise ImportServiceError(
                 f'Module "{import_path}" not found in working directory "{working_dir}"'
             )
 
-        file_name, ext = os.path.splitext(import_path)
-        if ext != ".py":
+        if rel_path.suffix != ".py":
             raise ImportServiceError(
-                f'Invalid module extension "{ext}" in target "{svc_import_path}",'
+                f'Invalid module extension "{rel_path.suffix}" in target "{svc_import_path}",'
                 ' the only extension acceptable here is ".py"'
             )
 
-        # move up until no longer in a python package or in the working dir
-        module_name_parts: t.List[str] = []
-        path = file_name
-        while True:
-            path, name = os.path.split(path)
-            module_name_parts.append(name)
-            if path == working_dir:
-                break
-        module_name = ".".join(module_name_parts[::-1])
+        module_name = ".".join(rel_path.with_suffix("").parts)
     else:
         # Importing by module name:
         module_name = import_path

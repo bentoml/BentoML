@@ -92,7 +92,7 @@ class CpuResource(Resource[float], resource_id="cpu"):
         if isinstance(spec, (int, float)):
             return float(spec)
 
-        milli_match = re.match("([0-9]+)m", spec)
+        milli_match = re.fullmatch("([0-9]+)m", spec)
         if milli_match:
             return float(milli_match[1]) / 1000.0
 

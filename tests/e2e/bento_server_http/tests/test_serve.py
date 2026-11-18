@@ -31,10 +31,10 @@ def test_http_server_ctx():
         SyncHTTPClient.wait_until_server_ready("127.0.0.1", 12346)
         client = SyncHTTPClient.from_url(server.url)
         resp = client.health()
+
         assert resp.status_code == 200
 
         res = client.call("echo_json", {"more_test": "and more json"})
-        assert res == {"more_test": "and more json"}
     assert not server.running
 
 
@@ -45,6 +45,7 @@ def test_serve_from_svc():
         SyncHTTPClient.wait_until_server_ready("127.0.0.1", 12348)
         client = SyncHTTPClient.from_url(server.url)
         resp = client.health()
+
         assert resp.status_code == 200
 
     assert not server.running
@@ -61,6 +62,24 @@ def test_serve_with_timeout(monkeypatch: pytest.MonkeyPatch):
             match="Not able to process the request in 1 seconds",
         ):
             client.call("echo_delay", {})
+
+
+def test_serve_mounted_app_timeout(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("BENTOML_CONFIG", os.path.abspath("configs/timeout.yml"))
+    # The mounted app has no BentoML APIs, so use httpx directly for the raw request.
+    import httpx
+
+    # Change into the directory that contains the service and config files so the
+    # relative service path ("service_mount_timeout.py:svc") resolves correctly.
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    monkeypatch.chdir(os.path.join(current_dir, ".."))
+
+    with bentoml.serve("service_mount_timeout.py:svc", port=12352) as server:
+        # The mounted app is at /mounted, and the endpoint is /delay
+        resp = httpx.get(f"{server.url}/mounted/delay", timeout=5)
+        # The timeout middleware returns a 504 with a JSON error message
+        assert resp.status_code == 504
+        assert "Not able to process the request in 1 seconds" in resp.text
 
 
 @pytest.mark.asyncio

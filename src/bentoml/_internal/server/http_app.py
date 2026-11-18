@@ -283,12 +283,28 @@ class HTTPAppFactory(BaseAppFactory):
         on_startup.extend(super().on_startup)
         return on_startup
 
-    async def readyz(self, _: "Request") -> "Response":
+    async def readyz(self, request: "Request") -> "Response":
         if BentoMLContainer.api_server_config.runner_probe.enabled.get():
-            runner_statuses = (
-                runner.runner_handle_is_ready() for runner in self.bento_service.runners
-            )
-            runners_ready = all(await asyncio.gather(*runner_statuses))
+            from opentelemetry import context
+            from opentelemetry.context import _SUPPRESS_INSTRUMENTATION_KEY
+
+            token = None
+            if BentoMLContainer.tracing_excluded_urls.get().url_disabled(
+                str(request.url)
+            ):
+                # The ASGI exclusion skips server spans, but not runner client spans.
+                token = context.attach(
+                    context.set_value(_SUPPRESS_INSTRUMENTATION_KEY, True)
+                )
+            try:
+                runner_statuses = (
+                    runner.runner_handle_is_ready()
+                    for runner in self.bento_service.runners
+                )
+                runners_ready = all(await asyncio.gather(*runner_statuses))
+            finally:
+                if token is not None:
+                    context.detach(token)
 
             if not runners_ready:
                 raise HTTPException(status_code=503, detail="Runners are not ready.")

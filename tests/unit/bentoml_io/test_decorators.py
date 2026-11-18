@@ -1,9 +1,11 @@
 from typing import Generator
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 from starlette.testclient import TestClient
 from typing_extensions import Annotated
 
@@ -159,6 +161,33 @@ def test_api_root_input():
 
     assert issubclass(root_input.input_spec, IORootModel)
     assert root_input.input_spec.model_fields["root"].annotation is str
+
+
+@pytest.mark.parametrize("default", [7, None])
+@pytest.mark.parametrize("args", [(), (None,), (0,)])
+def test_api_root_input_default(default, args):
+    @bentoml.api
+    def root_input(_, value: Optional[int] = default, /) -> Optional[int]:
+        return value
+
+    assert root_input.input_spec.from_inputs(*args).model_dump() == (
+        args[0] if args else default
+    )
+
+
+def test_api_root_input_required():
+    @bentoml.api
+    def root_input(_, value: int, /) -> int:
+        return value
+
+    with pytest.raises(ValidationError) as exc_info:
+        root_input.input_spec.from_inputs()
+    assert exc_info.value.errors()[0]["type"] == "missing"
+    assert exc_info.value.errors()[0]["loc"] == ("root",)
+
+    with pytest.raises(ValidationError):
+        root_input.input_spec.from_inputs(None)
+    assert root_input.input_spec.from_inputs(0).model_dump() == 0
 
 
 def test_api_root_input_illegal():

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 import io
 import json
@@ -455,6 +456,9 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
                     return
             except (httpx.TimeoutException, httpx.ConnectError):
                 pass
+            remaining = timeout - (time.monotonic() - start)
+            if remaining > 0:
+                time.sleep(min(0.1, remaining))
         raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
 
     def __enter__(self) -> t.Self:
@@ -665,6 +669,9 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
                     return
             except (httpx.TimeoutException, httpx.ConnectError):
                 pass
+            remaining = timeout - (time.monotonic() - start)
+            if remaining > 0:
+                await asyncio.sleep(min(0.1, remaining))
         raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
 
     async def is_ready(self, timeout: int | None = None) -> bool:

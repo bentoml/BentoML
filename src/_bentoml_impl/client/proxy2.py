@@ -293,6 +293,9 @@ class AsyncClient(AbstractClient):
                         return
             except (aiohttp.ClientError, aiohttp.ServerTimeoutError):
                 pass
+            remaining = end - time.monotonic()
+            if remaining > 0:
+                await asyncio.sleep(min(0.1, remaining))
         raise ServiceUnavailable(f"Server is not ready after {timeout} seconds")
 
     async def is_ready(self, timeout: int | None = None) -> bool:

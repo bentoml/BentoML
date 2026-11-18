@@ -101,6 +101,10 @@ class IOMixin:
         return schema
 
     @classmethod
+    def schema_adapter(cls) -> TypeAdapter[t.Any]:
+        return TypeAdapter(cls)
+
+    @classmethod
     def openapi_components(cls, name: str) -> dict[str, Schema]:
         from .service.openapi import REF_TEMPLATE
 
@@ -482,13 +486,17 @@ class IORootModel(IODescriptor, t.Generic[RootModelRootType]):
         return cls.model_validate(parsed, **kwargs)
 
     @classmethod
-    def model_json_schema(cls, *args: t.Any, **kwargs: t.Any) -> dict[str, t.Any]:
+    def schema_adapter(cls) -> TypeAdapter[t.Any]:
         field = cls.model_fields["root"]
         if field.metadata:
             typ_ = t.Annotated[(field.annotation, *field.metadata)]
         else:
             typ_ = field.annotation
-        schema = TypeAdapter(typ_).json_schema(*args, **kwargs)
+        return TypeAdapter(typ_)
+
+    @classmethod
+    def model_json_schema(cls, *args: t.Any, **kwargs: t.Any) -> dict[str, t.Any]:
+        schema = cls.schema_adapter().json_schema(*args, **kwargs)
         if getattr(cls, "__root_input__", False):
             schema["root_input"] = True
         return schema

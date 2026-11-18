@@ -200,14 +200,20 @@ class APIMethod(t.Generic[P, R]):
             }
         )
 
-    def openapi_request(self) -> dict[str, t.Any]:
+    def openapi_request(
+        self, json_schema: dict[str, t.Any] | None = None
+    ) -> dict[str, t.Any]:
         from .service.openapi import REF_TEMPLATE
 
+        if json_schema is None:
+            json_schema = self.input_spec.model_json_schema(
+                ref_template=REF_TEMPLATE, mode="validation"
+            )
+        if getattr(self.input_spec, "__root_input__", False):
+            json_schema = {**json_schema, "root_input": True}
         input = _flatten_field(
             _only_include(
-                self.input_spec.model_json_schema(
-                    ref_template=REF_TEMPLATE, mode="serialization"
-                ),
+                json_schema,
                 [attr.name for attr in Schema.__attrs_attrs__],
             ),
             {},
@@ -227,14 +233,20 @@ class APIMethod(t.Generic[P, R]):
             },
         }
 
-    def openapi_response(self) -> dict[str, t.Any]:
+    def openapi_response(
+        self, json_schema: dict[str, t.Any] | None = None
+    ) -> dict[str, t.Any]:
         from .service.openapi import REF_TEMPLATE
 
+        if json_schema is None:
+            json_schema = self.output_spec.model_json_schema(
+                ref_template=REF_TEMPLATE, mode="serialization"
+            )
+        if getattr(self.output_spec, "__root_input__", False):
+            json_schema = {**json_schema, "root_input": True}
         output = _flatten_field(
             _only_include(
-                self.output_spec.model_json_schema(
-                    ref_template=REF_TEMPLATE, mode="serialization"
-                ),
+                json_schema,
                 [attr.name for attr in Schema.__attrs_attrs__],
             ),
             {},

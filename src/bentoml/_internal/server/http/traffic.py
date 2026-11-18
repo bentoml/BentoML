@@ -33,7 +33,15 @@ class TimeoutMiddleware:
                 waiter.set_result(None)
             await send(message)
 
+        def _on_done(_fut: asyncio.Future[Any]) -> None:
+            # Unblock the waiter when the app finishes without sending (e.g. an
+            # unhandled exception), so we can propagate the error immediately
+            # instead of waiting for the full traffic timeout.
+            if not waiter.done():
+                waiter.set_result(None)
+
         fut = asyncio.ensure_future(self.app(scope, receive, _send), loop=loop)
+        fut.add_done_callback(_on_done)
 
         try:
             await waiter
@@ -46,6 +54,10 @@ class TimeoutMiddleware:
                     status_code=504,
                 )
                 await resp(scope, receive, send)
+            else:
+                # Request finished in the timeout race; propagate any exception
+                # or drain a successful completion instead of returning empty.
+                await fut
         else:
             await fut  # wait for the future to finish
 

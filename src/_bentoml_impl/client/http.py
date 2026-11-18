@@ -447,11 +447,13 @@ class SyncHTTPClient(HTTPClient[httpx.Client]):
     def wait_until_server_ready(self, timeout: float | None = None) -> None:
         if timeout is None:
             timeout = self.timeout
-        start = time.monotonic()
-        while time.monotonic() - start < timeout:
+        deadline = time.monotonic() + timeout
+        while (remaining := deadline - time.monotonic()) > 0:
             try:
-                resp = self.client.get(self._readyz_endpoint)
-                if resp.status_code == 200:
+                resp = self.client.get(
+                    self._readyz_endpoint, timeout=min(self.timeout, remaining)
+                )
+                if resp.status_code == 200 and time.monotonic() < deadline:
                     return
             except (httpx.TimeoutException, httpx.ConnectError):
                 pass
@@ -657,11 +659,13 @@ class AsyncHTTPClient(HTTPClient[httpx.AsyncClient]):
     async def wait_until_server_ready(self, timeout: float | None = None) -> None:
         if timeout is None:
             timeout = self.timeout
-        start = time.monotonic()
-        while time.monotonic() - start < timeout:
+        deadline = time.monotonic() + timeout
+        while (remaining := deadline - time.monotonic()) > 0:
             try:
-                resp = await self.client.get(self._readyz_endpoint)
-                if resp.status_code == 200:
+                resp = await self.client.get(
+                    self._readyz_endpoint, timeout=min(self.timeout, remaining)
+                )
+                if resp.status_code == 200 and time.monotonic() < deadline:
                     return
             except (httpx.TimeoutException, httpx.ConnectError):
                 pass

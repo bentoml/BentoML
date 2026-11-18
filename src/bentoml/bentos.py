@@ -575,29 +575,63 @@ def serve(
                 ssl_ciphers=ssl_ciphers,
             )
     elif server_type == "grpc":
-        from .serving import serve_grpc_production
+        from _bentoml_sdk import Service as NewService
 
-        if not isinstance(bento, str):
-            assert isinstance(bento, Service)
-            bento, working_dir = bento.get_service_import_origin()
+        from ._internal.service import load
 
-        return serve_grpc_production(
-            bento_identifier=bento,
-            reload=reload,
-            host=host,
-            port=port,
-            working_dir=working_dir,
-            api_workers=api_workers,
-            backlog=backlog,
-            threaded=not blocking,
-            development_mode=not production,
-            ssl_certfile=ssl_certfile,
-            ssl_keyfile=ssl_keyfile,
-            ssl_ca_certs=ssl_ca_certs,
-            max_concurrent_streams=max_concurrent_streams,
-            reflection=enable_reflection,
-            channelz=enable_channelz,
-            protocol_version=grpc_protocol_version,
-        )
+        if not isinstance(bento, (Service, NewService)):
+            svc = load(bento, working_dir=working_dir)
+        else:
+            svc = bento
+
+        if isinstance(svc, Service):  # < 1.2 bento
+            from .serving import serve_grpc_production
+
+            if not isinstance(bento, str):
+                bento, working_dir = svc.get_service_import_origin()
+
+            return serve_grpc_production(
+                bento_identifier=bento,
+                reload=reload,
+                host=host,
+                port=port,
+                working_dir=working_dir,
+                api_workers=api_workers,
+                backlog=backlog,
+                threaded=not blocking,
+                development_mode=not production,
+                ssl_certfile=ssl_certfile,
+                ssl_keyfile=ssl_keyfile,
+                ssl_ca_certs=ssl_ca_certs,
+                max_concurrent_streams=max_concurrent_streams,
+                reflection=enable_reflection,
+                channelz=enable_channelz,
+                protocol_version=grpc_protocol_version,
+            )
+        else:  # >= 1.2 bento
+            from _bentoml_impl.server.serving import serve_grpc
+
+            if not isinstance(bento, str):
+                bento = svc.import_string
+                working_dir = svc.working_dir
+
+            svc.inject_config()
+            return serve_grpc(
+                bento_identifier=bento,
+                working_dir=working_dir,
+                reload=reload,
+                host=host,
+                port=port,
+                backlog=backlog,
+                development_mode=not production,
+                threaded=not blocking,
+                ssl_certfile=ssl_certfile,
+                ssl_keyfile=ssl_keyfile,
+                ssl_ca_certs=ssl_ca_certs,
+                max_concurrent_streams=max_concurrent_streams,
+                reflection=enable_reflection,
+                channelz=enable_channelz,
+                protocol_version=grpc_protocol_version,
+            )
     else:
         raise BadInput(f"Unknown server type: '{server_type}'")

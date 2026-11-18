@@ -78,9 +78,13 @@ def run_framework_integration_test(session: nox.Session, framework: str):
 
 
 @nox.session(name="e2e-testing", python=PYTHON_VERSIONS)
-@nox.parametrize("suite", ["bento_server_http", "bento_server_grpc", "bento_new_sdk"])
+@nox.parametrize(
+    "suite",
+    ["bento_server_http", "bento_server_grpc", "bento_new_sdk", "bento_new_sdk_grpc"],
+)
 def run_e2e_test(session: nox.Session, suite: str):
-    session.run("pdm", "sync", "-G", "io,testing", external=True)
+    extras = "grpc,io,testing" if suite == "bento_new_sdk_grpc" else "io,testing"
+    session.run("pdm", "sync", "-G", extras, external=True)
     test_folder = os.path.join("tests/e2e", suite)
     requirements = os.path.join(test_folder, "requirements.txt")
     if os.path.exists(requirements):

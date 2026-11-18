@@ -505,35 +505,62 @@ def build_serve_command() -> click.Group:
                 working_dir = os.path.expanduser(bento)
             else:
                 working_dir = "."
+        if sys.path[0] != working_dir:
+            sys.path.insert(0, working_dir)
 
-        from bentoml.serving import serve_grpc_production
+        from bentoml._internal.service.loader import load
+        from bentoml.legacy import Service
 
-        if development:
-            serve_grpc_production(
-                bento,
-                working_dir=working_dir,
-                port=port,
-                host=DEFAULT_DEV_SERVER_HOST if not host else host,
-                backlog=backlog,
-                api_workers=1,
-                ssl_keyfile=ssl_keyfile,
-                ssl_certfile=ssl_certfile,
-                ssl_ca_certs=ssl_ca_certs,
-                max_concurrent_streams=max_concurrent_streams,
-                reflection=enable_reflection,
-                channelz=enable_channelz,
-                protocol_version=protocol_version,
-                reload=reload,
-                development_mode=True,
-            )
+        svc = load(bento_identifier=bento, working_dir=working_dir)
+        if isinstance(svc, Service):
+            from bentoml.serving import serve_grpc_production
+
+            if development:
+                serve_grpc_production(
+                    bento,
+                    working_dir=working_dir,
+                    port=port,
+                    host=DEFAULT_DEV_SERVER_HOST if not host else host,
+                    backlog=backlog,
+                    api_workers=1,
+                    ssl_keyfile=ssl_keyfile,
+                    ssl_certfile=ssl_certfile,
+                    ssl_ca_certs=ssl_ca_certs,
+                    max_concurrent_streams=max_concurrent_streams,
+                    reflection=enable_reflection,
+                    channelz=enable_channelz,
+                    protocol_version=protocol_version,
+                    reload=reload,
+                    development_mode=True,
+                )
+            else:
+                serve_grpc_production(
+                    bento,
+                    working_dir=working_dir,
+                    port=port,
+                    backlog=backlog,
+                    host=host,
+                    api_workers=api_workers,
+                    ssl_keyfile=ssl_keyfile,
+                    ssl_certfile=ssl_certfile,
+                    ssl_ca_certs=ssl_ca_certs,
+                    max_concurrent_streams=max_concurrent_streams,
+                    reflection=enable_reflection,
+                    channelz=enable_channelz,
+                    protocol_version=protocol_version,
+                    reload=reload,
+                    development_mode=False,
+                )
         else:
-            serve_grpc_production(
+            from _bentoml_impl.server import serve_grpc
+
+            svc.inject_config()
+            serve_grpc(
                 bento,
                 working_dir=working_dir,
+                host=DEFAULT_DEV_SERVER_HOST if development and not host else host,
                 port=port,
                 backlog=backlog,
-                host=host,
-                api_workers=api_workers,
                 ssl_keyfile=ssl_keyfile,
                 ssl_certfile=ssl_certfile,
                 ssl_ca_certs=ssl_ca_certs,
@@ -542,7 +569,7 @@ def build_serve_command() -> click.Group:
                 channelz=enable_channelz,
                 protocol_version=protocol_version,
                 reload=reload,
-                development_mode=False,
+                development_mode=development,
             )
 
     return cli

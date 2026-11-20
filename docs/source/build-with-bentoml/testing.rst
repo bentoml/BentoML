@@ -87,6 +87,50 @@ This unit test does the following:
 
     When the output is fixed and known (for example, a function that returns a constant value or a predictable result based on the input), you can write tests that directly assert the expected output. In such cases, mocking might still be used to isolate the function from any dependencies it has, but the focus of the test can be on asserting that the function returns the exact expected value.
 
+Mock API method bodies
+^^^^^^^^^^^^^^^^^^^^^^
+
+In most unit tests, it is better to mock the model, client, or helper function called by a
+Service method, as shown above. If you need to replace the decorated API method itself,
+patch the underlying ``APIMethod.func`` on ``Service.inner``. The replacement function
+should keep the same ``self`` parameter as the original method.
+
+.. code-block:: python
+    :caption: `test_mock_api_method.py`
+
+    import bentoml
+
+
+    @bentoml.service
+    class Summarization:
+        @bentoml.api
+        def summarize(self, text: str) -> str:
+            return f"real summary: {text}"
+
+
+    def test_mock_decorated_api_method(monkeypatch):
+        def fake_summarize(self, text: str) -> str:
+            return f"mock summary: {text}"
+
+        monkeypatch.setattr(
+            Summarization.inner.summarize,
+            "func",
+            fake_summarize,
+        )
+
+        service = Summarization()
+
+        assert service.summarize("BentoML testing") == "mock summary: BentoML testing"
+
+The same pattern works with a dotted path if that is more convenient for the test:
+
+.. code-block:: python
+
+    monkeypatch.setattr(
+        "service.Summarization.inner.summarize.func",
+        fake_summarize,
+    )
+
 Run the unit test:
 
 .. code-block:: bash

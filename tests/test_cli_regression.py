@@ -34,3 +34,54 @@ def test_regression(runner: CliRunner):
         )
         finish = time.perf_counter_ns() - start
     assert not ret and finish <= 1.7 * 1e6
+
+
+def test_start_runner_server_uses_localhost_default(
+    monkeypatch: pytest.MonkeyPatch, runner: CliRunner
+):
+    from bentoml import start as start_mod
+    from bentoml_cli._internal.start import start_command
+
+    calls = []
+
+    def fake_start_runner_server(*args: object, **kwargs: object) -> None:
+        calls.append({"args": args, "kwargs": kwargs})
+
+    monkeypatch.setattr(start_mod, "start_runner_server", fake_start_runner_server)
+
+    result = runner.invoke(
+        start_command,
+        ["start-runner-server", "test-bento", "--runner-name", "test-runner"],
+    )
+
+    assert result.exit_code == 0
+    assert calls[0]["kwargs"]["host"] is None
+
+
+def test_start_runner_server_keeps_explicit_host(
+    monkeypatch: pytest.MonkeyPatch, runner: CliRunner
+):
+    from bentoml import start as start_mod
+    from bentoml_cli._internal.start import start_command
+
+    calls = []
+
+    def fake_start_runner_server(*args: object, **kwargs: object) -> None:
+        calls.append({"args": args, "kwargs": kwargs})
+
+    monkeypatch.setattr(start_mod, "start_runner_server", fake_start_runner_server)
+
+    result = runner.invoke(
+        start_command,
+        [
+            "start-runner-server",
+            "test-bento",
+            "--runner-name",
+            "test-runner",
+            "--host",
+            "0.0.0.0",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert calls[0]["kwargs"]["host"] == "0.0.0.0"

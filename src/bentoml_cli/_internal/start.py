@@ -413,8 +413,11 @@ def build_start_command() -> click.Group:
     @click.option(
         "--host",
         type=click.STRING,
-        default=BentoMLContainer.http.host.get(),
-        help="The host to bind for the REST api server [defaults: 127.0.0.1(dev), 0.0.0.0(production)]",
+        default=None,
+        help=(
+            "The host to bind for the runner server. Defaults to 127.0.0.1 "
+            "unless explicitly configured."
+        ),
         envvar="BENTOML_HOST",
     )
     @click.option(

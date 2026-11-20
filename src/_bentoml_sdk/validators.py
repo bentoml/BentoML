@@ -128,12 +128,12 @@ class FileSchema:
 
         media_type: str | None = None
 
+        if isinstance(obj, PurePath):
+            return Path(obj)
         if isinstance(obj, str):
             body = obj.encode("utf-8")
             filename = None
-        if isinstance(obj, PurePath):
-            return Path(obj)
-        if isinstance(obj, UploadFile):
+        elif isinstance(obj, UploadFile):
             body = obj.file.read()
             filename = obj.filename
             media_type = obj.content_type

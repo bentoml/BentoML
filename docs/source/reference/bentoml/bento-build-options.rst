@@ -143,7 +143,7 @@ You can then provide values for these arguments in your build configuration:
        .. code-block:: toml
 
           [tool.bentoml.build.args]
-          model_name = deepseek-ai/DeepSeek-V3
+          model_name = "deepseek-ai/DeepSeek-V3"
           gpu = 4
 
     .. tab-item:: bentofile.yaml

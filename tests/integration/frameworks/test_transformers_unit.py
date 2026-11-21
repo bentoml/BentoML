@@ -12,6 +12,7 @@ from transformers.models.auto.modeling_auto import AutoModelForSequenceClassific
 from transformers.pipelines import check_task  # type: ignore
 from transformers.pipelines import pipeline  # type: ignore
 from transformers.pipelines.audio_classification import AudioClassificationPipeline
+from transformers.tokenization_utils_base import TruncationStrategy
 from transformers.trainer_utils import set_seed
 
 import bentoml
@@ -194,6 +195,44 @@ def test_model_options():
 
 
 TASK_NAME: str = "pair-classification"
+
+
+@pytest.mark.parametrize("task", ["text-classification", "feature-extraction"])
+def test_pipeline_tokenizer_defaults_round_trip(tmp_path: Path, task: str):
+    vocab = tmp_path / "vocab.txt"
+    vocab.write_text("[PAD]\n[UNK]\n[CLS]\n[SEP]\n[MASK]\nhello\n", encoding="utf-8")
+    tokenizer = transformers.BertTokenizer(vocab.as_posix())
+    config = transformers.BertConfig(
+        vocab_size=6,
+        hidden_size=8,
+        num_hidden_layers=1,
+        num_attention_heads=2,
+        intermediate_size=16,
+        max_position_embeddings=8,
+    )
+    if task == "feature-extraction":
+        model = transformers.BertModel(config)
+        settings = {
+            "tokenize_kwargs": {
+                "truncation": TruncationStrategy.ONLY_FIRST,
+                "max_length": 6,
+            }
+        }
+        override = {"tokenize_kwargs": {"max_length": 4}}
+    else:
+        model = transformers.BertForSequenceClassification(config)
+        settings = {"truncation": True, "max_length": 6}
+        override = {"max_length": 4}
+    original = pipeline(task, model=model.eval(), tokenizer=tokenizer, **settings)
+    saved = bentoml.transformers.save_model(
+        "truncated-pipeline", original, signatures={"__call__": {"batchable": False}}
+    )
+    text = "hello " * 12
+    restored = bentoml.transformers.load_model(saved.tag)
+    assert restored(text) == original(text)
+
+    overridden = bentoml.transformers.load_model(saved.tag, **override)
+    assert overridden(text) == original(text, **override)
 
 
 @pytest.fixture(name="pair_classification_pipeline", scope="function")

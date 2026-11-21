@@ -7,6 +7,7 @@ import platform
 import shutil
 import typing as t
 import warnings
+from enum import Enum
 from types import ModuleType
 
 import attr
@@ -194,6 +195,7 @@ class ModelOptions(BaseModelOptions):
         default=None,
     )
     kwargs: t.Dict[str, t.Any] = attr.field(factory=dict)
+    tokenizer_defaults: t.Dict[str, t.Any] = attr.field(factory=dict)
 
     @staticmethod
     def process_task_mapping(
@@ -250,7 +252,7 @@ class ModelOptions(BaseModelOptions):
         )
 
     def to_dict(self) -> dict[str, t.Any]:
-        return {
+        result = {
             "task": self.task,
             "tf": tuple(self.tf),
             "pt": tuple(self.pt),
@@ -261,6 +263,9 @@ class ModelOptions(BaseModelOptions):
             "type": self.type,
             "kwargs": self.kwargs,
         }
+        if self.tokenizer_defaults:
+            result["tokenizer_defaults"] = self.tokenizer_defaults
+        return result
 
 
 def convert_to_autoclass(cls_name: str) -> BaseAutoModelClass:
@@ -517,7 +522,7 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
                     kwargs,
                 )
             try:
-                return transformers.pipeline(
+                loaded = transformers.pipeline(
                     task=task, model=bento_model.path, **kwargs
                 )
             except Exception:
@@ -529,6 +534,12 @@ def load_model(bento_model: str | Tag | Model, *args: t.Any, **kwargs: t.Any) ->
                     "If you are loading a custom pipeline, See https://huggingface.co/docs/transformers/main/en/add_new_pipeline#how-to-create-a-custom-pipeline for more information. We recommend to upload the custom pipeline to HuggingFace Hub to ensure consistency. You can also try adding the pipeline instance to 'external_modules': 'import importlib; bentoml.transformers.save_model(..., external_modules=[importlib.import_module(pipeline_instance.__module__)])'"
                 )
                 raise
+            # Some pipelines take tokenizer options inside tokenize_kwargs.
+            tokenizer_kwargs = kwargs.get("tokenize_kwargs") or {}
+            for key, value in options.tokenizer_defaults.items():
+                if key not in kwargs and key not in tokenizer_kwargs:
+                    loaded._preprocess_params[key] = value
+            return loaded
 
 
 def make_default_signatures(pretrained_cls: t.Any) -> ModelSignaturesType:
@@ -1103,13 +1114,21 @@ def save_model(
                 check_task(pipeline_.task if task_name is None else task_name)[:2],
             )
 
+        options = ModelOptions.from_task(*options_args)
+        if isinstance(pipeline_.tokenizer, transformers.PreTrainedTokenizerBase):
+            for key in ("truncation", "max_length"):
+                value = pipeline_._preprocess_params.get(key)
+                if isinstance(value, Enum):
+                    value = value.value
+                if isinstance(value, (bool, str, int)):
+                    options.tokenizer_defaults[key] = value
         with bentoml.models._create(  # type: ignore
             name,
             module=MODULE_NAME,
             api_version=API_VERSION,
             labels=labels,
             context=context,
-            options=ModelOptions.from_task(*options_args),
+            options=options,
             signatures=signatures,
             custom_objects=custom_objects,
             external_modules=external_modules,

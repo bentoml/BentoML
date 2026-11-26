@@ -19,6 +19,13 @@ Available fields
 - ``service``: The Python module, namely the ``service.py`` file.
 - ``class-name``: The class-based Service's name created in ``service.py``, decorated with ``@bentoml.service``. If you have multiple Services in ``service.py``, you can specify the main Service receiving user requests in the configuration. Other Services will be started together with this main Service.
 
+.. note::
+
+   For legacy Service imports, the project working directory takes precedence in Python's module search path, including when an editable installation already added it later in the path.
+   Project modules named ``grpc``, ``schema``, or another dependency name can therefore shadow installed packages.
+   Python's module cache still applies; loading a different project does not isolate or automatically replace modules that are already imported.
+   The loader restores the previous working directory and search path position by default, while ``standalone_load=True`` intentionally retains the import context.
+
 .. tab-set::
 
     .. tab-item:: pyproject.toml

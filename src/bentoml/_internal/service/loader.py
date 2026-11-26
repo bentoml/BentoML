@@ -47,6 +47,18 @@ def import_service(
     which represents the module where the Service instance is created and optionally
     what attribute can be used to access this Service instance in that module
 
+    The working directory takes precedence in the module search path, even if it
+    was already present through an editable installation. Project modules can
+    therefore shadow installed dependencies with the same name, such as ``grpc``
+    or ``schema``. Python's module cache still applies: ``reload=True`` reloads
+    the service module, not its already imported dependencies.
+
+    By default a successful load restores the original working directory and
+    search path position. ``standalone_load=True`` retains that context.
+    A supplied model store stays active after a successful load in either mode;
+    any failed import restores the previous context and model store, including
+    when initialization raises an exception or aborts.
+
     Example usage:
         # When multiple service defined in the same module
         import_service("fraud_detector:svc_a")
@@ -77,7 +89,10 @@ def import_service(
     else:
         working_dir = os.getcwd()
 
-    if working_dir not in sys.path:
+    sys_path_index = sys.path.index(working_dir) if working_dir in sys.path else None
+    if sys_path_index != 0:
+        if sys_path_index is not None:
+            sys.path.pop(sys_path_index)
         sys.path.insert(0, working_dir)
         sys_path_modified = True
 
@@ -90,12 +105,14 @@ def import_service(
             BentoMLContainer.model_store.set(global_model_store)
         if sys_path_modified and working_dir:
             sys.path.remove(working_dir)
+            if sys_path_index is not None:
+                sys.path.insert(sys_path_index, working_dir)
         if prev_cwd is not None:
             os.chdir(prev_cwd)
 
     try:
         svc = _do_import(svc_import_path, working_dir, reload)
-    except ImportServiceError:
+    except BaseException:
         _restore(True)
         raise
     else:

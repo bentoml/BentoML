@@ -101,6 +101,47 @@ def test_working_dir_priority_error_restores_context(
     assert BentoMLContainer.model_store.get() is original_store
 
 
+@pytest.mark.parametrize(
+    ("source", "error"),
+    [
+        ('raise ValueError("service failed")\n', ValueError),
+        ("def invalid syntax\n", SyntaxError),
+        ('raise SystemExit("import aborted")\n', SystemExit),
+    ],
+)
+@pytest.mark.parametrize("standalone", [False, True])
+@pytest.mark.parametrize("already_listed", [False, True])
+def test_failed_import_restores_context(
+    conflicting_service_projects, tmp_path, source, error, standalone, already_listed
+):
+    from bentoml._internal.configuration.containers import BentoMLContainer
+    from bentoml._internal.models import ModelStore
+
+    module, (_, target) = conflicting_service_projects
+    (target / f"{module}.py").write_text(source)
+    if not already_listed:
+        sys.path.remove(str(target))
+    original_path, original_cwd = list(sys.path), os.getcwd()
+    original_store = BentoMLContainer.model_store.get()
+    model_store = ModelStore(str(tmp_path / "failed_import_store"))
+    try:
+        with pytest.raises(error):
+            import_service(
+                f"{module}:svc",
+                working_dir=str(target),
+                standalone_load=standalone,
+                model_store=model_store,
+            )
+        assert sys.path == original_path
+        assert os.getcwd() == original_cwd
+        assert BentoMLContainer.model_store.get() is original_store
+    finally:
+        # Keep a failing regression from affecting the rest of the loader tests.
+        sys.path[:] = original_path
+        os.chdir(original_cwd)
+        BentoMLContainer.model_store.set(original_store)
+
+
 def test_standalone_working_dir_priority(conflicting_service_projects, monkeypatch):
     module, (_, target) = conflicting_service_projects
     original_cwd = os.getcwd()

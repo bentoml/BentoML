@@ -56,7 +56,8 @@ def import_service(
     By default a successful load restores the original working directory and
     search path position. ``standalone_load=True`` retains that context.
     A supplied model store stays active after a successful load in either mode;
-    a handled ``ImportServiceError`` restores the previous model store.
+    any failed import restores the previous context and model store, including
+    when initialization raises an exception or aborts.
 
     Example usage:
         # When multiple service defined in the same module
@@ -111,7 +112,7 @@ def import_service(
 
     try:
         svc = _do_import(svc_import_path, working_dir, reload)
-    except ImportServiceError:
+    except BaseException:
         _restore(True)
         raise
     else:

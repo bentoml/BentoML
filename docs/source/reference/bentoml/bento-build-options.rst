@@ -24,7 +24,8 @@ Available fields
    For legacy Service imports, the project working directory takes precedence in Python's module search path, including when an editable installation already added it later in the path.
    Project modules named ``grpc``, ``schema``, or another dependency name can therefore shadow installed packages.
    Python's module cache still applies; loading a different project does not isolate or automatically replace modules that are already imported.
-   The loader restores the previous working directory and search path position by default, while ``standalone_load=True`` intentionally retains the import context.
+   The loader restores the previous working directory and search path position by default, while ``standalone_load=True`` intentionally retains the import context after a successful load.
+   Failed imports restore the previous context and model store in either mode.
 
 .. tab-set::
 

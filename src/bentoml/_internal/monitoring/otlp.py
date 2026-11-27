@@ -16,7 +16,6 @@ from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_CERTIFICATE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_COMPRESSION
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_ENDPOINT
-from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_HEADERS
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_INSECURE
 from opentelemetry.sdk.environment_variables import OTEL_EXPORTER_OTLP_TIMEOUT
 from opentelemetry.sdk.resources import Resource
@@ -107,7 +106,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
         endpoint: str | None = None,
         insecure: bool | str | None = None,
         credentials: str | None = None,
-        headers: str | None = None,
+        headers: dict[str, str] | str | None = None,
         timeout: int | str | None = None,
         compression: str | None = None,
         meta_sample_rate: float = 1.0,
@@ -171,19 +170,29 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
             os.environ[OTEL_EXPORTER_OTLP_INSECURE] = str(self.insecure)
         if self.credentials is not None:
             os.environ[OTEL_EXPORTER_OTLP_CERTIFICATE] = self.credentials
-        if self.headers is not None:
-            os.environ[OTEL_EXPORTER_OTLP_HEADERS] = self.headers
         if self.timeout is not None:
             os.environ[OTEL_EXPORTER_OTLP_TIMEOUT] = str(self.timeout)
         if self.compression is not None:
             os.environ[OTEL_EXPORTER_OTLP_COMPRESSION] = self.compression
+
+        headers: dict[str, str] | None = None
+        if self.headers is not None:
+            if isinstance(self.headers, str):
+                headers = {}
+                for item in self.headers.split(","):
+                    item = item.strip()
+                    if "=" in item:
+                        k, v = item.split("=", 1)
+                        headers[k.strip()] = v.strip()
+            else:
+                headers = dict(self.headers)
 
         exporter: OTLPHttpLogExporter | OTLPGrpcLogExporter
         if self.protocol == "http":
             exporter = OTLPHttpLogExporter(
                 endpoint=self.endpoint,
                 certificate_file=self.credentials,
-                headers=self.headers,
+                headers=headers,
                 timeout=self.timeout,
                 compression=self.compression,
             )
@@ -192,7 +201,7 @@ class OTLPMonitor(MonitorBase["JSONSerializable"]):
                 endpoint=self.endpoint,
                 insecure=self.insecure,
                 credentials=self.credentials,
-                headers=self.headers,
+                headers=headers,
                 timeout=self.timeout,
                 compression=self.compression,
             )

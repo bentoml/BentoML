@@ -328,7 +328,7 @@ class AsyncClient(AbstractClient):
                         f"Error making request: {resp.status}: {await resp.text()}",
                         error_code=HTTPStatus(resp.status),
                     )
-            data = await resp.json()
+                data = await resp.json()
             return AsyncTask(data["task_id"], __endpoint, self)
         finally:
             self._file_manager.close()

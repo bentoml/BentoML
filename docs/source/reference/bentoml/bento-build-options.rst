@@ -85,7 +85,7 @@ For descriptions sourced from an external file, you can use either an absolute o
 ``labels``
 ^^^^^^^^^^
 
-``labels`` are key-value pairs associated with objects. In BentoML, both Bentos and models can have labels attached to them. These labels can serve various purposes, such as identifying or categorizing Bentos and models in BentoCloud. You can add or modify labels at any time.
+``labels`` are key-value pairs associated with objects. In BentoML, both Bentos and models can have labels attached to them. These labels can serve various purposes, such as identifying or categorizing Bentos and models. You can add or modify labels at any time.
 
 .. tab-set::
 
@@ -258,7 +258,7 @@ You can specify the model to be used for building a Bento using a string model t
               alias: "summarization-model_v1"
 
 - ``tag``: The name and version of the model, separated by a colon.
-- ``filter``: This field uses the same filter syntax in BentoCloud. You use a filter to list specific models, such as the models with the same label. You can add multiple comma-separated filters to a model.
+- ``filter``: You use a filter to list specific models, such as the models with the same label. You can add multiple comma-separated filters to a model.
 - ``alias``: An alias for the model. If this is specified, you can use it directly in code like ``bentoml.models.BentoModel(alias)``.
 
 Python packages
@@ -566,11 +566,7 @@ You set environment variables under the ``envs`` key in ``bentofile.yaml``. Each
            - name: "API_KEY"
              value: "your_api_key_here"
 
-The specified environment variables will be injected into the Bento container.
-
-.. note::
-
-    If you deploy your BentoML Service on BentoCloud, you can either set environment variables through ``envs`` in configuration or the ``--env`` flag when running ``bentoml deploy``. See :ref:`scale-with-bentocloud/deployment/configure-deployments:environment variables` for details.
+The specified environment variables will be injected into the Bento container. To set or override a value when you run the container, use the ``-e`` flag of ``docker run``, for example, ``docker run -e API_KEY=<value>``.
 
 ``conda``
 ^^^^^^^^^

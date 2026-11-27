@@ -68,10 +68,6 @@ In this example, the ``summarize`` method on the client is directly mapped to th
 
 If you define :ref:`root input <root-input>` for an API endpoint, use only the positional argument in your client without specifying the parameter name.
 
-.. note::
-
-    If you deploy your Service to BentoCloud, you can get the client of a Deployment by using ``get_client()`` or ``get_async_client()``. For more information, see :ref:`scale-with-bentocloud/deployment/call-deployment-endpoints:interact with the Deployment`.
-
 Use a context manager
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -262,7 +258,7 @@ BentoML clients support a variety of file types, such as images and generic bina
 
 For file input, you pass a ``Path`` object pointing to the file. The client handles the file reading and sends it as part of the request. For file output, the client provides the output as a ``Path`` object. You can use this ``Path`` object to access, read, or process the file.
 
-The following code snippet comes from the :doc:`/examples/controlnet` example, which accepts and returns an image file.
+The following code snippet calls a Service that accepts and returns an image file.
 
 .. code-block:: python
 

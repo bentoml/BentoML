@@ -192,48 +192,6 @@ Then pass the values when building the Bento:
    # Containerize the Bento, no need to pass the credentials again
    bentoml containerize my_service:latest
 
-.. dropdown:: Use secrets in BentoCloud for private PyPI access
-
-   To securely manage PyPI credentials in BentoCloud, you can use :doc:`secrets </scale-with-bentocloud/manage-secrets-and-env-vars>` to store them.
-
-   1. Create secrets on BentoCloud via the BentoML CLI.
-
-      .. code-block:: bash
-
-         bentoml secret create pypi-credentials \
-            USERNAME=$USERNAME \
-            PASSWORD=$PASSWORD \
-            PYPI_URL=https://my.private.pypi/simple
-
-   2. Reference the secrets correctly in your Service code:
-
-      .. code-block:: python
-
-         import bentoml
-
-         image = bentoml.images.Image(python_version="3.11") \
-                .python_packages(
-                    "--extra-index-url https://${USERNAME}:${PASSWORD}@${PYPI_URL}",
-                    "my-private-package"
-                )
-
-         @bentoml.service(
-                image=image,
-                envs=[
-                    {"name": "USERNAME"},
-                    {"name": "PASSWORD"},
-                    {"name": "PYPI_URL"},
-                ]
-         )
-         class MyService:
-              ...
-
-   3. Deploy with the secret attached.
-
-      .. code-block:: bash
-
-         bentoml deploy --secret pypi-credentials
-
 .. _requirements_file:
 
 ``requirements_file()``
@@ -393,4 +351,4 @@ Here is an example:
 Next step
 ---------
 
-After you've configured the environment specifications, you can :doc:`build a Bento </get-started/packaging-for-deployment>` or :doc:`deploy your Service to BentoCloud </get-started/cloud-deployment>`.
+After you've configured the environment specifications, you can :doc:`build a Bento and containerize it </get-started/packaging-for-deployment>`.

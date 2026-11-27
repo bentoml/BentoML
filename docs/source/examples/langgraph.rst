@@ -14,12 +14,8 @@ This document demonstrates how to serve a LangGraph agent application with Bento
             <a href="https://github.com/bentoml/BentoLangGraph" style="margin-left: 5px; vertical-align: middle;">Source Code</a>
         </div>
         <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-left: 10px; text-align: center;">
-            <img src="https://docs.bentoml.com/en/latest/_static/img/bentocloud-logo.png" alt="BentoCloud" style="vertical-align: middle; width: 24px; height: 24px;">
-            <a href="#bentocloud" style="margin-left: 5px; vertical-align: middle;">Deploy to BentoCloud</a>
-        </div>
-        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 10px; background-color: #f9f9f9; flex-grow: 1; margin-left: 10px; text-align: center;">
             <img src="https://docs.bentoml.com/en/latest/_static/img/bentoml-icon.png" alt="BentoML" style="vertical-align: middle; width: 24px; height: 24px;">
-            <a href="#localserving" style="margin-left: 5px; vertical-align: middle;">Serve with BentoML</a>
+            <a href="#try-it-out" style="margin-left: 5px; vertical-align: middle;">Serve with BentoML</a>
         </div>
     </div>
 
@@ -37,15 +33,10 @@ Example output:
 
     Noah Lyles (USA) won the gold medal at the men's 100 metres event at the 2024 Summer Olympic Games. He won by five-thousands of a second over Jamaica's Kishane Thompson.
 
-This example is ready for easy deployment and scaling on BentoCloud. You can use either external LLM APIs or deploy an open-source LLM together with the LangGraph agent. With a single command, you get a production-grade application with fast autoscaling, secure deployment in your cloud, and comprehensive observability.
-
-.. image:: ../../_static/img/examples/langgraph/langgraph-agent-on-bentocloud.png
-    :alt: Screenshot of LangGraph agent deployed on BentoCloud showing the query interface for asking questions with search capabilities
-
 Architecture
 ------------
 
-This project consists of two main components: a BentoML Service that serves a LangGraph agent as REST APIs and an LLM that generates text. The LLM can be an external API like Claude 3.5 Sonnet or an open-source model served via BentoML (Ministral-8B-Instruct-2410 in this example).
+This project consists of two main components: a BentoML Service that serves a LangGraph agent as REST APIs and an LLM that generates text. The LLM can be an external API like Claude or an open-source model served via BentoML (Ministral-8B-Instruct-2410 in this example).
 
 .. image:: ../../_static/img/examples/langgraph/langgraph-bentoml-architecture.png
     :alt: Architecture diagram showing the LangGraph agent workflow with BentoML, illustrating how user queries flow through the agent to external tools and LLM components
@@ -62,7 +53,7 @@ Code explanations
 
 This `example <https://github.com/bentoml/BentoLangGraph>`_ contains the following two sub-projects that demonstrate the use of different LLMs:
 
-- `langgraph-anthropic <https://github.com/bentoml/BentoLangGraph/tree/main/langgraph-anthropic>`_ uses Claude 3.5 Sonnet
+- `langgraph-anthropic <https://github.com/bentoml/BentoLangGraph/tree/main/langgraph-anthropic>`_ uses Claude
 - `langgraph-mistral <https://github.com/bentoml/BentoLangGraph/tree/main/langgraph-mistral>`_ uses Ministral-8B-Instruct-2410
 
 Both sub-projects follow the same logic for implementing the LangGraph agent. This document explains the key code implementation in langgraph-mistral.
@@ -89,7 +80,7 @@ service.py
 
    ``LLM`` provides OpenAI-compatible APIs and uses vLLM as the inference backend. It is a dependent BentoML Service and can be invoked by the LangGraph agent. For more information on code explanations, see :doc:`/examples/vllm`.
 
-2. Create a another Service ``SearchAgentService`` to wrap around the LangGraph agent. You can optionally set :doc:`configurations </reference/bentoml/configurations>` like :doc:`workers </build-with-bentoml/parallelize-requests>` and :doc:`concurrency </scale-with-bentocloud/scaling/autoscaling>`.
+2. Create a another Service ``SearchAgentService`` to wrap around the LangGraph agent. You can optionally set :doc:`configurations </reference/bentoml/configurations>` like :doc:`workers </build-with-bentoml/parallelize-requests>`.
 
    .. code-block:: python
       :caption: `service.py`
@@ -99,15 +90,9 @@ service.py
             resources={
                 "cpu": "2000m"
             },
-            traffic={
-                "concurrency": 16,
-                "external_queue": True
-            }
       )
       class SearchAgentService:
           ...
-
-   For deployment on BentoCloud, we recommend you set ``concurrency`` and enable ``external_queue``. Concurrency refers to the number of requests the Service can handle at the same time. With ``external_queue`` enabled, if the application receives more than 16 requests simultaneously, the extra requests are placed in an external queue. They will be processed once the current ones are completed, allowing you to handle traffic spikes without dropping requests.
 
 3. :doc:`Define the runtime environment </build-with-bentoml/runtime-environment>` for a Bento, the unified distribution format in BentoML. A Bento is packaged with all the source code, Python dependencies, model references, and environment setup, making it easy to deploy consistently across different environments.
 
@@ -205,98 +190,7 @@ service.py
 Try it out
 ----------
 
-You can run `this example project <https://github.com/bentoml/BentoLangGraph/>`_ on BentoCloud, or serve it locally, containerize it as an OCI-compliant image, and deploy it anywhere.
-
-.. _BentoCloud:
-
-BentoCloud
-^^^^^^^^^^
-
-.. raw:: html
-
-    <a id="bentocloud"></a>
-
-BentoCloud provides fast and scalable infrastructure for building and scaling AI applications with BentoML in the cloud.
-
-1. Install BentoML and :doc:`log in to BentoCloud </scale-with-bentocloud/manage-api-tokens>` through the BentoML CLI. If you don't have a BentoCloud account, `sign up here for free <https://www.bentoml.com/>`_.
-
-   .. code-block:: bash
-
-      pip install bentoml
-      bentoml cloud login
-
-2. Clone the repository and select the desired project to deploy it. We recommend you create a BentoCloud :doc:`secret </scale-with-bentocloud/manage-secrets-and-env-vars>` to store the required environment variable.
-
-   .. code-block:: bash
-
-        git clone https://github.com/bentoml/BentoLangGraph.git
-
-        # Use Ministral-8B-Instruct-2410
-        cd BentoLangGraph/langgraph-mistral
-        bentoml secret create huggingface HF_TOKEN=$HF_TOKEN
-        bentoml deploy --secret huggingface
-
-        # Use Claude 3.5 Sonnet
-        cd BentoLangGraph/langgraph-anthropic
-        bentoml secret create anthropic ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
-        bentoml deploy --secret anthropic
-
-3. Once it is up and running on BentoCloud, you can call the endpoint in the following ways:
-
-   .. tab-set::
-
-    .. tab-item:: BentoCloud Playground
-
-		.. image:: ../../_static/img/examples/langgraph/langgraph-agent-on-bentocloud.png
-		   :alt: Screenshot of LangGraph agent deployed on BentoCloud showing the query interface for asking questions with search capabilities
-
-    .. tab-item:: Python client
-
-       .. code-block:: python
-
-          import bentoml
-
-          with bentoml.SyncHTTPClient("<your_deployment_endpoint_url>") as client:
-              result = client.invoke(
-                  input_query="Who won the gold medal at the men's 100 metres event at the 2024 Summer Olympic?",
-              )
-              print(result)
-
-    .. tab-item:: CURL
-
-       .. code-block:: bash
-
-          curl -s -X POST \
-              'https://<your_deployment_endpoint_url>/invoke' \
-              -H 'Content-Type: application/json' \
-              -d '{
-                  "input_query": "Who won the gold medal at the men's 100 metres event at the 2024 Summer Olympic?"
-          }'
-
-4. To make sure the Deployment automatically scales within a certain replica range, add the scaling flags:
-
-   .. code-block:: bash
-
-      bentoml deploy --secret huggingface --scaling-min 0 --scaling-max 3 # Set your desired count
-
-   If it's already deployed, update its allowed replicas as follows:
-
-   .. code-block:: bash
-
-      bentoml deployment update <deployment-name> --scaling-min 0 --scaling-max 3 # Set your desired count
-
-   For more information, see :doc:`how to configure concurrency and autoscaling </scale-with-bentocloud/scaling/autoscaling>`.
-
-.. _LocalServing:
-
-Local serving
-^^^^^^^^^^^^^
-
-.. raw:: html
-
-    <a id="localserving"></a>
-
-BentoML allows you to run and test your code locally, so that you can quickly validate your code with local compute resources.
+You can serve `this example project <https://github.com/bentoml/BentoLangGraph/>`_ locally, or containerize it as an OCI-compliant image and deploy it anywhere.
 
 1. Clone the repository and choose your desired project.
 
@@ -311,7 +205,7 @@ BentoML allows you to run and test your code locally, so that you can quickly va
         pip install -r requirements.txt
         export HF_TOKEN=<your-hf-token>
 
-        # Use Claude 3.5 Sonnet
+        # Use Claude
         cd BentoLangGraph/langgraph-anthropic
         pip install -r requirements.txt
         export ANTHROPIC_API_KEY=<your-anthropic-api-key>
@@ -326,6 +220,28 @@ BentoML allows you to run and test your code locally, so that you can quickly va
 
       To run this project with Ministral-8B-Instruct-2410 locally, you need an NVIDIA GPU with at least 16G VRAM.
 
-3. Visit or send API requests to `http://localhost:3000 <http://localhost:3000/>`_.
+3. Call the endpoint at `http://localhost:3000 <http://localhost:3000/>`_. You can also open this URL in your browser to try it out in the Swagger UI.
+
+   .. tab-set::
+
+      .. tab-item:: Python client
+
+         .. code-block:: python
+
+            import bentoml
+
+            with bentoml.SyncHTTPClient("http://localhost:3000") as client:
+                result = client.invoke(
+                    input_query="Who won the gold medal at the men's 100 metres event at the 2024 Summer Olympic?",
+                )
+                print(result)
+
+      .. tab-item:: CURL
+
+         .. code-block:: bash
+
+            curl -s -X POST http://localhost:3000/invoke \
+                -H 'Content-Type: application/json' \
+                -d "{\"input_query\": \"Who won the gold medal at the men's 100 metres event at the 2024 Summer Olympic?\"}"
 
 For custom deployment in your own infrastructure, use BentoML to :doc:`generate an OCI-compliant image </get-started/packaging-for-deployment>`.

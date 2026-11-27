@@ -32,3 +32,5 @@ security vulnerabilities:
 * Reports about pickle-related vulnerabilities in the runner service or
   dependency service. We consider these scenarios to be purely
   theoretical and not a practical vulnerability in BentoML.
+
+BentoML does not participate in Huntr.com's bug bounty program; we have no budget for bug bounties at this time nor do we plan to in the future.

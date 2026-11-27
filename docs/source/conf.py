@@ -146,12 +146,6 @@ html_theme_options = {
             "html": "&nbsp;&nbsp;",
             "class": "fab fa-x-twitter",
         },
-        {
-            "name": "Slack",
-            "url": "https://l.bentoml.com/join-slack",
-            "html": "&nbsp;&nbsp;",
-            "class": "fab fa-slack",
-        },
     ],
     "light_logo": "img/logo-light.svg",
     "dark_logo": "img/logo-dark.svg",

@@ -33,6 +33,7 @@ dependencies = [
     "click-option-group",
     "cloudpickle>=2.0.0",
     "httpx",
+    "certifi>=2026.10.19",
     "numpy",
     "nvidia-ml-py",
     "opentelemetry-api~=1.20",

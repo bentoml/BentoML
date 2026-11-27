@@ -4,8 +4,8 @@
 [metadata]
 groups = ["default", "all", "aws", "docs", "grpc", "grpc-channelz", "grpc-reflection", "io", "io-image", "io-pandas", "monitor-otlp", "testing", "tooling", "tracing", "tracing-jaeger", "tracing-otlp", "tracing-zipkin"]
 strategy = ["inherit_metadata"]
-lock_version = "4.5.0"
-content_hash = "sha256:24ab8a1f03c5f9c39a7b1322634c098053e1d1a17d9b0f1a078d80bbd24bb33d"
+lock_version = "4.5.1"
+content_hash = "sha256:3a17127489441a9e10042967583168d8cfa50474fcb7d17d8192056f5fe16b6e"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -390,13 +390,13 @@ files = [
 
 [[package]]
 name = "certifi"
-version = "2024.7.4"
-requires_python = ">=3.6"
+version = "2026.10.19"
+requires_python = ">=3.7"
 summary = "Python package for providing Mozilla's CA Bundle."
 groups = ["default", "all", "docs", "monitor-otlp", "tracing", "tracing-otlp", "tracing-zipkin"]
 files = [
-    {file = "certifi-2024.7.4-py3-none-any.whl", hash = "sha256:c198e21b1289c2ab85ee4e67bb4b4ef3ead0892059901a8d5b622f24a1101e90"},
-    {file = "certifi-2024.7.4.tar.gz", hash = "sha256:5a1e7645bc0ec61a09e26c36f6106dd4cf40c6db3a1fb6352b0244e7fb057c7b"},
+    {file = "certifi-2026.10.19-py3-none-any.whl", hash = "sha256:42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b"},
+    {file = "certifi-2026.10.19.tar.gz", hash = "sha256:035c1e85572b141bf1c3a3eff0e33a8eb74917522f2559075ff8d2fea780a1ae"},
 ]
 
 [[package]]
